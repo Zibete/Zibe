@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.FavoritesFragment"
+    android:background="@color/liz_blanco"
+    android:orientation="vertical">
+
+    <com.zibete.proyecto1.FixedSwipeRefreshLayout
+        android:id="@+id/favorite_swipe_refresh"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:background="@drawable/background_text"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_favorites"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+
+
+
+            </LinearLayout>
+
+
+
+            <ProgressBar
+                android:paddingHorizontal="150dp"
+                android:id="@+id/progressbar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+        </RelativeLayout>
+
+    </com.zibete.proyecto1.FixedSwipeRefreshLayout>
+
+</LinearLayout>

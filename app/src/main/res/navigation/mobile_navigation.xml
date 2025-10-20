@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/nav_chat">
+
+    <fragment
+        android:id="@+id/nav_grupos"
+        android:name="com.zibete.proyecto1.ui.GruposFragment"
+        android:label="@string/menu_grupos"
+        tools:layout="@layout/fragment_grupos" />
+
+
+
+    <fragment
+        android:id="@+id/nav_usuarios"
+        android:name="com.zibete.proyecto1.ui.Usuarios.UsuariosFragment"
+        android:label="@string/menu_usuarios"
+        tools:layout="@layout/fragment_usuarios"/>
+
+    <fragment
+        android:id="@+id/nav_chat"
+        android:name="com.zibete.proyecto1.ui.ChatList.ChatListFragment"
+        android:label="@string/menu_chat"
+        tools:layout="@layout/fragment_chat_list"/>
+
+
+    <fragment
+        android:id="@+id/nav_editPerfil"
+        android:name="com.zibete.proyecto1.ui.EditProfileFragment"
+        android:label="@string/menu_edit"
+        tools:layout="@layout/fragment_edit_profile"
+        app:popUpToInclusive="true"
+        app:popUpTo="@id/nav_editPerfil"/>
+
+    <fragment
+        android:id="@+id/nav_favoritos"
+        android:name="com.zibete.proyecto1.ui.FavoritesFragment"
+        android:label="@string/menu_chat"
+        tools:layout="@layout/fragment_chat_list"/>
+
+
+    <fragment
+        android:id="@+id/nav_group_chat"
+        android:name="com.zibete.proyecto1.ChatGroupFragment"
+        android:label="@string/menu_chat"
+        tools:layout="@layout/fragment_group"/>
+
+</navigation>

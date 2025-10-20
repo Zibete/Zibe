@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/colorA"
+    android:orientation="vertical"
+    android:id="@+id/frameIDgroup">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/colorA">
+
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMsg"
+            android:paddingHorizontal="5dp"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/linearBack"
+            android:paddingBottom="4dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:visibility="gone">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/buttonScrollBack"
+                app:fabSize="mini"
+                app:backgroundTint="@color/colorB"
+                app:maxImageSize="46dp"
+                android:src="@drawable/ic_baseline_arrow_drop_down_24"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"/>
+
+        </LinearLayout>
+
+        <ProgressBar
+            android:paddingHorizontal="150dp"
+            android:id="@+id/progressbar2"
+            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+
+        <LinearLayout
+            android:id="@+id/linearOnBoardingGroupChat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/side_nav_bar"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="@dimen/text_size_xlarge"
+
+                android:text="El chat está vacío"/>
+
+
+            <ImageView
+                android:paddingHorizontal="120dp"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:src="@drawable/ic_logo3"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="@dimen/text_size_xlarge"
+                android:text="Se el primero en decir algo!"/>
+
+
+        </LinearLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_chat_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorA"
+        android:padding="5dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/marco_color_bt"
+            >
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:padding="5dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+
+
+                    <LinearLayout
+                        android:id="@+id/linear_photo_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:visibility="gone"
+                        android:orientation="horizontal">
+
+
+                        <LinearLayout
+                            android:id="@+id/linear_photo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:gravity="center">
+
+                            <androidx.coordinatorlayout.widget.CoordinatorLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent">
+
+                                <com.zibete.proyecto1.ui.ResizableImageView
+                                    android:id="@+id/photo"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"/>
+
+                                <ProgressBar
+                                    android:id="@+id/loadingPhoto"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:indeterminate="true"
+                                    android:layout_gravity="center"/>
+
+
+                                <ImageView
+                                    android:id="@+id/cancel_action"
+                                    android:layout_weight="1"
+                                    android:layout_gravity="end"
+                                    android:layout_marginEnd="6dp"
+                                    android:layout_marginTop="3dp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:src="@drawable/ic_baseline_cancel_24"/>
+
+                            </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+
+
+
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+
+
+                    <EditText
+                        android:id="@+id/msg"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:hint="Escribe un mensaje"
+                        android:inputType="textCapSentences"
+                        android:textColor="@color/blanco"
+                        android:textColorHint="@color/secondary_text"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:visibility="visible"/>
+
+
+                    <ImageView
+                        android:id="@+id/btnCamera"
+                        android:visibility="gone"
+                        android:layout_gravity="center|bottom"
+                        android:padding="9dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_menu_camera" />
+
+                    <ImageView
+                        android:id="@+id/btnSendMsg"
+                        android:layout_gravity="center|bottom"
+                        android:padding="9dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_baseline_send_24"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+
+    </LinearLayout>
+
+
+
+
+</LinearLayout>
+
+
+
+</FrameLayout>

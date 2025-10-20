@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+    <item
+        android:id="@+id/action_silent"
+        android:orderInCategory="100"
+        android:title="@string/silenciar"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_notif"
+        android:orderInCategory="100"
+        android:title="@string/mostrar_notif"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_bloq"
+        android:orderInCategory="100"
+        android:title="@string/bloquear"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_desbloq"
+        android:orderInCategory="100"
+        android:title="@string/desbloquear"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_delete"
+        android:orderInCategory="100"
+        android:title="@string/eliminar_chat"
+        app:showAsAction="never" />
+</menu>

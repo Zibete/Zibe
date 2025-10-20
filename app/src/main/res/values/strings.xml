@@ -1,0 +1,166 @@
+<resources>
+    <string name="app_name">Zibe</string>
+    <string name="iniciar_sesion1">Iniciar sesión con...</string>
+    <string name="iniciar_sesion2">O utiliza tu cuenta...</string>
+    <string name="iniciar_sesion3">¿No tienes una cuenta?</string>
+    <string name="nombre">Nombre/Apodo</string>
+    <string name="email">Ingrese el email</string>
+    <string name="pass1">Ingrese una contraseña</string>
+    <string name="pass2">Repita la contraseña</string>
+    <string name="registro">Registrarse</string>
+    <string name="fin_registro">Finalizar registro</string>
+    <string name="FechaNacimiento">Fecha de nacimiento</string>
+    <string name="Edad">Edad</string>
+    <string name="Descipcion">¿Algo sobre vos?</string>
+    <string name="Entrar">Entrar</string>
+    <string name="Logout">Cerrar sesión</string>
+    <string name="datos">Complete sus datos</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Name User</string>
+    <string name="nav_header_subtitle">Email User</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="ajustes">Ajustes</string>
+    <string name="unlock_users">Desbloquear usuarios</string>
+    <string name="favoritos">Favoritos</string>
+    <string name="menu_grupos">Salas</string>
+    <string name="menu_usuarios">Personas</string>
+    <string name="menu_chat">Chat</string>
+    <string name="fragment_left_name">Nombre</string>
+    <string name="usuario">Usuario</string>
+    <string name="atras">Atrás</string>
+    <string name="siguiente">Siguiente</string>
+
+    <string name="desconectado">Desconectado</string>
+    <string name="facebook_app_id">971156603326191</string>
+    <string name="fb_login_protocol_scheme">fb971156603326191</string>
+    <string name="channel_name">APP Zibe</string>
+    <string name="channel_description">Tienes un nuevo mensaje</string>
+    <string name="reply_name">aña</string>
+    <string name="snooze">snozze</string>
+    <string name="menu_edit">Editar Perfil</string>
+    <string name="noleido">Marcar no leído</string>
+    <string name="leido">Marcar leído</string>
+    <string name="bloquear">Bloquear</string>
+    <string name="silenciar">Silenciar</string>
+    <string name="eliminar">Eliminar</string>
+    <string name="eliminar_chat">Eliminar chat</string>
+    <string name="archivar">Archivar</string>
+    <string name="mostrar_notif">Mostrar notificaciones</string>
+    <string name="ultVez">últ. vez</string>
+    <string name="hoy">hoy</string>
+    <string name="ayer">ayer</string>
+    <string name="a_las">a las</string>
+    <string name="conectado">conectado</string>
+    <string name="escribiendo">escribiendo...</string>
+    <string name="enlinea">en línea</string>
+    <string name="Enlinea">En línea</string>
+    <string name="title_activity_main2">MainActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="Buscar">Buscar...</string>
+    <string name="editar_foto_de_perfil">Editar foto de perfil</string>
+    <string name="enviar_desde">Enviar Desde...</string>
+    <string name="camera">Cámara</string>
+    <string name="gallery">Galería</string>
+    <string name="photo_received">Foto recibida</string>
+    <string name="photo_send">Foto enviada</string>
+    <string name="audio_received">Audio recibido</string>
+    <string name="audio_send">Audio enviado</string>
+    <string name="desbloquear">Desbloquear</string>
+    <string name="salir">Salir</string>
+    <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=3c26de61–d53c-465d-9a27-964437770e4e]]></string>
+    <string name="inicio">Inicio</string>
+    <string name="unhide_chats">Chats ocultos</string>
+    <string name="ocultar">Ocultar</string>
+    <string name="grabando">grabando audio...</string>
+
+    <string-array name="edad">
+        <item>18</item>
+        <item>19</item>
+        <item>20</item>
+        <item>21</item>
+        <item>22</item>
+        <item>23</item>
+        <item>24</item>
+        <item>25</item>
+        <item>26</item>
+        <item>27</item>
+        <item>28</item>
+        <item>29</item>
+        <item>30</item>
+        <item>31</item>
+        <item>32</item>
+        <item>33</item>
+        <item>34</item>
+        <item>35</item>
+        <item>36</item>
+        <item>37</item>
+        <item>38</item>
+        <item>39</item>
+        <item>40</item>
+        <item>41</item>
+        <item>42</item>
+        <item>43</item>
+        <item>44</item>
+        <item>45</item>
+        <item>46</item>
+        <item>47</item>
+        <item>48</item>
+        <item>49</item>
+        <item>50</item>
+        <item>51</item>
+        <item>52</item>
+        <item>53</item>
+        <item>54</item>
+        <item>55</item>
+        <item>56</item>
+        <item>57</item>
+        <item>58</item>
+        <item>59</item>
+        <item>60</item>
+        <item>61</item>
+        <item>62</item>
+        <item>63</item>
+        <item>64</item>
+        <item>65</item>
+        <item>66</item>
+        <item>67</item>
+        <item>68</item>
+        <item>69</item>
+        <item>70</item>
+        <item>71</item>
+        <item>72</item>
+        <item>73</item>
+        <item>74</item>
+        <item>75</item>
+        <item>76</item>
+        <item>77</item>
+        <item>78</item>
+        <item>79</item>
+        <item>80</item>
+        <item>81</item>
+        <item>82</item>
+        <item>83</item>
+        <item>84</item>
+        <item>85</item>
+        <item>86</item>
+        <item>87</item>
+        <item>88</item>
+        <item>89</item>
+        <item>90</item>
+        <item>91</item>
+        <item>92</item>
+        <item>93</item>
+        <item>94</item>
+        <item>95</item>
+        <item>96</item>
+        <item>97</item>
+        <item>98</item>
+        <item>99</item>
+    </string-array>
+
+</resources>

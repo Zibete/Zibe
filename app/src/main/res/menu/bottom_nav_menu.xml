@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navBottomUsers"
+        android:icon="@drawable/fui_ic_anonymous_white_24dp"
+        android:title="@string/menu_usuarios" />
+
+    <item
+        android:id="@+id/navBottomChat"
+        android:icon="@drawable/ic_logo3"
+        android:title="@string/menu_chat" />
+
+    <item
+        android:id="@+id/navBottomGrupos"
+        android:icon="@drawable/ic_baseline_groups_24"
+        android:title="@string/menu_grupos" />
+
+    <item
+        android:id="@+id/navBottomFavorites"
+        android:icon="@drawable/ic_baseline_star_24"
+        android:title="@string/favoritos"
+        android:visible="true"/>
+
+
+</menu>

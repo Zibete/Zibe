@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/colorA"
+    android:animateLayoutChanges="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:animateLayoutChanges="true">
+
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar_chat"
+                android:layout_width="match_parent"
+                app:contentInsetLeft="0dp"
+                app:contentInsetStart="0dp"
+                app:contentInsetStartWithNavigation="0dp"
+                android:layout_height="wrap_content"
+                android:background="@color/colorB"
+                app:popupTheme="@style/AppTheme.PopupOverlay">
+
+                <LinearLayout
+                    android:id="@+id/linearNameUser"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/image_user"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:padding="4dp"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_weight="1"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="5dp">
+
+                        <TextView
+                            android:layout_marginStart="5dp"
+                            android:id="@+id/nameUser"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_large"
+                            android:gravity="center"
+                            android:singleLine="true"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:layout_gravity="center">
+
+                            <ImageView
+                                android:visibility="gone"
+                                android:id="@+id/icon_conectado"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/ic_circle_online" />
+
+
+                            <ImageView
+                                android:visibility="gone"
+                                android:id="@+id/icon_desconectado"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:src="@drawable/ic_circle_offline"/>
+
+                            <TextView
+                                android:layout_gravity="center_vertical"
+                                android:id="@+id/tv_estado"
+                                android:textSize="12sp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+
+                    <LinearLayout
+                        android:id="@+id/linearDeleteMsg"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginHorizontal="3dp"
+                        android:layout_gravity="center"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/countDeleteMsg"
+                            android:layout_gravity="center"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_xlarge" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/trashAnimated"
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            app:lottie_rawRes="@raw/trash"
+                            android:layout_gravity="center"
+                            android:layout_marginHorizontal="-10dp"
+                            app:lottie_autoPlay="false"
+                            app:lottie_loop="false"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.appcompat.widget.Toolbar>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardview_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/colorC">
+
+            <TextView
+                android:id="@+id/tv_chat_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="2dp"
+                android:textStyle="bold"
+                android:textSize="@dimen/text_size_small"/>
+
+
+        </androidx.cardview.widget.CardView>
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:animateLayoutChanges="true"
+            android:layout_weight="1">
+
+
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMsg"
+                android:paddingHorizontal="5dp"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"/>
+
+
+            <LinearLayout
+                android:id="@+id/linearDate"
+                android:src="@drawable/ic_baseline_arrow_drop_down_24"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center|top"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_date"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:textSize="@dimen/text_size_small"
+                    android:background="@drawable/marco_color_b_date_chat"/>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/linearBack"
+                android:paddingBottom="4dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:visibility="gone">
+
+
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/buttonScrollBack"
+                    app:fabSize="mini"
+                    app:backgroundTint="@color/colorB"
+                    app:maxImageSize="46dp"
+                    android:src="@drawable/ic_baseline_arrow_drop_down_24"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="bottom"/>
+
+            </LinearLayout>
+
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutBloq"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_margin="10dp"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btnDesbloq"
+                android:background="@drawable/marco_color_b_round"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Desbloquear Usuario"/>
+
+        </LinearLayout>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/layoutChat"
+                android:animateLayoutChanges="true"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_weight="1"
+                android:background="@drawable/marco_color_b_round"
+                android:layout_marginVertical="10dp"
+                android:layout_marginEnd="65dp"
+                android:layout_marginStart="10dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:padding="5dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+
+                        <LinearLayout
+                            android:id="@+id/linear_photo_view"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:layout_weight="1"
+                            android:visibility="gone"
+                            android:orientation="horizontal">
+
+
+                            <LinearLayout
+                                android:id="@+id/linear_photo"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center">
+
+                                <androidx.coordinatorlayout.widget.CoordinatorLayout
+                                    android:layout_width="match_parent"
+                                    android:background="@drawable/marco_seekbar"
+                                    android:layout_height="match_parent">
+
+                                    <com.zibete.proyecto1.ui.ResizableImageView
+                                        android:id="@+id/photo"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"/>
+
+                                    <ProgressBar
+                                        android:id="@+id/loadingPhoto"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:indeterminate="true"
+                                        android:layout_gravity="center"/>
+
+
+                                    <ImageView
+                                        android:id="@+id/cancel_action"
+                                        android:layout_weight="1"
+                                        android:background="?selectableItemBackground"
+                                        android:layout_gravity="end"
+                                        android:layout_marginEnd="6dp"
+                                        android:layout_marginTop="3dp"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:src="@drawable/ic_baseline_cancel_24"/>
+
+                                </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+
+
+
+                            </LinearLayout>
+
+
+                        </LinearLayout>
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/trashAnimated2"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            app:lottie_rawRes="@raw/trash"
+                            android:layout_gravity="center"
+                            android:layout_marginVertical="-10dp"
+                            android:layout_marginStart="-10dp"
+                            android:layout_marginEnd="-16dp"
+                            app:lottie_autoPlay="false"
+                            app:lottie_loop="false"
+                            android:visibility="gone"/>
+
+                        <EditText
+                            android:id="@+id/msg"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:hint="Escribe un mensaje"
+                            android:inputType="textCapSentences"
+                            android:textColor="@color/blanco"
+                            android:textColorHint="@color/secondary_text"
+                            android:layout_marginHorizontal="9dp"
+                            android:layout_weight="1"
+                            android:visibility="visible"/>
+
+                        <LinearLayout
+                            android:id="@+id/linear_timer"
+                            android:layout_margin="10dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="20dp"
+                            android:layout_weight="1"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+
+                            <Chronometer
+                                android:layout_gravity="center"
+                                android:id="@+id/timer"
+                                android:textSize="@dimen/text_size_normal"
+                                android:textColor="@color/accent"
+                                android:gravity="center|start"
+                                android:layout_weight="1"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"/>
+
+
+                            <TextView
+                                android:id="@+id/tv_cancel_audio"
+                                android:layout_gravity="center"
+                                android:paddingHorizontal="10dp"
+                                android:textSize="@dimen/text_size_normal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:text="Deslice para cancelar"/>
+
+                        </LinearLayout>
+
+
+
+                        <ImageView
+                            android:id="@+id/btnCamera"
+                            android:visibility="gone"
+                            android:layout_gravity="center|bottom"
+                            android:paddingVertical="8dp"
+                            android:paddingEnd="9dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_menu_camera" />
+
+
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+
+
+
+        </LinearLayout>
+
+
+
+
+    </LinearLayout>
+
+
+
+
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:id="@+id/linearLottie"
+                android:layout_gravity="end|bottom"
+                android:gravity="end"
+                android:layout_marginBottom="-65dp"
+                android:layout_marginEnd="-65dp"
+                android:orientation="horizontal">
+
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/btnMic"
+                    android:layout_gravity="bottom|end"
+                    app:lottie_rawRes="@raw/lf30_editor_24iqgref"
+                    android:padding="-50dp"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+
+                    app:lottie_loop="true"
+                    android:visibility="gone"/>
+
+
+
+            </LinearLayout>
+
+
+
+
+            <ImageView
+                android:id="@+id/btnSendMsg"
+                android:layout_margin="10dp"
+                android:padding="16dp"
+                android:layout_gravity="end|bottom"
+                android:background="@drawable/marco_color_b_round"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/ic_baseline_send_24"
+                android:visibility="gone"/>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

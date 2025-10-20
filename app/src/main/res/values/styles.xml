@@ -1,0 +1,114 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorB</item>
+        <item name="colorPrimaryDark">@color/colorB</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:textColorPrimary">@color/primary_text</item>
+        <item name="android:textColorSecondary">@color/secondary_text</item>
+        <item name="android:textColorHint">@color/secondary_text</item>
+        <item name="android:textColor">@color/blanco</item>
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/colorA</item>
+        <item name="android:dropDownListViewStyle">@style/AppTheme.DropDownList</item>
+    </style>
+
+
+
+
+    <style name="AuthTheme.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/colorD</item>
+        <item name="colorPrimaryDark">@color/colorD</item>
+        <item name="colorPrimary">@color/colorG</item>
+
+    </style>
+
+    <style name="SignUpTheme" parent="AppTheme">
+
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/colorD</item>
+
+
+    </style>
+
+
+
+
+    <style name="AppTheme.MainActivity" parent="AppTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppThemeChat" parent="AppTheme.MainActivity">
+        <item name="colorPrimaryDark">@color/colorB</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="@style/Theme.AppCompat.Light.Dialog">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" >
+
+
+    </style>
+
+    <style name="AppTheme.DropDownList" parent="Widget.AppCompat.ListView.DropDown">
+        <item name="android:background">@color/backSplash</item>
+    </style>
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AlertDialogApp" parent="android:Theme.DeviceDefault.Dialog">
+
+        <item name="android:background">@color/colorA</item>
+        <item name="android:textColorPrimary">@color/blanco</item>
+
+
+
+    </style>
+
+
+
+
+
+
+
+    <style name="NavViewStyle">
+
+
+        <item name="android:textColorPrimary">@color/blanco</item>
+        <item name="android:textSize">15sp</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:textColorSecondary">@color/secondary_text</item>
+        <item name="android:listPreferredItemHeightSmall">38dp</item>
+        <item name="colorPrimary">@color/accent</item>
+
+
+</style>
+
+    <style name="NavBottomStyle" parent="Theme.MaterialComponents">
+
+        <item name="backgroundTint">@color/colorA</item>
+
+    </style>
+
+    <style name="TextAppearance" >
+        <item name="actionMenuTextColor">@color/blanco</item>
+        <item name="android:actionMenuTextColor">@color/blanco</item>
+    </style>
+
+    <style name="Arrow">
+        <item name="colorControlNormal">@android:color/white</item>
+    </style>
+
+
+</resources>

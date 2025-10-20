@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android2="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android2:layout_height="match_parent"
+    android2:layout_width="match_parent"
+    android2:fitsSystemWindows="true"
+    android2:theme="@style/AppTheme.NoActionBar"
+    android2:excludeFromRecents="true"
+    android2:background="@drawable/side_nav_bar">
+
+    <androidx.viewpager.widget.ViewPager
+        android2:id="@+id/viewPager"
+        android2:layout_above="@+id/dots"
+        android2:layout_width="match_parent"
+        android2:layout_height="wrap_content">
+
+
+
+
+    </androidx.viewpager.widget.ViewPager>
+
+    <Button
+        android2:id="@+id/btnBack"
+        android2:visibility="gone"
+        android2:text="@string/atras"
+        android2:textAllCaps="false"
+        android2:textColor="@drawable/btn1_color_txt"
+        android2:background="@android:color/transparent"
+        android2:textSize="23sp"
+        android2:layout_alignParentBottom="true"
+        android2:layout_width="wrap_content"
+        android2:layout_height="wrap_content"
+        android2:layout_marginLeft="2dp"
+        />
+
+    <Button
+        android2:id="@+id/btnNext"
+        android2:layout_width="wrap_content"
+        android2:layout_height="wrap_content"
+        android2:layout_alignParentEnd="true"
+        android2:layout_alignParentBottom="true"
+        android2:layout_marginRight="8dp"
+        android2:background="@android:color/transparent"
+        android2:text="@string/siguiente"
+        android2:textAllCaps="false"
+        android2:textColor="@drawable/btn1_color_txt"
+        android2:textSize="23sp" />
+
+    <com.google.android.material.tabs.TabLayout
+        android2:id="@+id/dots"
+        android2:layout_alignParentBottom="true"
+        android2:layout_centerHorizontal="true"
+        app:tabGravity="center"
+        app:tabIndicatorHeight="0dp"
+        android2:layout_width="wrap_content"
+        android2:layout_height="wrap_content"
+        />
+
+</RelativeLayout>

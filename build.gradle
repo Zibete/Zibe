@@ -1,0 +1,28 @@
+// Top-level build file
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        // si realmente usás jitpack en buildscript (poco común):
+        // maven { url "https://jitpack.io" }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:7.4.2"   // AGP 7.4.2
+        classpath "com.google.gms:google-services:4.4.2"   // plugin Google Services
+        // classpath "com.google.firebase:firebase-crashlytics-gradle:2.9.9"
+    }
+}
+
+// 👇 ESTE BLOQUE hay que borrarlo, o dejarlo vacío:
+// allprojects {
+//     repositories {
+//         google()
+//         mavenCentral()
+//         maven { url "https://jitpack.io" }
+//     }
+// }
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
