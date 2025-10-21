@@ -1,16 +1,15 @@
-plugins {
-    id 'com.android.application'
-    id 'com.google.gms.google-services'
-}
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 android {
-    namespace "com.zibete.proyecto1"
-    compileSdkVersion 34
+    namespace "com.zibete.proyecto1"          // ← NUEVO con AGP 8
+    compileSdkVersion 34                      // ← subir a 34
+    // buildToolsVersion "29.0.3"             // ← quitar
 
     defaultConfig {
         applicationId "com.zibete.proyecto1"
-        minSdkVersion 21
-        targetSdkVersion 33
+        minSdkVersion 23
+        targetSdkVersion 34                   // ← subir a 34
         versionCode 3
         versionName "1.10"
         multiDexEnabled true

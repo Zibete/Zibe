@@ -584,58 +584,37 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 
-
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-
         View view = findViewById(android.R.id.content);
+        int id = item.getItemId();
 
-        if (item.getItemId() == android.R.id.home) {
+        if (id == android.R.id.home) {
             super.onBackPressed();
             return true;
+
+        } else if (id == R.id.action_silent) { // Silenciar notificaciones
+            new Constants().Silent(nombre, id_user, chatWith);
+            Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
+
+        } else if (id == R.id.action_notif) {
+            new Constants().Silent(nombre, id_user, chatWith);
+            Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
+
+        } else if (id == R.id.action_bloq) { // Bloquear
+            new Constants().Block(this, nombre, id_user, view, chatWith);
+
+        } else if (id == R.id.action_desbloq) { // Desbloquear
+            new Constants().desBloquear(this, id_user, nombre, view, chatWith);
+
+        } else if (id == R.id.action_delete) { // Eliminar
+            new Constants().DeleteChat(this, id_user, nombre, view, chatWith);
         }
-
-        switch (item.getItemId()) {
-
-            case R.id.action_silent: //Silenciar notificaciones
-                new Constants().Silent(nombre, id_user, chatWith);
-                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
-
-                break;
-
-            case R.id.action_notif:
-
-                new Constants().Silent(nombre, id_user, chatWith);
-                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
-
-                break;
-
-            case R.id.action_bloq: //Bloquear
-
-
-                new Constants().Block(this, nombre, id_user, view, chatWith);
-
-                break;
-
-            case R.id.action_desbloq: //DESBloquear
-
-                new Constants().desBloquear(this, id_user, nombre, view, chatWith);
-
-                break;
-
-
-            case R.id.action_delete: //Eliminar
-
-                new Constants().DeleteChat(this, id_user, nombre , view, chatWith);
-
-                break;
-        }
-
 
         return super.onOptionsItemSelected(item);
     }
+
 
 
 

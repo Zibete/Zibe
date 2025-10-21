@@ -163,18 +163,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static int PERMISSION_CAMERA = 0;
 
 
-
-
-
     @SuppressLint("CutPasteId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-
-
-
 
         setContentView(R.layout.activity_main);
         LayoutTransition layoutTransition = new LayoutTransition();
@@ -182,8 +174,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         viewGroup = (ViewGroup) findViewById(R.id.toolbar);
         viewGroup.setLayoutTransition(layoutTransition);
-
-
 
 
 
@@ -203,18 +193,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
  */
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -689,175 +667,72 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mBottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                switch (item.getItemId()){
-                    case R.id.navBottomUsers:
 
-                        if (!toolbar.getTitle().equals(getString(R.string.menu_usuarios))) {
+                int id = item.getItemId();
 
-                            layoutSettings.setVisibility(View.VISIBLE);
+                if (id == R.id.navBottomUsers) {
+                    if (!toolbar.getTitle().equals(getString(R.string.menu_usuarios))) {
+
+                        layoutSettings.setVisibility(View.VISIBLE);
+                        invalidateOptionsMenu();
+
+                        Fragment newFragment = new UsuariosFragment();
+                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                        transaction.replace(R.id.nav_host_fragment, newFragment);
+                        toolbar.setTitle(R.string.menu_usuarios);
+                        //transaction.addToBackStack(null);
+                        transaction.commit();
+                    }
+                    return true;
+
+                } else if (id == R.id.navBottomChat) {
+                    NavChatList();
+                    return true;
+
+                } else if (id == R.id.navBottomFavorites) {
+                    Favorites();
+                    return true;
+
+                } else if (id == R.id.navBottomGrupos) {
+
+                    if (!inGroup) {
+
+                        if (!toolbar.getTitle().equals(getString(R.string.menu_grupos))) {
+
+                            layoutSettings.setVisibility(View.GONE);
                             invalidateOptionsMenu();
 
-                            Fragment newFragment = new UsuariosFragment();
+                            Fragment newFragment = new GruposFragment();
                             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                             transaction.replace(R.id.nav_host_fragment, newFragment);
-                            toolbar.setTitle(R.string.menu_usuarios);
-                            //transaction.addToBackStack(null);
+                            toolbar.setTitle(R.string.menu_grupos);
                             transaction.commit();
-
-
                         }
 
-                        break;
+                    }else{
+                        toolbar.setVisibility(View.VISIBLE);
+                        layoutSettings.setVisibility(View.GONE);
 
-                    case R.id.navBottomChat:
+                        invalidateOptionsMenu();
 
+                        //Fragment newFragment = new ChatGroupFragment();
+                        Fragment newFragment = new PageAdapterGroup();
 
-                        NavChatList();
+                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                        transaction.replace(R.id.nav_host_fragment, newFragment);
 
+                        toolbar.setTitle(groupName);
 
-                        break;
+                        Bundle data = new Bundle();
+                        data.putString("group_name", groupName);
+                        data.putString("getUid", userName);
+                        newFragment.setArguments(data);
 
-                    case R.id.navBottomFavorites:
-
-
-                        Favorites();
-
-
-                        break;
-
-
-
-                    case R.id.navBottomGrupos:
-
-                            if (!inGroup) {
-
-                                if (!toolbar.getTitle().equals(getString(R.string.menu_grupos))) {
-
-
-
-                                    layoutSettings.setVisibility(View.GONE);
-                                    invalidateOptionsMenu();
-
-                                    Fragment newFragment = new GruposFragment();
-                                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                                    transaction.replace(R.id.nav_host_fragment, newFragment);
-                                    toolbar.setTitle(R.string.menu_grupos);
-
-                                    transaction.commit();
-                                }
-
-
-                            }else{
-
-
-
-
-                                toolbar.setVisibility(View.VISIBLE);
-                                layoutSettings.setVisibility(View.GONE);
-
-                                invalidateOptionsMenu();
-
-                                //Fragment newFragment = new ChatGroupFragment();
-                                Fragment newFragment = new PageAdapterGroup();
-
-                                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                                transaction.replace(R.id.nav_host_fragment, newFragment);
-
-                                toolbar.setTitle(groupName);
-
-                                Bundle data = new Bundle();
-                                data.putString("group_name", groupName);
-                                data.putString("getUid", userName);
-                                newFragment.setArguments(data);
-
-                                transaction.commit();
-
-
-
-
-
-                            }
-
-
-
-
-
-/*
-
-                            ref_group_users.addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                    if (dataSnapshot.exists()){ //Si existen grupos
-
-                                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) { //Recorro uno por uno
-
-                                            final String group = snapshot.getRef().getKey();//Agarro el nombre
-
-                                            ref_group_users.child(group).child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                                @Override
-                                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                                    if (dataSnapshot.exists()) { //Si yo estoy dentro del grupo:
-
-                                                        String getMyName = dataSnapshot.getValue(String.class);
-                                                        String getMyGroup = group;
-
-                                                        toolbar.setVisibility(View.VISIBLE);
-                                                        layoutSettings.setVisibility(View.GONE);
-
-                                                        invalidateOptionsMenu();
-
-                                                        Fragment newFragment = new ChatGroupFragment();
-
-
-                                                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                                                        transaction.replace(R.id.nav_host_fragment, newFragment);
-
-                                                        toolbar.setTitle(getMyGroup);
-
-                                                        Bundle data = new Bundle();
-                                                        data.putString("group_name", getMyGroup);
-                                                        data.putString("getUid", getMyName);
-                                                        newFragment.setArguments(data);
-
-                                                        transaction.commit();
-
-
-                                                    }
-                                                }
-                                                @Override
-                                                public void onCancelled(@NonNull DatabaseError error) {
-                                                }
-                                            });
-
-
-
-
-
-
-
-                                            break;
-                                        }
-
-                                    }
-                                }
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                }
-                            });
-
-
-
-
- */
-
-
-
-                        break;
+                        transaction.commit();
+                    }
+                    return true;
                 }
-
-                return true;
+                return false;
             }
         });
 
@@ -1436,60 +1311,50 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        switch (item.getItemId()) {
-
-            case android.R.id.home:
-
-                onBackPressed();
-                return true;
-
-            case R.id.action_settings:
-
-                Ajustes(null);
-                return true;
-
-            case R.id.action_unlock:
-
-                unlockUser();
-                return true;
-
-            case R.id.action_unhide_chats:
-
-                unhideChats();
-                return true;
-
-            case R.id.action_favorites:
-
-                mBottomNavigation.findViewById(R.id.navBottomFavorites).performClick();
-                return true;
-
-            case R.id.action_exit:
 
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp));
-                builder.setTitle("Salir");
-                builder.setMessage("¿Desea abandonar " + groupName + "?");
-                builder.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
+        int id = item.getItemId();
 
-                    public void onClick(DialogInterface builder, int id) {
+        if (id == android.R.id.home) {
+            onBackPressed();
+            return true;
 
-                        exitGroup();
+        } else if (id == R.id.action_settings) {
+            Ajustes(null);
+            return true;
 
-                    }
-                });
-                builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface builder, int id) {
-                        return;
-                    }
-                });
-                builder.show();
+        } else if (id == R.id.action_unlock) {
+            unlockUser();
+            return true;
 
-                return true;
+        } else if (id == R.id.action_unhide_chats) {
+            unhideChats();
+            return true;
+        } else if (id == R.id.action_favorites) {
+            mBottomNavigation.findViewById(R.id.navBottomFavorites).performClick();
+            return true;
 
+        } else if (id == R.id.action_exit) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp));
+            builder.setTitle("Salir");
+            builder.setMessage("¿Desea abandonar " + groupName + "?");
+            builder.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
+
+                public void onClick(DialogInterface builder, int id) {
+                    exitGroup();
+                }
+            });
+            builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface builder, int id) {
+                    return;
+                }
+            });
+            builder.show();
+
+            return true;
         }
 
-        return true;
-
+        return false;
     }
 
     public void unhideChats() {

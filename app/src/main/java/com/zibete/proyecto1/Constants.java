@@ -110,7 +110,7 @@ public class Constants extends Application {
 
     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-
+    public static int navBottomUsers;
 
 
 
