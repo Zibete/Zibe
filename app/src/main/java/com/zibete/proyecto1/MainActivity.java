@@ -11,8 +11,6 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -45,19 +43,16 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
@@ -70,7 +65,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging; // (API nueva de FCM)
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.POJOS.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
@@ -101,7 +96,7 @@ import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userDate;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     public static final FirebaseAuth mAuth = FirebaseAuth.getInstance();
@@ -118,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static final DatabaseReference ref_group_users = database.getReference("Groups").child("Users");
     public static final int REQUEST_LOCATION = 0;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
+
     int flagIntent;
     BadgeDrawable badgeDrawableChat;
     static BadgeDrawable badgeDrawableGroup;
@@ -133,15 +129,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static RelativeLayout layoutSettings;
     private String userToken;
     public static BottomNavigationView mBottomNavigation;
-    Location mLastLocation;
-    LocationRequest mLocationRequest;
-    LocationCallback locationCallback;
-    FusedLocationProviderClient fusedLocationClient;
+
+    // >>> NUEVO stack de ubicación (moderno)
+    private Location mLastLocation;
+    private FusedLocationProviderClient fusedLocationClient;
+    private SettingsClient settingsClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
     public static final long UPDATE_INTERVAL = 1000;
     public static final long UPDATE_FASTEST_INTERVAL = UPDATE_INTERVAL / 2;
+    // <<<
+
     public SearchView searchView;
-    private GoogleApiClient mGoogleApiClient;
-    private static final String NOTIFICATION_MSG = "NOTIFICATION_MSG";
     private static String CHANNEL_ID;
     private final static int NOTIFICATION_ID = 0;
     private ViewGroup viewGroup;
@@ -172,101 +171,46 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         filter = findViewById(R.id.filter);
         refresh = findViewById(R.id.refresh);
 
-        locationCallback = new LocationCallback(){
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
+        // >>>> Ubicación: inicialización moderna
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        settingsClient = LocationServices.getSettingsClient(this);
 
-                // Do something with locationResult
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(UPDATE_FASTEST_INTERVAL)
+                .build();
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                Location loc = locationResult.getLastLocation();
+                if (loc != null) {
+                    mLastLocation = loc;
+                    updateLocationUI();
+                }
             }
         };
 
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .enableAutoManage(this, this)
-                .build();
-
-        mLocationRequest = new LocationRequest()
-                .setInterval(UPDATE_INTERVAL)
-                .setFastestInterval(UPDATE_FASTEST_INTERVAL)
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(mLocationRequest)
-                .setAlwaysShow(true);
-
-        PendingResult<LocationSettingsResult> result = LocationServices.SettingsApi.checkLocationSettings(
-                mGoogleApiClient, builder.build()
-        );
-
-        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
-            @Override
-            public void onResult(@NonNull LocationSettingsResult result) {
-                Status status = result.getStatus();
-
-                switch (status.getStatusCode()) {
-                    case LocationSettingsStatusCodes.SUCCESS:
-                        processLastLocation();
-                        break;
-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                        try {
-                            Log.d("TAG", "Los ajustes de ubicación no satisfacen la configuración. " +
-                                    "Se mostrará un diálogo de ayuda.");
-                            status.startResolutionForResult(
-                                    MainActivity.this,
-                                    REQUEST_CHECK_SETTINGS);
-                        } catch (IntentSender.SendIntentException e) {
-                            Log.d("TAG", "El Intent del diálogo no funcionó.");
-                            // Sin operaciones
-                        }
-                        break;
-                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                        Log.d("TAG", "Los ajustes de ubicación no son apropiados.");
-                        break;
-
-                }
-            }
-        });
-
-
-        //Intent intent1 = new Intent(getApplicationContext(),Notify.class);
-
-        //getApplicationContext().startService(intent1);
-
-        //ContextCompat.startForegroundService(this, intent1);
-        //startService(new Intent(this,Notify.class));
-
+        ensureLocationSettingsAndStart();
+        // <<<<
 
         setSupportActionBar(toolbar);
 
-
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
-
 
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-//APP BAR
-
-
+        // APP BAR
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_editPerfil)
-
                 .build();
 
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-
-
-//APP BAR
 
         headerView = navigationView.getHeaderView(0);
 
@@ -277,29 +221,23 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         getWindowManager().getDefaultDisplay().getMetrics(dimension);
         int height = dimension.heightPixels;
 
-
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, height/2);
-
-
         linear_image_user.setLayoutParams(layoutParams);
 
         TextView tv_usuario = headerView.findViewById(R.id.tv_usuario);
         TextView tv_mail = headerView.findViewById(R.id.tv_mail);
         LinearLayout editPerfil = headerView.findViewById(R.id.editPerfil);
 
-
         tv_usuario.setText(user.getDisplayName());
         tv_mail.setText(user.getEmail());
         Glide.with(getApplicationContext()).load(user.getPhotoUrl()).into(image_user);
 
-// Ir a Edit Perfil
+        // Ir a Edit Perfil
         editPerfil.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 EditProfile(null);
-
             }
         });
 
@@ -339,7 +277,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
-
 
         badgeDrawableGroup = mBottomNavigation.getOrCreateBadge(R.id.navBottomGrupos);
         badgeDrawableGroup.setBadgeTextColor(getResources().getColor(R.color.colorA));
@@ -411,11 +348,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         };
 
-
         listenerMsgUnreadBadge = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
 
                 if (!toolbar.getTitle().equals(groupName)) {
 
@@ -444,7 +379,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
-
                                             int Leidos = dataSnapshot1.getValue(int.class);
 
                                             if (inGroup) {
@@ -462,7 +396,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                         }
                                     });
 
-
                                 }
                             }
 
@@ -479,13 +412,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         };
 
-
         if (inGroup){
             ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
             final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.addValueEventListener(listenerMsgUnreadBadge);
         }
-
 
         mBottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -503,7 +434,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                         transaction.replace(R.id.nav_host_fragment, newFragment);
                         toolbar.setTitle(R.string.menu_usuarios);
-                        //transaction.addToBackStack(null);
                         transaction.commit();
                     }
                     return true;
@@ -538,7 +468,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                         invalidateOptionsMenu();
 
-                        //Fragment newFragment = new ChatGroupFragment();
                         Fragment newFragment = new PageAdapterGroup();
 
                         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -558,7 +487,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 return false;
             }
         });
-
 
         listenerToken = new ValueEventListener() {
             @Override
@@ -585,7 +513,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             }
                         });
 
-
                         builder.setNegativeButton("Cerrar sesión", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface builder, int id) {
 
@@ -606,26 +533,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         ref_cuentas.child(user.getUid()).child("token").addValueEventListener(listenerToken);
 
-
-        //signUp();
-
-
-
-
         flagIntent = getIntent().getExtras().getInt("flagIntent");
 
-
-
         if(flagIntent == 0){
-           EditProfile(null);
+            EditProfile(null);
         }
-
-
-
-        //Fin del OnCreate
+        // Fin onCreate
     }
 
-
+    // ======= Navegación / UI existentes =======
 
     public void NavChatList() {
 
@@ -650,7 +566,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     public void EditProfile(MenuItem item) {
-
 
         if (!toolbar.getTitle().equals(getString(R.string.menu_edit))) {
 
@@ -679,7 +594,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-
+    // ======= Ubicación: resultados de resolución de settings =======
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -688,6 +603,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 case Activity.RESULT_OK:
                     Log.d("TAG", "El usuario permitió el cambio de ajustes de ubicación.");
                     processLastLocation();
+                    startLocationUpdates();
                     break;
                 case Activity.RESULT_CANCELED:
                     Log.d("TAG", "El usuario no permitió el cambio de ajustes de ubicación");
@@ -696,67 +612,36 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
-
+    // ======= Ciclo de vida (online/offline + ubicación moderna) =======
     @Override
     protected void onStart() {
         super.onStart();
-
         new Constants().StateOnLine(getApplicationContext(), user.getUid());
-        mGoogleApiClient.connect();
+        ensureLocationSettingsAndStart();
     }
-
 
     @Override
     protected void onPause() {
         super.onPause();
-
         new Constants().StateOffLine(getApplicationContext(),user.getUid());
-
-        if (mGoogleApiClient.isConnected()) {
-            stopLocationUpdates();
-
-        }
+        stopLocationUpdates();
     }
-
 
     @Override
     protected void onResume() {
         super.onResume();
-
         new Constants().StateOnLine(getApplicationContext(), user.getUid());
-
-        if (mGoogleApiClient.isConnected()) {
-            startLocationUpdates();
-        }
-
-
+        // Si ya están OK los permisos/configuración, reanuda updates
+        startLocationUpdates();
     }
-
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mGoogleApiClient.disconnect();
-    }
-
-    private void stopLocationUpdates() {
-
-        fusedLocationClient.removeLocationUpdates(locationCallback);
-
-    }
-
 
     @Override
     public void onDestroy () {
         super.onDestroy();
-
         ref_cuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
         new Constants().StateOffLine(getApplicationContext(),user.getUid());
-
-
+        stopLocationUpdates();
     }
-
 
     @Override
     public boolean onSupportNavigateUp() {
@@ -765,9 +650,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 || super.onSupportNavigateUp();
     }
 
-
     public void logout(MenuItem item) {
-
 
         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                 .setTitle("Cerrar sesión")
@@ -775,10 +658,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 .setCancelable(false)
                 .setPositiveButton("Si", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface builder, int id) {
-
                         logout();
-
-
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -787,12 +667,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 })
                 .show();
-
-
     }
 
     public void logout() {
-
         new Constants().StateOffLine(getApplicationContext(),user.getUid());
 
         if (inGroup) {
@@ -803,94 +680,76 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             ref_cuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
         }
 
-
         UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences();
 
         FirebaseAuth.getInstance().signOut();
         com.facebook.login.LoginManager.getInstance().logOut();
-        if (mGoogleApiClient !=null) {
-            if (mGoogleApiClient.isConnected()) {
-                stopLocationUpdates();
-            }
-        }
+
+        stopLocationUpdates();
 
         finish();
         Intent intent = new Intent(getApplicationContext(), SplashActivity.class);
         startActivity(intent);
-
     }
 
+    // ======= Ubicación: helpers modernos =======
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Zibe necesita acceso a su ubicación para poder funcionar", Snackbar.LENGTH_SHORT);
-                snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                snack.show();
-
-            } else {
-                ActivityCompat.requestPermissions(
-                        this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        REQUEST_LOCATION);
-            }
+    private void ensureLocationSettingsAndStart() {
+        if (!isLocationPermissionGranted()) {
+            manageDeniedPermission();
+            return;
         }
 
+        LocationSettingsRequest settingsRequest = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest)
+                .setAlwaysShow(true)
+                .build();
 
-        // Obtenemos la última ubicación al ser la primera vez
-        processLastLocation();
-        // Iniciamos las actualizaciones de ubicación
-        startLocationUpdates();
+        settingsClient.checkLocationSettings(settingsRequest)
+                .addOnSuccessListener(this, (LocationSettingsResponse response) -> {
+                    processLastLocation();
+                    startLocationUpdates();
+                })
+                .addOnFailureListener(this, e -> {
+                    if (e instanceof ResolvableApiException) {
+                        try {
+                            ((ResolvableApiException) e).startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
+                        } catch (IntentSender.SendIntentException ex) {
+                            Log.d("TAG", "El Intent del diálogo no funcionó.");
+                        }
+                    } else {
+                        Log.d("TAG", "Los ajustes de ubicación no son apropiados.");
+                    }
+                });
     }
 
     @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
-        if (isLocationPermissionGranted()) {
+        if (!isLocationPermissionGranted()) {
+            return;
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, getMainLooper());
+    }
 
-            LocationManager locationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 10, (LocationListener) this);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, (LocationListener) this);
-
-
-
-            fusedLocationClient.requestLocationUpdates(mLocationRequest,locationCallback,
-                    null /* Looper */);
-
-        } else {
-            manageDeniedPermission();
+    private void stopLocationUpdates() {
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
         }
     }
 
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == REQUEST_LOCATION) {
-            if (grantResults.length == 1
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                processLastLocation();
-            }else{
-
-                Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Se cerrará su sesión", Snackbar.LENGTH_SHORT);
-                snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                snack.show();
-
-                logout(null);
-            }
+    @SuppressLint("MissingPermission")
+    private void processLastLocation() {
+        if (!isLocationPermissionGranted()) {
+            return;
         }
-
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        mLastLocation = location;
+                        updateLocationUI();
+                    }
+                });
     }
 
     private boolean isLocationPermissionGranted() {
@@ -905,7 +764,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 Manifest.permission.ACCESS_FINE_LOCATION)) {
             Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Zibe necesita acceso a su ubicación para poder funcionar", Snackbar.LENGTH_SHORT);
             snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-            TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+            TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             snack.show();
         } else {
@@ -915,11 +774,33 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_LOCATION) {
+            if (grantResults.length == 1
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                ensureLocationSettingsAndStart();
+            }else{
+
+                Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Se cerrará su sesión", Snackbar.LENGTH_SHORT);
+                snack.setBackgroundTint(getResources().getColor(R.color.colorC));
+                TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                snack.show();
+
+                logout(null);
+            }
+        }
+    }
+
     private void updateLocationUI() {
+        if (mLastLocation == null) return;
 
         latitud = mLastLocation.getLatitude();
         longitud = mLastLocation.getLongitude();
-
 
         ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -936,73 +817,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         });
     }
 
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-
-    private void processLastLocation() {
-
-        getLastLocation();
-        if (mLastLocation != null) {
-            updateLocationUI();
-        }
-
-    }
-
-    @SuppressLint("MissingPermission")
-    private void getLastLocation() {
-
-        if (isLocationPermissionGranted()) {
-
-
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        } else {
-            manageDeniedPermission();
-        }
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d("TAG", String.format("Nueva ubicación: (%s, %s)",
-                location.getLatitude(), location.getLongitude()));
-        mLastLocation = location;
-        updateLocationUI();
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-
+    // ======= Menú / navegación existentes =======
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-
-
         return super.onCreateOptionsMenu(menu);
-
     }
-
 
     @Override
     public void onBackPressed() {
@@ -1011,13 +832,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         ImageButton btSave = findViewById(R.id.bt_save);
         EditText edtFecha = findViewById(R.id.edtFecha);
 
-
-
-
-
         if (toolbar.getTitle().equals(getString(R.string.menu_edit))) {
 
-            if (btSave.isEnabled()) {
+            if (btSave != null && btSave.isEnabled()) {
 
                 new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                         .setTitle("Salir")
@@ -1034,7 +851,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
                                         if (fecha.equals("")) {
 
-
                                             final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Complete su fecha de nacimiento", Snackbar.LENGTH_INDEFINITE);
                                             snack.setAction("OK", new View.OnClickListener() {
                                                 @Override
@@ -1048,11 +864,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                             snack.show();
                                             return;
 
-
                                         } else {
 
                                             NavChatList();
-
 
                                         }
                                     }
@@ -1074,10 +888,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             } else {
 
-                String fecha = edtFecha.getText().toString().trim();
+                String fecha = edtFecha != null ? edtFecha.getText().toString().trim() : "";
 
                 if (fecha.isEmpty()) {
-
 
                     final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Complete su fecha de nacimiento", Snackbar.LENGTH_INDEFINITE);
                     snack.setAction("OK", new View.OnClickListener() {
@@ -1091,26 +904,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                     snack.show();
 
-
                 } else {
 
                     NavChatList();
                 }
             }
 
+        } else {
 
-        }else{
-
-            if (drawer.isOpen()){
-
-
+            if (drawer.isOpen()) {
                 drawer.closeDrawer(GravityCompat.START);
-
-            }else {
+            } else {
 
                 if (toolbar.getTitle().equals(getString(R.string.menu_chat)) | toolbar.getTitle().equals(getString(R.string.menu_usuarios))) {
 
-                    if (!searchView.isIconified()) {
+                    if (searchView != null && !searchView.isIconified()) {
                         searchView.onActionViewCollapsed();
                     } else {
                         super.onBackPressed();
@@ -1124,11 +932,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
-
 
         int id = item.getItemId();
 
@@ -1147,6 +952,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         } else if (id == R.id.action_unhide_chats) {
             unhideChats();
             return true;
+
         } else if (id == R.id.action_favorites) {
             mBottomNavigation.findViewById(R.id.navBottomFavorites).performClick();
             return true;
@@ -1205,14 +1011,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         }
                     }
 
-
-
                     if (!listName.isEmpty()) {
 
                         final CharSequence[] listaName = listName.toArray(new CharSequence[0]);
                         final CharSequence[] listaID = listID.toArray(new CharSequence[0]);
                         final int[] itemSelected = {0};
-
 
                         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                                 .setTitle("Chats ocultos")
@@ -1225,11 +1028,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                     }
                                 })
 
-
                                 .setPositiveButton("Mostrar", new DialogInterface.OnClickListener() {
 
                                     public void onClick(DialogInterface builder, int selectedIndex) {
-
 
                                         ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID [itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
@@ -1247,7 +1048,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                             public void onCancelled(@NonNull DatabaseError error) {
                                             }
                                         });
-
 
                                         Snackbar snack = Snackbar.make(findViewById(android.R.id.content), listaName [itemSelected[0]] + " ya no está oculto", Snackbar.LENGTH_SHORT);
                                         snack.setBackgroundTint(getResources().getColor(R.color.colorC));
@@ -1321,15 +1121,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         }
                     }
 
-
-
                     if (!listName.isEmpty()) {
-
 
                         final CharSequence[] listaName = listName.toArray(new CharSequence[0]);
                         final CharSequence[] listaID = listID.toArray(new CharSequence[0]);
                         final int[] itemSelected = {0};
-
 
                         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                                 .setTitle("¿A quién deseas desbloquear?")
@@ -1342,11 +1138,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                     }
                                 })
 
-
                                 .setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
 
                                     public void onClick(DialogInterface builder, int selectedIndex) {
-
 
                                         ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID [itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
@@ -1364,7 +1158,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                             public void onCancelled(@NonNull DatabaseError error) {
                                             }
                                         });
-
 
                                         Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Desbloqueaste a " + listaName [itemSelected[0]], Snackbar.LENGTH_SHORT);
                                         snack.setBackgroundTint(getResources().getColor(R.color.colorC));
@@ -1425,7 +1218,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             ref_group_chat.child(groupName).removeEventListener(listenerGroupChat);
         }
 
-
         ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -1441,9 +1233,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
-
         ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
-
 
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
 
@@ -1456,8 +1246,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 userType);
         ref_group_chat.child(groupName).push().setValue(chatmsg);
 
-
-        //badgeDrawableGroup.setVisible(false);
         ref_group_users.child(groupName).child(user.getUid()).removeValue();
 
         inGroup = false;
@@ -1486,7 +1274,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         transaction.commit();
     }
 
-
     public void Favorites() {
 
         layoutSettings.setVisibility(View.GONE);
@@ -1501,7 +1288,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         transaction.commit();
 
     }
-
 
     public void Index(MenuItem item) {
 
