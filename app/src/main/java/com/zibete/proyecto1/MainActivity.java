@@ -104,11 +104,9 @@ import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private AppBarConfiguration mAppBarConfiguration;
-
     public static final FirebaseAuth mAuth = FirebaseAuth.getInstance();
     public final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
     public static final FirebaseDatabase database = FirebaseDatabase.getInstance();
-
     public static final DatabaseReference ref_datos = database.getReference("Usuarios").child("Datos");
     public static final DatabaseReference ref_cuentas = database.getReference("Usuarios").child("Cuentas");
     public static final DatabaseReference ref_chat_path = database.getReference("Chats");
@@ -118,14 +116,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static final DatabaseReference ref_groups = database.getReference("Groups").child("Data");
     public static final DatabaseReference ref_group_chat = database.getReference("Groups").child("Chat");
     public static final DatabaseReference ref_group_users = database.getReference("Groups").child("Users");
-
     public static final int REQUEST_LOCATION = 0;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
     int flagIntent;
-
     BadgeDrawable badgeDrawableChat;
     static BadgeDrawable badgeDrawableGroup;
-
     public static Toolbar toolbar;
     DrawerLayout drawer;
     NavigationView navigationView;
@@ -135,11 +130,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static ImageView search;
     public static ImageView filter;
     public static ImageView refresh;
-
     public static RelativeLayout layoutSettings;
-
     private String userToken;
-
     public static BottomNavigationView mBottomNavigation;
     Location mLastLocation;
     LocationRequest mLocationRequest;
@@ -147,9 +139,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     FusedLocationProviderClient fusedLocationClient;
     public static final long UPDATE_INTERVAL = 1000;
     public static final long UPDATE_FASTEST_INTERVAL = UPDATE_INTERVAL / 2;
-
     public SearchView searchView;
-
     private GoogleApiClient mGoogleApiClient;
     private static final String NOTIFICATION_MSG = "NOTIFICATION_MSG";
     private static String CHANNEL_ID;
@@ -158,10 +148,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private ViewGroup viewGroup2;
     public static Double latitud;
     public static Double longitud;
-
-
-    public static int PERMISSION_CAMERA = 0;
-
 
     @SuppressLint("CutPasteId")
     @Override
@@ -175,42 +161,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         viewGroup = (ViewGroup) findViewById(R.id.toolbar);
         viewGroup.setLayoutTransition(layoutTransition);
 
-
-
-/*
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-                // Aquí muestras confirmación explicativa al usuario
-                // por si rechazó los permisos anteriormente
-            } else {
-                ActivityCompat.requestPermissions(
-                        this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        REQUEST_LOCATION);
-            }
-        }
-
- */
-
-
-
         if (user == null){
-
             logout(null);
         }else {
-
             CHANNEL_ID = user.getUid();
         }
-
-
 
         toolbar = findViewById(R.id.toolbar);
         layoutSettings = findViewById(R.id.layoutSettings);
         filter = findViewById(R.id.filter);
         refresh = findViewById(R.id.refresh);
-
 
         locationCallback = new LocationCallback(){
             @Override
@@ -220,18 +180,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 // Do something with locationResult
             }
         };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -285,19 +233,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         });
 
 
-
-
-
-
         //Intent intent1 = new Intent(getApplicationContext(),Notify.class);
 
         //getApplicationContext().startService(intent1);
 
         //ContextCompat.startForegroundService(this, intent1);
         //startService(new Intent(this,Notify.class));
-
-
-
 
 
         setSupportActionBar(toolbar);
@@ -307,79 +248,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         navigationView = findViewById(R.id.nav_view);
 
 
-
-
-
-
-
-
-
-
-
-
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-
-        /*
-        AppBarConfiguration appBarConfiguration1 = new AppBarConfiguration.Builder(
-                R.id.navBottomUsers, R.id.navBottomChat, R.id.navBottomGrupos)
-                .build();
-        final NavController navController3 = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController3, appBarConfiguration1);
-        NavigationUI.setupWithNavController(navView2, navController3);
-
-         */
-
-
-        /*fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Boton que sale con un mensaje", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-         */
-
-
-        // Pasar cada ID de menú como un conjunto de ID porque cada
-        // el menú debe considerarse como destinos de nivel superior.
-
-
-
-
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-
-
 //APP BAR
 
 
-
-
-
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-
-
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_editPerfil)
 
                 .build();
 
-
-
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-
-
-
-
-
-
-
 
 
 //APP BAR
@@ -409,8 +293,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         tv_mail.setText(user.getEmail());
         Glide.with(getApplicationContext()).load(user.getPhotoUrl()).into(image_user);
 
-
-
 // Ir a Edit Perfil
         editPerfil.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -421,24 +303,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         mBottomNavigation = findViewById(R.id.nav_view3);
         mBottomNavigation.findViewById(R.id.navBottomChat).performClick();
-
 
         badgeDrawableChat = mBottomNavigation.getOrCreateBadge(R.id.navBottomChat);
         badgeDrawableChat.setBadgeTextColor(getResources().getColor(R.color.colorA));
@@ -473,38 +339,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             public void onCancelled(@NonNull DatabaseError error) {
             }
         });
-
-
-        /*
-        MainActivity.ref_datos.child(user.getUid()).child("ChatList").child("msgNoLeidos").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-
-                    //if (!toolbar.getTitle().equals(getString(R.string.menu_chat))) {
-
-                        int msgNoLeidos = dataSnapshot.getValue(int.class);
-
-                        if (msgNoLeidos > 0) {
-
-                            badgeDrawableChat.setVisible(true);
-                            badgeDrawableChat.setNumber(msgNoLeidos);
-
-                        }else{
-
-                            badgeDrawableChat.setVisible(false);
-                        }
-                    //}
-                }else{
-                    badgeDrawableChat.setVisible(false);
-                }
-            }
-            @Override public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-
-         */
-
 
 
         badgeDrawableGroup = mBottomNavigation.getOrCreateBadge(R.id.navBottomGrupos);
@@ -578,8 +412,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         };
 
 
-
-
         listenerMsgUnreadBadge = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -641,9 +473,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 }
 
-
-
-
             }
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
@@ -651,17 +480,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         };
 
 
-
-
-
-
-
         if (inGroup){
             ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
             final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.addValueEventListener(listenerMsgUnreadBadge);
         }
-
 
 
         mBottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -735,10 +558,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 return false;
             }
         });
-
-
-
-
 
 
         listenerToken = new ValueEventListener() {
@@ -864,18 +683,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case REQUEST_CHECK_SETTINGS:
-                switch (resultCode) {
-                    case Activity.RESULT_OK:
-                        Log.d("TAG", "El usuario permitió el cambio de ajustes de ubicación.");
-                        processLastLocation();
-                        break;
-                    case Activity.RESULT_CANCELED:
-                        Log.d("TAG", "El usuario no permitió el cambio de ajustes de ubicación");
-                        break;
-                }
-                break;
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            switch (resultCode) {
+                case Activity.RESULT_OK:
+                    Log.d("TAG", "El usuario permitió el cambio de ajustes de ubicación.");
+                    processLastLocation();
+                    break;
+                case Activity.RESULT_CANCELED:
+                    Log.d("TAG", "El usuario no permitió el cambio de ajustes de ubicación");
+                    break;
+            }
         }
     }
 

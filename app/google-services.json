@@ -15,6 +15,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "572303503809-58hcksc88hrka4f9s409mj0ub204kmm3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zibete.proyecto1",
+            "certificate_hash": "bfe6e79bc35e292849a14b8bca7522fa94e30698"
+          }
+        },
+        {
+          "client_id": "572303503809-lgdg104aa29bgq6l3dhr7dtefjrmqv8l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zibete.proyecto1",
+            "certificate_hash": "bc7beaa9f50249d502919516d1dd3829e1981489"
+          }
+        },
+        {
           "client_id": "572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com",
           "client_type": 3
         }

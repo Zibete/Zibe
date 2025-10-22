@@ -52,6 +52,16 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.storage.FirebaseStorage;
 import com.zibete.proyecto1.Splash.SplashActivity;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+
 import java.util.Arrays;
 
 import static com.firebase.ui.auth.AuthUI.getApplicationContext;
@@ -73,7 +83,7 @@ public class AuthActivity extends AppCompatActivity {
     private ProgressDialog progress;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private static final int RC_SIGN_IN = 1;
-    private GoogleApiClient mGoogleApiClient;
+//    private GoogleApiClient mGoogleApiClient;
     LinearLayout linearLogin, linearDontDelete;
     TextView tvLogin;
     boolean deleteUser, deleteFirebaseAccount;
@@ -81,6 +91,42 @@ public class AuthActivity extends AppCompatActivity {
 
     String email;
     String password;
+
+    private GoogleSignInClient googleSignInClient;
+    private final ActivityResultLauncher<Intent> googleSignInLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                int code = result.getResultCode();
+                Intent data = result.getData();
+
+                if (code == RESULT_OK && data != null) {
+                    try {
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+                        GoogleSignInAccount account = task.getResult(ApiException.class);
+                        firebaseAuthWithGoogle(account);
+                    } catch (ApiException e) {
+                        progress.hide();
+                        Toast.makeText(this, "Google error status=" + e.getStatusCode(), Toast.LENGTH_LONG).show();
+                        updateUI(null);
+                    }
+                } else {
+                    progress.hide();
+                    // 🔎 Log para entender la cancelación
+                    String info = "RESULT_CANCELED";
+                    if (data != null) {
+                        try {
+                            Task<GoogleSignInAccount> t = GoogleSignIn.getSignedInAccountFromIntent(data);
+                            t.getResult(ApiException.class); // forzá parseo por si trae código
+                        } catch (ApiException ex) {
+                            info = "ApiException status=" + ex.getStatusCode();
+                        }
+                    }
+                    Toast.makeText(this, "Sign-in cancelado (" + info + ")", Toast.LENGTH_LONG).show();
+                    updateUI(null);
+                }
+            });
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,36 +242,22 @@ public class AuthActivity extends AppCompatActivity {
             }
         };
 
-
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestIdToken(getString(R.string.default_web_client_id))  // debe coincidir con tu proyecto de Firebase
                 .requestEmail()
                 .build();
 
-        mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
-            .enableAutoManage(this, new GoogleApiClient.OnConnectionFailedListener() {
-                @Override
-                public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-                }
-            }).addApi(Auth.GOOGLE_SIGN_IN_API,gso)
-                .build();
-            btn_google.setOnClickListener(new View.OnClickListener() {
-                @Override
-            public void onClick(View v) {
-                    progress.setMessage("Espere...");
-                    progress.show();
-                    progress.setCanceledOnTouchOutside(false);
-
-                    Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
-                    startActivityForResult(signInIntent,RC_SIGN_IN);
-            }
+        btn_google.setOnClickListener(v -> {
+            progress.setMessage("Espere...");
+            progress.show();
+            progress.setCanceledOnTouchOutside(false);
+            // fuerza a elegir cuenta cada vez:
+            googleSignInClient.signOut().addOnCompleteListener(t ->
+                    googleSignInLauncher.launch(googleSignInClient.getSignInIntent())
+            );
         });
-
-
-
-
-
 
 
 
