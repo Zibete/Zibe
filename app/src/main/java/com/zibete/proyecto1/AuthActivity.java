@@ -1,6 +1,5 @@
 package com.zibete.proyecto1;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -8,13 +7,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.method.PasswordTransformationMethod;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,9 +20,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -33,13 +31,12 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
-import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
@@ -52,506 +49,271 @@ import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.storage.FirebaseStorage;
 import com.zibete.proyecto1.Splash.SplashActivity;
 
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-
-
 import java.util.Arrays;
 
-import static com.firebase.ui.auth.AuthUI.getApplicationContext;
-import static com.zibete.proyecto1.MainActivity.REQUEST_LOCATION;
 import static com.zibete.proyecto1.MainActivity.ref_cuentas;
 import static com.zibete.proyecto1.MainActivity.ref_datos;
 
-
 public class AuthActivity extends AppCompatActivity {
 
-
     private CallbackManager callbackManager;
-    private EditText edt1, edt_pass;
-    private SignInButton btn_google;
-    private LoginButton btn_facebook;
-
+    private EditText edtEmail, edtPassword;
+    private SignInButton btnGoogle;
+    private LoginButton btnFacebook;
     private FirebaseAuth mAuth;
-
     private ProgressDialog progress;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private static final int RC_SIGN_IN = 1;
-//    private GoogleApiClient mGoogleApiClient;
-    LinearLayout linearLogin, linearDontDelete;
-    TextView tvLogin;
-    boolean deleteUser, deleteFirebaseAccount;
 
-
-    String email;
-    String password;
-
+    private LinearLayout linearLogin, linearDontDelete;
+    private TextView tvLogin;
+    private boolean deleteUser, deleteFirebaseAccount;
     private GoogleSignInClient googleSignInClient;
+
     private final ActivityResultLauncher<Intent> googleSignInLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                int code = result.getResultCode();
-                Intent data = result.getData();
-
-                if (code == RESULT_OK && data != null) {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                     try {
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                         GoogleSignInAccount account = task.getResult(ApiException.class);
                         firebaseAuthWithGoogle(account);
                     } catch (ApiException e) {
-                        progress.hide();
-                        Toast.makeText(this, "Google error status=" + e.getStatusCode(), Toast.LENGTH_LONG).show();
+                        progress.dismiss();
+                        Toast.makeText(this, "Error de Google: " + e.getStatusCode(), Toast.LENGTH_LONG).show();
                         updateUI(null);
                     }
                 } else {
-                    progress.hide();
-                    // 🔎 Log para entender la cancelación
-                    String info = "RESULT_CANCELED";
-                    if (data != null) {
-                        try {
-                            Task<GoogleSignInAccount> t = GoogleSignIn.getSignedInAccountFromIntent(data);
-                            t.getResult(ApiException.class); // forzá parseo por si trae código
-                        } catch (ApiException ex) {
-                            info = "ApiException status=" + ex.getStatusCode();
-                        }
-                    }
-                    Toast.makeText(this, "Sign-in cancelado (" + info + ")", Toast.LENGTH_LONG).show();
+                    progress.dismiss();
+                    Toast.makeText(this, "Inicio cancelado", Toast.LENGTH_LONG).show();
                     updateUI(null);
                 }
             });
-
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
 
-        SharedPreferences authPreferences = getSharedPreferences("AuthPreferences", Context.MODE_PRIVATE);
-        SharedPreferences.Editor authEditor = authPreferences.edit();
-        boolean onBoarding = authPreferences.getBoolean("onBoarding", false);
-        deleteUser = authPreferences.getBoolean("deleteUser", false);
-        deleteFirebaseAccount = authPreferences.getBoolean("deleteFirebaseAccount", false);
+        SharedPreferences prefs = getSharedPreferences("AuthPreferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        boolean onBoarding = prefs.getBoolean("onBoarding", false);
+        deleteUser = prefs.getBoolean("deleteUser", false);
+        deleteFirebaseAccount = prefs.getBoolean("deleteFirebaseAccount", false);
 
         linearLogin = findViewById(R.id.linearLogin);
         linearDontDelete = findViewById(R.id.linearDontDelete);
         tvLogin = findViewById(R.id.tvLogin);
+        edtEmail = findViewById(R.id.edt_mail);
+        edtPassword = findViewById(R.id.edt_pass);
+        btnGoogle = findViewById(R.id.btn_google);
+        btnFacebook = findViewById(R.id.btn_facebook);
+
         mAuth = FirebaseAuth.getInstance();
         progress = new ProgressDialog(this, R.style.AlertDialogApp);
         callbackManager = CallbackManager.Factory.create();
-        btn_google = findViewById(R.id.btn_google);
-        btn_facebook = findViewById(R.id.btn_facebook);
-        edt1 = findViewById(R.id.edt_mail);
-        edt_pass = findViewById(R.id.edt_pass);
-
-
 
         if (!onBoarding) {
-            Intent intent = new Intent(AuthActivity.this, OnBoardingActivity.class);
-            startActivity(intent);
-            authEditor.putBoolean("onBoarding", true);
-            authEditor.apply();
+            startActivity(new Intent(this, OnBoardingActivity.class));
+            editor.putBoolean("onBoarding", true).apply();
         }
 
-
-
-        if (deleteUser) {
-            linearLogin.setVisibility(View.GONE);
-            linearDontDelete.setVisibility(View.VISIBLE);
-            tvLogin.setText("Seleccione la cuenta que desea eliminar...");
-        }else{
-            linearLogin.setVisibility(View.VISIBLE);
-            linearDontDelete.setVisibility(View.GONE);
-            tvLogin.setText("Iniciar sesión con...");
-        }
-
+        linearLogin.setVisibility(deleteUser ? View.GONE : View.VISIBLE);
+        linearDontDelete.setVisibility(deleteUser ? View.VISIBLE : View.GONE);
+        tvLogin.setText(deleteUser ? "Seleccione la cuenta que desea eliminar..." : "Iniciar sesión con...");
 
         if (deleteFirebaseAccount) {
-
-            MessageDeleteAccount();
-
-            deleteFirebaseAccount = false;
-            authEditor.putBoolean("deleteFirebaseAccount", false);
-            authEditor.apply();
-
+            showDeleteAccountMessage();
+            editor.putBoolean("deleteFirebaseAccount", false).apply();
         }
 
-        btn_facebook.setReadPermissions(Arrays.asList("public_profile", "email"));
+        setupFacebookLogin();
+        setupAuthListener();
+        setupGoogleSignIn();
 
-        btn_facebook.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        btnGoogle.setOnClickListener(v -> {
+            progress.setMessage("Espere...");
+            progress.show();
+            googleSignInClient.signOut().addOnCompleteListener(task ->
+                    googleSignInLauncher.launch(googleSignInClient.getSignInIntent())
+            );
+        });
+    }
 
+    private void setupFacebookLogin() {
+        btnFacebook.setReadPermissions(Arrays.asList("public_profile", "email"));
+        btnFacebook.registerCallback(callbackManager, new FacebookCallback<>() {
             @Override
-            public void onSuccess(final LoginResult loginResult) {
-
-                progress.setMessage("Espere...");
-                progress.show();
-                progress.setCanceledOnTouchOutside(false);
-
+            public void onSuccess(LoginResult loginResult) {
+                showProgress();
                 handleFacebookAccessToken(loginResult.getAccessToken());
-
-
             }
 
             @Override
             public void onCancel() {
-
                 updateUI(null);
-                //Toast.makeText(AuthActivity.this, "facebook onCancel ", Toast.LENGTH_SHORT).show();
-
             }
 
             @Override
             public void onError(FacebookException error) {
-
-               // Toast.makeText(AuthActivity.this, "facebook onError ", Toast.LENGTH_SHORT).show();
                 updateUI(null);
             }
-        });//FIN FACEBOOK LOGIN
+        });
+    }
 
-
-
-
-        mAuthListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                final FirebaseUser user = mAuth.getCurrentUser();
-
-                if(user!=null){
-                    if (deleteUser) {
-
-                        ref_datos.child(user.getUid()).removeValue();
-                        ref_cuentas.child(user.getUid()).removeValue();
-                        FirebaseStorage.getInstance().getReference().child("Users/imgPerfil/" + user.getUid() + ".jpg").delete();
-                        user.delete();
-
-                        dontDelete(null);
-
-                        MessageDeleteAccount();
-
-
-                    }else {
-                        updateUI(user);
-                    }
+    private void setupAuthListener() {
+        mAuthListener = firebaseAuth -> {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            if (user != null) {
+                if (deleteUser) {
+                    ref_datos.child(user.getUid()).removeValue();
+                    ref_cuentas.child(user.getUid()).removeValue();
+                    FirebaseStorage.getInstance().getReference()
+                            .child("Users/imgPerfil/" + user.getUid() + ".jpg").delete();
+                    user.delete();
+                    dontDelete(null);
+                    showDeleteAccountMessage();
+                } else {
+                    updateUI(user);
                 }
             }
         };
+    }
 
+    private void setupGoogleSignIn() {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))  // debe coincidir con tu proyecto de Firebase
+                .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-
         googleSignInClient = GoogleSignIn.getClient(this, gso);
+    }
 
-        btn_google.setOnClickListener(v -> {
-            progress.setMessage("Espere...");
-            progress.show();
-            progress.setCanceledOnTouchOutside(false);
-            // fuerza a elegir cuenta cada vez:
-            googleSignInClient.signOut().addOnCompleteListener(t ->
-                    googleSignInLauncher.launch(googleSignInClient.getSignInIntent())
-            );
-        });
-
-
-
-
-    }//FIN OnCreate
-
-    public void MessageDeleteAccount() {
-        progress.dismiss();
-        final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "La cuenta ha sido eliminada", Snackbar.LENGTH_INDEFINITE);
-        snack.setAction("OK", new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                snack.dismiss();
+    private void handleFacebookAccessToken(AccessToken token) {
+        showProgress();
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
+            if (!task.isSuccessful()) {
+                progress.dismiss();
+                updateUI(null);
             }
         });
-        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-        TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
+            if (!task.isSuccessful()) {
+                progress.dismiss();
+                updateUI(null);
+            }
+        });
+    }
+
+    public void registro(View view) {
+        startActivity(new Intent(this, SignUpActivity.class));
+    }
+
+    public void entrar(View view) {
+        String email = edtEmail.getText().toString().trim();
+        String password = edtPassword.getText().toString().trim();
+
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        showProgress();
+        mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(this, task -> {
+            progress.dismiss();
+            if (!task.isSuccessful()) {
+                Toast.makeText(this, "Datos incorrectos", Toast.LENGTH_LONG).show();
+                updateUI(null);
+            }
+        });
+    }
+
+    public void resetPassword(View view) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_setemail, null);
+        EditText edtEmailReset = dialogView.findViewById(R.id.edt_email);
+        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.AuthTheme_NoActionBar))
+                .setTitle("Reestablecimiento de contraseña")
+                .setView(dialogView)
+                .setPositiveButton("Enviar e-mail", (dialog, id) -> {
+                    showProgress();
+                    mAuth.sendPasswordResetEmail(edtEmailReset.getText().toString())
+                            .addOnCompleteListener(task -> {
+                                progress.dismiss();
+                                String msg = task.isSuccessful() ?
+                                        "Instrucciones enviadas a " + edtEmailReset.getText() :
+                                        edtEmailReset.getText() + " no existe";
+                                showSnackbar(msg);
+                            });
+                })
+                .setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        edtEmailReset.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                boolean enable = s.length() > 0;
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enable);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(enable ? getColor(R.color.colorG) : Color.GRAY);
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    public void dontDelete(View view) {
+        SharedPreferences prefs = getSharedPreferences("AuthPreferences", Context.MODE_PRIVATE);
+        prefs.edit().putBoolean("deleteUser", false).apply();
+        deleteUser = false;
+        linearLogin.setVisibility(View.VISIBLE);
+        linearDontDelete.setVisibility(View.GONE);
+        tvLogin.setText("Iniciar sesión con...");
+    }
+
+    private void showProgress() {
+        progress.setMessage("Espere...");
+        progress.show();
+        progress.setCanceledOnTouchOutside(false);
+    }
+
+    private void showSnackbar(String message) {
+        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_INDEFINITE)
+                .setAction("OK", v -> {});
+        snack.setBackgroundTint(getColor(R.color.colorC));
+        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
         tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         snack.show();
     }
 
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mAuth.addAuthStateListener(mAuthListener);
-
+    private void showDeleteAccountMessage() {
+        progress.dismiss();
+        showSnackbar("La cuenta ha sido eliminada");
     }
 
-
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode,resultCode,data);
-        if (requestCode == RC_SIGN_IN) {
-
-            final GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-
-                if (result.isSuccess()) {
-
-
-                    firebaseAuthWithGoogle(result.getSignInAccount());
-
-
-                } else {
-
-                    progress.hide();
-                    updateUI(null);
-            }
-        }
-    }
-
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if (!task.isSuccessful()) {
-                    updateUI(null);
-                    progress.hide();
-                }
-            }
-        });
-    }
-
-    private void handleFacebookAccessToken(AccessToken token) {
-        showProgressBar();
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if (!task.isSuccessful()){
-
-                    updateUI(null);
-                    progress.hide();
-                }
-            }
-        });
-
-    }
-
-
-
-
-    public void registro (View view){
-
-        Intent intent = new Intent (AuthActivity.this, SignUpActivity.class);
-
-        startActivity(intent);
-
-    }
-
-
-
-
-    public void updateUI(final FirebaseUser user) {
-        if(user != null) {
-
-            Intent intent = new Intent(AuthActivity.this, SplashActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+    public void updateUI(FirebaseUser user) {
+        if (user != null) {
+            Intent intent = new Intent(this, SplashActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            progress.hide();
             finish();
-
-        }else{
-
+        } else {
             FirebaseAuth.getInstance().signOut();
             com.facebook.login.LoginManager.getInstance().logOut();
         }
     }
 
-
-    public void entrar (View view){
-        email = edt1.getText().toString().trim();
-        password = edt_pass.getText().toString().trim();
-
-
-        if (TextUtils.isEmpty(email)){
-            Toast.makeText(this, "Introduzca un e-mail",Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (TextUtils.isEmpty(password)){
-            Toast.makeText(this, "Introduzca una contraseña",Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-
-        mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if (!task.isSuccessful()) {
-
-
-                    Toast.makeText(AuthActivity.this, "Alguno de los datos ingresados no es correcto",Toast.LENGTH_LONG).show();
-                    progress.hide();
-                    updateUI(null);
-                }
-            }
-        });
-
-
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
     }
-
-
-
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mAuth.removeAuthStateListener(mAuthListener);
-
-    }
-
-    private void showProgressBar() {
-        progress.setMessage("Espere...");
-        progress.show();
-        progress.setCanceledOnTouchOutside(false);
-
-    }
-
-
-    public void resetPassword(View view) {
-
-
-        LayoutInflater inflater = LayoutInflater.from(AuthActivity.this);
-
-        View dialog_setemail = inflater.inflate(R.layout.dialog_setemail,null);
-
-        final EditText edt_email = dialog_setemail.findViewById(R.id.edt_email);
-        final AlertDialog.Builder mBuilder = new AlertDialog.Builder(new ContextThemeWrapper(AuthActivity.this, R.style.AuthTheme_NoActionBar));
-
-
-
-        mBuilder.setView(dialog_setemail);
-        mBuilder.setCancelable(true);
-        mBuilder.setTitle("Reestablecimiento de contraseña");
-
-
-
-
-
-        mBuilder.setPositiveButton("Enviar e-mail", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface builder, int id) {
-
-
-                progress.setMessage("Espere...");
-                progress.show();
-                progress.setCanceledOnTouchOutside(false);
-
-                mAuth.sendPasswordResetEmail(edt_email.getText().toString())
-                        .addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if (task.isSuccessful()) {
-
-                                    progress.dismiss();
-                                    final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Las instrucciones de reestablecimiento fueron enviadas a " + edt_email.getText().toString(), Snackbar.LENGTH_INDEFINITE);
-                                    snack.setAction("OK", new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            snack.dismiss();
-                                        }
-                                    });
-                                    snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                                    TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                                    tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                                    snack.show();
-
-                                } else {
-                                    progress.dismiss();
-                                    final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), edt_email.getText().toString() + " no existe", Snackbar.LENGTH_INDEFINITE);
-                                    snack.setAction("OK", new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            snack.dismiss();
-                                        }
-                                    });
-                                    snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                                    TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                                    tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                                    snack.show();
-                                }
-                            }
-                        });
-
-
-
-            }
-        });
-        mBuilder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface builder, int id) {
-                return;
-            }
-        });
-
-
-
-        final AlertDialog dialog = mBuilder.create();
-
-
-        edt_email.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                if (edt_email.length() == 0) {
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GRAY);
-
-                }
-            }
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (edt_email.length() != 0) {
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(AuthActivity.this.getResources().getColor(R.color.colorG));
-                }
-            }
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (edt_email.length() == 0) {
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-                    ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GRAY);
-                }
-            }
-        });
-
-        dialog.show();
-        ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
-        ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GRAY);
-
-
-
-
-
-
-
-
-    }
-
-
-    public void dontDelete(View view) {
-
-        SharedPreferences authPreferences = getSharedPreferences("AuthPreferences", Context.MODE_PRIVATE);
-        SharedPreferences.Editor authEditor = authPreferences.edit();
-        authEditor.putBoolean("deleteUser", false);
-        deleteUser = false;
-        authEditor.apply();
-
-        linearLogin.setVisibility(View.VISIBLE);
-        linearDontDelete.setVisibility(View.GONE);
-        tvLogin.setText("Iniciar sesión con...");
-
-
     }
 }
