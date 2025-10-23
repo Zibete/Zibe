@@ -9,7 +9,7 @@ buildscript {
         // jcenter()  ← si aún está, quítalo
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.11.2'
+        classpath 'com.android.tools.build:gradle:8.11.2'   // ← subir a AGP 8.1.4
         classpath "com.google.gms:google-services:4.4.4"
     }
 }
