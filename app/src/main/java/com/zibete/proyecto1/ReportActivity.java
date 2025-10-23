@@ -21,6 +21,7 @@ import com.zibete.proyecto1.Splash.SplashActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 
 import static com.zibete.proyecto1.MainActivity.ref_zibe;
 
@@ -87,7 +88,7 @@ public class ReportActivity extends AppCompatActivity {
 
                 new AlertDialog.Builder(new ContextThemeWrapper(ReportActivity.this, R.style.AlertDialogApp))
                         .setTitle("¡Mensaje enviado!")
-                        .setMessage("¡Muchas gracias! El mensaje se ha enviado y ya fue recibido por nuestro equipo de soporte")
+                        .setMessage("¡Muchas gracias! El mensaje ha sido enviado a nuestro equipo de soporte")
                         .setCancelable(false)
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface builder, int id) {

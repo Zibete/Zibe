@@ -4,181 +4,175 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorD"
-    tools:context=".AuthActivity"
-    android:layout_gravity="center"
-    android:orientation="vertical">
+    android:background="@drawable/bg_gradient_zibe"
+    tools:context=".AuthActivity">
 
     <LinearLayout
-            android:id="@+id/linearLayout"
-            android:layout_gravity="center"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:background="@drawable/marco_blanco"
-            android:orientation="vertical">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp">
 
+        <!-- CONTENEDOR PRINCIPAL (tarjeta) -->
+            <!-- LOGO -->
             <LinearLayout
-                android:layout_gravity="center"
-                android:paddingTop="10dp"
-                android:paddingHorizontal="10dp"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:orientation="vertical"
-                android:layout_weight="1">
+                android:padding="10dp">
 
                 <ImageView
-
-                    android:layout_gravity="center"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@mipmap/logo7"/>
-
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvLogin"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:textSize="@dimen/text_size_normal"
-                    android:textColor="@color/colorA"/>
+                    android:contentDescription="@string/app_name"
+                    android:padding="10dp"
+                    android:src="@mipmap/logo_zibe" />
+            </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="10dp"
-                    android:gravity="center"
-                    android:orientation="horizontal">
+        <!-- TEXTOS / SOCIAL LOGIN -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:orientation="vertical">
 
-                    <com.google.android.gms.common.SignInButton
-                        android:id="@+id/btn_google"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp" />
+            <TextView
+                android:id="@+id/tvLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="@dimen/text_size_normal"
+                android:textColor="@color/zibe_text_light"
+                android:layout_marginBottom="12dp"/>
 
-                    <com.facebook.login.widget.LoginButton
-                        android:id="@+id/btn_facebook"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"/>
+            <!-- GOOGLE -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_google_custom"
+                style="@style/Zibe.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Continuar con Google"
+                app:icon="@drawable/ic_google"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconTint="@null"
+                app:iconSize="40dp"
+                android:textAllCaps="false" />
 
-                </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/linearLogin"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:layout_marginHorizontal="10dp"
-                    android:visibility="visible">
+            <!-- FACEBOOK -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_facebook_custom"
+                style="@style/Zibe.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Continuar con Facebook"
+                app:icon="@drawable/ic_facebook"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconTint="@android:color/white"
+                android:textAllCaps="false"/>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:text="@string/iniciar_sesion2"
-                        android:textColor="@color/colorA"
-                        android:textSize="@dimen/text_size_normal"
-                        android:layout_marginBottom="5dp"/>
+            <TextView
+                android:id="@+id/tvLogin2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="@dimen/text_size_normal"
+                android:textColor="@color/zibe_text_light"
+                android:text="@string/iniciar_sesion2"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"/>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_marginBottom="10dp"
-                        app:boxCornerRadiusBottomStart="10dp"
-                        app:boxCornerRadiusBottomEnd="10dp"
-                        app:boxCornerRadiusTopEnd="10dp"
-                        app:boxCornerRadiusTopStart="10dp"
-                        android:layout_marginHorizontal="2dp">
+
+        <LinearLayout
+            android:id="@+id/linearLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <!-- EMAIL -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Zibe.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/zibe_text_light"
+                android:layout_marginBottom="10dp"
+                app:startIconDrawable="@drawable/ic_mail_24"
+                app:boxBackgroundMode="filled"
+                app:boxBackgroundColor="@color/zibe_night_end">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/edt_mail"
                             android:layout_width="match_parent"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/zibe_text_light"
                             android:hint="@string/email"
-                            android:textColor="@color/colorA"
-                            android:padding="8dp"
-                            android:textSize="@dimen/text_size_normal"/>
-
+                            android:inputType="textEmailAddress" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-
+                    <!-- PASSWORD -->
                     <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Zibe.Input"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        app:passwordToggleDrawable="@drawable/icon_selector"
-                        app:passwordToggleEnabled="true"
-                        app:passwordToggleTint="@color/colorDark"
-                        app:boxCornerRadiusBottomStart="10dp"
-                        app:boxCornerRadiusBottomEnd="10dp"
-                        app:boxCornerRadiusTopEnd="10dp"
-                        app:boxCornerRadiusTopStart="10dp"
-                        android:layout_marginHorizontal="2dp">
+                        app:endIconMode="password_toggle"
+                        android:textColor="@color/zibe_text_light"
+                        app:endIconTint="@color/zibe_text_muted"
+                        app:startIconDrawable="@drawable/ic_lock_24"
+                        app:boxBackgroundMode="filled"
+                        app:boxBackgroundColor="@color/zibe_night_end">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/edt_pass"
                             android:layout_width="match_parent"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
                             android:hint="@string/pass1"
-                            android:inputType="textPassword"
-                            android:textColor="@color/colorA"
-                            android:padding="8dp"
-                            android:textSize="@dimen/text_size_normal"/>
-
+                            android:textColor="@color/zibe_text_light"
+                            android:inputType="textPassword" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-
+                    <!-- RESET PASS -->
                     <TextView
                         android:id="@+id/btn_resetpass"
-                        android:layout_marginTop="5dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="right"
-                        android:text="¿Olvidaste tu contraseña?"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/olvidaste_contra"
                         android:onClick="resetPassword"
-                        android:textColor="@drawable/btn2_color_txt"
-                        android:textSize="@dimen/text_size_small" />
+                        android:textColor="@color/zibe_text_light"
+                        android:textSize="@dimen/text_size_normal" />
 
-
-
-                    <Button
+                    <!-- BOTÓN ENTRAR -->
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/bt_entrar"
+                        style="@style/Zibe.Button"
+                        android:paddingVertical="10dp"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/button1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
                         android:onClick="entrar"
-                        android:text="@string/Entrar"
-                        android:textColor="@drawable/btn1_color_txt"
-                        android:textSize="@dimen/text_size_normal"
-                        android:layout_marginTop="15dp"/>
+                        android:textSize="@dimen/text_size_large"
+                        android:text="@string/Entrar" />
 
-
+                    <!-- REGISTRO -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:paddingVertical="13dp"
-                        android:orientation="horizontal">
-
+                        android:orientation="horizontal"
+                        android:paddingVertical="13dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_gravity="center"
                             android:textSize="@dimen/text_size_normal"
                             android:text="@string/iniciar_sesion3"
                             android:layout_marginEnd="6dp"
-                            android:textColor="@color/colorA"/>
-
+                            android:textColor="@color/zibe_text_light"/>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -186,34 +180,31 @@
                             android:onClick="registro"
                             android:text="@string/registro"
                             android:textStyle="bold"
-                            android:textColor="@drawable/btn2_color_txt"
+                            android:textColor="@color/zibe_text_light"
                             android:textSize="@dimen/text_size_normal" />
-
                     </LinearLayout>
-
                 </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/linearDontDelete"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal"
-                    android:layout_margin="15dp"
-                    android:gravity="center">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:onClick="dontDelete"
-                        android:text="Ya no quiero eliminar mi cuenta"
-                        android:textStyle="bold"
-                        android:textColor="@drawable/btn2_color_txt"
-                        android:textSize="@dimen/text_size_normal" />
-
-                </LinearLayout>
-
             </LinearLayout>
 
-        </LinearLayout>
+            <!-- REACTIVAR CUENTA -->
+            <LinearLayout
+                android:id="@+id/linearDontDelete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_margin="8dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="dontDelete"
+                    android:text="@string/dont_delete_account"
+                    android:textStyle="bold"
+                    android:textColor="@color/zibe_text_light"
+                    android:textSize="@dimen/text_size_normal" />
+            </LinearLayout>
+
+    </LinearLayout>
 
 </LinearLayout>

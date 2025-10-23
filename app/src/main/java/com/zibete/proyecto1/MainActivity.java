@@ -27,7 +27,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
@@ -65,6 +64,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.POJOS.ChatsGroup;
@@ -86,7 +86,7 @@ import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
 import static com.zibete.proyecto1.Constants.listenerGroupBadge;
 import static com.zibete.proyecto1.Constants.listenerMsgUnreadBadge;
-import static com.zibete.proyecto1.Constants.listenerToken;
+import static com.zibete.proyecto1.Constants.listenerToken; // Usamos este handle global existente
 import static com.zibete.proyecto1.PageAdapterGroup.valueEventListenerTitle;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
@@ -127,10 +127,9 @@ public class MainActivity extends AppCompatActivity {
     public static ImageView filter;
     public static ImageView refresh;
     public static RelativeLayout layoutSettings;
-    private String userToken;
     public static BottomNavigationView mBottomNavigation;
 
-    // >>> NUEVO stack de ubicación (moderno)
+    // Ubicación (API moderna)
     private Location mLastLocation;
     private FusedLocationProviderClient fusedLocationClient;
     private SettingsClient settingsClient;
@@ -138,15 +137,21 @@ public class MainActivity extends AppCompatActivity {
     private LocationCallback locationCallback;
     public static final long UPDATE_INTERVAL = 1000;
     public static final long UPDATE_FASTEST_INTERVAL = UPDATE_INTERVAL / 2;
-    // <<<
 
     public SearchView searchView;
     private static String CHANNEL_ID;
+    @SuppressWarnings("unused")
     private final static int NOTIFICATION_ID = 0;
     private ViewGroup viewGroup;
+    @SuppressWarnings("unused")
     private ViewGroup viewGroup2;
     public static Double latitud;
     public static Double longitud;
+
+    // Control de sesión por dispositivo
+    private String myInstallId = null; // Identificador estable por instalación
+    private String myFcmToken = null;  // Token FCM para notificaciones
+    private boolean tokenListenerInitialized = false; // Evitar falso positivo en primera carga
 
     @SuppressLint("CutPasteId")
     @Override
@@ -157,12 +162,13 @@ public class MainActivity extends AppCompatActivity {
         LayoutTransition layoutTransition = new LayoutTransition();
         layoutTransition.enableTransitionType(LayoutTransition.CHANGING);
 
-        viewGroup = (ViewGroup) findViewById(R.id.toolbar);
+        viewGroup = findViewById(R.id.toolbar);
         viewGroup.setLayoutTransition(layoutTransition);
 
-        if (user == null){
+        if (user == null) {
             logout(null);
-        }else {
+            return;
+        } else {
             CHANNEL_ID = user.getUid();
         }
 
@@ -171,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         filter = findViewById(R.id.filter);
         refresh = findViewById(R.id.refresh);
 
-        // >>>> Ubicación: inicialización moderna
+        // Ubicación: inicialización
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         settingsClient = LocationServices.getSettingsClient(this);
 
@@ -189,9 +195,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-
         ensureLocationSettingsAndStart();
-        // <<<<
 
         setSupportActionBar(toolbar);
 
@@ -202,12 +206,12 @@ public class MainActivity extends AppCompatActivity {
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        // APP BAR
+        // NavController / AppBar
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_editPerfil)
-                .build();
+                R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_editPerfil
+        ).build();
 
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
@@ -222,7 +226,8 @@ public class MainActivity extends AppCompatActivity {
         int height = dimension.heightPixels;
 
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, height/2);
+                LinearLayout.LayoutParams.MATCH_PARENT, height / 2
+        );
         linear_image_user.setLayoutParams(layoutParams);
 
         TextView tv_usuario = headerView.findViewById(R.id.tv_usuario);
@@ -234,12 +239,7 @@ public class MainActivity extends AppCompatActivity {
         Glide.with(getApplicationContext()).load(user.getPhotoUrl()).into(image_user);
 
         // Ir a Edit Perfil
-        editPerfil.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                EditProfile(null);
-            }
-        });
+        editPerfil.setOnClickListener(v -> EditProfile(null));
 
         mBottomNavigation = findViewById(R.id.nav_view3);
         mBottomNavigation.findViewById(R.id.navBottomChat).performClick();
@@ -260,22 +260,20 @@ public class MainActivity extends AppCompatActivity {
 
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
-                        int unRead = snapshot.child("noVisto").getValue(int.class);
-
-                        countMsgUnread = countMsgUnread + unRead;
+                        Integer unRead = snapshot.child("noVisto").getValue(Integer.class);
+                        if (unRead != null) countMsgUnread += unRead;
 
                     }
                     badgeDrawableChat.setVisible(true);
                     badgeDrawableChat.setNumber(countMsgUnread);
 
-                }else{
+                } else {
                     badgeDrawableChat.setVisible(false);
                 }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
 
         badgeDrawableGroup = mBottomNavigation.getOrCreateBadge(R.id.navBottomGrupos);
@@ -299,12 +297,13 @@ public class MainActivity extends AppCompatActivity {
 
                                 if (dataSnapshot1.exists()) {
 
-                                    final int Leidos = dataSnapshot1.getValue(int.class);
-
                                     final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
                                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                                            Integer Leidos = dataSnapshot1.getValue(Integer.class);
+                                            if (Leidos == null) Leidos = 0;
 
                                             int countMsgUnread = 0;
 
@@ -312,9 +311,8 @@ public class MainActivity extends AppCompatActivity {
 
                                                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
-                                                    int unRead = snapshot.child("noVisto").getValue(int.class);
-
-                                                    countMsgUnread = countMsgUnread + unRead;
+                                                    Integer unRead = snapshot.child("noVisto").getValue(Integer.class);
+                                                    if (unRead != null) countMsgUnread += unRead;
 
                                                 }
                                             }
@@ -330,22 +328,19 @@ public class MainActivity extends AppCompatActivity {
                                         }
 
                                         @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                        }
+                                        public void onCancelled(@NonNull DatabaseError error) { }
                                     });
 
                                 }
                             }
                             @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                            }
+                            public void onCancelled(@NonNull DatabaseError error) { }
                         });
                     }
                 }
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         };
 
         listenerMsgUnreadBadge = new ValueEventListener() {
@@ -360,9 +355,8 @@ public class MainActivity extends AppCompatActivity {
 
                         for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
-                            int unRead = snapshot.child("noVisto").getValue(int.class);
-
-                            countMsgUnread = countMsgUnread + unRead;
+                            Integer unRead = snapshot.child("noVisto").getValue(Integer.class);
+                            if (unRead != null) countMsgUnread += unRead;
 
                         }
 
@@ -379,7 +373,8 @@ public class MainActivity extends AppCompatActivity {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
-                                            int Leidos = dataSnapshot1.getValue(int.class);
+                                            Integer Leidos = dataSnapshot1.getValue(Integer.class);
+                                            if (Leidos == null) Leidos = 0;
 
                                             if (inGroup) {
                                                 badgeDrawableGroup.setNumber((int) (totalMsg - Leidos + finalCountMsgUnread));
@@ -392,161 +387,179 @@ public class MainActivity extends AppCompatActivity {
                                         }
 
                                         @Override
-                                        public void onCancelled(@NonNull DatabaseError error) {
-                                        }
+                                        public void onCancelled(@NonNull DatabaseError error) { }
                                     });
 
                                 }
                             }
 
                             @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                            }
+                            public void onCancelled(@NonNull DatabaseError error) { }
                         });
                     }
                 }
 
             }
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         };
 
-        if (inGroup){
+        if (inGroup) {
             ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
             final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.addValueEventListener(listenerMsgUnreadBadge);
         }
 
-        mBottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        mBottomNavigation.setOnNavigationItemSelectedListener(item -> {
 
-                int id = item.getItemId();
+            int id = item.getItemId();
 
-                if (id == R.id.navBottomUsers) {
-                    if (!toolbar.getTitle().equals(getString(R.string.menu_usuarios))) {
+            if (id == R.id.navBottomUsers) {
+                if (!toolbar.getTitle().equals(getString(R.string.menu_usuarios))) {
 
-                        layoutSettings.setVisibility(View.VISIBLE);
-                        invalidateOptionsMenu();
+                    layoutSettings.setVisibility(View.VISIBLE);
+                    invalidateOptionsMenu();
 
-                        Fragment newFragment = new UsuariosFragment();
-                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                        transaction.replace(R.id.nav_host_fragment, newFragment);
-                        toolbar.setTitle(R.string.menu_usuarios);
-                        transaction.commit();
-                    }
-                    return true;
-
-                } else if (id == R.id.navBottomChat) {
-                    NavChatList();
-                    return true;
-
-                } else if (id == R.id.navBottomFavorites) {
-                    Favorites();
-                    return true;
-
-                } else if (id == R.id.navBottomGrupos) {
-
-                    if (!inGroup) {
-
-                        if (!toolbar.getTitle().equals(getString(R.string.menu_grupos))) {
-
-                            layoutSettings.setVisibility(View.GONE);
-                            invalidateOptionsMenu();
-
-                            Fragment newFragment = new GruposFragment();
-                            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                            transaction.replace(R.id.nav_host_fragment, newFragment);
-                            toolbar.setTitle(R.string.menu_grupos);
-                            transaction.commit();
-                        }
-
-                    }else{
-                        toolbar.setVisibility(View.VISIBLE);
-                        layoutSettings.setVisibility(View.GONE);
-
-                        invalidateOptionsMenu();
-
-                        Fragment newFragment = new PageAdapterGroup();
-
-                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                        transaction.replace(R.id.nav_host_fragment, newFragment);
-
-                        toolbar.setTitle(groupName);
-
-                        Bundle data = new Bundle();
-                        data.putString("group_name", groupName);
-                        data.putString("getUid", userName);
-                        newFragment.setArguments(data);
-
-                        transaction.commit();
-                    }
-                    return true;
+                    Fragment newFragment = new UsuariosFragment();
+                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.nav_host_fragment, newFragment);
+                    toolbar.setTitle(R.string.menu_usuarios);
+                    transaction.commit();
                 }
-                return false;
+                return true;
+
+            } else if (id == R.id.navBottomChat) {
+                NavChatList();
+                return true;
+
+            } else if (id == R.id.navBottomFavorites) {
+                Favorites();
+                return true;
+
+            } else if (id == R.id.navBottomGrupos) {
+
+                if (!inGroup) {
+
+                    if (!toolbar.getTitle().equals(getString(R.string.menu_grupos))) {
+
+                        layoutSettings.setVisibility(View.GONE);
+                        invalidateOptionsMenu();
+
+                        Fragment newFragment = new GruposFragment();
+                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                        transaction.replace(R.id.nav_host_fragment, newFragment);
+                        toolbar.setTitle(R.string.menu_grupos);
+                        transaction.commit();
+                    }
+
+                } else {
+                    toolbar.setVisibility(View.VISIBLE);
+                    layoutSettings.setVisibility(View.GONE);
+
+                    invalidateOptionsMenu();
+
+                    Fragment newFragment = new PageAdapterGroup();
+
+                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.nav_host_fragment, newFragment);
+
+                    toolbar.setTitle(groupName);
+
+                    Bundle data = new Bundle();
+                    data.putString("group_name", groupName);
+                    data.putString("getUid", userName);
+                    newFragment.setArguments(data);
+
+                    transaction.commit();
+                }
+                return true;
             }
+            return false;
         });
 
-        listenerToken = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-
-                if (dataSnapshot.exists()) {
-
-                    String token = dataSnapshot.getValue(String.class);
-                    FirebaseMessaging.getInstance().getToken()
-                            .addOnCompleteListener(task -> {
-                                userToken = task.getResult();
-                            });
-
-                    if (!token.equals(userToken)) {
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp));
-                        builder.setTitle("Atención");
-                        builder.setMessage("Se registró un inicio de sesión en otro dispositivo ¿Que desea hacer?");
-                        builder.setPositiveButton("Continuar en este dispositivo", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface builder, int id) {
-
-                                dataSnapshot.getRef().setValue(userToken);
-
-                            }
-                        });
-
-                        builder.setNegativeButton("Cerrar sesión", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface builder, int id) {
-
-                                logout(null);
-                                return;
-
-                            }
-                        });
-                        builder.setCancelable(false);
-                        builder.show();
-
+        // ===== Registro de instalación + FCM y listener de "installId" =====
+        FirebaseInstallations.getInstance().getId()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        myInstallId = task.getResult();
                     }
-                }
+                    // Obtener FCM token (independiente del control de sesión)
+                    FirebaseMessaging.getInstance().getToken()
+                            .addOnCompleteListener(tk -> {
+                                if (tk.isSuccessful()) {
+                                    myFcmToken = tk.getResult();
+                                    // Guardamos/actualizamos FCM token (no se usa para comparar sesión)
+                                    ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
+                                }
+                                // Auto-heal + listener de installId
+                                registerInstallIdAndAttachListener();
+                            });
+                });
+
+        // Flag de navegación entrante
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            flagIntent = extras.getInt("flagIntent", -1);
+            if (flagIntent == 0) {
+                EditProfile(null);
             }
-            @Override public void onCancelled(@NonNull DatabaseError error) {
-            }
-        };
-
-        ref_cuentas.child(user.getUid()).child("token").addValueEventListener(listenerToken);
-
-        flagIntent = getIntent().getExtras().getInt("flagIntent");
-
-        if(flagIntent == 0){
-            EditProfile(null);
         }
-        // Fin onCreate
     }
 
-    // ======= Navegación / UI existentes =======
+    /** Escribe mi installId si falta/difiere y luego engancha el listener de cambios remotos. */
+    private void registerInstallIdAndAttachListener() {
+        final DatabaseReference installIdRef = ref_cuentas.child(user.getUid()).child("installId");
+        installIdRef.get().addOnSuccessListener(snap -> {
+            String current = snap.exists() ? snap.getValue(String.class) : null;
+            if (myInstallId != null && (current == null || !current.equals(myInstallId))) {
+                installIdRef.setValue(myInstallId);
+            }
+            attachInstallIdListener(installIdRef);
+        }).addOnFailureListener(e -> attachInstallIdListener(installIdRef));
+    }
+
+    /** Observa el valor remoto de installId para detectar sesiones en otro dispositivo. */
+    private void attachInstallIdListener(DatabaseReference installIdRef) {
+        listenerToken = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String remoteInstallId = dataSnapshot.getValue(String.class);
+
+                // Si aún no tengo mi ID, no comparo
+                if (myInstallId == null) return;
+
+                // Ignorar la primera carga para evitar falso positivo de arranque
+                if (!tokenListenerInitialized) {
+                    tokenListenerInitialized = true;
+
+                    // Auto-curación: si en la nube no coincide conmigo al iniciar, me escribo
+                    if (remoteInstallId == null || !myInstallId.equals(remoteInstallId)) {
+                        dataSnapshot.getRef().setValue(myInstallId);
+                    }
+                    return;
+                }
+
+                // Desde acá, si cambia y no soy yo -> otro dispositivo tomó la sesión
+                if (remoteInstallId != null && !myInstallId.equals(remoteInstallId)) {
+                    new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
+                            .setTitle("Atención")
+                            .setMessage("Se registró un inicio de sesión en otro dispositivo. ¿Qué desea hacer?")
+                            .setPositiveButton("Continuar en este dispositivo", (dialog, id) ->
+                                    dataSnapshot.getRef().setValue(myInstallId))
+                            .setNegativeButton("Cerrar sesión", (dialog, id) -> logout(null))
+                            .setCancelable(false)
+                            .show();
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        };
+        installIdRef.addValueEventListener(listenerToken);
+    }
+
+    // ======= Navegación / UI =======
 
     public void NavChatList() {
-
         if (!toolbar.getTitle().equals(getString(R.string.menu_chat))) {
-
             toolbar.setVisibility(View.VISIBLE);
             layoutSettings.setVisibility(View.GONE);
             invalidateOptionsMenu();
@@ -566,9 +579,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void EditProfile(MenuItem item) {
-
         if (!toolbar.getTitle().equals(getString(R.string.menu_edit))) {
-
             mBottomNavigation.setVisibility(View.GONE);
             layoutSettings.setVisibility(View.GONE);
             toolbar.setTitle(R.string.menu_edit);
@@ -578,20 +589,15 @@ public class MainActivity extends AppCompatActivity {
             Fragment newFragment = new EditProfileFragment();
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.nav_host_fragment, newFragment);
-
             transaction.commit();
         }
-
         drawer.closeDrawer(GravityCompat.START);
     }
 
     public void Ajustes(MenuItem item) {
-
         drawer.closeDrawer(GravityCompat.START);
-
         Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
         startActivity(intent);
-
     }
 
     // ======= Ubicación: resultados de resolución de settings =======
@@ -599,15 +605,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CHECK_SETTINGS) {
-            switch (resultCode) {
-                case Activity.RESULT_OK:
-                    Log.d("TAG", "El usuario permitió el cambio de ajustes de ubicación.");
-                    processLastLocation();
-                    startLocationUpdates();
-                    break;
-                case Activity.RESULT_CANCELED:
-                    Log.d("TAG", "El usuario no permitió el cambio de ajustes de ubicación");
-                    break;
+            if (resultCode == Activity.RESULT_OK) {
+                Log.d("TAG", "El usuario permitió el cambio de ajustes de ubicación.");
+                processLastLocation();
+                startLocationUpdates();
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                Log.d("TAG", "El usuario no permitió el cambio de ajustes de ubicación");
             }
         }
     }
@@ -623,7 +626,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        new Constants().StateOffLine(getApplicationContext(), user.getUid());
         stopLocationUpdates();
     }
 
@@ -631,15 +634,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         new Constants().StateOnLine(getApplicationContext(), user.getUid());
-        // Si ya están OK los permisos/configuración, reanuda updates
         startLocationUpdates();
     }
 
     @Override
-    public void onDestroy () {
+    public void onDestroy() {
         super.onDestroy();
-        ref_cuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        // Quitamos el listener del nodo "installId"
+        ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
+        new Constants().StateOffLine(getApplicationContext(), user.getUid());
         stopLocationUpdates();
     }
 
@@ -651,34 +654,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void logout(MenuItem item) {
-
         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                 .setTitle("Cerrar sesión")
                 .setMessage("¿Está seguro de cerrar su sesión?")
                 .setCancelable(false)
-                .setPositiveButton("Si", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface builder, int id) {
-                        logout();
-                    }
-                })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface builder, int id) {
-                        return;
-                    }
-                })
+                .setPositiveButton("Si", (builder, id) -> logout())
+                .setNegativeButton("No", (builder, id) -> { })
                 .show();
     }
 
     public void logout() {
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        new Constants().StateOffLine(getApplicationContext(), user.getUid());
 
         if (inGroup) {
             exitGroup();
         }
 
-        if (listenerToken !=null) {
-            ref_cuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
-        }
+        // Quitamos el listener del nodo "installId"
+        ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
 
         UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences();
@@ -693,7 +686,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // ======= Ubicación: helpers modernos =======
+    // ======= Ubicación: helpers modernas =======
 
     private void ensureLocationSettingsAndStart() {
         if (!isLocationPermissionGranted()) {
@@ -726,9 +719,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
-        if (!isLocationPermissionGranted()) {
-            return;
-        }
+        if (!isLocationPermissionGranted()) return;
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, getMainLooper());
     }
 
@@ -740,9 +731,7 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("MissingPermission")
     private void processLastLocation() {
-        if (!isLocationPermissionGranted()) {
-            return;
-        }
+        if (!isLocationPermissionGranted()) return;
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(location -> {
                     if (location != null) {
@@ -753,41 +742,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isLocationPermissionGranted() {
-        int permission = ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         return permission == PackageManager.PERMISSION_GRANTED;
     }
 
     private void manageDeniedPermission() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
             Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Zibe necesita acceso a su ubicación para poder funcionar", Snackbar.LENGTH_SHORT);
             snack.setBackgroundTint(getResources().getColor(R.color.colorC));
             TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             snack.show();
         } else {
-            ActivityCompat.requestPermissions(
-                    this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
         }
     }
 
+    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == REQUEST_LOCATION) {
-            if (grantResults.length == 1
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 ensureLocationSettingsAndStart();
-            }else{
-
+            } else {
                 Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Se cerrará su sesión", Snackbar.LENGTH_SHORT);
                 snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                 tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                 snack.show();
 
@@ -812,12 +794,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
-    // ======= Menú / navegación existentes =======
+    // ======= Menú / navegación =======
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -840,8 +821,7 @@ public class MainActivity extends AppCompatActivity {
                         .setTitle("Salir")
                         .setMessage("Se perderán los cambios, ¿Desea continuar?")
                         .setCancelable(false)
-                        .setPositiveButton("Si", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface builder, int id) {
+                        .setPositiveButton("Si", (builder, id) ->
 
                                 MainActivity.ref_cuentas.child(user.getUid()).child("birthDay").addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
@@ -849,41 +829,26 @@ public class MainActivity extends AppCompatActivity {
 
                                         String fecha = dataSnapshot.getValue(String.class);
 
-                                        if (fecha.equals("")) {
+                                        if (fecha != null && fecha.equals("")) {
 
                                             final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Complete su fecha de nacimiento", Snackbar.LENGTH_INDEFINITE);
-                                            snack.setAction("OK", new View.OnClickListener() {
-                                                @Override
-                                                public void onClick(View v) {
-                                                    snack.dismiss();
-                                                }
-                                            });
+                                            snack.setAction("OK", v -> snack.dismiss());
                                             snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                                            TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                                            TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                                             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                                             snack.show();
-                                            return;
 
                                         } else {
-
                                             NavChatList();
-
                                         }
                                     }
 
                                     @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
+                                    public void onCancelled(@NonNull DatabaseError error) { }
+                                })
 
-                                    }
-                                });
-
-                            }
-                        })
-                        .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface builder, int id) {
-                                return;
-                            }
-                        })
+                        )
+                        .setNegativeButton("No", (builder, id) -> { })
                         .show();
 
             } else {
@@ -893,19 +858,13 @@ public class MainActivity extends AppCompatActivity {
                 if (fecha.isEmpty()) {
 
                     final Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Complete su fecha de nacimiento", Snackbar.LENGTH_INDEFINITE);
-                    snack.setAction("OK", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            snack.dismiss();
-                        }
-                    });
+                    snack.setAction("OK", v -> snack.dismiss());
                     snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                    TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                    TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                     tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                     snack.show();
 
                 } else {
-
                     NavChatList();
                 }
             }
@@ -925,7 +884,6 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                 } else {
-
                     NavChatList();
                 }
             }
@@ -961,17 +919,8 @@ public class MainActivity extends AppCompatActivity {
             AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp));
             builder.setTitle("Salir");
             builder.setMessage("¿Desea abandonar " + groupName + "?");
-            builder.setPositiveButton("Salir", new DialogInterface.OnClickListener() {
-
-                public void onClick(DialogInterface builder, int id) {
-                    exitGroup();
-                }
-            });
-            builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface builder, int id) {
-                    return;
-                }
-            });
+            builder.setPositiveButton("Salir", (dialog, which) -> exitGroup());
+            builder.setNegativeButton("Cancelar", (dialog, which) -> { });
             builder.show();
 
             return true;
@@ -984,9 +933,9 @@ public class MainActivity extends AppCompatActivity {
 
         final String type;
 
-        if (toolbar.getTitle().equals(groupName)){
+        if (toolbar.getTitle().equals(groupName)) {
             type = chatWithUnknown;
-        }else{
+        } else {
             type = chatWith;
         }
 
@@ -994,7 +943,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                if (dataSnapshot.exists()){
+                if (dataSnapshot.exists()) {
 
                     final ArrayList<String> listName = new ArrayList<>();
                     final ArrayList<String> listID = new ArrayList<>();
@@ -1002,7 +951,7 @@ public class MainActivity extends AppCompatActivity {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
                         ChatWith chat = snapshot.getValue(ChatWith.class);
-                        if (chat.getEstado().equals("delete")) {
+                        if (chat != null && "delete".equals(chat.getEstado())) {
 
                             String name = chat.getwUserName();
                             String user_id = chat.getwUserID();
@@ -1019,63 +968,45 @@ public class MainActivity extends AppCompatActivity {
 
                         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                                 .setTitle("Chats ocultos")
-                                .setSingleChoiceItems(listaName, itemSelected[0], new DialogInterface.OnClickListener() {
+                                .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
+                                .setPositiveButton("Mostrar", (builder, selectedIndex) ->
 
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int selectedIndex) {
-
-                                        itemSelected[0] = selectedIndex;
-                                    }
-                                })
-
-                                .setPositiveButton("Mostrar", new DialogInterface.OnClickListener() {
-
-                                    public void onClick(DialogInterface builder, int selectedIndex) {
-
-                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID [itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                                                 String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
 
-                                                if (Objects.equals(photo, Empty)){
+                                                if (Objects.equals(photo, Empty)) {
                                                     dataSnapshot.getRef().removeValue();
-                                                }else{
+                                                } else {
                                                     dataSnapshot.getRef().child("estado").setValue(type);
                                                 }
                                             }
+
                                             @Override
-                                            public void onCancelled(@NonNull DatabaseError error) {
-                                            }
-                                        });
+                                            public void onCancelled(@NonNull DatabaseError error) { }
+                                        })
 
-                                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), listaName [itemSelected[0]] + " ya no está oculto", Snackbar.LENGTH_SHORT);
-                                        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                                        snack.show();
-
-                                    }
-
-                                })
-
-                                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface builder, int id) {
-                                        return;
-                                    }
-                                })
-
+                                )
+                                .setNegativeButton("Cancelar", (builder, id) -> { })
                                 .setCancelable(false)
                                 .show();
 
-                    }else {
+                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), listaName[itemSelected[0]] + " ya no está oculto", Snackbar.LENGTH_SHORT);
+                        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
+                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        snack.show();
+
+                    } else {
                         Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "No hay chats ocultos", Snackbar.LENGTH_SHORT);
                         snack.setBackgroundTint(getResources().getColor(R.color.colorC));
                         TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                         tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                         snack.show();
                     }
-                }else{
+                } else {
                     Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "No hay chats ocultos", Snackbar.LENGTH_SHORT);
                     snack.setBackgroundTint(getResources().getColor(R.color.colorC));
                     TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
@@ -1085,18 +1016,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
     public void unlockUser() {
         final String type;
 
-        if (toolbar.getTitle().equals(groupName)){
+        if (toolbar.getTitle().equals(groupName)) {
             type = chatWithUnknown;
-        }else{
+        } else {
             type = chatWith;
         }
 
@@ -1104,7 +1033,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                if (dataSnapshot.exists()){
+                if (dataSnapshot.exists()) {
 
                     final ArrayList<String> listName = new ArrayList<>();
                     final ArrayList<String> listID = new ArrayList<>();
@@ -1112,7 +1041,7 @@ public class MainActivity extends AppCompatActivity {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
                         ChatWith chat = snapshot.getValue(ChatWith.class);
-                        if (chat.getEstado().equals("bloq")) {
+                        if (chat != null && "bloq".equals(chat.getEstado())) {
 
                             String name = chat.getwUserName();
                             String user_id = chat.getwUserID();
@@ -1129,63 +1058,45 @@ public class MainActivity extends AppCompatActivity {
 
                         new AlertDialog.Builder(new ContextThemeWrapper(MainActivity.this, R.style.AlertDialogApp))
                                 .setTitle("¿A quién deseas desbloquear?")
-                                .setSingleChoiceItems(listaName, itemSelected[0], new DialogInterface.OnClickListener() {
+                                .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
+                                .setPositiveButton("Aceptar", (builder, selectedIndex) ->
 
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int selectedIndex) {
-
-                                        itemSelected[0] = selectedIndex;
-                                    }
-                                })
-
-                                .setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-
-                                    public void onClick(DialogInterface builder, int selectedIndex) {
-
-                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID [itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                                                 String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
 
-                                                if (Objects.equals(photo, Empty)){
+                                                if (Objects.equals(photo, Empty)) {
                                                     dataSnapshot.getRef().removeValue();
-                                                }else{
+                                                } else {
                                                     dataSnapshot.getRef().child("estado").setValue(type);
                                                 }
                                             }
+
                                             @Override
-                                            public void onCancelled(@NonNull DatabaseError error) {
-                                            }
-                                        });
+                                            public void onCancelled(@NonNull DatabaseError error) { }
+                                        })
 
-                                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Desbloqueaste a " + listaName [itemSelected[0]], Snackbar.LENGTH_SHORT);
-                                        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                                        snack.show();
-
-                                    }
-
-                                })
-
-                                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface builder, int id) {
-                                        return;
-                                    }
-                                })
-
+                                )
+                                .setNegativeButton("Cancelar", (builder, id) -> { })
                                 .setCancelable(false)
                                 .show();
 
-                    }else {
+                        Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "Desbloqueaste a " + listaName[itemSelected[0]], Snackbar.LENGTH_SHORT);
+                        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
+                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+                        snack.show();
+
+                    } else {
                         Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "No hay usuarios bloqueados", Snackbar.LENGTH_SHORT);
                         snack.setBackgroundTint(getResources().getColor(R.color.colorC));
                         TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
                         tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                         snack.show();
                     }
-                }else{
+                } else {
                     Snackbar snack = Snackbar.make(findViewById(android.R.id.content), "No hay usuarios bloqueados", Snackbar.LENGTH_SHORT);
                     snack.setBackgroundTint(getResources().getColor(R.color.colorC));
                     TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
@@ -1195,9 +1106,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
@@ -1221,16 +1130,16 @@ public class MainActivity extends AppCompatActivity {
         ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()){
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     String key = snapshot.getKey();
                     ref_chat_unknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
                     ref_chat_unknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
                     ref_datos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
                 }
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
 
         ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
@@ -1275,7 +1184,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void Favorites() {
-
         layoutSettings.setVisibility(View.GONE);
         toolbar.setTitle(R.string.favoritos);
 
@@ -1290,15 +1198,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void Index(MenuItem item) {
-
-        if (toolbar.getTitle().equals(getString(R.string.menu_edit)) | toolbar.getTitle().equals(getString(R.string.ajustes)) | toolbar.getTitle().equals(getString(R.string.favoritos))) {
+        if (toolbar.getTitle().equals(getString(R.string.menu_edit)) |
+                toolbar.getTitle().equals(getString(R.string.ajustes)) |
+                toolbar.getTitle().equals(getString(R.string.favoritos))) {
 
             onBackPressed();
 
         } else {
-
             drawer.closeDrawer(GravityCompat.START);
         }
-
     }
 }

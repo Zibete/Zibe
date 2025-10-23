@@ -29,13 +29,14 @@ import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
-import com.facebook.login.widget.LoginButton;
+
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.SignInButton;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -58,8 +59,8 @@ public class AuthActivity extends AppCompatActivity {
 
     private CallbackManager callbackManager;
     private EditText edtEmail, edtPassword;
-    private SignInButton btnGoogle;
-    private LoginButton btnFacebook;
+    private MaterialButton btnGoogle;
+    private com.google.android.material.button.MaterialButton btnFacebook;
     private FirebaseAuth mAuth;
     private ProgressDialog progress;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -105,8 +106,11 @@ public class AuthActivity extends AppCompatActivity {
         tvLogin = findViewById(R.id.tvLogin);
         edtEmail = findViewById(R.id.edt_mail);
         edtPassword = findViewById(R.id.edt_pass);
-        btnGoogle = findViewById(R.id.btn_google);
-        btnFacebook = findViewById(R.id.btn_facebook);
+        btnGoogle = findViewById(R.id.btn_google_custom);
+        btnFacebook = findViewById(R.id.btn_facebook_custom);
+        btnGoogle.setIconTint(null);
+        btnFacebook.setIconTint(null);
+
 
         mAuth = FirebaseAuth.getInstance();
         progress = new ProgressDialog(this, R.style.AlertDialogApp);
@@ -119,7 +123,7 @@ public class AuthActivity extends AppCompatActivity {
 
         linearLogin.setVisibility(deleteUser ? View.GONE : View.VISIBLE);
         linearDontDelete.setVisibility(deleteUser ? View.VISIBLE : View.GONE);
-        tvLogin.setText(deleteUser ? "Seleccione la cuenta que desea eliminar..." : "Iniciar sesión con...");
+        tvLogin.setText(deleteUser ? "Seleccione la cuenta que desea eliminar..." : "");
 
         if (deleteFirebaseAccount) {
             showDeleteAccountMessage();
@@ -140,25 +144,32 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void setupFacebookLogin() {
-        btnFacebook.setReadPermissions(Arrays.asList("public_profile", "email"));
-        btnFacebook.registerCallback(callbackManager, new FacebookCallback<>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                showProgress();
-                handleFacebookAccessToken(loginResult.getAccessToken());
-            }
+        // 1) Click del botón dispara el login
+        btnFacebook.setOnClickListener(v ->
+                LoginManager.getInstance()
+                        .logInWithReadPermissions(
+                                this,
+                                Arrays.asList("public_profile", "email")
+                        )
+        );
 
-            @Override
-            public void onCancel() {
-                updateUI(null);
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-                updateUI(null);
-            }
-        });
+        // 2) Registro del callback en LoginManager (no en el botón)
+        LoginManager.getInstance().registerCallback(
+                callbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        showProgress();
+                        handleFacebookAccessToken(loginResult.getAccessToken());
+                    }
+                    @Override
+                    public void onCancel() { updateUI(null); }
+                    @Override
+                    public void onError(FacebookException error) { updateUI(null); }
+                }
+        );
     }
+
 
     private void setupAuthListener() {
         mAuthListener = firebaseAuth -> {
@@ -190,13 +201,23 @@ public class AuthActivity extends AppCompatActivity {
     private void handleFacebookAccessToken(AccessToken token) {
         showProgress();
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
-            if (!task.isSuccessful()) {
-                progress.dismiss();
-                updateUI(null);
-            }
-        });
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    progress.dismiss();
+                    if (task.isSuccessful()) {
+                        // authStateListener llamará a updateUI(user)
+                        return;
+                    }
+                    Exception e = task.getException();
+                    String msg = "Error autenticando con Facebook.";
+                    if (e != null) {
+                        msg += " " + e.getClass().getSimpleName() + ": " + e.getMessage();
+                    }
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                    updateUI(null);
+                });
     }
+
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
@@ -304,6 +325,15 @@ public class AuthActivity extends AppCompatActivity {
             com.facebook.login.LoginManager.getInstance().logOut();
         }
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (callbackManager != null) {
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
 
     @Override
     protected void onStart() {

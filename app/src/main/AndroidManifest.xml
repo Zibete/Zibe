@@ -42,15 +42,20 @@
             android:value="@string/facebook_app_id"
             tools:replace="android:value" />
 
+        <provider
+            android:name="com.facebook.FacebookContentProvider"
+            android:authorities="com.facebook.app.FacebookContentProvider${facebook_app_id}"
+            android:exported="true" />
+
         <activity
             android:name=".ChatActivity"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppThemeChat"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity
-            android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
-            android:theme="@style/Base.Theme.AppCompat" />
+<!--        <activity-->
+<!--            android:name="com.theartofdev.edmodo.cropper.CropImageActivity"-->
+<!--            android:theme="@style/Base.Theme.AppCompat" />-->
         <activity
             android:name=".SlidePhotoActivity"
             android:theme="@style/AppTheme.MainActivity"/>

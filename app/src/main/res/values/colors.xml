@@ -2,28 +2,16 @@
 <resources>
 
     <color name="fui_transparent">#00000000</color>
-
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
-
     <color name="blanco">#FFFFFF</color>
-
-    <color name="colorVerde1">#6CBF84</color>
-    <color name="colorVerde2">#037367</color>
-    <color name="colorVerde3">#00281F</color>
     <color name="colorDark">#323339</color>
-    <color name="colorDark2">#3F3931</color>
     <color name="Violeta">#3C455C</color>
     <color name="Violeta2">#765285</color>
-    <color name="Violeta3">#351C4D</color>
-    <color name="NaranjaLight">#E7B183</color>
-    <color name="Naranja">#DF6E21</color>
     <color name="colorClaro">#DFE2D2</color>
     <color name="colorClaro2">#B2B2A2</color>
     <color name="visto">#00AFFF</color>
-
-
     <color name="colorA">#071d25</color>
     <color name="colorB">#06374a</color>
     <color name="colorBT">#DE06374a</color>
@@ -34,26 +22,64 @@
     <color name="colorG">#c50c56</color>
     <color name="colorH">#e4619a</color>
     <color name="backSplash">#182632</color>
-
     <color name="accent">#FF4081</color>
     <color name="accent_transparent">#4DFF4081</color>
     <color name="primary_text">#212121</color>
     <color name="secondary_text">#757575</color>
-
-
-    <color name="primary">#673AB7</color>
-    <color name="primary_dark">#512DA8</color>
-    <color name="primary_light">#D1C4E9</color>
-    <color name="icons">#FFFFFF</color>
-    <color name="divider">#BDBDBD</color>
-
--->Liz colores
-
-    <color name="liz_pp">#FFF1E1</color>
-    <color name="liz_background">#0D524A</color>
-    <color name="liz_pp2">#D9E8E6</color>
     <color name="liz_blanco">#F6F6F6</color>
 
 
 
+    <!-- COLORES PRINCIPALES -->
+    <color name="zibe_pink">#FF3B93</color>
+    <color name="zibe_purple">#8B3CFF</color>
+    <color name="zibe_purple_dark">#6A28C8</color>
+    <color name="zibe_gradient_start">#FF3B93</color>
+    <color name="zibe_gradient_end">#8B3CFF</color>
+
+    <!-- FONDOS -->
+    <color name="zibe_night_start">#0D1B2A</color>
+    <color name="zibe_night_end">#1B263B</color>
+    <color name="zibe_card">#1E2A38</color>
+    <color name="zibe_surface">#233042</color>
+    <color name="zibe_overlay">#331B263B</color>
+
+    <!-- TEXTO -->
+    <color name="zibe_text_light">#FFFFFF</color>
+    <color name="zibe_text_muted">#A3B1C6</color>
+    <color name="zibe_text_pink">#FF3B93</color>
+
+    <!-- ESTADOS -->
+    <color name="zibe_green">#3DF4AB</color>
+    <color name="zibe_red">#FF3366</color>
+    <color name="zibe_yellow">#FFDD57</color>
+    <color name="zibe_shadow">#1A000000</color>
+
+    <!-- NAVEGACIÓN -->
+    <color name="zibe_nav_active">#FF3B93</color>
+    <color name="zibe_nav_inactive">#A3B1C6</color>
+    <color name="zibe_nav_bg">#0D1B2A</color>
+
+    <!-- BOTONES -->
+    <color name="zibe_btn_primary">#FF3B93</color>
+    <color name="zibe_btn_secondary">#8B3CFF</color>
+    <color name="zibe_btn_disabled">#555E70</color>
+
+    <!-- CAMPOS -->
+    <color name="zibe_input_bg">#1E2A38</color>
+    <color name="zibe_input_border">#3E4A5A</color>
+    <color name="zibe_hint_text">#8894A8</color>
+
+    <!-- MISC -->
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+
+    <color name="zibe_blue">#3C4FDB</color>
+
+
 </resources>
+
+
+
