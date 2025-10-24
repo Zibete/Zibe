@@ -1,10 +1,8 @@
 package com.zibete.proyecto1;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -22,13 +20,13 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.login.LoginBehavior;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 
@@ -38,11 +36,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -58,6 +54,7 @@ import static com.zibete.proyecto1.MainActivity.ref_datos;
 public class AuthActivity extends AppCompatActivity {
 
     private CallbackManager callbackManager;
+    private LoginManager loginManager;
     private EditText edtEmail, edtPassword;
     private MaterialButton btnGoogle;
     private com.google.android.material.button.MaterialButton btnFacebook;
@@ -70,6 +67,29 @@ public class AuthActivity extends AppCompatActivity {
     private TextView tvLogin;
     private boolean deleteUser, deleteFirebaseAccount;
     private GoogleSignInClient googleSignInClient;
+
+    private final FacebookCallback<LoginResult> facebookCallback = new FacebookCallback<LoginResult>() {
+        @Override
+        public void onSuccess(LoginResult loginResult) {
+            handleFacebookAccessToken(loginResult.getAccessToken());
+        }
+
+        @Override
+        public void onCancel() {
+            if (progress != null && progress.isShowing()) {
+                progress.dismiss();
+            }
+            updateUI(null);
+        }
+
+        @Override
+        public void onError(FacebookException error) {
+            if (progress != null && progress.isShowing()) {
+                progress.dismiss();
+            }
+            updateUI(null);
+        }
+    };
 
     private final ActivityResultLauncher<Intent> googleSignInLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -115,6 +135,8 @@ public class AuthActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         progress = new ProgressDialog(this, R.style.AlertDialogApp);
         callbackManager = CallbackManager.Factory.create();
+        loginManager = LoginManager.getInstance();
+        loginManager.registerCallback(callbackManager, facebookCallback);
 
         if (!onBoarding) {
             startActivity(new Intent(this, OnBoardingActivity.class));
@@ -144,32 +166,12 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void setupFacebookLogin() {
-        // 1) Click del botón dispara el login
-        btnFacebook.setOnClickListener(v ->
-                LoginManager.getInstance()
-                        .logInWithReadPermissions(
-                                this,
-                                Arrays.asList("public_profile", "email")
-                        )
-        );
-
-        // 2) Registro del callback en LoginManager (no en el botón)
-        LoginManager.getInstance().registerCallback(
-                callbackManager,
-                new FacebookCallback<LoginResult>() {
-                    @Override
-                    public void onSuccess(LoginResult loginResult) {
-                        showProgress();
-                        handleFacebookAccessToken(loginResult.getAccessToken());
-                    }
-                    @Override
-                    public void onCancel() { updateUI(null); }
-                    @Override
-                    public void onError(FacebookException error) { updateUI(null); }
-                }
-        );
+        // 1) Click del botón dispara el flujo de login reutilizando LoginManager
+        btnFacebook.setOnClickListener(v -> {
+            loginManager.setLoginBehavior(LoginBehavior.NATIVE_WITH_FALLBACK);
+            loginManager.logInWithReadPermissions(this, Arrays.asList("public_profile", "email"));
+        });
     }
-
 
     private void setupAuthListener() {
         mAuthListener = firebaseAuth -> {
@@ -322,7 +324,7 @@ public class AuthActivity extends AppCompatActivity {
             finish();
         } else {
             FirebaseAuth.getInstance().signOut();
-            com.facebook.login.LoginManager.getInstance().logOut();
+            loginManager.logOut();
         }
     }
 

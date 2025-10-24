@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
     id 'com.google.gms.google-services'
 }
 
@@ -92,8 +91,8 @@ dependencies {
     }
 
 
-    // Facebook SDK (antiguo, si rompe lo actualizamos)
-    implementation 'com.facebook.android:facebook-android-sdk:4.42.0'
+    // Facebook Login (actualizado para compatibilidad con Android 13/14)
+    implementation 'com.facebook.android:facebook-login:16.3.0'
 
     // FirebaseUI Auth depende de Glide, añade anotaciones si querés
     annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'

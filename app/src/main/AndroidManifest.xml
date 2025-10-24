@@ -3,24 +3,52 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.zibete.proyecto1">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.VIBRATE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage"
-        />
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-feature android:name="android.hardware.location.gps"/>
-    <uses-feature android:name="android.hardware.camera" android:required="true"/>
+    <!-- Conectividad / sistema -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Notificaciones (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Ubicación -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Marca el GPS como "no requerido" para no excluir dispositivos sin GPS dedicado -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <!-- Cámara / micrófono -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Foreground Service types (si alguna vez grabás/llamás con servicio en 1ª plano) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+
+    <!-- Almacenamiento: nuevas permissions en Android 13+.
+         Mantén compat con <= 32 usando maxSdkVersion.  -->
+    <!-- Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+    <!-- Compat <= 32 -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Escribir en almacenamiento compartido solo necesario <= 28 -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Cámara presente pero no obligatoria; evita que la Play Store filtre tablets/TV sin cámara -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -30,65 +58,92 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
-        android:requestLegacyExternalStorage="true"
-        tools:targetApi="m">
+        tools:targetApi="tiramisu">
 
-        <activity android:name=".CustomPermission"
-            android:theme="@style/AppTheme.MainActivity"/>
+        <!-- Si ya no usas storage legado, elimina la siguiente línea.
+             La dejo fuera para quitar el warning: -->
+        <!-- android:requestLegacyExternalStorage="true" -->
 
+        <activity
+            android:name=".CustomPermission"
+            android:theme="@style/AppTheme.MainActivity" />
+
+        <!-- Facebook -->
+        <!-- Fuerza tu valor y resuelve el conflicto -->
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"
             tools:replace="android:value" />
 
+        <!-- Provider de Facebook: usa ${applicationId} -->
         <provider
             android:name="com.facebook.FacebookContentProvider"
-            android:authorities="com.facebook.app.FacebookContentProvider${facebook_app_id}"
-            android:exported="true" />
+            android:authorities="com.facebook.app.FacebookContentProvider${applicationId}"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
 
+        <!-- ... -->
+
+        <!-- Activities -->
         <activity
             android:name=".ChatActivity"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppThemeChat"
             android:windowSoftInputMode="adjustResize" />
 
-<!--        <activity-->
-<!--            android:name="com.theartofdev.edmodo.cropper.CropImageActivity"-->
-<!--            android:theme="@style/Base.Theme.AppCompat" />-->
         <activity
             android:name=".SlidePhotoActivity"
-            android:theme="@style/AppTheme.MainActivity"/>
+            android:theme="@style/AppTheme.MainActivity" />
         <activity
             android:name=".SlideProfileActivity"
-            android:theme="@style/AppTheme.MainActivity"/>
+            android:theme="@style/AppTheme.MainActivity" />
         <activity
             android:name=".SettingsActivity"
-            android:theme="@style/AppTheme.MainActivity"/>
+            android:theme="@style/AppTheme.MainActivity" />
         <activity
             android:name=".PerfilActivity"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.MainActivity"
             android:windowSoftInputMode="adjustPan" />
-        <activity
-            android:name=".ui.EditProfileFragment"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.MainActivity"
-            android:windowSoftInputMode="adjustResize"
-            tools:ignore="Instantiatable" />
+
+        <!-- ⚠️ Quita el registro como activity del Fragment (no va en el manifest) -->
+        <!-- <activity android:name=".ui.EditProfileFragment" ... />  ELIMINADO -->
+
         <activity
             android:name=".Splash.SplashActivity"
-            android:theme="@style/AppTheme.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/AppTheme.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".AuthActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
             android:theme="@style/AuthTheme.NoActionBar" />
+
+        <!-- 1. METADATOS: Le dice al SDK cuáles son tus credenciales -->
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
+        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
+
+        <!-- 2. ACTIVITIES: Componentes de UI que el SDK necesita -->
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/fb_login_protocol_scheme" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".ReportActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -96,9 +151,10 @@
         <activity
             android:name=".OnBoardingActivity"
             android:launchMode="singleTask"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
+        <!-- Tip: evitar lock portrait; si lo mantienes, Android 16+ podría ignorarlo -->
+
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
@@ -115,16 +171,18 @@
             android:parentActivityName=".AuthActivity"
             android:theme="@style/AuthTheme.NoActionBar" />
 
+        <!-- FCM: debe ser exported=true porque recibe intents externos (Android 12+) -->
         <service
             android:name=".FCM"
-            android:exported="false"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.RECEIVE"
             android:stopWithTask="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
-    </application>
 
+
+    </application>
 </manifest>
