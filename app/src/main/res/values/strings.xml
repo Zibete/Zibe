@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Zibe</string>
     <string name="iniciar_sesion1">Iniciar sesión con...</string>
-    <string name="iniciar_sesion2">O utiliza tu cuenta...</string>
+    <string name="iniciar_sesion2">o utiliza tu cuenta</string>
     <string name="iniciar_sesion3">¿No tienes una cuenta?</string>
     <string name="nombre">Nombre/Apodo</string>
     <string name="email">Ingrese el email</string>

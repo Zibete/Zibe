@@ -257,7 +257,7 @@ public class AuthActivity extends AppCompatActivity {
     public void resetPassword(View view) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_setemail, null);
         EditText edtEmailReset = dialogView.findViewById(R.id.edt_email);
-        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.AuthTheme_NoActionBar))
+        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, R.style.AuthTheme_Zibe))
                 .setTitle("Reestablecimiento de contraseña")
                 .setView(dialogView)
                 .setPositiveButton("Enviar e-mail", (dialog, id) -> {

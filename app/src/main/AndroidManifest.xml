@@ -14,40 +14,34 @@
     <!-- Notificaciones (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Ubicación -->
+    <!-- Ubicación (opcional, no exige GPS físico) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Marca el GPS como "no requerido" para no excluir dispositivos sin GPS dedicado -->
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <!-- Cámara / micrófono -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- Foreground Service types (si alguna vez grabás/llamás con servicio en 1ª plano) -->
+    <!-- Foreground Service types (si usás servicios en 1er plano) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
-    <!-- Almacenamiento: nuevas permissions en Android 13+.
-         Mantén compat con <= 32 usando maxSdkVersion.  -->
-    <!-- Android 13+ -->
+    <!-- Almacenamiento (compat >=33 y <=32) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
-
-    <!-- Compat <= 32 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <!-- Escribir en almacenamiento compartido solo necesario <= 28 -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- Cámara presente pero no obligatoria; evita que la Play Store filtre tablets/TV sin cámara -->
+    <!-- Cámara presente pero no obligatoria (no filtra dispositivos) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -56,35 +50,31 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/logo"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
+        android:theme="@style/AppTheme.Zibe"
         android:usesCleartextTraffic="true"
         tools:targetApi="tiramisu">
 
-        <!-- Si ya no usas storage legado, elimina la siguiente línea.
-             La dejo fuera para quitar el warning: -->
-        <!-- android:requestLegacyExternalStorage="true" -->
-
-        <activity
-            android:name=".CustomPermission"
-            android:theme="@style/AppTheme.MainActivity" />
-
-        <!-- Facebook -->
-        <!-- Fuerza tu valor y resuelve el conflicto -->
+        <!-- Facebook: meta-data único (resuelve conflicto con firebase-ui-auth) -->
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id"
             tools:replace="android:value" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
 
-        <!-- Provider de Facebook: usa ${applicationId} -->
+        <!-- Provider de Facebook (usa applicationId para evitar hardcode de package) -->
         <provider
             android:name="com.facebook.FacebookContentProvider"
             android:authorities="com.facebook.app.FacebookContentProvider${applicationId}"
             android:exported="true"
             tools:ignore="ExportedContentProvider" />
 
-        <!-- ... -->
-
         <!-- Activities -->
+        <activity
+            android:name=".CustomPermission"
+            android:theme="@style/AppTheme.MainActivity" />
+
         <activity
             android:name=".ChatActivity"
             android:parentActivityName=".MainActivity"
@@ -106,9 +96,6 @@
             android:theme="@style/AppTheme.MainActivity"
             android:windowSoftInputMode="adjustPan" />
 
-        <!-- ⚠️ Quita el registro como activity del Fragment (no va en el manifest) -->
-        <!-- <activity android:name=".ui.EditProfileFragment" ... />  ELIMINADO -->
-
         <activity
             android:name=".Splash.SplashActivity"
             android:exported="true"
@@ -122,13 +109,8 @@
         <activity
             android:name=".AuthActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-            android:theme="@style/AuthTheme.NoActionBar" />
+            android:theme="@style/AuthTheme.Zibe" />
 
-        <!-- 1. METADATOS: Le dice al SDK cuáles son tus credenciales -->
-        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
-        <meta-data android:name="com.facebook.sdk.ClientToken" android:value="@string/facebook_client_token"/>
-
-        <!-- 2. ACTIVITIES: Componentes de UI que el SDK necesita -->
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -144,6 +126,7 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".ReportActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -151,10 +134,8 @@
         <activity
             android:name=".OnBoardingActivity"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
-        <!-- Tip: evitar lock portrait; si lo mantienes, Android 16+ podría ignorarlo -->
-
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
@@ -169,9 +150,9 @@
         <activity
             android:name=".SignUpActivity"
             android:parentActivityName=".AuthActivity"
-            android:theme="@style/AuthTheme.NoActionBar" />
+            android:theme="@style/AuthTheme.Zibe" />
 
-        <!-- FCM: debe ser exported=true porque recibe intents externos (Android 12+) -->
+        <!-- FCM (Android 12+ requiere exported) -->
         <service
             android:name=".FCM"
             android:exported="true"
@@ -182,7 +163,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
-
 
     </application>
 </manifest>

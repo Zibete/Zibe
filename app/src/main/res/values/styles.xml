@@ -1,163 +1,102 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorPrimary">@color/colorB</item>
-        <item name="colorPrimaryDark">@color/colorB</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:textColorPrimary">@color/primary_text</item>
-        <item name="android:textColorSecondary">@color/secondary_text</item>
-        <item name="android:textColorHint">@color/secondary_text</item>
-        <item name="android:textColor">@color/blanco</item>
-        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/zibe_night_end</item>
-        <item name="android:dropDownListViewStyle">@style/AppTheme.DropDownList</item>
-    </style>
-
-
-
-
-    <style name="AuthTheme.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@null</item>
-        <item name="android:windowFrame">@null</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/zibe_night_end</item>
-        <item name="colorPrimaryDark">@color/zibe_night_end</item>
-        <item name="colorPrimary">@color/colorG</item>
-
-    </style>
-
-    <style name="SignUpTheme" parent="AppTheme">
-
-        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/zibe_night_end</item>
-
-
-    </style>
-
-
-
-
-    <style name="AppTheme.MainActivity" parent="AppTheme">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="AppThemeChat" parent="AppTheme.MainActivity">
-        <item name="colorPrimaryDark">@color/colorB</item>
-    </style>
-
-    <style name="AppTheme.NoActionBar" parent="@style/Theme.AppCompat.Light.Dialog">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@null</item>
-        <item name="android:windowFrame">@null</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-
-    </style>
-
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" >
-
-
-    </style>
-
-    <style name="AppTheme.DropDownList" parent="Widget.AppCompat.ListView.DropDown">
-        <item name="android:background">@color/backSplash</item>
-    </style>
-
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="AlertDialogApp" parent="android:Theme.DeviceDefault.Dialog">
-
-        <item name="android:background">@color/colorA</item>
-        <item name="android:textColorPrimary">@color/blanco</item>
-
-
-
-    </style>
-
-
-
-
-
-
-
-    <style name="NavViewStyle">
-
-
-        <item name="android:textColorPrimary">@color/blanco</item>
-        <item name="android:textSize">15sp</item>
-        <item name="colorAccent">@color/accent</item>
-        <item name="android:textColorSecondary">@color/secondary_text</item>
-        <item name="android:listPreferredItemHeightSmall">38dp</item>
-        <item name="colorPrimary">@color/accent</item>
-
-
-</style>
-
-    <style name="NavBottomStyle" parent="Theme.MaterialComponents">
-
-        <item name="backgroundTint">@color/colorA</item>
-
-    </style>
-
-    <style name="TextAppearance" >
-        <item name="actionMenuTextColor">@color/blanco</item>
-        <item name="android:actionMenuTextColor">@color/blanco</item>
-    </style>
-
-    <style name="Arrow">
-        <item name="colorControlNormal">@android:color/white</item>
-    </style>
-
-
-
-    <!-- 🌈 Tema principal de la app -->
+    <!-- ===== TEMA BASE APP ===== -->
     <style name="AppTheme.Zibe" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/zibe_pink</item>
+        <!-- Colores base -->
+        <item name="colorPrimary">@color/zibe_purple</item>
         <item name="colorPrimaryVariant">@color/zibe_purple_dark</item>
+        <item name="colorSecondary">@color/zibe_pink</item>
         <item name="colorAccent">@color/zibe_pink</item>
+        <item name="colorControlActivated">@color/zibe_purple</item>
 
-        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
-        <item name="android:navigationBarColor">@color/zibe_night_end</item>
+        <!-- Sistema -->
         <item name="android:statusBarColor">@color/zibe_night_start</item>
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/zibe_night_end</item>
+        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
 
+        <!-- Texto -->
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
         <item name="android:textColorSecondary">@color/zibe_text_muted</item>
         <item name="android:textColorHint">@color/zibe_hint_text</item>
-<!--        <item name="android:fontFamily">@font/poppins_regular</item>-->
 
+        <!-- Defaults de widgets -->
         <item name="materialButtonStyle">@style/Zibe.Button</item>
-        <item name="android:editTextStyle">@style/Zibe.Input</item>
+        <item name="textInputStyle">@style/Zibe.Input</item>
         <item name="bottomNavigationStyle">@style/Zibe.BottomNav</item>
+        <item name="toolbarStyle">@style/Zibe.Toolbar</item>
+        <item name="materialAlertDialogTheme">@style/Zibe.Dialog</item>
     </style>
 
-    <!-- 🔘 Botones principales -->
+    <!-- Tema Auth -->
+    <style name="AuthTheme.Zibe" parent="AppTheme.Zibe">
+        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
+    </style>
+
+    <!-- ===== COMPAT CON NOMBRES EXISTENTES EN TUS LAYOUTS ===== -->
+
+    <!-- activity_on_boarding.xml -->
+    <style name="AppTheme.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
+    </style>
+
+    <!-- app_bar_main.xml / activity_chat.xml -->
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
+
+    <!-- NavigationView en activity_main.xml -->
+    <style name="NavViewStyle" parent="Widget.MaterialComponents.NavigationView">
+        <item name="android:textColorPrimary">@color/zibe_text_light</item>
+        <item name="android:textColorSecondary">@color/zibe_text_muted</item>
+        <item name="itemIconTint">@color/zibe_nav_inactive</item>
+        <item name="itemTextColor">@color/zibe_nav_inactive</item>
+        <item name="itemRippleColor">@color/zibe_pink</item>
+    </style>
+
+    <!-- BottomNavigation en content_main.xml -->
+    <style name="NavBottomStyle" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="backgroundTint">@color/zibe_nav_bg</item>
+        <item name="itemIconTint">@color/zibe_nav_inactive</item>
+        <item name="itemTextColor">@color/zibe_nav_inactive</item>
+        <item name="itemRippleColor">@color/zibe_pink</item>
+    </style>
+
+    <!-- filter_layout.xml / profile_photo_layout.xml -->
+    <style name="AlertDialogApp" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:background">@color/zibe_card</item>
+        <item name="android:textColor">@color/zibe_text_light</item>
+    </style>
+
+    <!-- ===== WIDGETS ZIBE ===== -->
+
+    <!-- Botón por defecto (violeta). Usá Zibe.Button.Primary para rosa -->
     <style name="Zibe.Button" parent="Widget.MaterialComponents.Button">
-        <item name="android:backgroundTint">@color/zibe_purple_dark</item>
+        <item name="android:backgroundTint">@color/zibe_btn_secondary</item>
         <item name="android:textColor">@color/white</item>
-<!--        <item name="android:fontFamily">@font/poppins_medium</item>-->
         <item name="android:textAllCaps">false</item>
         <item name="cornerRadius">28dp</item>
         <item name="android:elevation">3dp</item>
     </style>
 
-    <!-- 🧾 Campos de texto -->
+    <style name="Zibe.Button.Primary" parent="Zibe.Button">
+        <item name="android:backgroundTint">@color/zibe_btn_primary</item>
+    </style>
+
+    <!-- TextInputLayout (el nombre coincide con tus layouts: Zibe.Input) -->
     <style name="Zibe.Input" parent="Widget.MaterialComponents.TextInputLayout.FilledBox.Dense">
         <item name="boxBackgroundColor">@color/zibe_input_bg</item>
         <item name="boxStrokeColor">@color/zibe_input_border</item>
+        <item name="hintTextColor">@color/zibe_hint_text</item>
+        <item name="startIconTint">@color/zibe_text_muted</item>
+        <item name="endIconTint">@color/zibe_text_muted</item>
+        <!-- El focus usa colorControlActivated (violeta) -->
+    </style>
+
+    <!-- EditText interno (si lo aplicás aparte) -->
+    <style name="Zibe.EditText" parent="Widget.MaterialComponents.TextInputEditText.FilledBox.Dense">
         <item name="android:textColor">@color/zibe_text_light</item>
-        <item name="android:textColorHint">@color/zibe_hint_text</item>
-<!--        <item name="android:fontFamily">@font/poppins_regular</item>-->
-        <item name="hintTextAppearance">@style/Zibe.HintText</item>
+        <item name="hintTextColor">@color/zibe_hint_text</item>
     </style>
 
-    <style name="Zibe.HintText" parent="TextAppearance.AppCompat.Small">
-        <item name="android:textColor">@color/zibe_hint_text</item>
-<!--        <item name="android:fontFamily">@font/poppins_regular</item>-->
-    </style>
-
-    <!-- 🧭 Navegación inferior -->
     <style name="Zibe.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="backgroundTint">@color/zibe_nav_bg</item>
         <item name="itemIconTint">@color/zibe_nav_inactive</item>
@@ -165,15 +104,12 @@
         <item name="itemRippleColor">@color/zibe_pink</item>
     </style>
 
-    <!-- 🌌 AppBar / Toolbar -->
     <style name="Zibe.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
         <item name="android:background">@drawable/bg_gradient_zibe</item>
         <item name="android:titleTextColor">@color/white</item>
         <item name="android:subtitleTextColor">@color/zibe_text_muted</item>
-<!--        <item name="android:fontFamily">@font/poppins_semibold</item>-->
     </style>
 
-    <!-- 🗨️ Tarjetas / contenedores -->
     <style name="Zibe.Card" parent="Widget.MaterialComponents.CardView">
         <item name="cardBackgroundColor">@color/zibe_card</item>
         <item name="cardCornerRadius">12dp</item>
@@ -181,21 +117,34 @@
         <item name="android:foreground">?attr/selectableItemBackground</item>
     </style>
 
-    <!-- 💬 AlertDialogs -->
     <style name="Zibe.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="android:background">@color/zibe_card</item>
         <item name="android:textColor">@color/zibe_text_light</item>
-<!--        <item name="android:fontFamily">@font/poppins_regular</item>-->
     </style>
 
-    <!-- 📱 Actividad de autenticación -->
-    <style name="AuthTheme.Zibe" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
-        <item name="colorPrimary">@color/zibe_pink</item>
-        <item name="colorPrimaryDark">@color/zibe_purple_dark</item>
-        <item name="colorAccent">@color/zibe_pink</item>
-        <item name="android:textColorPrimary">@color/zibe_text_light</item>
-        <item name="android:textColorHint">@color/zibe_hint_text</item>
+    <!-- Utilidades que tus layouts referencian -->
+    <style name="TextAppearance">
+        <item name="actionMenuTextColor">@color/white</item>
+        <item name="android:actionMenuTextColor">@color/white</item>
+    </style>
+
+    <style name="Arrow">
+        <item name="colorControlNormal">@android:color/white</item>
+    </style>
+
+    <!-- Alias para compatibilidad si el manifest usa @style/AppTheme -->
+    <style name="AppTheme" parent="AppTheme.Zibe"/>
+
+    <!-- Usado por varias activities -->
+    <style name="AppTheme.MainActivity" parent="AppTheme.Zibe">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Usado por ChatActivity -->
+    <style name="AppThemeChat" parent="AppTheme.MainActivity">
+        <!-- Solo si querés algo distinto para Chat -->
+        <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 
 
