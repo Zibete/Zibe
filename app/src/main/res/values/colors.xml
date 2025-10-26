@@ -42,8 +42,10 @@
 
     <!-- TEXTO -->
     <color name="zibe_text_light">#FFFFFF</color>
+    <color name="zibe_text_dark">#1B263B</color>
     <color name="zibe_text_muted">#A3B1C6</color>
     <color name="zibe_text_pink">#FF3B93</color>
+
 
     <!-- ESTADOS -->
     <color name="zibe_green">#3DF4AB</color>

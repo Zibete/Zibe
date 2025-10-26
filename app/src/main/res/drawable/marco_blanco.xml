@@ -5,7 +5,7 @@
             <corners android:radius="30dp" />
             <stroke android:width="3dp"
                 android:color="@color/blanco"/>
-            <solid android:color="@color/blanco"
+            <solid android:color="@color/zibe_text_light"
                 />
         </shape>
     </item>

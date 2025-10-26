@@ -83,6 +83,12 @@
     <string name="grabando">grabando audio...</string>
     <string name="dont_delete_account">Ya no quiero eliminar mi cuenta</string>
     <string name="olvidaste_contra">¿Olvidaste tu contraseña?</string>
+    <string name="enivar_comentarios">Enivar comentarios</string>
+    <string name="eliminar_cuenta">Eliminar Cuenta</string>
+    <string name="version">2025</string>
+    <string name="version_string">Versión Beta</string>
+    <string name="cuenta">Cuenta</string>
+    <string name="notificaciones">Notificaciones</string>
 
     <string-array name="edad">
         <item>18</item>

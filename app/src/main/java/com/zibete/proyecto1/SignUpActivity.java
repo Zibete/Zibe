@@ -1,8 +1,6 @@
 package com.zibete.proyecto1;
 
 import android.Manifest;
-import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,9 +8,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.ContextThemeWrapper;
 import android.view.View;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,14 +45,12 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 
-
-
 import static com.zibete.proyecto1.MainActivity.REQUEST_LOCATION;
 import static com.zibete.proyecto1.MainActivity.ref_cuentas;
 
 public class SignUpActivity extends AppCompatActivity {
 
-    private EditText edt_name, edt_age, edt_desc, edt1, edt2;
+    private EditText edt_name, edt_desc, edt1, edt2;
     private String birthDay;
     private ProgressDialog progress;
     private FirebaseAuth mAuth;
@@ -191,7 +185,7 @@ public class SignUpActivity extends AppCompatActivity {
         email    = edt1.getText().toString().trim();
         password = edt2.getText().toString().trim();
         name     = edt_name.getText().toString().trim();
-        birthday = edt_age.getText().toString().trim();
+        birthday = edtBirthdate.getText().toString().trim();
         desc     = edt_desc.getText().toString().trim();
 
         if (TextUtils.isEmpty(email))    { toast("Introduzca un e-mail"); return; }
