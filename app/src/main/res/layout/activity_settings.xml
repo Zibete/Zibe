@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/colorA"
+    android:background="@color/zibe_night_start"
     android:orientation="vertical"
     android:layout_gravity="center">
 
@@ -418,7 +418,7 @@
                         <Button
                             android:id="@+id/btn_report"
                             android:text="Enivar comentarios"
-                            android:backgroundTint="@color/colorA"
+                            android:backgroundTint="@color/zibe_night_start"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textColor="@color/colorClaro"/>
@@ -426,7 +426,7 @@
                         <Button
                             android:id="@+id/btn_delete_account"
                             android:text="Eliminar Cuenta"
-                            android:backgroundTint="@color/colorA"
+                            android:backgroundTint="@color/zibe_night_start"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textColor="@color/colorClaro"/>
@@ -453,7 +453,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
-        android:background="@color/fui_transparent"/>
+        android:background="@color/transparent"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="fui_transparent">#00000000</color>
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
@@ -11,8 +10,7 @@
     <color name="Violeta2">#765285</color>
     <color name="colorClaro">#DFE2D2</color>
     <color name="colorClaro2">#B2B2A2</color>
-    <color name="visto">#00AFFF</color>
-    <color name="colorA">#071d25</color>
+
     <color name="colorB">#06374a</color>
     <color name="colorBT">#DE06374a</color>
     <color name="colorC">#0c417f</color>
@@ -22,11 +20,9 @@
     <color name="colorG">#c50c56</color>
     <color name="colorH">#e4619a</color>
     <color name="backSplash">#182632</color>
-    <color name="accent">#FF4081</color>
-    <color name="accent_transparent">#4DFF4081</color>
     <color name="primary_text">#212121</color>
-    <color name="secondary_text">#757575</color>
-    <color name="liz_blanco">#F6F6F6</color>
+
+
 
 
 
@@ -74,9 +70,11 @@
     <color name="transparent">#00000000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-
-
     <color name="zibe_blue">#3C4FDB</color>
+
+    <color name="visto">#00AFFF</color>
+    <color name="accent">#FF4081</color>
+    <color name="accent_transparent">#4DFF4081</color>
 
 
 </resources>

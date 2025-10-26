@@ -5,8 +5,6 @@ import android.animation.LayoutTransition;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -245,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
         mBottomNavigation.findViewById(R.id.navBottomChat).performClick();
 
         badgeDrawableChat = mBottomNavigation.getOrCreateBadge(R.id.navBottomChat);
-        badgeDrawableChat.setBadgeTextColor(getResources().getColor(R.color.colorA));
+        badgeDrawableChat.setBadgeTextColor(getResources().getColor(R.color.zibe_night_start));
         badgeDrawableChat.setBackgroundColor(getResources().getColor(R.color.accent));
         badgeDrawableChat.setVisible(false);
 
@@ -277,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         badgeDrawableGroup = mBottomNavigation.getOrCreateBadge(R.id.navBottomGrupos);
-        badgeDrawableGroup.setBadgeTextColor(getResources().getColor(R.color.colorA));
+        badgeDrawableGroup.setBadgeTextColor(getResources().getColor(R.color.zibe_night_start));
         badgeDrawableGroup.setBackgroundColor(getResources().getColor(R.color.accent));
         badgeDrawableGroup.setVisible(false);
 

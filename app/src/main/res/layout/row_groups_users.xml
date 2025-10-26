@@ -41,7 +41,7 @@
                 android:id="@+id/creator"
                 android:layout_width="40dp"
                 android:layout_height="match_parent"
-                android:backgroundTint="@color/fui_transparent"
+                android:backgroundTint="@color/transparent"
                 android:src="@drawable/ic_baseline_stars_24"
                 android:visibility="gone"/>
 
@@ -49,7 +49,7 @@
                 android:id="@+id/masked"
                 android:layout_width="40dp"
                 android:layout_height="match_parent"
-                android:backgroundTint="@color/fui_transparent"
+                android:backgroundTint="@color/transparent"
                 android:src="@drawable/mask_foreground"
                 android:visibility="gone"/>
 

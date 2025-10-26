@@ -269,7 +269,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
             } else {
 
-                holder.selectedItem.setBackgroundColor(context.getResources().getColor(R.color.fui_transparent));
+                holder.selectedItem.setBackgroundColor(context.getResources().getColor(R.color.transparent));
 
             }
 
@@ -456,7 +456,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
     public void notSelectedChat(@NonNull viewHolderAdapterChat holder, Chats chats) {
 
-        holder.selectedItem.setBackgroundColor(context.getResources().getColor(R.color.fui_transparent));
+        holder.selectedItem.setBackgroundColor(context.getResources().getColor(R.color.transparent));
         notSelectedDeleteMsg(chats);
     }
 

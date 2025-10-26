@@ -9,7 +9,7 @@
     <string name="pass2">Repita la contraseña</string>
     <string name="registro">Registrarse</string>
     <string name="fin_registro">Finalizar registro</string>
-    <string name="FechaNacimiento">Fecha de nacimiento</string>
+    <string name="fecha_nacimiento">Fecha de nacimiento</string>
     <string name="Edad">Edad</string>
     <string name="Descipcion">¿Algo sobre vos?</string>
     <string name="Entrar">Entrar</string>

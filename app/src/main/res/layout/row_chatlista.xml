@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="8dp"
-        app:cardBackgroundColor="@color/colorA"
+        app:cardBackgroundColor="@color/zibe_night_start"
         android:layout_marginHorizontal="5dp"
         android:layout_marginTop="2dp">
 

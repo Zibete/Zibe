@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context=".ui.Usuarios.UsuariosFragment"
     android:orientation="vertical"
-    android:background="@color/liz_blanco"
+    android:background="@color/zibe_text_light"
     android:id="@+id/linearUsers">
 
     <com.zibete.proyecto1.FixedSwipeRefreshLayout

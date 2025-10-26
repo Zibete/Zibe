@@ -123,7 +123,7 @@ public class AuthActivity extends AppCompatActivity {
 
         linearLogin = findViewById(R.id.linearLogin);
         linearDontDelete = findViewById(R.id.linearDontDelete);
-        tvLogin = findViewById(R.id.tvLogin);
+//        tvLogin = findViewById(R.id.tvLogin);
         edtEmail = findViewById(R.id.edt_mail);
         edtPassword = findViewById(R.id.edt_pass);
         btnGoogle = findViewById(R.id.btn_google_custom);
@@ -145,7 +145,8 @@ public class AuthActivity extends AppCompatActivity {
 
         linearLogin.setVisibility(deleteUser ? View.GONE : View.VISIBLE);
         linearDontDelete.setVisibility(deleteUser ? View.VISIBLE : View.GONE);
-        tvLogin.setText(deleteUser ? "Seleccione la cuenta que desea eliminar..." : "");
+
+//        tvLogin.setText(deleteUser ? "Seleccione la cuenta que desea eliminar..." : "");
 
         if (deleteFirebaseAccount) {
             showDeleteAccountMessage();

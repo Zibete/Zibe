@@ -2,8 +2,8 @@
     android:shape="rectangle">
     <gradient
         android:angle="90"
-        android:centerColor="@color/colorB"
-        android:endColor="@color/colorA"
-        android:startColor="@color/colorA"
+        android:startColor="@color/zibe_purple_dark"
+        android:centerColor="@color/zibe_gradient_end"
+        android:endColor="@color/zibe_purple_dark"
         />
 </shape>

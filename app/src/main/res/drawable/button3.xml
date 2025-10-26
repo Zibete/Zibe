@@ -17,8 +17,8 @@
         <shape android:shape="rectangle">
             <corners android:radius="50dp" />
             <stroke android:width="3dp"
-                android:color="@color/colorA" />
-            <solid android:color="@color/colorA"
+                android:color="@color/zibe_night_start" />
+            <solid android:color="@color/zibe_night_start"
                 />
         </shape>
     </item>
@@ -27,7 +27,7 @@
         <shape android:shape="rectangle">
             <corners android:radius="50dp" />
             <stroke android:width="3dp"
-                android:color="@color/colorA" />
+                android:color="@color/zibe_night_start" />
             <solid android:color="@color/colorG"
                 />
         </shape>

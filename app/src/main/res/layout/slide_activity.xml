@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
-    android:background="@color/colorA"
+    android:background="@color/zibe_night_start"
     android:orientation="vertical"
     android:layout_gravity="center"
     tools:context=".SlidePhotoActivity">
@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
-        android:background="@color/fui_transparent">
+        android:background="@color/transparent">
 
     </androidx.appcompat.widget.Toolbar>
 

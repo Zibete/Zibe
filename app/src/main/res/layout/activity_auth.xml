@@ -2,18 +2,22 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+
     android:background="@drawable/bg_gradient_zibe"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp">
     tools:context=".AuthActivity">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="10dp">
+        <!-- TEXTOS / SOCIAL LOGIN -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:orientation="vertical">
 
-        <!-- CONTENEDOR PRINCIPAL (tarjeta) -->
+            <!-- CONTENEDOR PRINCIPAL (tarjeta) -->
             <!-- LOGO -->
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -30,21 +34,13 @@
                     android:src="@mipmap/logo_zibe" />
             </LinearLayout>
 
-        <!-- TEXTOS / SOCIAL LOGIN -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvLogin"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="@dimen/text_size_normal"
-                android:textColor="@color/zibe_text_light"
-                android:layout_marginBottom="12dp"/>
+<!--            <TextView-->
+<!--                android:id="@+id/tvLogin"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:textSize="@dimen/text_size_normal"-->
+<!--                android:layout_marginBottom="12dp"/>-->
 
             <!-- GOOGLE -->
             <com.google.android.material.button.MaterialButton
@@ -80,7 +76,6 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:textSize="@dimen/text_size_normal"
-                android:textColor="@color/zibe_text_light"
                 android:text="@string/iniciar_sesion2"
                 android:layout_marginTop="12dp"
                 android:layout_marginBottom="12dp"/>
@@ -98,92 +93,86 @@
                 style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/zibe_text_light"
                 android:layout_marginBottom="10dp"
                 app:startIconDrawable="@drawable/ic_mail_24"
                 app:boxBackgroundMode="filled"
                 app:boxBackgroundColor="@color/zibe_night_end">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/edt_mail"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/zibe_text_light"
-                            android:hint="@string/email"
-                            android:inputType="textEmailAddress" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_mail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/email"
+                    android:inputType="textEmailAddress" />
 
-                    <!-- PASSWORD -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Zibe.Input"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:endIconMode="password_toggle"
-                        android:textColor="@color/zibe_text_light"
-                        app:endIconTint="@color/zibe_text_muted"
-                        app:startIconDrawable="@drawable/ic_lock_24"
-                        app:boxBackgroundMode="filled"
-                        app:boxBackgroundColor="@color/zibe_night_end">
+            </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/edt_pass"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/pass1"
-                            android:textColor="@color/zibe_text_light"
-                            android:inputType="textPassword" />
-                    </com.google.android.material.textfield.TextInputLayout>
+            <!-- PASSWORD -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Zibe.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:endIconDrawable="@drawable/icon_selector"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/zibe_text_muted"
+                app:startIconDrawable="@drawable/ic_lock_24"
+                app:boxBackgroundMode="filled">
 
-                    <!-- RESET PASS -->
-                    <TextView
-                        android:id="@+id/btn_resetpass"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/olvidaste_contra"
-                        android:onClick="resetPassword"
-                        android:textColor="@color/zibe_text_light"
-                        android:textSize="@dimen/text_size_normal" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edt_pass"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/pass1"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- BOTÓN ENTRAR -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/bt_entrar"
-                        style="@style/Zibe.Button"
-                        android:paddingVertical="10dp"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:onClick="entrar"
-                        android:textSize="@dimen/text_size_large"
-                        android:text="@string/Entrar" />
+            <!-- RESET PASS -->
+            <TextView
+                android:id="@+id/btn_resetpass"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:text="@string/olvidaste_contra"
+                android:textStyle="bold"
+                android:onClick="resetPassword"
+                android:textSize="@dimen/text_size_normal" />
 
-                    <!-- REGISTRO -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingVertical="13dp">
+            !-- BOTÓN ENTRAR -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/bt_entrar"
+                style="@style/Zibe.Button"
+                android:paddingVertical="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:onClick="entrar"
+                android:textSize="@dimen/text_size_large"
+                android:text="@string/Entrar" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="@dimen/text_size_normal"
-                            android:text="@string/iniciar_sesion3"
-                            android:layout_marginEnd="6dp"
-                            android:textColor="@color/zibe_text_light"/>
+            <!-- REGISTRO -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="horizontal"
+                android:paddingVertical="13dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:onClick="registro"
-                            android:text="@string/registro"
-                            android:textStyle="bold"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal" />
-                    </LinearLayout>
-                </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_size_normal"
+                    android:text="@string/iniciar_sesion3"
+                    android:layout_marginEnd="6dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="registro"
+                    android:text="@string/registro"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/text_size_normal" />
+
             </LinearLayout>
 
             <!-- REACTIVAR CUENTA -->
@@ -201,10 +190,11 @@
                     android:onClick="dontDelete"
                     android:text="@string/dont_delete_account"
                     android:textStyle="bold"
-                    android:textColor="@color/zibe_text_light"
                     android:textSize="@dimen/text_size_normal" />
             </LinearLayout>
 
-    </LinearLayout>
+        </LinearLayout>
+
+        </LinearLayout>
 
 </LinearLayout>

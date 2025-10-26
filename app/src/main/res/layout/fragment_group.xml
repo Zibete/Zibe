@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@color/colorA"
+    android:background="@color/zibe_night_start"
     android:orientation="vertical"
     android:id="@+id/frameIDgroup">
 
@@ -12,7 +12,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/colorA">
+    android:background="@color/zibe_night_start">
 
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -100,7 +100,7 @@
         android:id="@+id/layout_chat_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorA"
+        android:background="@color/zibe_night_start"
         android:padding="5dp">
 
 
@@ -188,7 +188,7 @@
                         android:hint="Escribe un mensaje"
                         android:inputType="textCapSentences"
                         android:textColor="@color/blanco"
-                        android:textColorHint="@color/secondary_text"
+                        android:textColorHint="@color/zibe_text_muted"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
                         android:visibility="visible"/>

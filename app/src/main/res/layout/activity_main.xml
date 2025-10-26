@@ -24,7 +24,7 @@
         android:fitsSystemWindows="false"
         app:itemIconSize="25dp"
         app:itemIconTint="@color/blanco"
-        android:background="@color/colorA"
+        android:background="@color/zibe_night_start"
         android:theme="@style/NavViewStyle"
         app:headerLayout="@layout/nav_view"
         app:menu="@menu/activity_main_drawer" />

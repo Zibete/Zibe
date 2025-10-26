@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
-    android:background="@color/colorA"
+    android:background="@color/zibe_night_start"
     android:orientation="vertical"
     android:layout_gravity="center"
     tools:context=".ui.EditProfileFragment">
@@ -81,7 +81,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:textSize="16sp"
-                            android:text="@string/FechaNacimiento"/>
+                            android:text="@string/fecha_nacimiento"/>
                         <TextView
                             android:layout_width="50dp"
                             android:layout_height="wrap_content"

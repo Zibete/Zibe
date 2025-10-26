@@ -176,7 +176,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
         if (groupUser.getUser_id().equals(user.getUid())){
             holder.cardviewUserGroup.setCardBackgroundColor(context.getResources().getColor(R.color.accent_transparent));
         }else{
-            holder.cardviewUserGroup.setCardBackgroundColor(context.getResources().getColor(R.color.colorA));
+            holder.cardviewUserGroup.setCardBackgroundColor(context.getResources().getColor(R.color.zibe_night_start));
         }
 
 

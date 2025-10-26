@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:backgroundTint="@color/colorA"
+    android:backgroundTint="@color/zibe_night_start"
     android:id="@+id/linearCardMsg">
 
     <LinearLayout
@@ -183,7 +183,7 @@
             android:id="@+id/selectedItem"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/fui_transparent"/>
+            android:background="@color/transparent"/>
 
     </androidx.cardview.widget.CardView>
 

@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorA"
+    android:background="@color/zibe_night_start"
     android:layout_gravity="center"
     android:orientation="vertical"
     android:id="@+id/coordinatorLayout">
@@ -250,7 +250,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
-        android:background="@color/fui_transparent">
+        android:background="@color/transparent">
 
     </androidx.appcompat.widget.Toolbar>
 

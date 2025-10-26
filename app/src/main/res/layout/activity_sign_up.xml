@@ -4,9 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorD"
+    android:padding="10dp"
     tools:context=".SignUpActivity">
-
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,135 +21,118 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-
         <LinearLayout
             android:id="@+id/linearLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_margin="10dp"
-            android:background="@drawable/marco_blanco"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textView2">
 
-
+            <!-- EMAIL -->
             <com.google.android.material.textfield.TextInputLayout
-                android:layout_marginTop="20dp"
+                style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="10dp">
+                app:startIconDrawable="@drawable/ic_mail_24"
+                app:boxBackgroundMode="filled">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_mail2"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="wrap_content"
                     android:hint="@string/email"
-                    android:textColor="@color/colorA"
-                    android:padding="8dp"
-                    android:textSize="@dimen/text_size_normal"/>
+                    android:inputType="textEmailAddress" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-
+            <!-- PASSWORD -->
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                app:passwordToggleDrawable="@drawable/icon_selector"
-                app:passwordToggleEnabled="true"
-                app:passwordToggleTint="@color/colorDark"
                 android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="10dp">
+                app:endIconDrawable="@drawable/icon_selector"
+                app:endIconMode="password_toggle"
+                app:startIconDrawable="@drawable/ic_lock_24"
+                app:boxBackgroundMode="filled">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_pass2"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="wrap_content"
                     android:hint="@string/pass1"
-                    android:inputType="textPassword"
-                    android:textColor="@color/colorA"
-                    android:padding="8dp"
-                    android:textSize="@dimen/text_size_normal"/>
-
+                    android:inputType="textPassword" />
             </com.google.android.material.textfield.TextInputLayout>
 
+
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="10dp">
+                app:startIconDrawable="@drawable/ic_person_24">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_name"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:hint="@string/nombre"
-                    android:textColor="@color/colorA"
-                    android:padding="8dp"
-                    android:textSize="@dimen/text_size_normal"/>
+                    android:layout_height="wrap_content"
+                    android:hint="@string/nombre"/>
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_birthdate"
+                style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="10dp">
+                android:hint="@string/fecha_nacimiento"
+                app:endIconMode="custom"
+                app:startIconDrawable="@drawable/ic_calendar_24">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edt_age"
+                    android:id="@+id/edt_birthdate"
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:hint="@string/FechaNacimiento"
-                    android:clickable="true"
-                    android:ems="10"
+                    android:layout_height="wrap_content"
                     android:focusable="false"
-                    android:inputType="date"
-                    android:textColor="@color/colorA"
-                    android:padding="8dp"
-                    android:textSize="@dimen/text_size_normal"/>
-
+                    android:clickable="true"
+                    android:inputType="none"/>
             </com.google.android.material.textfield.TextInputLayout>
+
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_marginBottom="10dp"
-                android:layout_marginHorizontal="10dp">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_descripcion"
                     android:layout_width="match_parent"
                     android:layout_height="120dp"
                     android:hint="@string/Descipcion"
-                    android:textColor="@color/colorA"
                     android:inputType="textMultiLine|textCapSentences"
                     android:gravity="start|top"
-                    android:padding="8dp"
-                    android:textSize="@dimen/text_size_normal"/>
+                    android:padding="8dp"/>
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/bt_registro"
+                style="@style/Zibe.Button"
+                android:paddingVertical="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="10dp"
-                android:layout_marginBottom="10dp"
-                android:background="@drawable/button1"
+                android:layout_marginTop="16dp"
                 android:onClick="Register"
-                android:text="@string/fin_registro"
-                android:textSize="@dimen/text_size_normal"
-                android:textColor="@drawable/btn1_color_txt" />
+                android:textSize="@dimen/text_size_large"
+                android:text="@string/fin_registro" />
 
-        </LinearLayout>
+            </LinearLayout>
 
         </ScrollView>
 

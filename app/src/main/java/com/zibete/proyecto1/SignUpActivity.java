@@ -23,6 +23,8 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -43,6 +45,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
+
 
 
 import static com.zibete.proyecto1.MainActivity.REQUEST_LOCATION;
@@ -61,6 +67,9 @@ public class SignUpActivity extends AppCompatActivity {
     private String myInstallId = null;
     private String myFcmToken  = null;
 
+    private TextInputLayout tilBirthdate;
+    private TextInputEditText edtBirthdate;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,10 +78,13 @@ public class SignUpActivity extends AppCompatActivity {
         setTitle(R.string.datos);
 
         edt_name = findViewById(R.id.edt_name);
-        edt_age  = findViewById(R.id.edt_age);
+//        edt_age  = findViewById(R.id.edt_age);
         edt_desc = findViewById(R.id.edt_descripcion);
         edt1     = findViewById(R.id.edt_mail2);
         edt2     = findViewById(R.id.edt_pass2);
+
+        tilBirthdate = findViewById(R.id.til_birthdate);
+        edtBirthdate = findViewById(R.id.edt_birthdate);
 
         progress = new ProgressDialog(this, R.style.AlertDialogApp);
         mAuth    = FirebaseAuth.getInstance();
@@ -84,26 +96,75 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(t -> { if (t.isSuccessful()) myFcmToken = t.getResult(); });
 
-        // Selector de fecha de nacimiento
-        edt_age.setOnClickListener(view -> {
-            final Calendar calendar = Calendar.getInstance();
-            DatePickerDialog datePickerDialog = new DatePickerDialog(
-                    new ContextThemeWrapper(SignUpActivity.this, AlertDialog.THEME_HOLO_LIGHT),
-                    (DatePicker datePicker, int year, int month, int dayOfMonth) -> {
-                        calendar.set(Calendar.YEAR, year);
-                        calendar.set(Calendar.MONTH, month);
-                        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                        Date date = calendar.getTime();
-                        birthDay = sdf.format(date);
-                        edt_age.setText(birthDay);
-                    },
-                    calendar.get(Calendar.YEAR) - 18, // por defecto, -18
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH)
-            );
-            datePickerDialog.show();
+
+        View.OnClickListener openPickerListener = v -> showBirthdatePicker();
+        // Abrir al tocar el campo o el icono
+        edtBirthdate.setOnClickListener(openPickerListener);
+        tilBirthdate.setEndIconOnClickListener(openPickerListener);
+
+
+//        // Selector de fecha de nacimiento
+//        edt_age.setOnClickListener(view -> {
+//            final Calendar calendar = Calendar.getInstance();
+//            DatePickerDialog datePickerDialog = new DatePickerDialog(
+//                    new ContextThemeWrapper(SignUpActivity.this, AlertDialog.THEME_HOLO_LIGHT),
+//                    (DatePicker datePicker, int year, int month, int dayOfMonth) -> {
+//                        calendar.set(Calendar.YEAR, year);
+//                        calendar.set(Calendar.MONTH, month);
+//                        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+//                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+//                        Date date = calendar.getTime();
+//                        birthDay = sdf.format(date);
+//                        edt_age.setText(birthDay);
+//                    },
+//                    calendar.get(Calendar.YEAR) - 18, // por defecto, -18
+//                    calendar.get(Calendar.MONTH),
+//                    calendar.get(Calendar.DAY_OF_MONTH)
+//            );
+//            datePickerDialog.show();
+//        });
+    }//FIN ONCREATE
+
+    private void showBirthdatePicker() {
+        // tope máximo visible = hace 18 años
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.YEAR, -18);
+        long eighteenYearsAgo = cal.getTimeInMillis();
+
+        CalendarConstraints constraints = new CalendarConstraints.Builder()
+                .setValidator(DateValidatorPointBackward.before(eighteenYearsAgo))
+                .setEnd(eighteenYearsAgo) // tope máximo visible = hace 18 años
+                .build();
+
+
+        // Preseleccionar si ya hay valor
+        Long selection = null;
+        try {
+            String txt = edtBirthdate.getText() == null ? "" : edtBirthdate.getText().toString().trim();
+            if (!txt.isEmpty()) {
+                java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+                java.util.Date d = fmt.parse(txt);
+                if (d != null) selection = d.getTime();
+            }
+        } catch (Exception ignored) {}
+
+        MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(getString(R.string.fecha_nacimiento))
+                .setCalendarConstraints(constraints)
+                .setTheme(R.style.ZibeDatePickerOverlay)
+                .setSelection(selection)   // puede ser null
+                .build();
+
+        picker.addOnPositiveButtonClickListener(selectionUtc -> {
+            // Formatear al estilo que uses en tu backend/UI
+            java.text.SimpleDateFormat out =
+                    new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+            String formatted = out.format(new java.util.Date(selectionUtc));
+            edtBirthdate.setText(formatted);
+            tilBirthdate.setError(null);
         });
+
+        picker.show(getSupportFragmentManager(), "zibe_birthdate");
     }
 
     // Permisos de ubicación tras completar registro

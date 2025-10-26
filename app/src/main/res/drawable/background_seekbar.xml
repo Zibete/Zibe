@@ -3,8 +3,8 @@
     <gradient
         android:angle="90"
 
-        android:startColor="@color/fui_transparent"
-        android:centerColor="@color/colorA"
-        android:endColor="@color/fui_transparent"
+        android:startColor="@color/transparent"
+        android:centerColor="@color/zibe_night_start"
+        android:endColor="@color/transparent"
         />
 </shape>

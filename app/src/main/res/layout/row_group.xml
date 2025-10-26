@@ -50,7 +50,7 @@
                             android:layout_marginVertical="2dp"
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="@color/secondary_text"/>
+                            android:background="@color/zibe_text_muted"/>
 
                     </LinearLayout>
 
