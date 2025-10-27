@@ -89,6 +89,7 @@
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
     <string name="notificaciones">Notificaciones</string>
+    <string name="guardar">Guardar</string>
 
     <string-array name="edad">
         <item>18</item>

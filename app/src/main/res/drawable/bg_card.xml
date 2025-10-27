@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/accent_transparent">
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/zibe_card" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/zibe_input_border" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+
+    <!-- máscara para limitar el ripple a las esquinas -->
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</ripple>

@@ -1,32 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_enabled="true"
-        android:state_pressed="false">
-         <shape android:shape="rectangle">
-            <corners android:radius="5dp" />
-            <stroke android:width="3dp"
-                android:color="@color/colorC" />
-            <solid android:color="@color/colorC"/>
-        </shape>
-    </item>
 
-
+    <!-- DESHABILITADO -->
     <item android:state_enabled="false">
         <shape android:shape="rectangle">
-            <corners android:radius="5dp" />
-            <stroke android:width="3dp"
-                android:color="@color/zibe_night_start" />
-            <solid android:color="@color/zibe_night_start" />
+            <solid android:color="@color/zibe_btn_disabled"/>
+            <stroke android:width="2dp" android:color="@color/zibe_input_border"/>
+            <corners android:radius="12dp"/>
         </shape>
     </item>
 
-    <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <corners android:radius="5dp" />
-            <stroke android:width="3dp"
-                android:color="@color/zibe_night_start" />
-            <solid android:color="@color/colorC" />
-        </shape>
-    </item>
+    <!-- HABILITADO (con ripple) -->
+    <item>
+        <ripple android:color="@color/accent_transparent">
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/zibe_btn_secondary"/>
+                    <stroke android:width="2dp" android:color="@color/zibe_input_border"/>
+                    <corners android:radius="12dp"/>
+                    <padding
+                        android:left="6dp"
+                        android:top="6dp"
+                        android:right="6dp"
+                        android:bottom="6dp"/>
+                </shape>
+            </item>
 
+            <!-- máscara para que el ripple respete el radio -->
+            <item android:id="@android:id/mask">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/white"/>
+                    <corners android:radius="12dp"/>
+                </shape>
+            </item>
+        </ripple>
+    </item>
 </selector>

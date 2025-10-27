@@ -41,6 +41,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.AuthCredential;
@@ -94,9 +95,14 @@ public class SettingsActivity extends AppCompatActivity {
     Toolbar toolbar;
     TextView my_email;
     LinearLayout btn_change_email, btn_change_password;
+
+    LinearLayout linear_notif_grupales, linear_notif_individuales;
+
     ImageView arrow_down_change_pass, arrow_up_change_pass, arrow_down_change_email, arrow_up_change_email;
     Button btn_logout, btn_report, btn_delete_account;
-    ImageButton btn_save_pass, btn_save_email;
+    ImageButton btn_save_pass,btn_save_email ;
+
+//    ShapeableImageView btn_save_email;
     LinearLayout linearChangeEmail, linearChangePassword;
     EditText edt_password_email, edt_password_pass, edt_new_mail, edt_new_pass;
     String newEmail, newPassword, password;
@@ -135,6 +141,14 @@ public class SettingsActivity extends AppCompatActivity {
         edt_new_pass = findViewById(R.id.edt_new_pass);
         switch_groupNotifications = findViewById(R.id.switch_groupNotifications);
         switch_individualNotifications = findViewById(R.id.switch_individualNotifications);
+        linear_notif_grupales = findViewById(R.id.linear_notif_grupales);
+        linear_notif_individuales = findViewById(R.id.linear_notif_individuales);
+
+
+        linear_notif_grupales.setOnClickListener(v -> switch_groupNotifications.performClick());
+
+        linear_notif_individuales.setOnClickListener(v -> switch_individualNotifications.performClick());
+
 
         progress = new ProgressDialog(SettingsActivity.this, R.style.AlertDialogApp);
 

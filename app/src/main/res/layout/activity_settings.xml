@@ -1,502 +1,459 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:textColor="@color/zibe_text_light"
-    android:layout_gravity="center">
+    tools:context=".SettingsActivity">
 
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:isScrollContainer="true">
+    <!-- AppBar / Toolbar -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_gradient_zibe"
+        android:fitsSystemWindows="true"
+        app:elevation="0dp">
 
-
-
-        <ScrollView
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar_ajustes"
+            style="@style/Zibe.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:animateLayoutChanges="true"
-            android:fillViewport="true"
-            android:id="@+id/scrollable">
+            android:layout_height="wrap_content"
+            app:navigationIconTint="@color/white"
+            app:title="@string/ajustes" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <LinearLayout
+    <!-- Contenido scrollable -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollable"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="50dp">
+
+            <!-- ===== Tarjeta CUENTA ===== -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="@color/zibe_card"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="3dp"
+                style="@style/Zibe.Card">
 
                 <LinearLayout
-                    android:layout_marginVertical="50dp"
-                    android:layout_marginHorizontal="20dp"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingVertical="16dp"
-                    android:background="@drawable/marco_color_bt">
+                    android:padding="16dp">
 
+                    <!-- Título -->
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cuenta"
+                        android:textSize="@dimen/text_size_normal"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/zibe_text_light"
+                        android:drawableStart="@drawable/ic_person_24"
+                        android:drawablePadding="8dp"
+                        />
 
-                    <LinearLayout
+                    <!-- Email actual -->
+                    <TextView
+                        android:id="@+id/my_email"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:paddingHorizontal="10dp">
+                        android:layout_marginTop="6dp"
+                        android:padding="3dp"
+                        android:textColor="@color/accent"
+                        android:textStyle="bold"
+                        tools:text="usuario@correo.com" />
 
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/cuenta"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"
-                            android:drawableStart="@drawable/ic_person_24"
-                            android:drawablePadding="6dp"
-                            android:gravity="center_vertical" />
-
+                    <!-- Header expandible: Cambiar email -->
+                    <LinearLayout
+                        android:id="@+id/btn_change_email"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/ripple_header_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp">
 
                         <TextView
-                            android:gravity="center"
-                            android:id="@+id/my_email"
-                            android:layout_width="match_parent"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/accent"
-                            android:textStyle="bold"
-                            android:padding="3dp"/>
+                            android:layout_weight="1"
+                            android:text="CAMBIAR EMAIL"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_normal" />
 
+                        <ImageView
+                            android:id="@+id/arrow_down_change_email"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_down_24" />
+
+                        <ImageView
+                            android:id="@+id/arrow_up_change_email"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Contenido expandible: Cambiar email -->
+                    <LinearLayout
+                        android:id="@+id/linearChangeEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="bottom"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:visibility="gone">
 
                         <LinearLayout
-                            android:id="@+id/btn_change_email"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="7dp"
-                            android:background="@color/colorC"
-                            android:gravity="center"
-                            android:layout_margin="4dp"
-                            android:orientation="horizontal">
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="8dp">
 
-                            <TextView
-                                android:text="CAMBIAR EMAIL"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textAlignment="center"
+                            <!-- EMAIL -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Zibe.Input"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="@color/colorClaro"/>
-
-                            <ImageView
-                                android:id="@+id/arrow_down_change_email"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:src="@drawable/ic_baseline_keyboard_arrow_down_24"/>
-                            <ImageView
-                                android:id="@+id/arrow_up_change_email"
-                                android:visibility="gone"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:src="@drawable/ic_baseline_keyboard_arrow_up_24"/>
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/linearChangeEmail"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal"
-                            android:gravity="bottom"
-                            android:visibility="gone">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1"
-                                    android:orientation="horizontal">
-
-                                    <com.google.android.material.textfield.TextInputLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        app:passwordToggleDrawable="@drawable/icon_selector"
-                                        app:passwordToggleEnabled="true"
-                                        app:passwordToggleTint="@color/colorClaro">
-
-                                        <com.google.android.material.textfield.TextInputEditText
-                                            android:id="@+id/edt_password_email"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="match_parent"
-                                            android:hint="Contraseña"
-                                            android:inputType="textPassword"
-                                            android:textColor="@color/colorClaro"/>
-
-                                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                                </LinearLayout>
-
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    app:passwordToggleTint="@color/colorPrimary">
+                                android:layout_marginBottom="10dp"
+                                app:startIconDrawable="@drawable/ic_mail_24"
+                                app:boxBackgroundMode="filled">
 
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/edt_new_mail"
                                     android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:hint="Nuevo Email"
-                                    android:inputType="text"
-                                    android:textColor="@color/colorClaro"/>
+                                    android:layout_height="wrap_content"
+                                    android:hint="Nuevo email"
+                                    android:inputType="textEmailAddress" />
 
-                                </com.google.android.material.textfield.TextInputLayout>
-
-
-                            </LinearLayout>
-
-                            <ImageButton
-                                android:id="@+id/btn_save_email"
-                                android:layout_width="50dp"
-                                android:layout_height="50dp"
-                                android:src="@drawable/ic_baseline_save_24"
-                                android:background="@drawable/button2"
-                                android:layout_marginBottom="7dp"
-                                android:layout_marginHorizontal="5dp"/>
+                            </com.google.android.material.textfield.TextInputLayout>
 
 
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/btn_change_password"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="7dp"
-                            android:background="@color/colorC"
-                            android:gravity="center"
-                            android:layout_margin="4dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:text="CAMBIAR CONTRASEÑA"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textAlignment="center"
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Zibe.Input"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="@color/colorClaro"/>
+                                android:layout_marginBottom="10dp"
+                                app:endIconDrawable="@drawable/icon_selector"
+                                app:endIconMode="password_toggle"
+                                app:startIconDrawable="@drawable/ic_lock_24"
+                                app:boxBackgroundMode="filled">
 
-                            <ImageView
-                                android:id="@+id/arrow_down_change_pass"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:src="@drawable/ic_baseline_keyboard_arrow_down_24"/>
-                            <ImageView
-                                android:id="@+id/arrow_up_change_pass"
-                                android:visibility="gone"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:src="@drawable/ic_baseline_keyboard_arrow_up_24"/>
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/linearChangePassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal"
-                            android:gravity="bottom"
-                            android:visibility="gone">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_weight="1"
-                                    android:orientation="horizontal">
-
-                                    <com.google.android.material.textfield.TextInputLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        app:passwordToggleDrawable="@drawable/icon_selector"
-                                        app:passwordToggleEnabled="true"
-                                        app:passwordToggleTint="@color/colorClaro">
-
-                                        <com.google.android.material.textfield.TextInputEditText
-                                            android:id="@+id/edt_password_pass"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="match_parent"
-                                            android:hint="Contraseña"
-                                            android:inputType="textPassword"
-                                            android:textColor="@color/colorClaro"/>
-
-                                    </com.google.android.material.textfield.TextInputLayout>
-
-
-                                </LinearLayout>
-
-
-                                <com.google.android.material.textfield.TextInputLayout
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/edt_password_email"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    app:passwordToggleDrawable="@drawable/icon_selector"
-                                    app:passwordToggleEnabled="true"
-                                    app:passwordToggleTint="@color/colorClaro">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/edt_new_pass"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="match_parent"
-                                        android:hint="Nueva Contraseña"
-                                        android:inputType="textPassword"
-                                        android:textColor="@color/colorClaro"/>
-
-                                </com.google.android.material.textfield.TextInputLayout>
-
-
-                            </LinearLayout>
-
-                            <ImageButton
-                                android:id="@+id/btn_save_pass"
-                                android:layout_width="50dp"
-                                android:layout_height="50dp"
-                                android:src="@drawable/ic_baseline_save_24"
-                                android:background="@drawable/button2"
-                                android:layout_marginBottom="7dp"
-                                android:layout_marginHorizontal="5dp"/>
-
+                                    android:hint="Contraseña actual"
+                                    android:inputType="textPassword" />
+                            </com.google.android.material.textfield.TextInputLayout>
 
                         </LinearLayout>
 
-                        <Button
-                            android:id="@+id/btn_logout"
-                            android:text="Cerrar sesión"
-                            android:backgroundTint="@color/colorC"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/colorClaro"/>
+                        <ImageButton
+                            android:id="@+id/btn_save_email"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:background="@drawable/btn_check_zibe"
+                            android:contentDescription="@string/guardar"
+                            android:layout_marginBottom="7dp"
+                            android:layout_marginHorizontal="5dp" />
 
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/notificaciones"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"
-                            android:drawableStart="@drawable/ic_notifications_black_24dp"
-                            android:drawablePadding="6dp"
-                            android:gravity="center_vertical" />
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="7dp"
-                            android:background="@color/colorC"
-                            android:gravity="center"
-                            android:layout_margin="4dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:text="CHATS INDIVIDUALES"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textAlignment="center"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-
-                                android:textColor="@color/colorClaro"/>
-
-                            <com.google.android.material.switchmaterial.SwitchMaterial
-                                android:id="@+id/switch_individualNotifications"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"/>
-
-                        </LinearLayout>
-
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="7dp"
-                            android:background="@color/colorC"
-                            android:gravity="center"
-                            android:layout_margin="4dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:text="CHATS GRUPALES"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textAlignment="center"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="@color/colorClaro"/>
-
-                            <com.google.android.material.switchmaterial.SwitchMaterial
-                                android:id="@+id/switch_groupNotifications"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"/>
-
-                        </LinearLayout>
-
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_margin="20dp"-->
-<!--                            android:paddingVertical="10dp"-->
-<!--                            android:paddingHorizontal="20dp"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:background="@drawable/bg_title_ripple"-->
-<!--                            android:layout_height="wrap_content">-->
-
-<!--                            <ImageView-->
-<!--                                android:layout_width="80dp"-->
-<!--                                android:layout_height="80dp"-->
-<!--                                android:paddingEnd="10dp"-->
-<!--                                android:src="@mipmap/logo_zibe"/>-->
-
-<!--                            <LinearLayout-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:orientation="vertical">-->
-
-<!--                                <TextView-->
-<!--                                    android:layout_width="wrap_content"-->
-<!--                                    android:layout_height="wrap_content"-->
-<!--                                    android:textSize="15sp"-->
-<!--                                    android:textColor="@color/colorF"-->
-<!--                                    android:text="Zibe App"/>-->
-<!--                                <TextView-->
-<!--                                    android:layout_width="wrap_content"-->
-<!--                                    android:layout_height="wrap_content"-->
-<!--                                    android:textSize="12sp"-->
-<!--                                    android:textColor="@color/colorF"-->
-<!--                                    android:text="@string/version_string"/>-->
-<!--                                <TextView-->
-<!--                                    android:layout_width="wrap_content"-->
-<!--                                    android:layout_height="wrap_content"-->
-<!--                                    android:textSize="12sp"-->
-<!--                                    android:textColor="@color/colorF"-->
-<!--                                    android:text="@string/version"/>-->
-<!--                                <TextView-->
-<!--                                    android:layout_width="wrap_content"-->
-<!--                                    android:layout_height="wrap_content"-->
-<!--                                    android:textSize="12sp"-->
-<!--                                    android:textColor="@color/colorF"-->
-<!--                                    android:text="ZibeteProyects"/>-->
-
-<!--                            </LinearLayout>-->
-
-<!--                        </LinearLayout>-->
-
-                        <!-- Contenedor del resplandor (marco) -->
-                        <FrameLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_title_ripple"
-                            android:clipToPadding="false">
-
-                            <!-- Tarjeta moderna (fondo + borde) -->
-                            <com.google.android.material.card.MaterialCardView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                app:cardUseCompatPadding="true"
-                                app:cardElevation="4dp"
-                                app:strokeWidth="3dp"
-                                app:cardCornerRadius="30dp">
-
-                                <!-- Contenido: ícono + textos -->
-                                <LinearLayout
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:layout_margin="10dp">
-
-                                    <ImageView
-                                        android:layout_width="80dp"
-                                        android:layout_height="match_parent"
-                                        android:src="@mipmap/logo_zibe"
-                                        android:contentDescription="@string/app_name"/>
-
-                                    <LinearLayout
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="vertical">
-
-                                        <com.google.android.material.textview.MaterialTextView
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="Zibe App"
-                                            android:textColor="@color/zibe_text_dark"
-                                            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"/>
-
-                                        <com.google.android.material.textview.MaterialTextView
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/version_string"
-                                            android:textColor="@color/zibe_text_dark"
-                                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"/>
-
-                                        <com.google.android.material.textview.MaterialTextView
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/version"
-                                            android:textColor="@color/zibe_text_dark"
-                                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"/>
-
-                                        <com.google.android.material.textview.MaterialTextView
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="ZibeteProyects"
-                                            android:textColor="@color/zibe_text_dark"
-                                            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"/>
-
-                                    </LinearLayout>
-                                </LinearLayout>
-                            </com.google.android.material.card.MaterialCardView>
-                        </FrameLayout>
-
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_report"
-                            android:text="@string/enivar_comentarios"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btn_delete_account"
-                            android:text="@string/eliminar_cuenta"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
 
                     </LinearLayout>
 
+                    <!-- Header expandible: Cambiar contraseña -->
+                    <LinearLayout
+                        android:id="@+id/btn_change_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/ripple_header_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CAMBIAR CONTRASEÑA"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_normal" />
+
+                        <ImageView
+                            android:id="@+id/arrow_down_change_pass"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_down_24" />
+
+                        <ImageView
+                            android:id="@+id/arrow_up_change_pass"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Contenido expandible: Cambiar contraseña -->
+                    <LinearLayout
+                        android:id="@+id/linearChangePassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="bottom"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="8dp">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Zibe.Input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                app:endIconDrawable="@drawable/icon_selector"
+                                app:endIconMode="password_toggle"
+                                app:startIconDrawable="@drawable/ic_lock_24"
+                                app:boxBackgroundMode="filled">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/edt_password_pass"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Contraseña actual"
+                                    android:inputType="textPassword" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Zibe.Input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="10dp"
+                                app:endIconDrawable="@drawable/icon_selector"
+                                app:endIconMode="password_toggle"
+                                app:startIconDrawable="@drawable/ic_lock_24"
+                                app:boxBackgroundMode="filled">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/edt_new_pass"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="Nueva Contraseña"
+                                    android:inputType="textPassword" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                        </LinearLayout>
+
+                        <ImageButton
+                            android:id="@+id/btn_save_pass"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:background="@drawable/btn_check_zibe"
+                            android:contentDescription="@string/guardar"
+                            android:layout_marginBottom="7dp"
+                            android:layout_marginHorizontal="5dp" />
+
+
+                    </LinearLayout>
+
+                    <!-- Logout -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_logout"
+                        style="@style/Zibe.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Cerrar sesión"
+                        android:backgroundTint="@color/zibe_btn_secondary"
+                        android:textColor="@color/white" />
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <Space
+            <!-- ===== Tarjeta NOTIFICACIONES ===== -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Zibe.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                app:cardBackgroundColor="@color/zibe_card">
+
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="50dp"/>
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_notifications_black_24dp"
+                        android:drawablePadding="8dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/notificaciones"
+                        android:textColor="@color/zibe_text_light"
+                        android:textSize="@dimen/text_size_normal" />
+
+                    <!-- Switch: Individuales -->
+                    <LinearLayout
+                        android:id="@+id/linear_notif_individuales"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/ripple_header_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CHATS INDIVIDUALES"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_normal" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_individualNotifications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent" />
+                    </LinearLayout>
+
+                    <!-- Switch: Grupales -->
+                    <LinearLayout
+                        android:id="@+id/linear_notif_grupales"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/ripple_header_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CHATS GRUPALES"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/text_size_normal" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_groupNotifications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ===== Info de la app ===== -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@mipmap/logo_zibe" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="40dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Zibe App"
+                        android:textColor="@color/zibe_text_light"
+                        android:textSize="@dimen/text_size_normal" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/version_string"
+                        android:textColor="@color/zibe_text_muted"
+                        android:textSize="@dimen/text_size_small" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/version"
+                        android:textColor="@color/zibe_text_muted"
+                        android:textSize="@dimen/text_size_small" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ZibeteProyects"
+                        android:textColor="@color/zibe_text_muted"
+                        android:textSize="@dimen/text_size_small" />
+                </LinearLayout>
             </LinearLayout>
 
+            <!-- Acciones finales -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_report"
+                style="@style/Zibe.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/enivar_comentarios" />
 
-        </ScrollView>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete_account"
+                style="@style/Zibe.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/eliminar_cuenta" />
 
-    </LinearLayout>
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar_ajustes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/Arrow"
-        android:background="@color/transparent"/>
-
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
