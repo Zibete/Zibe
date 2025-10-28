@@ -3,27 +3,35 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
+    <item
+        android:id="@+id/index"
+        android:icon="@drawable/ic_home_black_24dp"
+        android:title="@string/inicio"
+        android:titleCondensed="@string/inicio"
+        android:contentDescription="@string/inicio"
+        android:onClick="Index" />
 
-                <item
-                    android:icon="@drawable/ic_home_black_24dp"
-                    android:id="@+id/index"
-                    android:onClick="Index"
-                    android:title="@string/inicio" />
-                <item
-                    android:icon="@drawable/fui_ic_anonymous_white_24dp"
-                    android:id="@+id/editPerfil"
-                    android:onClick="EditProfile"
-                    android:title="@string/menu_edit" />
-                <item
-                    android:icon="@drawable/ic_baseline_settings_24"
-                    android:id="@+id/delete_account"
-                    android:onClick="Ajustes"
-                    android:title="@string/ajustes" />
-                <item
-                    android:id="@+id/logout"
-                    android:icon="@drawable/ic_baseline_exit_to_app_24"
-                    android:onClick="logout"
-                    android:title="@string/Logout" />
+    <item
+        android:id="@+id/editPerfil"
+        android:icon="@drawable/fui_ic_anonymous_white_24dp"
+        android:title="@string/menu_edit"
+        android:titleCondensed="@string/menu_edit"
+        android:contentDescription="@string/menu_edit"
+        android:onClick="EditProfile" />
 
+    <item
+        android:id="@+id/delete_account"
+        android:icon="@drawable/ic_baseline_settings_24"
+        android:title="@string/ajustes"
+        android:titleCondensed="@string/ajustes"
+        android:contentDescription="@string/ajustes"
+        android:onClick="Ajustes" />
 
+    <item
+        android:id="@+id/logout"
+        android:icon="@drawable/ic_baseline_exit_to_app_24"
+        android:title="@string/Logout"
+        android:titleCondensed="@string/Logout"
+        android:contentDescription="@string/Logout"
+        android:onClick="logout" />
 </menu>

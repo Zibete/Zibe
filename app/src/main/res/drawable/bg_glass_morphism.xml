@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sombra suave interior -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp" />
+            <gradient
+                android:startColor="#14FFFFFF"
+                android:centerColor="#10FFFFFF"
+                android:endColor="#08FFFFFF"
+                android:angle="270"/>
+        </shape>
+    </item>
+
+    <!-- Placa translÃºcida -->
+    <item android:top="1dp" android:bottom="1dp" android:left="1dp" android:right="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <!-- blanco translÃºcido -->
+            <solid android:color="#26FFFFFF"/>
+        </shape>
+    </item>
+</layer-list>
+
+

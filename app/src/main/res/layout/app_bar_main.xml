@@ -11,19 +11,14 @@
         android:layout_height="wrap_content"
         android:theme="@style/AppTheme.AppBarOverlay">
 
-
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/colorB"
             app:contentInsetStart="0dp"
             app:contentInsetLeft="0dp"
             app:contentInsetStartWithNavigation="0dp"
             app:popupTheme="@style/AppTheme.PopupOverlay">
-
-
 
             <RelativeLayout
                 android:id="@+id/layoutSettings"
@@ -31,7 +26,6 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:visibility="gone">
-
 
                 <ImageView
                     android:id="@+id/refresh"
@@ -55,16 +49,10 @@
 
             </RelativeLayout>
 
-
-
-
         </androidx.appcompat.widget.Toolbar>
-
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <include layout="@layout/content_main" />
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

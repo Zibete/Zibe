@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:gravity="top"
     android:padding="10dp"
-    android:background="@color/backSplash">
+    android:background="@color/zibe_gradient_end">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_group_users"

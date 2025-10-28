@@ -31,7 +31,6 @@ android {
         }
     }
 }
-
 dependencies {
     // AndroidX base
     implementation 'androidx.appcompat:appcompat:1.2.0'
@@ -44,14 +43,18 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.3.4'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'com.google.android.material:material:1.13.0'
+
+    // ✅ BlurView actual (JitPack). ¡No agregues renderscript!
+    implementation 'com.github.Dimezis:BlurView:version-3.1.0'
+
 
     // Google Play Services
     implementation 'com.google.android.gms:play-services-auth:21.4.0'
     implementation 'com.google.android.gms:play-services-location:21.3.0'
     implementation 'com.google.android.gms:play-services-basement:18.9.0'
 
-    // Firebase con BoM (Bill of Materials)
+    // Firebase con BoM
     implementation platform('com.google.firebase:firebase-bom:34.4.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
@@ -60,18 +63,18 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'com.google.firebase:firebase-messaging-directboot'
 
-    // FirebaseUI -> usar versión de MavenCentral actual
     implementation 'com.firebaseui:firebase-ui-auth:8.0.2'
 
-    // Glide + transformaciones (actualizadas a versiones en MavenCentral/JitPack)
+    // Glide + transforms
     implementation 'com.github.bumptech.glide:glide:4.9.0'
-    implementation 'jp.wasabeef:glide-transformations:4.3.0'   // ⬅ 4.1.0 no está, 4.3.0 sí
+    implementation 'jp.wasabeef:glide-transformations:4.3.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
 
-    // GPUImage (subimos a versión presente en MavenCentral)
-    implementation 'jp.co.cyberagent.android:gpuimage:2.1.0'   // ⬅ 2.0.4 no está
+    // GPUImage
+    implementation 'jp.co.cyberagent.android:gpuimage:2.1.0'
 
     // FAB
-    implementation 'com.github.clans:fab:1.6.4'                // por JitPack
+    implementation 'com.github.clans:fab:1.6.4'
 
     // Volley
     implementation 'com.android.volley:volley:1.2.0'
@@ -81,21 +84,17 @@ dependencies {
 
     // UI/Imágenes
     implementation 'de.hdodenhof:circleimageview:3.1.0'
-    implementation 'com.github.chrisbanes:PhotoView:2.3.0'     // por JitPack
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'com.squareup.picasso:picasso:2.5.0'
-    implementation 'id.zelory:compressor:3.0.1'                // ⬅ 2.1.0 daba “unspecified”; subir versión
-    implementation 'com.github.rahimlis:badgedtablayout:v1.2'  // por JitPack
+    implementation 'id.zelory:compressor:3.0.1'
+    implementation 'com.github.rahimlis:badgedtablayout:v1.2'
 
     implementation("com.github.CanHub:Android-Image-Cropper:4.4.0") {
         version { strictly("4.3.3") }
     }
 
-
-    // Facebook Login (actualizado para compatibilidad con Android 13/14)
+    // Facebook Login
     implementation 'com.facebook.android:facebook-login:16.3.0'
-
-    // FirebaseUI Auth depende de Glide, añade anotaciones si querés
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
 
     // Tests
     testImplementation 'junit:junit:4.12'

@@ -76,7 +76,8 @@
     <string name="audio_send">Audio enviado</string>
     <string name="desbloquear">Desbloquear</string>
     <string name="salir">Salir</string>
-    <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=3c26de61–d53c-465d-9a27-964437770e4e]]></string>
+    <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8]]></string>
+
     <string name="inicio">Inicio</string>
     <string name="unhide_chats">Chats ocultos</string>
     <string name="ocultar">Ocultar</string>

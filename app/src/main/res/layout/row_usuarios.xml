@@ -5,237 +5,203 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardviewUsers"
         android:layout_width="match_parent"
         android:layout_height="125dp"
-        app:cardCornerRadius="20dp"
-        app:cardBackgroundColor="@color/zibe_night_start"
-        android:layout_marginHorizontal="5dp"
-        android:layout_marginVertical="2.5dp">
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginVertical="4dp"
+        android:foreground="@drawable/fg_card_ripple"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:strokeColor="#99FFFFFF"
+        app:strokeWidth="1dp"
+        app:shapeAppearanceOverlay="@style/Shape.Zibe.Card.Large"
+        app:cardElevation="0dp">
 
-        <LinearLayout
-
-            android:orientation="horizontal"
+        <!-- Fondo tipo vidrio (translúcido + leve degradado) -->
+        <FrameLayout
+            android:id="@+id/glass_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_glass_morphism">
 
-
-
-            <LinearLayout
-                android:layout_width="125dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="center">
-
-
-            <com.zibete.proyecto1.ui.ResizableImageView
-                android:id="@+id/image_user1"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"/>
-
-            </LinearLayout>
-
-            <LinearLayout
+            <!-- capa de glow animado -->
+            <View
+                android:id="@+id/glow_border"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:orientation="vertical"
-                android:layout_margin="5dp">
+                android:background="@drawable/bg_glow_zibe"
+                android:alpha="0.9"/>
 
+            <!-- blurview (desenfoque real) -->
+            <eightbitlab.com.blurview.BlurView
+                android:id="@+id/blur_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+            <!-- CONTENIDO -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:padding="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="110dp"
                     android:layout_height="match_parent"
-                    android:layout_gravity="top"
+                    android:gravity="center">
+
+                    <com.zibete.proyecto1.ui.ResizableImageView
+                        android:id="@+id/image_user1"
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/bg_avatar_ring"
+                        android:contentDescription="@string/app_name" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
+                    <!-- Fila superior: estado + usuario + íconos -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:orientation="horizontal">
-
+                        android:gravity="center_vertical">
 
                         <ImageView
                             android:id="@+id/icon_conectado"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:src="@drawable/ic_circle_online"
-                            android:layout_gravity="center"
                             android:visibility="gone" />
 
                         <ImageView
                             android:id="@+id/icon_desconectado"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
                             android:src="@drawable/ic_circle_offline"
-                            android:layout_gravity="center"
                             android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/tv_estado"
-                            android:layout_width="match_parent"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:visibility="gone"/>
+                            android:visibility="gone" />
 
                         <TextView
                             android:id="@+id/tv_usuario1"
-                            android:layout_width="match_parent"
-                            android:layout_gravity="center"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:textSize="@dimen/text_size_large"
                             android:layout_weight="1"
-                            android:textIsSelectable="true"
-                            android:layout_marginHorizontal="4dp"
-                            android:singleLine="true"/>
-
+                            android:layout_marginStart="6dp"
+                            android:textSize="@dimen/text_size_large"
+                            android:textColor="@color/zibe_text_light"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
 
                         <ImageView
                             android:id="@+id/bloq"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
                             android:src="@drawable/ic_baseline_block_24"
-                            android:visibility="gone"/>
-
+                            android:visibility="gone"
+                            app:tint="@color/zibe_text_muted" />
 
                         <ImageView
                             android:id="@+id/favorite_on"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="8dp"
                             android:src="@drawable/ic_baseline_star_24"
-                            android:visibility="gone"/>
-
-
-
+                            android:visibility="gone"
+                            app:tint="@color/colorAccent" />
 
                         <TextView
-                            android:layout_gravity="center"
                             android:id="@+id/tv_edad"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:textSize="@dimen/text_size_large"/>
-
+                            android:layout_marginStart="8dp"
+                            android:textSize="@dimen/text_size_large"
+                            android:textColor="@color/zibe_text_light"/>
                     </LinearLayout>
 
-
+                    <!-- Descripción -->
                     <LinearLayout
                         android:id="@+id/linear_desc"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:padding="5dp"
+                        android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_weight="1"
+                        android:paddingTop="4dp"
                         android:visibility="gone">
 
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="@color/zibe_text_muted"/>
+                            android:background="#33FFFFFF"/>
 
                         <TextView
                             android:id="@+id/tv_desc"
-                            android:layout_gravity="center"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:paddingVertical="4dp"
                             android:maxLines="2"
                             android:ellipsize="end"
-                            android:textAlignment="center"
+                            android:textAlignment="textStart"
+                            android:textColor="@color/zibe_text_light"
                             android:textSize="@dimen/text_size_normal"/>
+
                         <View
-                            android:layout_marginTop="1dp"
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="@color/zibe_text_muted"/>
-
+                            android:background="#33FFFFFF"/>
                     </LinearLayout>
 
-
-
-
-                </LinearLayout>
-
-
-
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:orientation="horizontal">
-
+                    <!-- Fila inferior: ubicación + acciones -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="bottom"
-                        android:orientation="vertical"
-                        android:layout_weight="1">
+                        android:gravity="center_vertical"
+                        android:paddingTop="6dp">
 
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@drawable/ic_baseline_location_on_24"
+                            app:tint="@color/zibe_text_light" />
 
-
-
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
+                        <TextView
+                            android:id="@+id/distance"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal">
+                            android:layout_weight="1"
+                            android:layout_marginStart="6dp"
+                            android:textSize="@dimen/text_size_normal"
+                            android:textColor="@color/colorAccent"/>
 
-                            <ImageView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_baseline_location_on_24"/>
+                        <ImageView
+                            android:id="@+id/goChat"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:src="@drawable/ic_baseline_send_24"
+                            android:padding="6dp"
+                            android:visibility="gone"
+                            app:tint="@color/zibe_text_light" />
 
-                            <TextView
-                                android:id="@+id/distance"
-                                android:layout_gravity="center"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textColor="@color/colorAccent"/>
-                        </LinearLayout>
-
-
-
-
+                        <ImageView
+                            android:id="@+id/bloq_me"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:src="@drawable/ic_baseline_cancel_schedule_send_24"
+                            android:padding="6dp"
+                            android:visibility="gone"
+                            app:tint="@color/zibe_text_muted" />
                     </LinearLayout>
-
-                    <ImageView
-                        android:id="@+id/goChat"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:src="@drawable/ic_baseline_send_24"
-                        android:paddingHorizontal="5dp"
-                        android:visibility="gone"/>
-
-                    <ImageView
-                        android:id="@+id/bloq_me"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:src="@drawable/ic_baseline_cancel_schedule_send_24"
-                        android:paddingHorizontal="5dp"
-                        android:visibility="gone"/>
-
-
                 </LinearLayout>
-
-
             </LinearLayout>
-
-
-
-
-
-        </LinearLayout>
-
-
-
-    </androidx.cardview.widget.CardView>
-
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

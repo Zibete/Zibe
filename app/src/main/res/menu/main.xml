@@ -4,42 +4,38 @@
 
     <item
         android:id="@+id/action_search"
+        android:title="@string/Buscar"
         android:icon="@drawable/ic_baseline_search_24"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
-        android:title="@string/Buscar"
-        app:showAsAction="ifRoom"
-        />
+        app:showAsAction="ifRoom|collapseActionView" />
 
     <item
         android:id="@+id/action_exit"
-        android:orderInCategory="100"
         android:title="@string/salir"
-        app:showAsAction="always"/>
-
+        android:orderInCategory="100"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/action_settings"
-        android:orderInCategory="100"
         android:title="@string/ajustes"
+        android:orderInCategory="100"
         app:showAsAction="never" />
+
     <item
         android:id="@+id/action_unlock"
-        android:orderInCategory="100"
         android:title="@string/unlock_users"
+        android:orderInCategory="100"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_unhide_chats"
-        android:orderInCategory="100"
         android:title="@string/unhide_chats"
+        android:orderInCategory="100"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_favorites"
-        android:orderInCategory="100"
         android:title="@string/favoritos"
+        android:orderInCategory="100"
         app:showAsAction="never" />
-
-
-
 </menu>

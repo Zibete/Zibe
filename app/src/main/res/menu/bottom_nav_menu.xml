@@ -4,23 +4,29 @@
     <item
         android:id="@+id/navBottomUsers"
         android:icon="@drawable/fui_ic_anonymous_white_24dp"
-        android:title="@string/menu_usuarios" />
+        android:title="@string/menu_usuarios"
+        android:titleCondensed="@string/menu_usuarios"
+        android:contentDescription="@string/menu_usuarios" />
 
     <item
         android:id="@+id/navBottomChat"
         android:icon="@drawable/ic_logo3"
-        android:title="@string/menu_chat" />
+        android:title="@string/menu_chat"
+        android:titleCondensed="@string/menu_chat"
+        android:contentDescription="@string/menu_chat" />
 
     <item
         android:id="@+id/navBottomGrupos"
         android:icon="@drawable/ic_baseline_groups_24"
-        android:title="@string/menu_grupos" />
+        android:title="@string/menu_grupos"
+        android:titleCondensed="@string/menu_grupos"
+        android:contentDescription="@string/menu_grupos" />
 
     <item
         android:id="@+id/navBottomFavorites"
         android:icon="@drawable/ic_baseline_star_24"
         android:title="@string/favoritos"
-        android:visible="true"/>
-
-
+        android:titleCondensed="@string/favoritos"
+        android:contentDescription="@string/favoritos"
+        android:visible="true" />
 </menu>

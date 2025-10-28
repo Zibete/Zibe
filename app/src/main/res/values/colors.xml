@@ -27,11 +27,14 @@
 
 
     <!-- COLORES PRINCIPALES -->
-    <color name="zibe_pink">#FF3B93</color>
+    <color name="zibe_blue">#3A54BF</color>
+    <color name="zibe_pink">#F6286D</color>
     <color name="zibe_purple">#8B3CFF</color>
     <color name="zibe_purple_dark">#6A28C8</color>
     <color name="zibe_gradient_start">#FF3B93</color>
     <color name="zibe_gradient_end">#8B3CFF</color>
+    <color name="zibe_pink_24">#40FF4081</color>
+
 
     <!-- FONDOS -->
     <color name="zibe_night_start">#0D1B2A</color>
@@ -54,12 +57,12 @@
     <color name="zibe_shadow">#1A000000</color>
 
     <!-- NAVEGACIÓN -->
-    <color name="zibe_nav_active">#FF3B93</color>
+    <color name="zibe_nav_active">#F6286D</color>
     <color name="zibe_nav_inactive">#A3B1C6</color>
     <color name="zibe_nav_bg">#0D1B2A</color>
 
     <!-- BOTONES -->
-    <color name="zibe_btn_primary">#FF3B93</color>
+    <color name="zibe_btn_primary">#F6286D</color>
     <color name="zibe_btn_secondary">#8B3CFF</color>
     <color name="zibe_btn_disabled">#555E70</color>
 
@@ -72,11 +75,13 @@
     <color name="transparent">#00000000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="zibe_blue">#3C4FDB</color>
-
     <color name="visto">#00AFFF</color>
-    <color name="accent">#FF4081</color>
+    <color name="accent">#F6286D</color>
     <color name="accent_transparent">#4DFF4081</color>
+
+    <color name="zibe_dialog_bg">#1E1E1E</color>        <!-- Fondo más oscuro para el cuadro -->
+ 
+    <color name="zibe_pink_bright">#FF5BAA</color>
 
 
 </resources>

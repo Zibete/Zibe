@@ -1,178 +1,183 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="10dp"
-    android:background="@color/zibe_night_start">
+    android:padding="16dp"
+    android:background="@drawable/bg_gradient_zibe">
 
-    <ScrollView
+    <!-- Header: título + cerrar -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_chat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Crear nuevo"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_xlarge"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp"/>
+
+        <ImageView
+            android:id="@+id/img_cancel_dialog"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_baseline_close_24"/>
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="12dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_marginHorizontal="12dp"
-                    android:layout_marginVertical="10dp"
-                    android:id="@+id/tv_chat"
-                    android:text="Crear nuevo"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAlignment="center"
-                    android:textSize="@dimen/text_size_xlarge"/>
-
-                <ImageView
-                    android:id="@+id/img_cancel_dialog"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/ic_baseline_close_24"/>
-
-            </LinearLayout>
-
-            <LinearLayout
+            <!-- Card principal -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/marco_color_bt"
-                android:gravity="center"
                 android:layout_margin="12dp"
-                android:padding="16dp">
+                app:cardBackgroundColor="@color/zibe_card"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginVertical="6dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="@dimen/text_size_large"
-                        android:text="Creador:"
-                        android:textColor="@color/colorClaro"
-                        android:layout_gravity="center"
-                        android:singleLine="true"
-                        android:layout_marginEnd="6dp"/>
-
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/image_user"
-                        android:layout_width="45dp"
-                        android:layout_height="45dp"
-                        android:padding="4dp"/>
-
-                    <TextView
-                        android:id="@+id/name_user"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="@dimen/text_size_large"
-                        android:textColor="@color/colorClaro"
-                        android:paddingHorizontal="4dp"
-                        android:layout_gravity="center"
-                        android:singleLine="true"/>
-
-                </LinearLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edt_name_new_group"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:hint="Escribe un nombre..."
-                        android:textSize="@dimen/text_size_large"
-                        android:inputType="textCapSentences"
-                        android:textColor="@color/colorClaro"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edt_data_new_group"
-                        android:layout_width="match_parent"
-                        android:layout_height="120dp"
-                        android:hint="¿De qué se trata?"
-                        android:inputType="textMultiLine|textCapSentences"
-                        android:gravity="start|top"
-                        android:textSize="@dimen/text_size_large"
-                        android:textColor="@color/colorClaro"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="6dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:text="Privado"
-                        android:textSize="@dimen/text_size_large"
-                        android:textAlignment="center"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/colorClaro"/>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_groupNotifications"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginHorizontal="10dp"/>
-
-                    <TextView
-                        android:text="Público"
-                        android:textSize="@dimen/text_size_large"
-                        android:textAlignment="center"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/colorClaro"/>
-
-                </LinearLayout>
-
-
-                <Button
-                    android:layout_gravity="center"
-                    android:id="@+id/btn_create_new_chat"
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="@dimen/text_size_normal"
-                    android:text="Crear"
-                    android:paddingHorizontal="20dp"
-                    android:background="@drawable/button2"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="6dp"/>
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            </LinearLayout>
+                    <!-- Creador -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Creador:"
+                            android:textColor="@color/colorClaro"
+                            android:textSize="@dimen/text_size_large"
+                            android:layout_marginEnd="8dp"/>
+
+                        <de.hdodenhof.circleimageview.CircleImageView
+                            android:id="@+id/image_user"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:padding="4dp"/>
+
+                        <TextView
+                            android:id="@+id/name_user"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="@dimen/text_size_large"
+                            android:textColor="@color/colorClaro"
+                            android:layout_marginStart="8dp"
+                            android:singleLine="true"/>
+                    </LinearLayout>
+
+                    <!-- Nombre del grupo -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:startIconDrawable="@drawable/ic_baseline_groups_24"
+                        app:boxBackgroundMode="filled">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edt_name_new_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Escribe un nombre..."
+                            android:textSize="@dimen/text_size_large"
+                            android:inputType="textCapSentences"
+                            android:textColor="@color/colorClaro"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Descripción -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:startIconDrawable="@drawable/ic_info_24"
+                        app:boxBackgroundMode="filled">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/edt_data_new_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="120dp"
+                            android:hint="¿De qué se trata?"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:gravity="start|top"
+                            android:textSize="@dimen/text_size_large"
+                            android:textColor="@color/colorClaro"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Privacidad (conserva IDs y visibilidad original) -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:text="Privado"
+                            android:textSize="@dimen/text_size_large"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/colorClaro"/>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_groupNotifications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="10dp"/>
+
+                        <TextView
+                            android:text="Público"
+                            android:textSize="@dimen/text_size_large"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/colorClaro"/>
+                    </LinearLayout>
+
+                    <!-- Crear -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_create_new_chat"
+                        style="@style/Zibe.Button.Primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="16dp"
+                        android:text="Crear"
+                        android:textSize="@dimen/text_size_normal"
+                        android:paddingHorizontal="20dp"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>
-
-
-
-
-
-
-

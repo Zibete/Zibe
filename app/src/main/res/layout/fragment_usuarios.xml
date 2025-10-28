@@ -1,38 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.Usuarios.UsuariosFragment"
-    android:orientation="vertical"
-    android:background="@color/zibe_text_light"
-    android:id="@+id/linearUsers">
+    android:background="@drawable/bg_gradient_zibe">
 
     <com.zibete.proyecto1.FixedSwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:orientation="vertical"
-        android:background="@drawable/background_text"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent">
 
         <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent" />
 
             <ProgressBar
-                android:paddingHorizontal="150dp"
                 android:id="@+id/progressbar"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-
+                android:layout_height="match_parent"
+                android:paddingHorizontal="150dp" />
         </RelativeLayout>
 
-
     </com.zibete.proyecto1.FixedSwipeRefreshLayout>
-
-</LinearLayout>
+</FrameLayout>

@@ -1,9 +1,7 @@
 package com.zibete.proyecto1.ui;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
@@ -19,16 +17,12 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.DatePicker;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -43,15 +37,18 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.load.resource.bitmap.CenterCrop;
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
+import com.google.android.material.datepicker.CalendarConstraints;
+import com.google.android.material.datepicker.DateValidatorPointBackward;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
@@ -67,21 +64,20 @@ import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlidePhotoActivity;
 import com.zibete.proyecto1.Splash.SplashActivity;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Objects;
 
-import static android.app.Activity.RESULT_OK;
-import static com.firebase.ui.auth.AuthUI.getApplicationContext;
 import static com.zibete.proyecto1.Constants.CAMERA_SELECTED;
 import static com.zibete.proyecto1.Constants.PERMISSIONS_EDIT_PROFILE;
 import static com.zibete.proyecto1.Constants.PHOTO_SELECTED;
@@ -89,110 +85,169 @@ import static com.zibete.proyecto1.MainActivity.ref_cuentas;
 
 public class EditProfileFragment extends Fragment {
 
-    ImageView imageProfile, deleteSelected, cameraSelected, storageSelected, img_cancel_dialog;
-    EditText edtNameUser, edtDesc, edtDate;
-    TextView tvAge, completeProfile, tv_title;
-    String birthDay;
-    ProgressBar loadingPhoto;
-    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    ProgressDialog progress;
+    // UI
+    private ResizableImageViewProfile ftPerfil;
+    private ProgressBar loadingPhoto;
+    private TextInputEditText edtNameUser, edtDesc, edtDate;
+    private TextView tvAge, completeProfile, btnDone, btnOk;
 
-    FirebaseStorage storage = FirebaseStorage.getInstance();
-    StorageReference storageReference = storage.getReference();
-    StorageReference refImgUser;
+    private ExtendedFloatingActionButton btSave, btEdit;
+    private LinearLayout linearButtonsEdit, linearOnBoardingProfile;
 
-    ImageButton btSave, bt_edit;
-    TextView btn_ok, btn_done;
-    LinearLayout linearImageActivity, linearButtonsEdit, linearOnBoardingProfile, linear_edit_delete;
-    View view;
+    // State
+    private String birthDay;
+    private ProgressDialog progress;
+    private ArrayList<String> photoList;
 
-    ArrayList<String> photoList;
+    // Firebase
+    private final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+    private final FirebaseStorage storage = FirebaseStorage.getInstance();
+    private final StorageReference storageReference = storage.getReference();
+    private StorageReference refImgUser;
+
+    // Media
     private ContentValues values;
     private Uri imageUri;
     private Bitmap thumbnail;
-    String imageurl;
-    byte[] thumb_byte;
+    private String imageurl;
+    private byte[] thumb_byte;
 
-    // Tokens actuales del dispositivo
+    // Tokens
     private String myInstallId = null;
     private String myFcmToken = null;
 
+    // Prefs
+    private SharedPreferences prefs;
+    private SharedPreferences.Editor editor;
+    private boolean flagProfile;
+
     public EditProfileFragment() { }
 
-    @SuppressLint("RestrictedApi")
-    public static SharedPreferences prefs = getApplicationContext().getSharedPreferences("OnBoardingProfile", Context.MODE_PRIVATE);
-    public static SharedPreferences.Editor editor = prefs.edit();
-    public boolean flagProfile = prefs.getBoolean("flag_OnBoardingProfile", false);
-
     @Override
-    public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
-
-        view = inflater.inflate(R.layout.fragment_edit_profile, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_edit_profile, container, false);
         setHasOptionsMenu(true);
 
         if (user == null) return view;
+
+        // Prefs
+        Context ctx = requireContext();
+        prefs = ctx.getSharedPreferences("OnBoardingProfile", Context.MODE_PRIVATE);
+        editor = prefs.edit();
+        flagProfile = prefs.getBoolean("flag_OnBoardingProfile", false);
+
+        // Firebase storage ref
         refImgUser = storageReference.child("Users/imgPerfil/" + user.getUid() + ".jpg");
 
-        // Obtener tokens (no bloqueante)
+        // Tokens
         FirebaseInstallations.getInstance().getId()
                 .addOnCompleteListener(t -> { if (t.isSuccessful()) myInstallId = t.getResult(); });
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(t -> { if (t.isSuccessful()) myFcmToken = t.getResult(); });
 
-        photoList = new ArrayList<>();
-        linearOnBoardingProfile = view.findViewById(R.id.linearOnBoardingProfile);
-        linearButtonsEdit = view.findViewById(R.id.linearButtonsEdit);
-        linearImageActivity = view.findViewById(R.id.linearImageActivity);
-        progress = new ProgressDialog(getContext(), R.style.AlertDialogApp);
-        imageProfile = view.findViewById(R.id.ftPerfil);
+        // Bind UI
+        ftPerfil = view.findViewById(R.id.ftPerfil);
+        loadingPhoto = view.findViewById(R.id.loadingPhoto);
         edtNameUser = view.findViewById(R.id.edtNameUser);
         edtDesc = view.findViewById(R.id.edtDesc);
-        tvAge = view.findViewById(R.id.tvEdad);
-        completeProfile = view.findViewById(R.id.completeProfile);
         edtDate = view.findViewById(R.id.edtFecha);
+        tvAge = view.findViewById(R.id.tvEdad);
+        linearButtonsEdit = view.findViewById(R.id.linearButtonsEdit);
+        btEdit = view.findViewById(R.id.bt_edit);
         btSave = view.findViewById(R.id.bt_save);
-        bt_edit = view.findViewById(R.id.bt_edit);
-        btn_ok = view.findViewById(R.id.btn_ok);
-        loadingPhoto = view.findViewById(R.id.loadingPhoto);
-        btn_done = view.findViewById(R.id.btn_done);
+        btnDone = view.findViewById(R.id.btn_done);
+        linearOnBoardingProfile = view.findViewById(R.id.linearOnBoardingProfile);
+        completeProfile = view.findViewById(R.id.completeProfile);
+        btnOk = view.findViewById(R.id.btn_ok);
 
+        progress = new ProgressDialog(getContext(), R.style.AlertDialogApp);
+        photoList = new ArrayList<>();
+
+//        // === Ajustes para que la imagen respete ancho completo y alto auto ===
+//        ViewGroup.LayoutParams lp = ftPerfil.getLayoutParams();
+//        if (lp != null) {
+//            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+//            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+//            ftPerfil.setLayoutParams(lp);
+//        }
+//        ftPerfil.setAdjustViewBounds(true);
+//        ftPerfil.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+        // Onboarding overlay
         btSave.setEnabled(false);
-
         if (!flagProfile) {
             linearOnBoardingProfile.setVisibility(View.VISIBLE);
-            btn_done.setVisibility(View.VISIBLE);
-            editor.putBoolean("flag_OnBoardingProfile", true);
-            editor.apply();
+            btnDone.setVisibility(View.VISIBLE);
+            editor.putBoolean("flag_OnBoardingProfile", true).apply();
         } else {
             linearOnBoardingProfile.setVisibility(View.GONE);
-            btn_done.setVisibility(View.GONE);
+            btnDone.setVisibility(View.GONE);
         }
 
-        btn_done.setOnClickListener(v -> ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        btnOk.setOnClickListener(v1 -> linearOnBoardingProfile.setVisibility(View.GONE));
+        linearOnBoardingProfile.setOnClickListener(v12 -> linearOnBoardingProfile.setVisibility(View.GONE));
+
+        btnDone.setOnClickListener(v -> ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    String bd = String.valueOf(dataSnapshot.child("birthDay").getValue(String.class));
-                    if (bd == null || bd.isEmpty()) {
-                        final Snackbar snack = Snackbar.make(requireActivity().findViewById(android.R.id.content), "Complete su fecha de nacimiento", Snackbar.LENGTH_INDEFINITE);
-                        snack.setAction("OK", vv -> snack.dismiss());
-                        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        snack.show();
-                    } else {
-                        Intent intent = new Intent(getContext(), SplashActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(intent);
-                    }
+                if (!dataSnapshot.exists()) return;
+                String bd = dataSnapshot.child("birthDay").getValue(String.class);
+                if (bd == null || bd.isEmpty()) {
+                    snack("Complete su fecha de nacimiento");
+                } else {
+                    Intent intent = new Intent(getContext(), SplashActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
                 }
             }
             @Override public void onCancelled(@NonNull DatabaseError error) { }
         }));
 
-        btn_ok.setOnClickListener(v -> linearOnBoardingProfile.setVisibility(View.GONE));
-        linearOnBoardingProfile.setOnClickListener(v -> linearOnBoardingProfile.setVisibility(View.GONE));
-
         // Cargar datos actuales
+        bindCurrentProfile();
+
+        // Nombre y desc desde Auth / DB
+        if (edtNameUser != null) edtNameUser.setText(user.getDisplayName() != null ? user.getDisplayName() : "");
+        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (!dataSnapshot.exists()) return;
+                String desc = dataSnapshot.child("descripcion").getValue(String.class);
+                if (edtDesc != null) edtDesc.setText(desc != null ? desc : "");
+                btSave.setEnabled(false);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        });
+
+        // Click foto -> SlidePhotoActivity
+        ftPerfil.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), SlidePhotoActivity.class);
+            intent.putExtra("photoList", photoList);
+            intent.putExtra("position", 0);
+            intent.putExtra("rotation", 0);
+            startActivity(intent);
+        });
+
+        // Editar foto (dialog)
+        btEdit.setOnClickListener(v -> EditProfilePhoto());
+
+        // Date picker Material
+        edtDate.setOnClickListener(v -> showMaterialDatePicker());
+
+        // Guardar
+        btSave.setOnClickListener(v -> save());
+
+        // Habilitar guardar al modificar texto
+        TextWatcher enableSaveWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { btSave.setEnabled(true); }
+            @Override public void afterTextChanged(Editable s) { }
+        };
+        edtNameUser.addTextChangedListener(enableSaveWatcher);
+        edtDesc.addTextChangedListener(enableSaveWatcher);
+
+        return view;
+    }
+
+    private void bindCurrentProfile() {
         ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()) return;
@@ -201,25 +256,32 @@ public class EditProfileFragment extends Fragment {
                 String bd = dataSnapshot.child("birthDay").getValue(String.class);
                 String desc = dataSnapshot.child("descripcion").getValue(String.class);
 
+                // Edad + textos
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    if (bd == null || bd.equals("")) {
+                    if (bd == null || bd.isEmpty()) {
                         completeProfile.setText("Te pediremos que completes tu fecha de nacimiento. También podrás agregar información sobre vos o cambiar tu foto de perfil");
                     } else {
-                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        LocalDate fechaNac = LocalDate.parse(bd, fmt);
-                        String edad3 = String.valueOf(Period.between(fechaNac, LocalDate.now()).getYears());
-                        tvAge.setText(edad3);
-                        edtDate.setText(bd);
-                        completeProfile.setText("Actualizá tu perfil con una foto y tus datos personales");
+                        try {
+                            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                            LocalDate fechaNac = LocalDate.parse(bd, fmt);
+                            String edad = String.valueOf(Period.between(fechaNac, LocalDate.now()).getYears());
+                            tvAge.setText(edad);
+                            edtDate.setText(bd);
+                            completeProfile.setText("Actualizá tu perfil con una foto y tus datos personales");
+                        } catch (Exception ignored) { }
                     }
                 }
 
-                edtDesc.setText(desc);
+                if (edtDesc != null) edtDesc.setText(desc != null ? desc : "");
 
                 loadingPhoto.setVisibility(View.VISIBLE);
-                Glide.with(getContext())
-                        .load(foto)
-                        .apply(new RequestOptions().transform(new CenterCrop(), new RoundedCorners(35)))
+
+                // IMPORTANTE: sin transformaciones para respetar FIT_CENTER + adjustViewBounds
+                RequestOptions opts = new RequestOptions().dontTransform();
+
+                Glide.with(requireContext())
+                        .load(foto != null && !foto.isEmpty() ? foto : getString(R.string.URL_PHOTO_DEF))
+                        .apply(opts)
                         .listener(new RequestListener<Drawable>() {
                             @Override public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                                 loadingPhoto.setVisibility(View.GONE);
@@ -230,333 +292,373 @@ public class EditProfileFragment extends Fragment {
                                 return false;
                             }
                         })
-                        .into(imageProfile);
+                        .into(ftPerfil);
 
-                if (foto != null) photoList.add(foto);
+                if (foto != null && !foto.isEmpty()) photoList.add(foto);
                 btSave.setEnabled(false);
             }
             @Override public void onCancelled(@NonNull DatabaseError error) { }
         });
-
-        edtNameUser.setText(user.getDisplayName());
-        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    String desc = dataSnapshot.child("descripcion").getValue(String.class);
-                    edtDesc.setText(desc);
-                    btSave.setEnabled(false);
-                }
-            }
-            @Override public void onCancelled(@NonNull DatabaseError error) { }
-        });
-
-        DisplayMetrics dimension = new DisplayMetrics();
-        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(dimension);
-        int height = dimension.heightPixels;
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, height - (height / 4));
-        linearImageActivity.setLayoutParams(layoutParams);
-        linearImageActivity.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), SlidePhotoActivity.class);
-            intent.putExtra("photoList", photoList);
-            intent.putExtra("position", 0);
-            intent.putExtra("rotation", 180);
-            startActivity(intent);
-        });
-
-        bt_edit.setOnClickListener(v -> EditProfilePhoto());
-
-        edtDate.setOnClickListener(view -> {
-            final Calendar calendar = Calendar.getInstance();
-            DatePickerDialog datePickerDialog = new DatePickerDialog(
-                    new ContextThemeWrapper(getContext(), R.style.AlertDialogApp),
-                    (DatePicker dp, int year, int month, int dayOfMonth) -> {
-                        calendar.set(Calendar.YEAR, year);
-                        calendar.set(Calendar.MONTH, month);
-                        calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                        birthDay = simpleDateFormat.format(calendar.getTime());
-                        edtDate.setText(birthDay);
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                            LocalDate fechaNac = LocalDate.parse(birthDay, fmt);
-                            String edad3 = String.valueOf(Period.between(fechaNac, LocalDate.now()).getYears());
-                            tvAge.setText(edad3);
-                            btSave.setEnabled(true);
-                        }
-                    },
-                    calendar.get(Calendar.YEAR) - 18,
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH));
-            datePickerDialog.show();
-        });
-
-        btSave.setOnClickListener(v -> save());
-
-        TextWatcher enableSaveWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { btSave.setEnabled(false); }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { btSave.setEnabled(true); }
-            @Override public void afterTextChanged(Editable s) { }
-        };
-        edtNameUser.addTextChangedListener(enableSaveWatcher);
-        edtDesc.addTextChangedListener(enableSaveWatcher);
-
-        return view;
     }
 
-    public void EditProfilePhoto() {
-        String[] permissions = {Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
-        int read = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
-        int write = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        int cam = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
+    // ======== DATE PICKER (Material) ========
+    private void showMaterialDatePicker() {
+        CalendarConstraints.Builder constraints = new CalendarConstraints.Builder()
+                .setValidator(DateValidatorPointBackward.now());
 
-        if (read != PackageManager.PERMISSION_GRANTED || write != PackageManager.PERMISSION_GRANTED || cam != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(permissions, PERMISSIONS_EDIT_PROFILE);
+        MaterialDatePicker.Builder<Long> builder = MaterialDatePicker.Builder.datePicker();
+        MaterialDatePicker<Long> picker = builder
+                .setTitleText(getString(R.string.fecha_nacimiento))
+                .setCalendarConstraints(constraints.build())
+                .setTheme(R.style.ZibeDatePickerOverlay)
+                .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+                .build();
+
+        picker.addOnPositiveButtonClickListener(selection -> {
+            String formatted = epochToDate(selection);
+            birthDay = formatted;
+            edtDate.setText(formatted);
+
+            try {
+                int edad = computeAgeFromString(formatted);
+                tvAge.setText(String.valueOf(edad));
+            } catch (Exception ignored) { }
+
+            btSave.setEnabled(true);
+        });
+
+        picker.show(getParentFragmentManager(), "ZIBE_BIRTHDATE_PICKER");
+    }
+
+    private String epochToDate(Long epochMillis) {
+        if (epochMillis == null) return "";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            LocalDate ld = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate();
+            return ld.format(DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()));
         } else {
-            final View viewFilter = getLayoutInflater().inflate(R.layout.profile_photo_layout, null);
-            deleteSelected = viewFilter.findViewById(R.id.deleteSelected);
-            cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
-            storageSelected = viewFilter.findViewById(R.id.storageSelected);
-            tv_title = viewFilter.findViewById(R.id.tv_title);
-            linear_edit_delete = viewFilter.findViewById(R.id.linear_edit_delete);
-            img_cancel_dialog = viewFilter.findViewById(R.id.img_cancel_dialog);
-            linear_edit_delete.setVisibility(View.VISIBLE);
-            tv_title.setText(getResources().getString(R.string.editar_foto_de_perfil));
-
-            final AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getContext(), R.style.AlertDialogApp));
-            builder.setView(viewFilter);
-            builder.setCancelable(true);
-            final AlertDialog dialog = builder.create();
-            dialog.show();
-
-            deleteSelected.setOnClickListener(v -> {
-                btSave.setEnabled(true);
-                imageUri = Uri.parse(getContext().getString(R.string.URL_PHOTO_DEF));
-                imageurl = getContext().getString(R.string.URL_PHOTO_DEF);
-
-                loadingPhoto.setVisibility(View.VISIBLE);
-                Glide.with(getContext())
-                        .load(imageUri)
-                        .apply(new RequestOptions().transform(new RoundedCorners(35)))
-                        .listener(new RequestListener<Drawable>() {
-                            @Override public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                loadingPhoto.setVisibility(View.GONE);
-                                return false;
-                            }
-                            @Override public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                                loadingPhoto.setVisibility(View.GONE);
-                                return false;
-                            }
-                        }).into(imageProfile);
-
-                thumb_byte = null;
-                dialog.dismiss();
-            });
-
-            cameraSelected.setOnClickListener(v -> {
-                startCamera();
-                dialog.dismiss();
-            });
-
-            img_cancel_dialog.setOnClickListener(v -> dialog.dismiss());
-
-            storageSelected.setOnClickListener(v -> {
-                Intent gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-                startActivityForResult(gallery, PHOTO_SELECTED);
-                dialog.dismiss();
-            });
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            return sdf.format(epochMillis);
         }
     }
 
+    private int computeAgeFromString(String ddMMyyyy) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate birth = LocalDate.parse(ddMMyyyy, fmt);
+            return Period.between(birth, LocalDate.now()).getYears();
+        } else {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Calendar b = Calendar.getInstance();
+            b.setTime(Objects.requireNonNull(sdf.parse(ddMMyyyy)));
+            Calendar now = Calendar.getInstance();
+            int age = now.get(Calendar.YEAR) - b.get(Calendar.YEAR);
+            if (now.get(Calendar.DAY_OF_YEAR) < b.get(Calendar.DAY_OF_YEAR)) age--;
+            return age;
+        }
+    }
+
+    // ======== FOTO DE PERFIL ========
+    public void EditProfilePhoto() {
+        ArrayList<String> perms = new ArrayList<>();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            perms.add(Manifest.permission.CAMERA);
+            perms.add(Manifest.permission.READ_MEDIA_IMAGES);
+        } else {
+            perms.add(Manifest.permission.CAMERA);
+            perms.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            perms.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+
+        boolean needRequest = false;
+        for (String p : perms) {
+            if (ContextCompat.checkSelfPermission(requireContext(), p) != PackageManager.PERMISSION_GRANTED) {
+                needRequest = true; break;
+            }
+        }
+        if (needRequest) {
+            requestPermissions(perms.toArray(new String[0]), PERMISSIONS_EDIT_PROFILE);
+            return;
+        }
+
+        final View viewFilter = getLayoutInflater().inflate(R.layout.profile_photo_layout, null);
+        ImageView deleteSelected = viewFilter.findViewById(R.id.deleteSelected);
+        ImageView cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
+        ImageView storageSelected = viewFilter.findViewById(R.id.storageSelected);
+        TextView tv_title = viewFilter.findViewById(R.id.tv_title);
+        LinearLayout linear_edit_delete = viewFilter.findViewById(R.id.linear_edit_delete);
+        ImageView img_cancel_dialog = viewFilter.findViewById(R.id.img_cancel_dialog);
+
+        linear_edit_delete.setVisibility(View.VISIBLE);
+        tv_title.setText(getResources().getString(R.string.editar_foto_de_perfil));
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getContext(), R.style.AlertDialogApp));
+        builder.setView(viewFilter);
+        builder.setCancelable(true);
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+
+        deleteSelected.setOnClickListener(v -> {
+            btSave.setEnabled(true);
+            imageUri = Uri.parse(getString(R.string.URL_PHOTO_DEF));
+            imageurl = getString(R.string.URL_PHOTO_DEF);
+
+            loadingPhoto.setVisibility(View.VISIBLE);
+
+            // Respetar FIT_CENTER + alto auto
+            Glide.with(requireContext())
+                    .load(imageUri)
+                    .apply(new RequestOptions().dontTransform())
+                    .listener(new RequestListener<Drawable>() {
+                        @Override public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                            loadingPhoto.setVisibility(View.GONE);
+                            return false;
+                        }
+                        @Override public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            loadingPhoto.setVisibility(View.GONE);
+                            return false;
+                        }
+                    }).into(ftPerfil);
+
+            thumb_byte = null;
+            dialog.dismiss();
+        });
+
+        cameraSelected.setOnClickListener(v -> {
+            startCamera();
+            dialog.dismiss();
+        });
+
+        img_cancel_dialog.setOnClickListener(v -> dialog.dismiss());
+
+        storageSelected.setOnClickListener(v -> {
+            Intent gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            try {
+                startActivityForResult(gallery, PHOTO_SELECTED);
+            } catch (Exception e) {
+                snack("No se pudo abrir la galería");
+            }
+            dialog.dismiss();
+        });
+    }
+
     public void startCamera() {
-        values = new ContentValues();
-        values.put(android.provider.MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis());
-        imageUri = requireContext().getContentResolver().insert(
-                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
-        startActivityForResult(intent, CAMERA_SELECTED);
+        try {
+            values = new ContentValues();
+            values.put(android.provider.MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis());
+            imageUri = requireContext().getContentResolver().insert(
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(intent, CAMERA_SELECTED);
+        } catch (Exception e) {
+            snack("No se pudo abrir la cámara");
+        }
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (!isAdded()) return;
 
+        if (progress == null) {
+            progress = new ProgressDialog(getContext(), R.style.AlertDialogApp);
+        }
         progress.setMessage("Espere...");
-        progress.show();
         progress.setCanceledOnTouchOutside(false);
 
-        // Tu flujo de crop está comentado. Dejamos solo el cierre del progress.
-        progress.dismiss();
+        try {
+            progress.show();
+            // Aquí cargarías el preview de lo tomado/seleccionado si lo procesás.
+        } catch (Throwable ignored) {
+        } finally {
+            if (progress != null && progress.isShowing()) progress.dismiss();
+        }
     }
 
     public String getRealPathFromURI(Uri contentUri) {
-        String[] proj = {android.provider.MediaStore.Images.Media.DATA};
-        Cursor cursor = requireActivity().getContentResolver().query(contentUri, proj, null, null, null);
-        int column_index = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DATA);
-        cursor.moveToFirst();
-        return cursor.getString(column_index);
+        try {
+            String[] proj = {android.provider.MediaStore.Images.Media.DATA};
+            Cursor cursor = requireActivity().getContentResolver().query(contentUri, proj, null, null, null);
+            if (cursor == null) return null;
+            int column_index = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            String res = cursor.getString(column_index);
+            cursor.close();
+            return res;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSIONS_EDIT_PROFILE) {
-            EditProfilePhoto();
+            boolean allGranted = true;
+            for (int r : grantResults) {
+                if (r != PackageManager.PERMISSION_GRANTED) { allGranted = false; break; }
+            }
+            if (allGranted) {
+                EditProfilePhoto();
+            } else {
+                snack("Necesitás otorgar permisos para cambiar la foto.");
+            }
         }
     }
 
     private void save() {
-        progress.setMessage("Espere...");
-        progress.show();
-        progress.setCanceledOnTouchOutside(false);
-
-        String name = edtNameUser.getText().toString().trim();
-        String fecha = edtDate.getText().toString().trim();
-        String desc = edtDesc.getText().toString().trim();
-
-        if (fecha.isEmpty()) {
-            progress.dismiss();
-            snack("Debe ingresar su fecha de nacimiento para continuar");
-            return;
+        if (progress == null) {
+            progress = new ProgressDialog(getContext(), R.style.AlertDialogApp);
         }
+        progress.setMessage("Espere...");
+        progress.setCanceledOnTouchOutside(false);
+        progress.show();
 
-        // Validación + cálculo de edad
-        int edad = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate birth = LocalDate.parse(fecha, fmt);
-            edad = Period.between(birth, LocalDate.now()).getYears();
-            if (edad < 18) {
-                progress.dismiss();
-                snack("Lo sentimos, debe ser mayor de 18 años para utilizar la App");
+        try {
+            String name = edtNameUser.getText() == null ? "" : edtNameUser.getText().toString().trim();
+            String fecha = edtDate.getText() == null ? "" : edtDate.getText().toString().trim();
+            String desc = edtDesc.getText() == null ? "" : edtDesc.getText().toString().trim();
+
+            if (fecha.isEmpty()) {
+                snack("Debe ingresar su fecha de nacimiento para continuar");
                 return;
             }
-        } else {
-            // Fallback simple si alguna vez soportás <26
+
+            int edad;
             try {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-                Calendar b = Calendar.getInstance();
-                b.setTime(sdf.parse(fecha));
-                Calendar now = Calendar.getInstance();
-                edad = now.get(Calendar.YEAR) - b.get(Calendar.YEAR);
-                if (now.get(Calendar.DAY_OF_YEAR) < b.get(Calendar.DAY_OF_YEAR)) edad--;
+                edad = computeAgeFromString(fecha);
                 if (edad < 18) {
-                    progress.dismiss();
                     snack("Lo sentimos, debe ser mayor de 18 años para utilizar la App");
                     return;
                 }
             } catch (Exception e) {
-                progress.dismiss();
                 snack("Fecha de nacimiento inválida");
                 return;
             }
-        }
 
-        // Subida de foto (si corresponde)
-        if (thumb_byte != null) {
-            File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Zibe");
-            if (!folder.mkdirs()) {
-                Log.e("TAG", "No se pudo crear el directorio (puede existir)");
-            }
+            if (thumb_byte != null) {
+                try {
+                    File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Zibe");
+                    if (!folder.exists() && !folder.mkdirs()) {
+                        Log.e("EditProfile", "No se pudo crear el directorio (o ya existe)");
+                    }
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("ddMMyyyyHHmm", Locale.getDefault());
-            String fname = "IMG_" + simpleDateFormat.format(Calendar.getInstance().getTime());
-            File file = new File(folder, fname + ".jpg");
-            try {
-                FileOutputStream fos = new FileOutputStream(file);
-                thumbnail.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("ddMMyyyyHHmm", Locale.getDefault());
+                    String fname = "IMG_" + simpleDateFormat.format(Calendar.getInstance().getTime());
+                    File file = new File(folder, fname + ".jpg");
+                    try {
+                        FileOutputStream fos = new FileOutputStream(file);
+                        thumbnail.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
 
-            UploadTask uploadTask = refImgUser.putBytes(thumb_byte);
-            uploadTask.continueWithTask((Continuation<UploadTask.TaskSnapshot, Task<Uri>>) task -> {
-                if (!task.isSuccessful()) throw Objects.requireNonNull(task.getException());
-                return refImgUser.getDownloadUrl();
-            }).addOnCompleteListener((OnCompleteListener<Uri>) task -> {
-                if (task.isSuccessful()) {
-                    Uri downloadUri = task.getResult();
-                    ref_cuentas.child(user.getUid()).child("foto").setValue(downloadUri.toString());
-                    imageUri = downloadUri;
-                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                            .setPhotoUri(downloadUri)
-                            .build();
-                    user.updateProfile(profileUpdates);
+                    UploadTask uploadTask = refImgUser.putBytes(thumb_byte);
+                    uploadTask.continueWithTask((Continuation<UploadTask.TaskSnapshot, Task<Uri>>) task -> {
+                        if (!task.isSuccessful()) throw Objects.requireNonNull(task.getException());
+                        return refImgUser.getDownloadUrl();
+                    }).addOnCompleteListener((OnCompleteListener<Uri>) task -> {
+                        if (task.isSuccessful()) {
+                            Uri downloadUri = task.getResult();
+                            ref_cuentas.child(user.getUid()).child("foto").setValue(downloadUri.toString());
+                            imageUri = downloadUri;
+                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                    .setPhotoUri(downloadUri)
+                                    .build();
+                            user.updateProfile(profileUpdates);
+                        }
+                    });
+                } catch (Throwable t) {
+                    Log.e("EditProfile", "Error subiendo foto", t);
                 }
-            });
+            }
+
+            UserProfileChangeRequest profileUpdates;
+            if (imageurl != null && imageurl.equals(getString(R.string.URL_PHOTO_DEF))) {
+                try { refImgUser.delete(); } catch (Throwable ignored) { }
+                ref_cuentas.child(user.getUid()).child("foto").setValue(imageurl);
+                profileUpdates = new UserProfileChangeRequest.Builder()
+                        .setDisplayName(name)
+                        .setPhotoUri(imageUri)
+                        .build();
+            } else {
+                profileUpdates = new UserProfileChangeRequest.Builder()
+                        .setDisplayName(name)
+                        .build();
+            }
+            user.updateProfile(profileUpdates);
+
+            SimpleDateFormat stamp = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            String nowStr = stamp.format(Calendar.getInstance().getTime());
+
+            ref_cuentas.child(user.getUid()).child("nombre").setValue(name);
+            ref_cuentas.child(user.getUid()).child("birthDay").setValue(fecha);
+            ref_cuentas.child(user.getUid()).child("age").setValue(edad);
+            ref_cuentas.child(user.getUid()).child("descripcion").setValue(desc);
+            ref_cuentas.child(user.getUid()).child("date").setValue(nowStr);
+
+            if (myInstallId != null && !myInstallId.isEmpty()) {
+                ref_cuentas.child(user.getUid()).child("installId").setValue(myInstallId);
+                ref_cuentas.child(user.getUid()).child("token").setValue(myInstallId);
+            }
+            if (myFcmToken != null && !myFcmToken.isEmpty()) {
+                ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
+            }
+
+            updateUI(user);
+        } finally {
+            if (progress != null && progress.isShowing()) {
+                try { progress.dismiss(); } catch (Throwable ignored) {}
+            }
         }
-
-        // Actualizar nombre/foto en Auth
-        UserProfileChangeRequest profileUpdates;
-        if (imageurl != null && imageurl.equals(getContext().getString(R.string.URL_PHOTO_DEF))) {
-            // si marcó foto por defecto
-            refImgUser.delete();
-            ref_cuentas.child(user.getUid()).child("foto").setValue(imageurl);
-            profileUpdates = new UserProfileChangeRequest.Builder()
-                    .setDisplayName(name)
-                    .setPhotoUri(imageUri)
-                    .build();
-        } else {
-            profileUpdates = new UserProfileChangeRequest.Builder()
-                    .setDisplayName(name)
-                    .build();
-        }
-        user.updateProfile(profileUpdates);
-
-        // Timestamp
-        SimpleDateFormat stamp = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-        String nowStr = stamp.format(Calendar.getInstance().getTime());
-
-        // Escribir campos de perfil + tokens
-        ref_cuentas.child(user.getUid()).child("nombre").setValue(name);
-        ref_cuentas.child(user.getUid()).child("birthDay").setValue(fecha);
-        ref_cuentas.child(user.getUid()).child("age").setValue(edad);
-        ref_cuentas.child(user.getUid()).child("descripcion").setValue(desc);
-        ref_cuentas.child(user.getUid()).child("date").setValue(nowStr);
-
-        if (myInstallId != null && !myInstallId.isEmpty()) {
-            ref_cuentas.child(user.getUid()).child("installId").setValue(myInstallId);
-            // compat temporal (mismo valor que installId)
-            ref_cuentas.child(user.getUid()).child("token").setValue(myInstallId);
-        }
-        if (myFcmToken != null && !myFcmToken.isEmpty()) {
-            ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
-        }
-
-        updateUI(user);
     }
 
     private void updateUI(FirebaseUser user) {
+        if (!isAdded()) return;
         if (user != null) {
-            Toast.makeText(getContext(), "Datos actualizados correctamente", Toast.LENGTH_SHORT).show();
-            progress.dismiss();
+            try {
+                Toast.makeText(getContext(), "Datos actualizados correctamente", Toast.LENGTH_SHORT).show();
+            } catch (Throwable ignored) { }
+            if (progress != null && progress.isShowing()) progress.dismiss();
             Intent intent = new Intent(getContext(), SplashActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+        } else {
+            if (progress != null && progress.isShowing()) progress.dismiss();
         }
     }
 
-    public static void DeleteProfilePreferences() {
+    public static void DeleteProfilePreferences(Context context) {
+        if (context == null) return;
+        SharedPreferences prefs = context.getSharedPreferences("OnBoardingProfile", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean("flag_OnBoardingProfile", false);
         editor.apply();
     }
 
     @Override
-    public void onPrepareOptionsMenu(Menu menu) {
+    public void onPrepareOptionsMenu(@NonNull Menu menu) {
         super.onPrepareOptionsMenu(menu);
-        menu.findItem(R.id.action_search).setVisible(false);
-        menu.findItem(R.id.action_favorites).setVisible(false);
+        try {
+            if (menu.findItem(R.id.action_search) != null) {
+                menu.findItem(R.id.action_search).setVisible(false);
+            }
+            if (menu.findItem(R.id.action_favorites) != null) {
+                menu.findItem(R.id.action_favorites).setVisible(false);
+            }
+        } catch (Throwable ignored) { }
     }
 
     private void snack(String msg) {
-        if (getView() == null) return;
+        if (!isAdded() || getView() == null) return;
         final Snackbar snack = Snackbar.make(getView(), msg, Snackbar.LENGTH_INDEFINITE);
         snack.setAction("OK", v -> snack.dismiss());
-        snack.setBackgroundTint(getResources().getColor(R.color.colorC));
-        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        try {
+            snack.setBackgroundTint(getResources().getColor(R.color.zibe_pink));
+            TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+            tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        } catch (Throwable ignored) { }
         snack.show();
     }
 }

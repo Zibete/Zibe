@@ -129,8 +129,9 @@
 
         <activity
             android:name=".ReportActivity"
-            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
+            android:theme="@style/AppTheme.Zibe"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation" />
+
         <activity
             android:name=".OnBoardingActivity"
             android:launchMode="singleTask"

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Icon Button filled-tonal + ripple + gradiente Zibe en un solo XML -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -49,7 +49,7 @@
                     </item>
                 </layer-list>
             </item>
-            <!-- máscara: respeta las esquinas redondeadas del ripple -->
+            <!-- mÃ¡scara: respeta las esquinas redondeadas del ripple -->
             <item android:id="@android:id/mask">
                 <shape android:shape="rectangle">
                     <solid android:color="@color/white"/>
@@ -59,7 +59,7 @@
         </ripple>
     </item>
 
-    <!-- NORMAL (gradiente Zibe rosa→violeta) -->
+    <!-- NORMAL (gradiente Zibe rosaâ†’violeta) -->
     <item>
         <ripple android:color="@color/accent_transparent">
             <item>
@@ -96,3 +96,5 @@
     </item>
 
 </selector>
+
+

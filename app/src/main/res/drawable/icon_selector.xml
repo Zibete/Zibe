@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <animated-selector xmlns:android="http://schemas.android.com/apk/res/android">
 
 <!-- checked = visible -> ojo abierto -->
@@ -12,7 +12,7 @@
     android:id="@+id/masked"
     android:drawable="@drawable/design_ic_visibility_off"/>
 
-<!-- Transiciones (si tenés estos AVDs; si no, omití estas dos líneas) -->
+<!-- Transiciones (si tenÃ©s estos AVDs; si no, omitÃ­ estas dos lÃ­neas) -->
 <transition
     android:fromId="@id/visible"
     android:toId="@id/masked"
@@ -23,3 +23,5 @@
     android:toId="@id/visible"
     android:drawable="@drawable/avd_show_password"/>
 </animated-selector>
+
+

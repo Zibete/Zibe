@@ -1,72 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/editPerfil"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/zibe_night_start"
-    android:gravity="bottom"
     android:orientation="vertical"
-    android:padding="10dp"
-    android:theme="@style/ThemeOverlay.AppCompat.Dark"
-    android:id="@+id/editPerfil">
+    android:gravity="center_horizontal"
+    android:padding="20dp"
+    android:background="@drawable/bg_gradient_zibe">
 
-        <LinearLayout
-            android:id="@+id/linear_image_user"
-            android:layout_width="wrap_content"
-            android:layout_height="100dp"
-            android:gravity="center"
-            android:layout_weight="1">
+    <!-- Imagen de perfil centrada -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/linear_image_user"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginBottom="12dp"
+        app:cardCornerRadius="60dp"
+        app:cardElevation="6dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/zibe_surface">
 
-            <com.zibete.proyecto1.ui.ResizableImageView
-                android:id="@+id/image_user"
-                android:layout_gravity="center"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+        <com.zibete.proyecto1.ui.ResizableImageView
+            android:id="@+id/image_user"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+    </com.google.android.material.card.MaterialCardView>
 
-        </LinearLayout>
-
+    <!-- Datos de usuario -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp">
 
+        <!-- Nombre y correo -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingEnd="8dp">
 
+            <TextView
+                android:id="@+id/tv_usuario"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_header_title"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:textSize="@dimen/text_size_xlarge"/>
 
-        <TextView
-            android:id="@+id/tv_usuario"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/nav_header_title"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textSize="@dimen/text_size_xlarge"/>
-
-        <TextView
-            android:id="@+id/tv_mail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/text_size_normal"
-            android:text="@string/nav_header_subtitle"/>
-
+            <TextView
+                android:id="@+id/tv_mail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_header_subtitle"
+                android:textColor="@color/zibe_text_light"
+                android:textSize="@dimen/text_size_normal"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+        <!-- Botón editar -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/zibe_btn_secondary"
+            android:clickable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
             android:layout_gravity="center">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@color/transparent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="8dp"
+                android:tint="@color/white"
                 android:src="@drawable/ic_baseline_edit_24"/>
-
-        </LinearLayout>
-
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-
 </LinearLayout>

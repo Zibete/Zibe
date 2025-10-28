@@ -114,7 +114,11 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
         mLayoutManager.setStackFromEnd(true);
         rv = view.findViewById(R.id.rv);
         rv.setLayoutManager(mLayoutManager);
-
+        // Sugerencias de performance para listas con blur
+        rv.setHasFixedSize(true);
+        rv.setItemViewCacheSize(20);
+        rv.setDrawingCacheEnabled(true);
+        rv.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
 
 

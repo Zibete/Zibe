@@ -717,7 +717,7 @@ public class SettingsActivity extends AppCompatActivity {
 
 
         UsuariosFragment.DeletePreferences();
-        EditProfileFragment.DeleteProfilePreferences();
+        EditProfileFragment.DeleteProfilePreferences(this);
 
         FirebaseAuth.getInstance().signOut();
         com.facebook.login.LoginManager.getInstance().logOut();

@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Borde circular animado Zibe -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="200dp"
+            android:height="200dp"
+            android:viewportWidth="100"
+            android:viewportHeight="100">
+            <path
+                android:name="ring"
+                android:pathData="M50,5
+                                  A45,45 0 1,1 49.9,5"
+                android:strokeWidth="4"
+                android:strokeLineCap="round"
+                android:fillColor="@android:color/transparent"
+                android:strokeColor="@color/zibe_pink"/>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="ring">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="rotation"
+                android:duration="2000"
+                android:valueFrom="0"
+                android:valueTo="360"
+                android:repeatCount="infinite"
+                android:interpolator="@android:interpolator/linear"/>
+        </aapt:attr>
+    </target>
+</animated-vector>
+
+

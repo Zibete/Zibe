@@ -52,6 +52,7 @@ import com.google.android.gms.location.Priority;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
@@ -216,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
         headerView = navigationView.getHeaderView(0);
 
-        LinearLayout linear_image_user = headerView.findViewById(R.id.linear_image_user);
+        MaterialCardView linear_image_user = headerView.findViewById(R.id.linear_image_user);
         ImageView image_user = headerView.findViewById(R.id.image_user);
 
         DisplayMetrics dimension = new DisplayMetrics();
@@ -672,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
         ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
 
         UsuariosFragment.DeletePreferences();
-        EditProfileFragment.DeleteProfilePreferences();
+        EditProfileFragment.DeleteProfilePreferences(this);
 
         FirebaseAuth.getInstance().signOut();
         com.facebook.login.LoginManager.getInstance().logOut();
