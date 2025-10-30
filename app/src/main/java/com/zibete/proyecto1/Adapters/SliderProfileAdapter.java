@@ -6,8 +6,6 @@ import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -38,23 +36,17 @@ import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.ChatActivity;
 import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.POJOS.Users;
-import com.zibete.proyecto1.PerfilActivity;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlidePhotoActivity;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;
 
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.maxChatSize;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class SliderProfileAdapter extends PagerAdapter {
 
@@ -232,7 +224,10 @@ public class SliderProfileAdapter extends PagerAdapter {
         });
 
 
-        new Constants().StateUser(context, users.getID(), icon_conectado, icon_desconectado, tv_estado, chatWith);
+        UserRepository.stateUser(context, users.getID(), icon_conectado, icon_desconectado, tv_estado, chatWith);
+
+        UserRepository.setUserOnline(context, users.getID());
+
 
         new Constants().setFavorite(users.getID(), perfil_favorite_on, perfil_favorite_off);
 

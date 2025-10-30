@@ -21,14 +21,12 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
-import androidx.appcompat.widget.Toolbar;
+import com.google.android.material.appbar.MaterialToolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -36,9 +34,9 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-
 import com.bumptech.glide.Glide;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -56,11 +54,9 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.installations.FirebaseInstallations;
@@ -73,6 +69,8 @@ import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.FavoritesFragment;
 import com.zibete.proyecto1.ui.GruposFragment;
 import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
+import com.zibete.proyecto1.utils.FirebaseRefs;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -94,29 +92,16 @@ import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.readGroupMsg;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userDate;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
+import static com.zibete.proyecto1.utils.FirebaseRefs.user;
 
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
-    public static final FirebaseAuth mAuth = FirebaseAuth.getInstance();
-    public final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-    public static final FirebaseDatabase database = FirebaseDatabase.getInstance();
-    public static final DatabaseReference ref_datos = database.getReference("Usuarios").child("Datos");
-    public static final DatabaseReference ref_cuentas = database.getReference("Usuarios").child("Cuentas");
-    public static final DatabaseReference ref_chat_path = database.getReference("Chats");
-    public static final DatabaseReference ref_chat = database.getReference("Chats").child("Chats");
-    public static final DatabaseReference ref_chat_unknown = database.getReference("Chats").child("Unknown");
-    public static final DatabaseReference ref_zibe = database.getReference("Zibe");
-    public static final DatabaseReference ref_groups = database.getReference("Groups").child("Data");
-    public static final DatabaseReference ref_group_chat = database.getReference("Groups").child("Chat");
-    public static final DatabaseReference ref_group_users = database.getReference("Groups").child("Users");
-    public static final int REQUEST_LOCATION = 0;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
-
     int flagIntent;
     BadgeDrawable badgeDrawableChat;
     static BadgeDrawable badgeDrawableGroup;
-    public static Toolbar toolbar;
+    public static MaterialToolbar toolbar;
     DrawerLayout drawer;
     NavigationView navigationView;
     ActionBarDrawerToggle toggle;
@@ -125,9 +110,8 @@ public class MainActivity extends AppCompatActivity {
     public static ImageView search;
     public static ImageView filter;
     public static ImageView refresh;
-    public static RelativeLayout layoutSettings;
+    public static View layoutSettings;
     public static BottomNavigationView mBottomNavigation;
-
     // Ubicación (API moderna)
     private Location mLastLocation;
     private FusedLocationProviderClient fusedLocationClient;
@@ -136,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
     private LocationCallback locationCallback;
     public static final long UPDATE_INTERVAL = 1000;
     public static final long UPDATE_FASTEST_INTERVAL = UPDATE_INTERVAL / 2;
-
     public SearchView searchView;
     private static String CHANNEL_ID;
     @SuppressWarnings("unused")
@@ -151,6 +134,8 @@ public class MainActivity extends AppCompatActivity {
     private String myInstallId = null; // Identificador estable por instalación
     private String myFcmToken = null;  // Token FCM para notificaciones
     private boolean tokenListenerInitialized = false; // Evitar falso positivo en primera carga
+
+    private NavHostFragment navHostFragment;
 
     @SuppressLint("CutPasteId")
     @Override
@@ -196,17 +181,21 @@ public class MainActivity extends AppCompatActivity {
         };
         ensureLocationSettingsAndStart();
 
+        // ✅ MaterialToolbar funciona igual con setSupportActionBar
         setSupportActionBar(toolbar);
 
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
 
+        // ✅ MaterialToolbar hereda de Toolbar, funciona con el Toggle
         toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
         // NavController / AppBar
-        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        navHostFragment =
+                (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+        navController = navHostFragment.getNavController();
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_editPerfil
@@ -248,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
         badgeDrawableChat.setBackgroundColor(getResources().getColor(R.color.accent));
         badgeDrawableChat.setVisible(false);
 
-        final Query newQuery = ref_datos.child(user.getUid()).child(chatWith).orderByChild("noVisto").startAt(1);
+        final Query newQuery = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWith).orderByChild("noVisto").startAt(1);
         newQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -290,13 +279,13 @@ public class MainActivity extends AppCompatActivity {
 
                         final long totalMsg = dataSnapshot.getChildrenCount();
 
-                        ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
+                        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
                                 if (dataSnapshot1.exists()) {
 
-                                    final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+                                    final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
                                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -360,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         final int finalCountMsgUnread = countMsgUnread;
-                        ref_group_chat.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
+                        FirebaseRefs.ref_group_chat.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -368,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     final long totalMsg = dataSnapshot.getChildrenCount();
 
-                                    ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
+                                    FirebaseRefs.ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
@@ -404,8 +393,8 @@ public class MainActivity extends AppCompatActivity {
         };
 
         if (inGroup) {
-            ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
-            final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+            FirebaseRefs.ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
+            final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.addValueEventListener(listenerMsgUnreadBadge);
         }
 
@@ -488,7 +477,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (tk.isSuccessful()) {
                                     myFcmToken = tk.getResult();
                                     // Guardamos/actualizamos FCM token (no se usa para comparar sesión)
-                                    ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
+                                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
                                 }
                                 // Auto-heal + listener de installId
                                 registerInstallIdAndAttachListener();
@@ -507,7 +496,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** Escribe mi installId si falta/difiere y luego engancha el listener de cambios remotos. */
     private void registerInstallIdAndAttachListener() {
-        final DatabaseReference installIdRef = ref_cuentas.child(user.getUid()).child("installId");
+        final DatabaseReference installIdRef = FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId");
         installIdRef.get().addOnSuccessListener(snap -> {
             String current = snap.exists() ? snap.getValue(String.class) : null;
             if (myInstallId != null && (current == null || !current.equals(myInstallId))) {
@@ -599,7 +588,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // ======= Ubicación: resultados de resolución de settings =======
+    // ======= Ubicación: resultados de resolución de settings ======= //
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -614,25 +603,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ======= Ciclo de vida (online/offline + ubicación moderna) =======
+    // ======= Ciclo de vida (online/offline + ubicación moderna) ======= //
     @Override
     protected void onStart() {
         super.onStart();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
         ensureLocationSettingsAndStart();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
         stopLocationUpdates();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
         startLocationUpdates();
     }
 
@@ -640,8 +629,8 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         // Quitamos el listener del nodo "installId"
-        ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
-        new Constants().StateOffLine(getApplicationContext(), user.getUid());
+        FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
         stopLocationUpdates();
     }
 
@@ -663,14 +652,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void logout() {
-        new Constants().StateOffLine(getApplicationContext(), user.getUid());
-
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
         if (inGroup) {
             exitGroup();
         }
 
         // Quitamos el listener del nodo "installId"
-        ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
+        FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
 
         UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences(this);
@@ -685,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // ======= Ubicación: helpers modernas =======
+    // ======= Ubicación: helpers modernas ======= //
 
     private void ensureLocationSettingsAndStart() {
         if (!isLocationPermissionGranted()) {
@@ -753,7 +741,7 @@ public class MainActivity extends AppCompatActivity {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             snack.show();
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, Constants.REQUEST_LOCATION);
         }
     }
 
@@ -762,7 +750,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUEST_LOCATION) {
+        if (requestCode == Constants.REQUEST_LOCATION) {
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 ensureLocationSettingsAndStart();
             } else {
@@ -783,12 +771,12 @@ public class MainActivity extends AppCompatActivity {
         latitud = mLastLocation.getLatitude();
         longitud = mLastLocation.getLongitude();
 
-        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    ref_cuentas.child(user.getUid()).child("latitud").setValue(latitud);
-                    ref_cuentas.child(user.getUid()).child("longitud").setValue(longitud);
+                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("latitud").setValue(latitud);
+                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("longitud").setValue(longitud);
                 }
             }
 
@@ -797,7 +785,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ======= Menú / navegación =======
+    // ======= Menú / navegación ======= //
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -822,7 +810,7 @@ public class MainActivity extends AppCompatActivity {
                         .setCancelable(false)
                         .setPositiveButton("Si", (builder, id) ->
 
-                                MainActivity.ref_cuentas.child(user.getUid()).child("birthDay").addListenerForSingleValueEvent(new ValueEventListener() {
+                                FirebaseRefs.ref_cuentas.child(user.getUid()).child("birthDay").addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -938,7 +926,7 @@ public class MainActivity extends AppCompatActivity {
             type = chatWith;
         }
 
-        ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -970,7 +958,7 @@ public class MainActivity extends AppCompatActivity {
                                 .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
                                 .setPositiveButton("Mostrar", (builder, selectedIndex) ->
 
-                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        FirebaseRefs.ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -1028,7 +1016,7 @@ public class MainActivity extends AppCompatActivity {
             type = chatWith;
         }
 
-        ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -1060,7 +1048,7 @@ public class MainActivity extends AppCompatActivity {
                                 .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
                                 .setPositiveButton("Aceptar", (builder, selectedIndex) ->
 
-                                        ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        FirebaseRefs.ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -1113,27 +1101,27 @@ public class MainActivity extends AppCompatActivity {
         inGroup = false;
 
         if (listenerGroupBadge != null) {
-            ref_group_chat.child(groupName).removeEventListener(listenerGroupBadge);
+            FirebaseRefs.ref_group_chat.child(groupName).removeEventListener(listenerGroupBadge);
         }
         if (listenerMsgUnreadBadge != null) {
-            final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+            final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.removeEventListener(listenerMsgUnreadBadge);
         }
         if (valueEventListenerTitle != null) {
-            ref_group_users.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
+            FirebaseRefs.ref_group_users.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
         }
         if (listenerGroupChat != null) {
-            ref_group_chat.child(groupName).removeEventListener(listenerGroupChat);
+            FirebaseRefs.ref_group_chat.child(groupName).removeEventListener(listenerGroupChat);
         }
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     String key = snapshot.getKey();
-                    ref_chat_unknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
-                    ref_chat_unknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
-                    ref_datos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
+                    FirebaseRefs.ref_chat_unknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
+                    FirebaseRefs.ref_chat_unknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
+                    FirebaseRefs.ref_datos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
                 }
             }
 
@@ -1141,7 +1129,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) { }
         });
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
+        FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
 
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
 
@@ -1152,9 +1140,9 @@ public class MainActivity extends AppCompatActivity {
                 user.getUid(),
                 0,
                 userType);
-        ref_group_chat.child(groupName).push().setValue(chatmsg);
+        FirebaseRefs.ref_group_chat.child(groupName).push().setValue(chatmsg);
 
-        ref_group_users.child(groupName).child(user.getUid()).removeValue();
+        FirebaseRefs.ref_group_users.child(groupName).child(user.getUid()).removeValue();
 
         inGroup = false;
         userName = "";

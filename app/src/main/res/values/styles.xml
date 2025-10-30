@@ -51,13 +51,30 @@
         <item name="itemRippleColor">@color/zibe_pink</item>
     </style>
 
-    <!-- BottomNavigation en content_main.xml -->
-    <style name="NavBottomStyle" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="backgroundTint">@color/zibe_nav_bg</item>
-        <item name="itemIconTint">@color/zibe_nav_inactive</item>
-        <item name="itemTextColor">@color/zibe_nav_inactive</item>
-        <item name="itemRippleColor">@color/zibe_pink</item>
+    <!-- Overlay para BottomNavigationView (Material 3) -->
+    <style name="ThemeOverlay.Zibe.BottomNav" parent="ThemeOverlay.Material3.BottomNavigationView">
+        <!-- Colores de íconos/textos (usá el selector) -->
+        <item name="itemIconTint">@drawable/bottom_nav_selector</item>
+        <item name="itemTextColor">@drawable/bottom_nav_selector</item>
+
+        <!-- Ripple sutil (o transparente si no querés “mancha”) -->
+        <item name="itemRippleColor">@color/transparent</item>
+
+        <!-- Indicador activo (pill translúcido redondeado) -->
+        <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
+
+<!--    &lt;!&ndash; Indicador activo redondeado &ndash;&gt;-->
+<!--    <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">-->
+<!--        <item name="android:color">@color/glass_indicator</item>-->
+<!--        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.Rounded16</item>-->
+<!--    </style>-->
+
+<!--    <style name="ShapeAppearance.Zibe.Rounded16" parent="ShapeAppearance.Material3.Corner.Medium">-->
+<!--        <item name="cornerFamily">rounded</item>-->
+<!--        <item name="cornerSize">16dp</item>-->
+<!--    </style>-->
+
 
     <!-- filter_layout.xml / profile_photo_layout.xml -->
     <style name="AlertDialogApp" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
@@ -203,6 +220,36 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">20dp</item>
     </style>
+
+    <!-- Indicador activo transparente (sin bloque detrás del ícono) -->
+    <style name="Zibe.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@android:color/transparent</item>
+
+
+    </style>
+
+    <!-- Si decidís usar un pill redondeado -->
+    <style name="Shape.Rounded16">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- Estilo Shape básico -->
+    <style name="Shape" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/glass_indicator</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.Rounded16</item>
+    </style>
+
+    <style name="ShapeAppearance.Zibe.Rounded16" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
 
 
 </resources>

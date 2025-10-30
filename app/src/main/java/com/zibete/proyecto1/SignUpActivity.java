@@ -43,10 +43,10 @@ import java.util.Map;
 
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.CalendarConstraints;
-import com.google.android.material.datepicker.DateValidatorPointBackward;
+import com.zibete.proyecto1.utils.SnackUtils;
 
-import static com.zibete.proyecto1.MainActivity.REQUEST_LOCATION;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
+import static com.zibete.proyecto1.Constants.REQUEST_LOCATION;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 
 public class SignUpActivity extends AppCompatActivity {
 
@@ -126,8 +126,8 @@ public class SignUpActivity extends AppCompatActivity {
         long eighteenYearsAgo = cal.getTimeInMillis();
 
         CalendarConstraints constraints = new CalendarConstraints.Builder()
-                .setValidator(DateValidatorPointBackward.before(eighteenYearsAgo))
-                .setEnd(eighteenYearsAgo) // tope máximo visible = hace 18 años
+//                .setValidator(DateValidatorPointBackward.before(eighteenYearsAgo))
+//                .setEnd(eighteenYearsAgo) // tope máximo visible = hace 18 años
                 .build();
 
 
@@ -194,26 +194,21 @@ public class SignUpActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(birthday)) { toast("Introduzca su fecha de nacimiento"); return; }
 
         // Validación de >= 18 años (en dispositivos modernos con java.time)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                LocalDate fechaNac = LocalDate.parse(birthday, fmt);
-                LocalDate ahora    = LocalDate.now();
-                if (Period.between(fechaNac, ahora).getYears() < 18) {
-                    showSnack("Lo sentimos, debe ser mayor de 18 años para utilizar la App");
-                    return;
-                }
-            } catch (Exception e) {
-                toast("Fecha inválida");
+        try {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate fechaNac = LocalDate.parse(birthday, fmt);
+            LocalDate ahora = LocalDate.now();
+            if (Period.between(fechaNac, ahora).getYears() < 18) {
+                SnackUtils.showInfo(findViewById(android.R.id.content),
+                        "Lo sentimos, debe ser mayor de 18 años para utilizar la App"
+                );
                 return;
             }
-        } else {
-            // Fallback simple para APIs viejas
-            if (calcAgeLegacy(birthday) < 18) {
-                showSnack("Lo sentimos, debe ser mayor de 18 años para utilizar la App");
-                return;
-            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Fecha inválida", Toast.LENGTH_SHORT).show();
+            return;
         }
+
 
         // Ejecutar alta
         doSignUp();
@@ -349,6 +344,10 @@ public class SignUpActivity extends AppCompatActivity {
         TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
         tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
         snack.show();
+
+
+
+
     }
 
     // ==== utilidades de edad ====

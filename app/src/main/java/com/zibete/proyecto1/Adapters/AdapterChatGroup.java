@@ -57,9 +57,9 @@ import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_RECEIVER_DLT;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.viewHolderAdapterChat> implements View.OnCreateContextMenuListener{

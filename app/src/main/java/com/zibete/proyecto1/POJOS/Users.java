@@ -21,8 +21,6 @@ public class Users implements Comparable <Users>, java.io.Serializable{
     public Users() {
     }
 
-
-
     public Users(String ID, String nombre, String birthDay, String date, Integer age, String mail, String foto, boolean estado, String token, double distance, String descripcion, double latitud, double longitud) {
         this.ID = ID;
         Nombre = nombre;

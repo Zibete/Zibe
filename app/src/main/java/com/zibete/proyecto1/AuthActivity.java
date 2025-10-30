@@ -48,8 +48,8 @@ import com.zibete.proyecto1.Splash.SplashActivity;
 
 import java.util.Arrays;
 
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class AuthActivity extends AppCompatActivity {
 

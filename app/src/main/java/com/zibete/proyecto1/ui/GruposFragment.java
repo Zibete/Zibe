@@ -32,8 +32,8 @@ import com.zibete.proyecto1.R;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
-import static com.zibete.proyecto1.MainActivity.ref_groups;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_groups;
 
 
 public class GruposFragment extends Fragment implements SearchView.OnQueryTextListener{

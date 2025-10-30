@@ -31,7 +31,7 @@ import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 
 public class SplashActivity extends AppCompatActivity {
     private String userToken;

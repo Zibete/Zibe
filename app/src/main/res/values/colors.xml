@@ -83,6 +83,15 @@
  
     <color name="zibe_pink_bright">#FF5BAA</color>
 
+    <color name="zibe_night_start_10">#1AFFFFFF</color>
+    <!-- Opcional para pill suave -->
+    <color name="zibe_night_start_20">#33FFFFFF</color> <!-- 20% blanco en modo oscuro, ajustá a tu paleta -->
+
+    <!-- Fondo glass (modo claro) -->
+    <color name="glass_bg">#1AFFFFFF</color>        <!-- blanco 10% -->
+    <color name="glass_stroke">#33FFFFFF</color>    <!-- blanco 20% -->
+    <color name="glass_indicator">#26FFFFFF</color> <!-- blanco 15% para el pill -->
+
 
 </resources>
 

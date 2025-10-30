@@ -3,9 +3,6 @@ package com.zibete.proyecto1.Adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,17 +26,16 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.ChatActivity;
 import com.zibete.proyecto1.Constants;
-import com.zibete.proyecto1.MainActivity;
 import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlideProfileActivity;
 import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
+import com.zibete.proyecto1.utils.DateUtils;
+import com.zibete.proyecto1.utils.FirebaseRefs;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,16 +43,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import eightbitlab.com.blurview.BlurTarget;
 import eightbitlab.com.blurview.BlurView;
-import eightbitlab.com.blurview.RenderScriptBlur;
 
 
 import static com.zibete.proyecto1.Constants.getDistanceMeters;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.MainActivity.latitud;
 import static com.zibete.proyecto1.MainActivity.longitud;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.GlassEffect.applyGlassEffect;
+import static com.zibete.proyecto1.utils.GlassEffect.startGlowIfAny;
 
 public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAdapter> implements Filterable {
 
@@ -129,37 +125,11 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAd
             blurView = itemView.findViewById(R.id.blur_view);
             glowBorder = itemView.findViewById(R.id.glow_border);
 
-            applyGlassEffect();
-            startGlowIfAny();
+            applyGlassEffect(blurView, itemView);
+            startGlowIfAny(glowBorder);
         }
 
-        private void startGlowIfAny() {
-            if (glowBorder == null) return;
-            Drawable bg = glowBorder.getBackground();
-            if (bg instanceof AnimationDrawable) {
-                AnimationDrawable anim = (AnimationDrawable) bg;
-                anim.setEnterFadeDuration(600);
-                anim.setExitFadeDuration(600);
-                anim.start();
-            }
-        }
 
-        /** Configura el efecto glass (BlurView 3.x con BlurTarget) */
-        private void applyGlassEffect() {
-            if (blurView == null) return;
-
-            float radius = 16f;
-
-            // El BlurTarget es el "contenedor base" a desenfocar
-            BlurTarget blurTarget = new BlurTarget(itemView.getRootView().getContext());
-
-            blurView.setupWith(blurTarget)
-                    .setBlurRadius(radius)
-                    .setBlurAutoUpdate(true);
-
-            // sombreado suave para contraste
-            blurView.setOverlayColor(0x1A000000);
-        }
     }
 
     // --------------------- Create --------------------- //
@@ -207,13 +177,13 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAd
 
     // --------------------- Datos por card --------------------- //
     @SuppressLint("SetTextI18n")
-    public void loadUserCard(@NonNull final ViewHolderAdapter h, Users u) {
+    public void loadUserCard(@NonNull final ViewHolderAdapter h, Users users) {
 
-        Glide.with(context).load(u.getFoto()).into(h.img_user);
-        h.tv_usuario1.setText(u.getNombre());
+        Glide.with(context).load(users.getFoto()).into(h.img_user);
+        h.tv_usuario1.setText(users.getNombre());
 
         // Distancia
-        Double dist = getDistanceMeters(latitud, longitud, u.getLatitud(), u.getLongitud());
+        Double dist = getDistanceMeters(latitud, longitud, users.getLatitud(), users.getLongitud());
         if (dist > 10000) {
             h.distance.setText("A " + new BigDecimal(dist / 1000).setScale(0, RoundingMode.HALF_UP) + " km");
         } else if (dist > 1000) {
@@ -222,26 +192,24 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAd
             h.distance.setText("A " + new BigDecimal(dist).setScale(0, RoundingMode.HALF_UP) + " m");
         }
 
-        // Edad
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && u.getBirthDay() != null && !u.getBirthDay().isEmpty()) {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate birth = LocalDate.parse(u.getBirthDay(), fmt);
-            h.tv_edad.setText(String.valueOf(Period.between(birth, LocalDate.now()).getYears()));
-        }
+// Edad
+        int edad = DateUtils.calcularEdad(users.getBirthDay());
+        h.tv_edad.setText(String.valueOf(edad));
+
 
         // Descripción
-        if (u.getDescripcion() != null && !u.getDescripcion().isEmpty()) {
-            h.tv_desc.setText(u.getDescripcion());
+        if (users.getDescripcion() != null && !users.getDescripcion().isEmpty()) {
+            h.tv_desc.setText(users.getDescripcion());
             h.linear_desc.setVisibility(View.VISIBLE);
         } else {
             h.linear_desc.setVisibility(View.GONE);
         }
 
         // Estado on/off
-        new Constants().StateUser(context, u.getID(), h.icon_conectado, h.icon_desconectado, h.tv_estado, chatWith);
+        UserRepository.stateUser(context, users.getID(), h.icon_conectado, h.icon_desconectado, h.tv_estado, chatWith);
 
         // Favoritos
-        ref_datos.child(user.getUid()).child("FavoriteList").child(u.getID())
+        ref_datos.child(user.getUid()).child("FavoriteList").child(users.getID())
                 .addValueEventListener(new ValueEventListener() {
                     @Override public void onDataChange(@NonNull DataSnapshot snap) {
                         h.favorite_on.setVisibility(snap.exists() ? View.VISIBLE : View.GONE);
@@ -250,7 +218,7 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAd
                 });
 
         // Bloqueado
-        MainActivity.ref_datos.child(user.getUid()).child(chatWith).child(u.getID()).child("estado")
+        FirebaseRefs.ref_datos.child(user.getUid()).child(chatWith).child(users.getID()).child("estado")
                 .addValueEventListener(new ValueEventListener() {
                     @Override public void onDataChange(@NonNull DataSnapshot snap) {
                         h.bloq.setVisibility(Objects.equals(snap.getValue(String.class), "bloq") ? View.VISIBLE : View.GONE);
@@ -259,7 +227,7 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.ViewHolderAd
                 });
 
         // Me bloqueó
-        MainActivity.ref_datos.child(u.getID()).child(chatWith).child(user.getUid()).child("estado")
+        FirebaseRefs.ref_datos.child(users.getID()).child(chatWith).child(user.getUid()).child("estado")
                 .addValueEventListener(new ValueEventListener() {
                     @Override public void onDataChange(@NonNull DataSnapshot snap) {
                         boolean blocked = Objects.equals(snap.getValue(String.class), "bloq");

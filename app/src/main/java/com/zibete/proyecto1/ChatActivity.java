@@ -84,6 +84,7 @@ import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.POJOS.Chats;
 import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.utils.CropHelper;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
@@ -123,10 +124,10 @@ import static com.zibete.proyecto1.Constants.chatWithUnknown;
 import static com.zibete.proyecto1.Constants.maxChatSize;
 import static com.zibete.proyecto1.Constants.storageReference;
 import static com.zibete.proyecto1.Constants.unknown;
-import static com.zibete.proyecto1.MainActivity.ref_chat_path;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
@@ -607,8 +608,7 @@ public class ChatActivity extends AppCompatActivity {
 
                 View view = findViewById(android.R.id.content);
 
-                new Constants().desBloquear(ChatActivity.this, id_user_final, name_user_final, view, refChatWith);
-
+                UserRepository.setUnBlockUser(ChatActivity.this, id_user_final, name_user_final, view, refChatWith);
 
             }
         });
@@ -706,7 +706,8 @@ public class ChatActivity extends AppCompatActivity {
                     btnCamera.setVisibility(View.VISIBLE);
                     btnMic.setVisibility(View.VISIBLE);
                     btnSendMsg.setVisibility(View.GONE);
-                    new Constants().StateOnLine(getApplicationContext(), user.getUid());
+                    UserRepository.setUserOnline(getApplicationContext(), user.getUid());
+
                 }
 
             }
@@ -731,9 +732,8 @@ public class ChatActivity extends AppCompatActivity {
 
 
 //ESTADO
-        new Constants().StateUser(getApplicationContext(), id_user_final, icon_conectado, icon_desconectado, tv_estado, refChatWith);
 
-
+        UserRepository.stateUser(getApplicationContext(), id_user_final, icon_conectado, icon_desconectado, tv_estado, refChatWith);
 
 
 
@@ -1096,7 +1096,7 @@ public class ChatActivity extends AppCompatActivity {
             msg.setVisibility(View.VISIBLE);
             btnCamera.setVisibility(View.VISIBLE);
 
-            new Constants().StateOnLine(getApplicationContext(), user.getUid());
+            UserRepository.setUserOnline(getApplicationContext(), user.getUid());
 
         }
     }
@@ -1159,7 +1159,7 @@ public class ChatActivity extends AppCompatActivity {
             msg.setVisibility(View.VISIBLE);
             btnCamera.setVisibility(View.VISIBLE);
 
-            new Constants().StateOnLine(getApplicationContext(), user.getUid());
+            UserRepository.setUserOnline(getApplicationContext(), user.getUid());
 
         }else{
 
@@ -1715,7 +1715,7 @@ public class ChatActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        new Constants().StateOffLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(), user.getUid());
 
         ref_actual.getRef().setValue("");
 
@@ -1726,7 +1726,7 @@ public class ChatActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
 
         ref_actual.setValue(id_user_final + refChatWith);
 
@@ -1736,7 +1736,6 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_chat_activity, menu);
-
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -1823,19 +1822,19 @@ public class ChatActivity extends AppCompatActivity {
             return true;
 
         } else if (id == R.id.action_silent) { // Silenciar notificaciones
-            new Constants().Silent(name_user_final, id_user_final, refChatWith);
+            UserRepository.Silent(name_user_final, id_user_final, refChatWith);
             Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_notif) {
-            new Constants().Silent(name_user_final, id_user_final, refChatWith);
+            UserRepository.Silent(name_user_final, id_user_final, refChatWith);
             Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_bloq) { // Bloquear
-            new Constants().Block(this, name_user_final, id_user_final, view, refChatWith);
+            UserRepository.setBlockUser(this, name_user_final, id_user_final, view, refChatWith);
 
         } else if (id == R.id.action_desbloq) { // Desbloquear
-            new Constants().desBloquear(this, id_user_final, name_user_final, view, refChatWith);
 
+            UserRepository.setUnBlockUser(this, id_user_final, name_user_final, view, refChatWith);
         } else if (id == R.id.action_delete) { // Eliminar
             new Constants().DeleteChat(this, id_user_final, name_user_final, view, refChatWith);
         }

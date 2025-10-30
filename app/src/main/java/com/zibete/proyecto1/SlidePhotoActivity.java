@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.zibete.proyecto1.Adapters.SliderPhotoAdapter;
 import com.zibete.proyecto1.Adapters.SliderProfileAdapter;
 import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;
 
@@ -86,13 +87,13 @@ public class SlidePhotoActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
     }
 
 }

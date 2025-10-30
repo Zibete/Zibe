@@ -3,7 +3,6 @@ package com.zibete.proyecto1.Adapters;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -25,40 +24,32 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.ChatActivity;
 import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.PerfilActivity;
 import com.zibete.proyecto1.R;
-import com.zibete.proyecto1.SlideProfileActivity;
+import com.zibete.proyecto1.utils.DateUtils;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUsers.viewHolderAdapter> {
 
     ArrayList <String> favoritesArrayList;
     ArrayList <String> favoritesArrayList2;
-
     Context context;
     ArrayList <Users> extraUserList = new ArrayList<>();
     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
 
     public AdapterFavoriteUsers(ArrayList<String> favoritesArrayList, Context context) {
         this.favoritesArrayList = favoritesArrayList;
         this.context = context;
 
     }
-
 
     public class viewHolderAdapter extends RecyclerView.ViewHolder {
         TextView tv_favorite_user, tv_favorite_age;
@@ -80,33 +71,21 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
 
         }
 
-
     }
 
     @NonNull
     @Override
     public viewHolderAdapter onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_favorites, parent, false);
-
         viewHolderAdapter holder = new viewHolderAdapter(v);
-
-
-
         return holder;
-
-
     }
 
     @Override
     public void onBindViewHolder(@NonNull final viewHolderAdapter holder, final int position, List <Object> payloads) {
 
         final String favoriteUser = favoritesArrayList.get(position);
-
-
-
-
 
         if (payloads.isEmpty()) {
             super.onBindViewHolder(holder, position, payloads);
@@ -124,9 +103,6 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
             }
         }
 
-
-
-
         DisplayMetrics metrics = new DisplayMetrics();
         WindowManager windowManager = (WindowManager) context
                 .getSystemService(Context.WINDOW_SERVICE);
@@ -139,11 +115,7 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
 
         holder.linearCardFavorites.setLayoutParams(layoutParams);
 
-
-
-
-
-        // BOTÓN PARA IR AL PERFIL
+        // IR AL PERFIL
         holder.cardview_favorites.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
@@ -152,26 +124,8 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
                 intent.putExtra("id_user",favoriteUser);
                 v.getContext().startActivity(intent);
 
-
-/*
-                Intent intent = new Intent(v.getContext(), SlideProfileActivity.class);
-
-                //Collections.reverse(extraUserList);
-
-                intent.putExtra("userList", extraUserList);
-                intent.putExtra("position", favoritesArrayList.get(position));
-                intent.putExtra("rotation", 0);
-                v.getContext().startActivity(intent);
-
- */
-
-
             }
-        });
-        // FIN BOTÓN PARA IR AL PERFIL
-
-
-
+        });// FIN IR AL PERFIL
 
     }//Fin del onBindViewHolder 2
 
@@ -191,22 +145,9 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
                     String foto = dataSnapshot.child("foto").getValue(String.class);
                     String nombre = dataSnapshot.child("nombre").getValue(String.class);
 
+                    int age = DateUtils.calcularEdad(birthDay);
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-                        if (!birthDay.isEmpty()) {
-                            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                            LocalDate fechaNac = LocalDate.parse(birthDay, fmt);
-                            LocalDate ahora = LocalDate.now();
-
-                            Period periodo = Period.between(fechaNac, ahora);
-
-                            String edad3 = String.valueOf(periodo.getYears());
-                            holder.tv_favorite_age.setText(edad3);
-                        }
-                    }
-
-
+                    holder.tv_favorite_age.setText(String.valueOf(age));
                     holder.tv_favorite_user.setText(nombre);
                     Glide.with(context).load(foto).into(holder.image_favorite_user);
 
@@ -219,22 +160,11 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
             }
         });
 
-
-
-
-
-
-
-
-
-
 //Mostrar estado
-
         ref_datos.child(favoriteUser).child("Estado").addListenerForSingleValueEvent(new ValueEventListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-
 
                 if (dataSnapshot.exists()) {
 
@@ -277,21 +207,17 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
         notifyItemInserted(favoritesArrayList.size());
     }
 
-
-
-
-
     @Override
     public int getItemCount() {
         return favoritesArrayList.size();
     }
-
 
     public void updateDataUsers(ArrayList <String> usersList2){
 
         final FavoritesDiffCallback usersDiffCallback = new FavoritesDiffCallback (usersList2, favoritesArrayList);
         final DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(usersDiffCallback);
         diffResult.dispatchUpdatesTo(this);
+
         favoritesArrayList.clear();
         favoritesArrayList.addAll(usersList2);
 
@@ -300,8 +226,4 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
 
     }
 
-
-
 }
-
-

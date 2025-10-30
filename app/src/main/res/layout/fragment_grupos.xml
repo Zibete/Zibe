@@ -4,61 +4,47 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_zibe"
     android:orientation="vertical">
 
-
-    <LinearLayout
+    <!-- Contenedor principal -->
+    <com.zibete.proyecto1.FixedSwipeRefreshLayout
+        android:id="@+id/group_swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/background_text"
         android:orientation="vertical">
 
-        <com.zibete.proyecto1.FixedSwipeRefreshLayout
-            android:id="@+id/group_swipe_refresh"
-            android:orientation="vertical"
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <androidx.coordinatorlayout.widget.CoordinatorLayout
+            <!-- Lista de grupos -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_groups"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingHorizontal="8dp"
+                android:clipToPadding="false" />
+
+            <!-- Círculo de progreso -->
+            <ProgressBar
+                android:id="@+id/progressbar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingHorizontal="120dp" />
+
+            <!-- Botón flotante para nuevo grupo -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_new_group"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="20dp"
+                android:src="@drawable/ic_baseline_add_24"
+                app:backgroundTint="@color/zibe_pink"
+                app:tint="@color/white" />
 
-                <LinearLayout
-                    android:layout_marginLeft="8dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rv_groups"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"/>
-
-                </LinearLayout>
-
-
-
-                <ProgressBar
-                    android:paddingHorizontal="150dp"
-                    android:id="@+id/progressbar"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/fab_new_group"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|right"
-                    android:src="@drawable/ic_baseline_add_24"
-                    android:layout_margin="16dp"/>
-
-            </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-        </com.zibete.proyecto1.FixedSwipeRefreshLayout>
-
-    </LinearLayout>
-
-
-
+    </com.zibete.proyecto1.FixedSwipeRefreshLayout>
 
 </LinearLayout>

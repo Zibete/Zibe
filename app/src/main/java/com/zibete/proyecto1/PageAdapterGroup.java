@@ -1,14 +1,10 @@
 package com.zibete.proyecto1;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,16 +13,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -34,20 +26,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.rahimlis.badgedtablayout.BadgedTabLayout;
-import com.zibete.proyecto1.Splash.SplashActivity;
-import com.zibete.proyecto1.ui.ChatList.ChatListFragment;
 import com.zibete.proyecto1.ui.ChatList.ChatListGroupsFragment;
-import com.zibete.proyecto1.ui.FavoritesFragment;
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.MainActivity.badgeDrawableGroup;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class PageAdapterGroup extends Fragment {

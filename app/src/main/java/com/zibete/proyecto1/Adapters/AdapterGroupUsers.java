@@ -38,8 +38,8 @@ import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_groups;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_groups;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.viewHolderAdapter> implements Filterable {

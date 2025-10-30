@@ -19,8 +19,8 @@ import java.util.HashMap;
 
 import static com.zibete.proyecto1.Constants.Calling;
 import static com.zibete.proyecto1.Constants.Ringing;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class CallingActivity extends AppCompatActivity {
 

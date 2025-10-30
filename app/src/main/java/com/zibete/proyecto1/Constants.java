@@ -1,17 +1,26 @@
 package com.zibete.proyecto1;
 
-import android.annotation.SuppressLint;
+import static com.zibete.proyecto1.MainActivity.latitud;
+import static com.zibete.proyecto1.MainActivity.longitud;
+import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.user;
+import static java.lang.StrictMath.acos;
+import static java.lang.StrictMath.cos;
+import static java.lang.StrictMath.sin;
+import static java.lang.StrictMath.toRadians;
+
 import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Typeface;
-import android.os.Build;
 import android.view.ContextThemeWrapper;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -20,430 +29,407 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.bumptech.glide.Glide;
 import com.github.clans.fab.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging;
-
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.zibete.proyecto1.Adapters.AdapterPhotoReceived;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.POJOS.Chats;
-import com.zibete.proyecto1.POJOS.Estado;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.utils.DateUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Objects;
 
-import static com.zibete.proyecto1.MainActivity.latitud;
-import static com.zibete.proyecto1.MainActivity.longitud;
-import static com.zibete.proyecto1.MainActivity.ref_chat;
-import static com.zibete.proyecto1.MainActivity.ref_chat_path;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static java.lang.StrictMath.acos;
-import static java.lang.StrictMath.cos;
-import static java.lang.StrictMath.sin;
-import static java.lang.StrictMath.toRadians;
-
 public class Constants extends Application {
 
+    public static final int REQUEST_LOCATION = 0;
     public static int FRAGMENT_ID_CHATLIST = 1;
     public static int FRAGMENT_ID_CHATGROUPLIST = 2;
-
     public static int CAMERA_SELECTED = 22;
     public static int PHOTO_SELECTED = 33;
     public static int MIC_SELECTED = 44;
     public static int PERMISSIONS_EDIT_PROFILE = 11;
     public static int maxChatSize = 10000;
-
     public static int INFO = 111;
-
     public static int MSG = 100;
     public static int MSG_SENDER_DLT = 101;
     public static int MSG_RECEIVER_DLT = 102;
-
     public static int PHOTO = 200;
     public static int PHOTO_SENDER_DLT = 201;
     public static int PHOTO_RECEIVER_DLT = 202;
-
     public static int AUDIO = 300;
     public static int AUDIO_SENDER_DLT = 301;
     public static int AUDIO_RECEIVER_DLT = 302;
-
     public static int PRIVATE_GROUP = 2;
     public static int PUBLIC_GROUP = 1;
-
     public static String chat = "Chats";
     public static String unknown = "Unknown";
-
     public static String chatWith = "ChatWith";
     public static String chatWithUnknown = "ChatWithUnknown";
-
     public static String Empty = "Empty";
     public static String Calling = "Calling";
     public static String Ringing = "Ringing";
-
     public static FirebaseStorage storage = FirebaseStorage.getInstance();
     public static StorageReference storageReference = storage.getReference();
-
     public static ValueEventListener listenerToken;
     public static ValueEventListener listenerGroupBadge;
     public static ValueEventListener listenerMsgUnreadBadge;
 
-    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-    public static int navBottomUsers;
-
-
-
-    public void StateOnLine(Context context, final String id_user){
-
-        Estado cState = new Estado(
-                context.getString(R.string.conectado),
-                "",
-                "");
-        ref_datos.child(id_user).child("Estado").setValue(cState);
-        ref_cuentas.child(id_user).child("estado").setValue(true);
-
-    }
-
-    public void StateOffLine(Context context, String id_user){
-
-        if (user != null) {
-            final Calendar c = Calendar.getInstance();
-            final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-            final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-
-            final Estado cState = new Estado(
-                    context.getString(R.string.ultVez),
-                    dateFormat.format(c.getTime()),
-                    timeFormat.format(c.getTime()));
-
-            ref_datos.child(id_user).child("Estado").setValue(cState);
-            ref_cuentas.child(id_user).child("estado").setValue(false);
-        }
-
-    }
-
-    public void StateUser (final Context context, final String id_user, final ImageView icon_conectado, final ImageView icon_desconectado, final TextView tv_estado, final String type){
-
-        ref_datos.child(id_user).child("Estado").addValueEventListener(new ValueEventListener() {
-            @SuppressLint("SetTextI18n")
-            @Override
-            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-
-                if (dataSnapshot.exists()) {
-
-                    Calendar c = Calendar.getInstance();
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                    final String estado = dataSnapshot.child("estado").getValue(String.class);
-                    String fecha = dataSnapshot.child("fecha").getValue(String.class);
-                    String hora = dataSnapshot.child("hora").getValue(String.class);
-
-                    if (estado.equals(context.getString(R.string.conectado))) {
-                        //Conectado
-                        icon_conectado.setVisibility(View.VISIBLE);
-                        icon_desconectado.setVisibility(View.GONE);
-                        tv_estado.setText(context.getString(R.string.enlinea));
-                        tv_estado.setTypeface(null, Typeface.NORMAL);
-                        tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
-                    } else {
-                        if (estado.equals(context.getString(R.string.escribiendo)) || estado.equals(context.getString(R.string.grabando))) {
-                            //Escribiendo
-
-
-                            ref_datos.child(id_user).child("ChatList").child("Actual").addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                    if (dataSnapshot.exists()) {
-
-                                        if (dataSnapshot.getValue(String.class).equals(user.getUid() + type)) {
-                                            icon_conectado.setVisibility(View.VISIBLE);
-                                            icon_desconectado.setVisibility(View.GONE);
-                                            tv_estado.setText(estado);
-                                            tv_estado.setTypeface(null, Typeface.ITALIC);
-                                            tv_estado.setTextColor(context.getResources().getColor(R.color.accent));
-                                        } else {
-                                            icon_conectado.setVisibility(View.VISIBLE);
-                                            icon_desconectado.setVisibility(View.GONE);
-                                            tv_estado.setText(context.getString(R.string.enlinea));
-                                            tv_estado.setTypeface(null, Typeface.NORMAL);
-                                            tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
 
-                                        }
-                                    }
-                                }
-                                @Override
-                                public void onCancelled(@NonNull DatabaseError error) {
-                                }
-                            });
 
-                        }else {
-                            //últ vez
-                            icon_conectado.setVisibility(View.GONE);
-                            icon_desconectado.setVisibility(View.VISIBLE);
-                            tv_estado.setTypeface(null, Typeface.NORMAL);
-                            tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
 
-                            if (fecha.equals(dateFormat.format(c.getTime()))) {
-                                tv_estado.setText(context.getString(R.string.ultVez) + " " + context.getString(R.string.hoy) + " " + context.getString(R.string.a_las) + " " + hora);
-                            } else {
 
-                                Calendar calendar = Calendar.getInstance();
-                                calendar.add(Calendar.DATE, -1);
 
-                                if (fecha.equals(dateFormat.format(calendar.getTime()))) {
-                                    tv_estado.setText(context.getString(R.string.ultVez) + " " + context.getString(R.string.ayer) + " " + context.getString(R.string.a_las) + " " + hora);
-                                } else {
-                                    tv_estado.setText(context.getString(R.string.ultVez) + " " + fecha + " " + context.getString(R.string.a_las) + " " + hora);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    icon_conectado.setVisibility(View.GONE);
-                    icon_desconectado.setVisibility(View.VISIBLE);
-                    tv_estado.setText(context.getString(R.string.desconectado));
-                }
 
-            }
-            @Override public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
 
-    }
 
-    public void NoLeido (String id_user, String type){
 
 
-        ref_datos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull final DataSnapshot dataVistos) {
-                if (dataVistos.exists()) {
-                    final Integer noVistos = dataVistos.getValue(Integer.class);
 
-                    ref_datos.child(user.getUid()).child("ChatList").child("msgNoLeidos").addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataLeidos) {
-                            if (dataLeidos.exists()) {
-                                final Integer noLeidos = dataLeidos.getValue(Integer.class);
-                                Integer count = noLeidos - noVistos;
 
-                                if ((noVistos > 0)) {
-                                    dataVistos.getRef().setValue(0);
-                                    dataLeidos.getRef().setValue(count);
 
-                                } else {
 
-                                    dataVistos.getRef().setValue(1);
-                                    dataLeidos.getRef().setValue(noLeidos + 1);
 
-                                }
-                            }
-                        }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-
-
-    }
-
-    public void Silent(final String name_user, final String id_user, final String type){
-
-
-        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                if (dataSnapshot.exists()) {
-
-                    String state = dataSnapshot.child("estado").getValue(String.class);
-                    String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
-
-                    if (photo.equals(Empty)){
-
-                        dataSnapshot.getRef().removeValue();
-
-                    }else{
-
-                        if (state.equals("silent")) {
-
-                            dataSnapshot.getRef().child("estado").setValue(type);
-
-                        }else{
-
-                            dataSnapshot.getRef().child("estado").setValue("silent");
-
-                        }
-                    }
-
-                }else {
-
-                    newChatWith(dataSnapshot, id_user, name_user, "silent");
-
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-
-
-    }
-
-    public void newChatWith(@NonNull DataSnapshot dataSnapshot, String id_user, String name_user, String state) {
-        final Calendar c = Calendar.getInstance();
-        final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
-        final ChatWith newChat = new ChatWith(
-                "",
-                dateFormat3.format(c.getTime()),
-                null,
-                "",
-                id_user,
-                name_user,
-                Empty,
-                state,
-                0,
-                1);
-
-        dataSnapshot.getRef().setValue(newChat);
-    }
-
-    public void Block(final Context context, final String name_user, final String id_user, final View view, final String type){
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(context, R.style.AlertDialogApp));
-        builder.setTitle("Bloquear");
-        builder.setMessage("¿Desea bloquear a " + name_user + "?");
-
-        builder.setCancelable(false);
-        builder.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-
-            public void onClick(DialogInterface builder, int id) {
-
-                ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
-
-                        if (dataSnapshot.exists()){
-
-                            dataSnapshot.getRef().child("estado").setValue("bloq");
-
-                        } else {
-
-                            newChatWith(dataSnapshot, id_user, name_user, "bloq");
-
-                        }
-                    }
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                    }
-                });
-
-                final Snackbar snack = Snackbar.make(view, "Bloqueaste a " + name_user +", podrás desbloquearlo cuando desees", Snackbar.LENGTH_INDEFINITE);
-                snack.setAction("OK", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        snack.dismiss();
-                    }
-                });
-                snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
-                TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                snack.show();
-
-            }
-        });
-        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface builder, int id) {
-                return;
-            }
-        });
-        builder.show();
-
-    }
-
-
-    public void desBloquear (final Context context, final String id_user, final String name_user, final View view, final String type) {
-
-        new AlertDialog.Builder(new ContextThemeWrapper(context, R.style.AlertDialogApp))
-
-                .setMessage("¿Desea desbloquear a " + name_user + "?")
-                .setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface builder, int id) {
-
-                        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
-                                String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
-
-                                if (photo.equals(Empty)){
-                                    dataSnapshot.getRef().removeValue();
-
-                                }else{
-                                    dataSnapshot.getRef().child("estado").setValue(type);
-
-                                }
-
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-
-                            }
-                        });
-
-
-                        Snackbar snack = Snackbar.make(view, "Desbloqueaste a " + name_user, Snackbar.LENGTH_SHORT);
-                        snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
-                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
-                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        snack.show();
-
-                    }
-
-
-                })
-                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
-
-                    public void onClick(DialogInterface builder, int id) {
-
-                        return;
-                    }
-                })
-                .show();
-
-    }
-
+//
+//    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+//    public void StateOnLine(Context context, final String id_user){
+//
+//        Estado cState = new Estado(
+//                context.getString(R.string.conectado),
+//                "",
+//                "");
+//        ref_datos.child(id_user).child("Estado").setValue(cState);
+//        ref_cuentas.child(id_user).child("estado").setValue(true);
+//
+//    }
+//    public void StateOffLine(Context context, String id_user){
+//
+//        if (user != null) {
+//            final Calendar c = Calendar.getInstance();
+//            final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+//            final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+//
+//            final Estado cState = new Estado(
+//                    context.getString(R.string.ultVez),
+//                    dateFormat.format(c.getTime()),
+//                    timeFormat.format(c.getTime()));
+//
+//            ref_datos.child(id_user).child("Estado").setValue(cState);
+//            ref_cuentas.child(id_user).child("estado").setValue(false);
+//        }
+//
+//    }
+//    public void StateUser (final Context context, final String id_user, final ImageView icon_conectado, final ImageView icon_desconectado, final TextView tv_estado, final String type){
+//
+//        ref_datos.child(id_user).child("Estado").addValueEventListener(new ValueEventListener() {
+//            @SuppressLint("SetTextI18n")
+//            @Override
+//            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+//
+//                if (dataSnapshot.exists()) {
+//
+//                    Calendar c = Calendar.getInstance();
+//                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+//                    final String estado = dataSnapshot.child("estado").getValue(String.class);
+//                    String fecha = dataSnapshot.child("fecha").getValue(String.class);
+//                    String hora = dataSnapshot.child("hora").getValue(String.class);
+//
+//                    if (estado.equals(context.getString(R.string.conectado))) {
+//                        //Conectado
+//                        icon_conectado.setVisibility(View.VISIBLE);
+//                        icon_desconectado.setVisibility(View.GONE);
+//                        tv_estado.setText(context.getString(R.string.enlinea));
+//                        tv_estado.setTypeface(null, Typeface.NORMAL);
+//                        tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
+//                    } else {
+//                        if (estado.equals(context.getString(R.string.escribiendo)) || estado.equals(context.getString(R.string.grabando))) {
+//                            //Escribiendo
+//
+//
+//                            ref_datos.child(id_user).child("ChatList").child("Actual").addValueEventListener(new ValueEventListener() {
+//                                @Override
+//                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//
+//                                    if (dataSnapshot.exists()) {
+//
+//                                        if (dataSnapshot.getValue(String.class).equals(user.getUid() + type)) {
+//                                            icon_conectado.setVisibility(View.VISIBLE);
+//                                            icon_desconectado.setVisibility(View.GONE);
+//                                            tv_estado.setText(estado);
+//                                            tv_estado.setTypeface(null, Typeface.ITALIC);
+//                                            tv_estado.setTextColor(context.getResources().getColor(R.color.accent));
+//                                        } else {
+//                                            icon_conectado.setVisibility(View.VISIBLE);
+//                                            icon_desconectado.setVisibility(View.GONE);
+//                                            tv_estado.setText(context.getString(R.string.enlinea));
+//                                            tv_estado.setTypeface(null, Typeface.NORMAL);
+//                                            tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
+//
+//                                        }
+//                                    }
+//                                }
+//                                @Override
+//                                public void onCancelled(@NonNull DatabaseError error) {
+//                                }
+//                            });
+//
+//                        }else {
+//                            //últ vez
+//                            icon_conectado.setVisibility(View.GONE);
+//                            icon_desconectado.setVisibility(View.VISIBLE);
+//                            tv_estado.setTypeface(null, Typeface.NORMAL);
+//                            tv_estado.setTextColor(context.getResources().getColor(R.color.colorClaro));
+//
+//                            if (fecha.equals(dateFormat.format(c.getTime()))) {
+//                                tv_estado.setText(context.getString(R.string.ultVez) + " " + context.getString(R.string.hoy) + " " + context.getString(R.string.a_las) + " " + hora);
+//                            } else {
+//
+//                                Calendar calendar = Calendar.getInstance();
+//                                calendar.add(Calendar.DATE, -1);
+//
+//                                if (fecha.equals(dateFormat.format(calendar.getTime()))) {
+//                                    tv_estado.setText(context.getString(R.string.ultVez) + " " + context.getString(R.string.ayer) + " " + context.getString(R.string.a_las) + " " + hora);
+//                                } else {
+//                                    tv_estado.setText(context.getString(R.string.ultVez) + " " + fecha + " " + context.getString(R.string.a_las) + " " + hora);
+//                                }
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    icon_conectado.setVisibility(View.GONE);
+//                    icon_desconectado.setVisibility(View.VISIBLE);
+//                    tv_estado.setText(context.getString(R.string.desconectado));
+//                }
+//
+//            }
+//            @Override public void onCancelled(@NonNull DatabaseError error) {
+//            }
+//        });
+//
+//    }
+
+//    public static void NoLeido(String id_user, String type){
+//
+//
+//        ref_datos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull final DataSnapshot dataVistos) {
+//                if (dataVistos.exists()) {
+//                    final Integer noVistos = dataVistos.getValue(Integer.class);
+//
+//                    ref_datos.child(user.getUid()).child("ChatList").child("msgNoLeidos").addListenerForSingleValueEvent(new ValueEventListener() {
+//                        @Override
+//                        public void onDataChange(@NonNull DataSnapshot dataLeidos) {
+//                            if (dataLeidos.exists()) {
+//                                final Integer noLeidos = dataLeidos.getValue(Integer.class);
+//                                Integer count = noLeidos - noVistos;
+//
+//                                if ((noVistos > 0)) {
+//                                    dataVistos.getRef().setValue(0);
+//                                    dataLeidos.getRef().setValue(count);
+//
+//                                } else {
+//
+//                                    dataVistos.getRef().setValue(1);
+//                                    dataLeidos.getRef().setValue(noLeidos + 1);
+//
+//                                }
+//                            }
+//                        }
+//
+//                        @Override
+//                        public void onCancelled(@NonNull DatabaseError error) {
+//                        }
+//                    });
+//                }
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError error) {
+//            }
+//        });
+//
+//
+//    }
+
+//    public void Silent(final String name_user, final String id_user, final String type){
+//
+//
+//        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//
+//                if (dataSnapshot.exists()) {
+//
+//                    String state = dataSnapshot.child("estado").getValue(String.class);
+//                    String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
+//
+//                    if (photo.equals(Empty)){
+//
+//                        dataSnapshot.getRef().removeValue();
+//
+//                    }else{
+//
+//                        if (state.equals("silent")) {
+//
+//                            dataSnapshot.getRef().child("estado").setValue(type);
+//
+//                        }else{
+//
+//                            dataSnapshot.getRef().child("estado").setValue("silent");
+//
+//                        }
+//                    }
+//
+//                }else {
+//
+//                    newChatWith(dataSnapshot, id_user, name_user, "silent");
+//
+//                }
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError error) {
+//            }
+//        });
+//
+//
+//    }
+
+//    public void newChatWith(@NonNull DataSnapshot dataSnapshot, String id_user, String name_user, String state) {
+//        final Calendar c = Calendar.getInstance();
+//        final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
+//        final ChatWith newChat = new ChatWith(
+//                "",
+//                dateFormat3.format(c.getTime()),
+//                null,
+//                "",
+//                id_user,
+//                name_user,
+//                Empty,
+//                state,
+//                0,
+//                1);
+//
+//        dataSnapshot.getRef().setValue(newChat);
+//    }
+
+//    public void Block(final Context context, final String name_user, final String id_user, final View view, final String type){
+//
+//        AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(context, R.style.AlertDialogApp));
+//        builder.setTitle("Bloquear");
+//        builder.setMessage("¿Desea bloquear a " + name_user + "?");
+//
+//        builder.setCancelable(false);
+//        builder.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+//
+//            public void onClick(DialogInterface builder, int id) {
+//
+//                ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+//                    @Override
+//                    public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+//
+//                        if (dataSnapshot.exists()){
+//
+//                            dataSnapshot.getRef().child("estado").setValue("bloq");
+//
+//                        } else {
+//
+//                            newChatWith(dataSnapshot, id_user, name_user, "bloq");
+//
+//                        }
+//                    }
+//                    @Override
+//                    public void onCancelled(@NonNull DatabaseError error) {
+//                    }
+//                });
+//
+//                final Snackbar snack = Snackbar.make(view, "Bloqueaste a " + name_user +", podrás desbloquearlo cuando desees", Snackbar.LENGTH_INDEFINITE);
+//                snack.setAction("OK", new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View v) {
+//                        snack.dismiss();
+//                    }
+//                });
+//                snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
+//                TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+//                tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+//                snack.show();
+//
+//            }
+//        });
+//        builder.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+//            public void onClick(DialogInterface builder, int id) {
+//                return;
+//            }
+//        });
+//        builder.show();
+//
+//    }
+
+//    public void desBloquear (final Context context, final String id_user, final String name_user, final View view, final String type) {
+//
+//        new AlertDialog.Builder(new ContextThemeWrapper(context, R.style.AlertDialogApp))
+//
+//                .setMessage("¿Desea desbloquear a " + name_user + "?")
+//                .setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface builder, int id) {
+//
+//                        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+//                            @Override
+//                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//
+//                                String photo = dataSnapshot.child("wUserPhoto").getValue(String.class);
+//
+//                                if (photo.equals(Empty)){
+//                                    dataSnapshot.getRef().removeValue();
+//
+//                                }else{
+//                                    dataSnapshot.getRef().child("estado").setValue(type);
+//
+//                                }
+//
+//                            }
+//
+//                            @Override
+//                            public void onCancelled(@NonNull DatabaseError error) {
+//
+//                            }
+//                        });
+//
+//
+//                        Snackbar snack = Snackbar.make(view, "Desbloqueaste a " + name_user, Snackbar.LENGTH_SHORT);
+//                        snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
+//                        TextView tv = snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+//                        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+//                        snack.show();
+//
+//                    }
+//
+//
+//                })
+//                .setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
+//
+//                    public void onClick(DialogInterface builder, int id) {
+//
+//                        return;
+//                    }
+//                })
+//                .show();
+//
+//    }
 
     public void UnhiddenChat(final Context context, final String id_user, String name_user, final View view, final String type) {
 
@@ -477,7 +463,6 @@ public class Constants extends Application {
         builder.show();
 
     }
-
 
     public void DeleteChat(final Context context, final String id_user, final String name_user, final View view, final String type){
 
@@ -761,9 +746,6 @@ public class Constants extends Application {
 
     }
 
-
-
-
     public static Double getDistanceMeters(double milatitud, double milongitud, double sulatitud, double sulongitud) {
 
         double l1 = toRadians(milatitud);
@@ -787,19 +769,10 @@ public class Constants extends Application {
 
                 String birthDay = dataSnapshot.child("birthDay").getValue(String.class);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int edad = DateUtils.calcularEdad(birthDay);
+                age.setText(String.valueOf(edad));
 
-                    if (!birthDay.isEmpty()) {
-                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        LocalDate fechaNac = LocalDate.parse(birthDay, fmt);
-                        LocalDate ahora = LocalDate.now();
 
-                        Period periodo = Period.between(fechaNac, ahora);
-
-                        String edad3 = String.valueOf(periodo.getYears());
-                        age.setText(edad3);
-                    }
-                }
             }
 
             @Override
@@ -897,8 +870,6 @@ public class Constants extends Application {
 
     }
 
-
-
     public void setFavorite (String user_id, final ImageView profile_favorite_on, final ImageView profile_favorite_off){
 
         ref_datos.child(user.getUid()).child("FavoriteList").child(user_id).addValueEventListener(new ValueEventListener() {
@@ -923,7 +894,7 @@ public class Constants extends Application {
 
     public void setBloq (String user_id, final ImageView profile_bloc){
 
-        MainActivity.ref_datos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

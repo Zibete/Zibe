@@ -21,12 +21,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.SliderProfileAdapter;
 import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;
 import java.util.Objects;
 
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class SlideProfileActivity extends AppCompatActivity {
 
@@ -269,18 +270,18 @@ public class SlideProfileActivity extends AppCompatActivity {
             super.onBackPressed();
 
         } else if (id == R.id.action_silent) { // Silenciar notificaciones
-            new Constants().Silent(users.getNombre(), users.getID(), chatWith);
+            UserRepository.Silent(users.getNombre(), users.getID(), chatWith);
             Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_notif) {
-            new Constants().Silent(users.getNombre(), users.getID(), chatWith);
+            UserRepository.Silent(users.getNombre(), users.getID(), chatWith);
             Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_bloq) { // Bloquear
-            new Constants().Block(this, users.getNombre(), users.getID(), view, chatWith);
+            UserRepository.setBlockUser(this, users.getNombre(), users.getID(), view, chatWith);
 
         } else if (id == R.id.action_desbloq) { // Desbloquear
-            new Constants().desBloquear(this, users.getID(), users.getNombre(), view, chatWith);
+            UserRepository.setUnBlockUser(this, users.getID(), users.getNombre(), view, chatWith);
 
         } else if (id == R.id.action_delete) { // Eliminar
             new Constants().DeleteChat(this, users.getID(), users.getNombre(), view, chatWith);
@@ -306,13 +307,13 @@ public class SlideProfileActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
     }
 
 }

@@ -2,7 +2,6 @@ package com.zibete.proyecto1;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -37,12 +36,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.AdapterPhotoReceived;
+import com.zibete.proyecto1.utils.DateUtils;
+import com.zibete.proyecto1.utils.FirebaseRefs;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -53,9 +52,9 @@ import static com.zibete.proyecto1.Constants.maxChatSize;
 import static com.zibete.proyecto1.MainActivity.latitud;
 import static com.zibete.proyecto1.MainActivity.longitud;
 import static com.zibete.proyecto1.Constants.getDistanceMeters;
-import static com.zibete.proyecto1.MainActivity.ref_chat;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class PerfilActivity extends AppCompatActivity {
@@ -194,7 +193,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 //Bloquedo
-        MainActivity.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -214,7 +213,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
         //Me Bloqueó
-        MainActivity.ref_datos.child(id_user).child("ChatWith").child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(id_user).child("ChatWith").child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -268,7 +267,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 
-        MainActivity.ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -279,24 +278,10 @@ public class PerfilActivity extends AppCompatActivity {
                 Double sulatitud = dataSnapshot.child("latitud").getValue(Double.class);
                 Double sulongitud = dataSnapshot.child("longitud").getValue(Double.class);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                int edad = DateUtils.calcularEdad(birthDay);
+                age.setText(String.valueOf(edad));
 
-                    if (!birthDay.isEmpty()) {
-                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        LocalDate fechaNac = LocalDate.parse(birthDay, fmt);
-                        LocalDate ahora = LocalDate.now();
-
-                        Period periodo = Period.between(fechaNac, ahora);
-
-                        String edad3 = String.valueOf(periodo.getYears());
-                        age.setText(edad3);
-                    }
-                }
-
-
-
-
-
+                //Calcular distancia
                 Double distanceMeters = getDistanceMeters(latitud, longitud, sulatitud, sulongitud);
 
                 //Como mostrar la distancia al user
@@ -321,9 +306,6 @@ public class PerfilActivity extends AppCompatActivity {
                     distanceUser.setText("A " + bd + " metros");
 
                 }
-
-
-
 
 
                 photoList.add(foto);
@@ -402,8 +384,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 
-        new Constants().StateUser(getApplicationContext(), id_user, icon_conectado, icon_desconectado, tv_estado, chatWith);
-
+        UserRepository.stateUser(getApplicationContext(), id_user, icon_conectado, icon_desconectado, tv_estado, chatWith);
 
         ft_perfil.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -492,13 +473,13 @@ public class PerfilActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
     }
 
 
@@ -530,7 +511,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
         //Para el menu1
-        MainActivity.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -595,19 +576,18 @@ public class PerfilActivity extends AppCompatActivity {
             return true;
 
         } else if (id == R.id.action_silent) { // Silenciar notificaciones
-            new Constants().Silent(nombre, id_user, chatWith);
+            UserRepository.Silent(nombre, id_user, chatWith);
             Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_notif) {
-            new Constants().Silent(nombre, id_user, chatWith);
+            UserRepository.Silent(nombre, id_user, chatWith);
             Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_bloq) { // Bloquear
-            new Constants().Block(this, nombre, id_user, view, chatWith);
+            UserRepository.setBlockUser(this, nombre, id_user, view, chatWith);
 
         } else if (id == R.id.action_desbloq) { // Desbloquear
-            new Constants().desBloquear(this, id_user, nombre, view, chatWith);
-
+            UserRepository.setUnBlockUser(this, id_user, nombre, view, chatWith);
         } else if (id == R.id.action_delete) { // Eliminar
             new Constants().DeleteChat(this, id_user, nombre, view, chatWith);
         }

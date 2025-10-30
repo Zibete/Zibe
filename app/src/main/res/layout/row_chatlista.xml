@@ -137,14 +137,14 @@
                                 android:id="@+id/checked"
                                 android:layout_width="15dp"
                                 android:layout_height="wrap_content"
-                                android:src="@drawable/ic_baseline_check_24"/>
+                                android:src="@drawable/ic_check_24"/>
 
                             <ImageView
                                 android:id="@+id/checked2"
                                 android:layout_width="15dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="5dp"
-                                android:src="@drawable/ic_baseline_check_24"/>
+                                android:src="@drawable/ic_check_24"/>
 
                         </RelativeLayout>
 

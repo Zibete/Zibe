@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.Usuarios.UsuariosFragment"
-    android:background="@drawable/bg_gradient_zibe">
+    android:background="@mipmap/logo_zibe"
+    tools:context=".ui.Usuarios.UsuariosFragment">
 
     <com.zibete.proyecto1.FixedSwipeRefreshLayout
         android:id="@+id/swipe_refresh"

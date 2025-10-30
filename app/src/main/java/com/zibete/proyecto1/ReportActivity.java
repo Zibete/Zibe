@@ -15,12 +15,13 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.zibete.proyecto1.Splash.SplashActivity;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-import static com.zibete.proyecto1.MainActivity.ref_zibe;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_zibe;
 
 public class ReportActivity extends AppCompatActivity {
 
@@ -97,12 +98,12 @@ public class ReportActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if (user != null) new Constants().StateOffLine(getApplicationContext(), user.getUid());
+        if (user != null) UserRepository.setUserOffline(getApplicationContext(),user.getUid());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (user != null) new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        if (user != null) UserRepository.setUserOnline(getApplicationContext(), user.getUid());
     }
 }

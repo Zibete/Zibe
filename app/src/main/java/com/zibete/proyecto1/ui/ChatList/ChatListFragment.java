@@ -29,6 +29,7 @@ import com.zibete.proyecto1.Adapters.AdapterChatLista;
 import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.R;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -42,7 +43,7 @@ import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATGROUPLIST;
 import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATLIST;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 import static com.zibete.proyecto1.ui.ChatList.ChatListGroupsFragment.chatsGroupArrayList;
 
 public class ChatListFragment extends Fragment implements SearchView.OnQueryTextListener{
@@ -376,21 +377,19 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
         switch (item.getItemId()) {
             case 1: //Marcar leído, no leído
 
-                new Constants().NoLeido(id_user, type);
-
+                UserRepository.setNoLeido(id_user,type);
                 break;
 
             case 2: //Silenciar notificaciones
 
-                new Constants().Silent(name_user, id_user, type);
+                UserRepository.Silent(name_user, id_user, type);
 
                 break;
 
             case 3: //Bloquear
 
 
-
-                new Constants().Block(getContext(), name_user, id_user, view, type);
+                UserRepository.setBlockUser(getContext(), name_user, id_user, view, type);
 
                 break;
 

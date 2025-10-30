@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -40,10 +39,8 @@ import com.zibete.proyecto1.Adapters.AdapterUsers;
 import com.zibete.proyecto1.FixedSwipeRefreshLayout;
 import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.R;
+import com.zibete.proyecto1.utils.DateUtils;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -52,7 +49,7 @@ import static com.zibete.proyecto1.Constants.getDistanceMeters;
 import static com.zibete.proyecto1.MainActivity.filter;
 import static com.zibete.proyecto1.MainActivity.latitud;
 import static com.zibete.proyecto1.MainActivity.longitud;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 import static com.zibete.proyecto1.MainActivity.refresh;
 
 public class UsuariosFragment extends Fragment implements SearchView.OnQueryTextListener{
@@ -61,7 +58,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
     ProgressBar progressbar;
     ImageButton goChat;
     static RecyclerView rv;
-    static AdapterUsers adapter;
+    static AdapterUsers adapterUsers;
     LinearLayoutManager mLayoutManager;
     FixedSwipeRefreshLayout swipe_refresh;
     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -139,8 +136,8 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
         }
 
 
-        adapter = new AdapterUsers(usersArrayList, originalUsersList, getContext());
-        rv.setAdapter(adapter);
+        adapterUsers = new AdapterUsers(usersArrayList, originalUsersList, getContext());
+        rv.setAdapter(adapterUsers);
 
         swipe_refresh = view.findViewById(R.id.swipe_refresh);
         swipe_refresh.setRecyclerView(rv);
@@ -455,18 +452,8 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
                             if (!key.equals(usuario)){
 
                                 Users users = snapshot.getValue(Users.class);
-
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    String edad1 = users.getBirthDay();
-                                    if (!edad1.isEmpty()) {
-                                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                                        LocalDate fechaNac = LocalDate.parse(users.getBirthDay(), fmt);
-                                        LocalDate ahora = LocalDate.now();
-                                        Period periodo = Period.between(fechaNac, ahora);
-                                        Integer edad = periodo.getYears();
-                                        users.setAge(edad);
-                                    }
-                                }
+                                int edad = DateUtils.calcularEdad(users.getBirthDay());
+                                users.setAge(edad);
 
                                 Double distanceMeters = getDistanceMeters(latitud, longitud, users.getLatitud(), users.getLongitud());
                                 users.setDistance(distanceMeters);
@@ -479,7 +466,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
                                             if (flag.equals("load")) {
 
-                                                adapter.addUser(users);
+                                                adapterUsers.addUser(users);
                                             } else {
                                                 usersArrayList2.add(users);
                                             }
@@ -488,7 +475,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
                                     } else {
 
                                         if (flag.equals("load")) {
-                                            adapter.addUser(users);
+                                            adapterUsers.addUser(users);
                                         } else {
                                             usersArrayList2.add(users);
                                         }
@@ -515,7 +502,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
                                     if (users.getEstado()) {
                                         if (flag.equals("load")) {
-                                            adapter.addUser(users);
+                                            adapterUsers.addUser(users);
                                         } else {
                                             usersArrayList2.add(users);
                                         }
@@ -523,7 +510,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
                                 } else {
 
                                     if (flag.equals("load")) {
-                                        adapter.addUser(users);
+                                        adapterUsers.addUser(users);
                                     } else {
                                         usersArrayList2.add(users);
                                     }
@@ -540,11 +527,11 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
                     if (flag.equals("load")){
 
-                        adapter.notifyDataSetChanged();
+                        adapterUsers.notifyDataSetChanged();
 
                     }else {
 
-                        adapter.updateDataUsers(usersArrayList2);
+                        adapterUsers.updateDataUsers(usersArrayList2);
                         //adapter.updateDataUsers(originalUsersList);
                     }
                     setScrollbar();
@@ -553,7 +540,6 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
                     progressbar.setVisibility(View.GONE);
                     Toast.makeText(getContext(), "No existen usuarios", Toast.LENGTH_SHORT).show();
                 }
-
 
                 progressbar.setVisibility(View.GONE);
 
@@ -587,7 +573,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
 
     public static void setScrollbar(){
-        rv.scrollToPosition(adapter.getItemCount()-1);
+        rv.scrollToPosition(adapterUsers.getItemCount()-1);
     }
 
     @Override
@@ -599,9 +585,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
     @Override
     public boolean onQueryTextChange(String newText) {
 
-
-        adapter.getFilter().filter(newText);
-
+        adapterUsers.getFilter().filter(newText);
 
         return false;
     }

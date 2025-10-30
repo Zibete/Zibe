@@ -1,16 +1,11 @@
 package com.zibete.proyecto1;
 
-import android.app.IntentService;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
-import android.os.Build;
-import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -19,25 +14,17 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.Splash.SplashActivity;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 import static com.zibete.proyecto1.Constants.chat;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.unknown;
-import static com.zibete.proyecto1.MainActivity.ref_chat;
-import static com.zibete.proyecto1.MainActivity.ref_chat_path;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 import static com.zibete.proyecto1.MainActivity.toolbar;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupNotifications;

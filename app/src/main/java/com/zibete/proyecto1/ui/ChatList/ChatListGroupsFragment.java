@@ -27,7 +27,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.AdapterChatGroupsLista;
-import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.R;
 
@@ -38,7 +37,7 @@ import java.util.Collections;
 import java.util.Date;
 
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 public class ChatListGroupsFragment extends Fragment implements SearchView.OnQueryTextListener{
 

@@ -31,6 +31,7 @@ import com.zibete.proyecto1.ChatActivity;
 import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.R;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,12 +42,10 @@ import java.util.Locale;
 
 import static com.zibete.proyecto1.Constants.Empty;
 import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATGROUPLIST;
-import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATLIST;
-import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.MainActivity.ref_chat_unknown;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_unknown;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 
@@ -217,7 +216,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
 
 //Mostrar estado
-        new Constants().StateUser(context, wChat.getwUserID(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWithUnknown);
+        UserRepository.stateUser(context, wChat.getwUserID(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWithUnknown);
 
 
 //Checked

@@ -81,7 +81,7 @@ import java.util.Objects;
 import static com.zibete.proyecto1.Constants.CAMERA_SELECTED;
 import static com.zibete.proyecto1.Constants.PERMISSIONS_EDIT_PROFILE;
 import static com.zibete.proyecto1.Constants.PHOTO_SELECTED;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 
 public class EditProfileFragment extends Fragment {
 

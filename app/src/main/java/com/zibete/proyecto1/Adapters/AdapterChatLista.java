@@ -27,10 +27,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.ChatActivity;
-import com.zibete.proyecto1.MainActivity;
 import com.zibete.proyecto1.POJOS.ChatWith;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.Constants;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,9 +43,9 @@ import java.util.Locale;
 import static com.zibete.proyecto1.Constants.Empty;
 import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATLIST;
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.MainActivity.ref_chat;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 
 
 public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.viewHolderAdapterChatList> implements Filterable, View.OnCreateContextMenuListener {
@@ -245,8 +245,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
         });
 
 //Mostrar estado
-        new Constants().StateUser(context, wChat.getwUserID(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWith);
-
+        UserRepository.stateUser(context, wChat.getwUserID(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWith);
 //Checked
 
         ref_datos.child(wChat.getwUserID()).child(chatWith).child(user.getUid()).addValueEventListener(new ValueEventListener() {

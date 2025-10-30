@@ -32,16 +32,11 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
-import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.AuthCredential;
@@ -61,6 +56,7 @@ import com.zibete.proyecto1.Splash.SplashActivity;
 import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.GruposFragment;
 import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
+import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -72,11 +68,11 @@ import static com.zibete.proyecto1.MainActivity.layoutSettings;
 import static com.zibete.proyecto1.Constants.listenerGroupBadge;
 import static com.zibete.proyecto1.Constants.listenerMsgUnreadBadge;
 import static com.zibete.proyecto1.Constants.listenerToken;
-import static com.zibete.proyecto1.MainActivity.ref_chat_unknown;
-import static com.zibete.proyecto1.MainActivity.ref_cuentas;
-import static com.zibete.proyecto1.MainActivity.ref_datos;
-import static com.zibete.proyecto1.MainActivity.ref_group_chat;
-import static com.zibete.proyecto1.MainActivity.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_unknown;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_chat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.PageAdapterGroup.valueEventListenerTitle;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
@@ -704,7 +700,8 @@ public class SettingsActivity extends AppCompatActivity {
     public void logOut(String deleteUser) {
 
         if (deleteUser == null) {
-            new Constants().StateOffLine(getApplicationContext(), user.getUid());
+
+            UserRepository.setUserOffline(getApplicationContext(), user.getUid());
         }
 
         if(inGroup) {
@@ -931,13 +928,13 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        new Constants().StateOffLine(getApplicationContext(),user.getUid());
+        UserRepository.setUserOffline(getApplicationContext(),user.getUid());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new Constants().StateOnLine(getApplicationContext(), user.getUid());
+        UserRepository.setUserOnline(getApplicationContext(), user.getUid());
     }
 
     @Override
