@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.utils;
 
 import static com.zibete.proyecto1.Constants.Empty;
+import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.utils.FirebaseRefs.auth;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
@@ -28,6 +29,7 @@ import com.zibete.proyecto1.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Objects;
 
 // Clase que maneja la comunicación con Firebase para datos de usuario
 // (repository = repositorio → capa de acceso a datos)
@@ -415,7 +417,27 @@ public class UserRepository {
 
 
 
+    public static void bindBlockStatus (
+            String user_id,
+            final ImageView profile_bloc)
 
+    { // bindBlockStatus = vincular estado de bloqueo
+
+        ref_datos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                if (Objects.equals(dataSnapshot.getValue(String.class), "bloq")) {
+                    profile_bloc.setVisibility(View.VISIBLE);
+                } else {
+                    profile_bloc.setVisibility(View.GONE);
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
 
 
 

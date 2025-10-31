@@ -40,6 +40,7 @@ import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlidePhotoActivity;
+import com.zibete.proyecto1.utils.ProfileUiBinder;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;
@@ -229,20 +230,17 @@ public class SliderProfileAdapter extends PagerAdapter {
         UserRepository.setUserOnline(context, users.getID());
 
 
-        new Constants().setFavorite(users.getID(), perfil_favorite_on, perfil_favorite_off);
+        ProfileUiBinder.setFavorite(users.getID(), perfil_favorite_on, perfil_favorite_off);
 
-        new Constants().setBloq(users.getID(), perfil_bloq);
+        ProfileUiBinder.getBloqMe(users.getID(), perfil_bloq_me);
 
-        new Constants().getBloqMe(users.getID(), perfil_bloq_me);
+        ProfileUiBinder.getAge(users.getID(), age);
 
-        new Constants().getAge(users.getID(), age);
+        ProfileUiBinder.getDistanceToUser(users.getID(), distanceUser);
 
-        new Constants().getDistanceToUser(users.getID(), distanceUser);
+        ProfileUiBinder.addPhotoReceived(users.getID(), adapterPhotoReceived, linearPhotos);
 
-        new Constants().addPhotoReceived(users.getID(), adapterPhotoReceived, linearPhotos);
-
-        new Constants().setMenuProfile(context, users.getID(), subMenu_chatWithUnknown,subMenu_chatWith);
-
+        ProfileUiBinder.setMenuProfile(context, users.getID(), subMenu_chatWithUnknown,subMenu_chatWith);
 
 
         container.addView(view);
