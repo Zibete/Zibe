@@ -1,20 +1,26 @@
 package com.zibete.proyecto1.model
+import com.google.firebase.database.PropertyName
 import java.io.Serializable
 import java.util.Objects
 
 data class Users(
     var id: String = "",
+    @get:PropertyName("nombre") @set:PropertyName("nombre")
     var name: String? = null,
     var birthDay: String? = null,
     var date: String? = null,
     var age: Int? = null,
     var mail: String? = null,
+    @get:PropertyName("foto") @set:PropertyName("foto")
     var profilePhoto: String? = null,
     var status: Boolean = false,
     var token: String? = null,
     var distance: Double = 0.0,
+    @get:PropertyName("descripcion") @set:PropertyName("descripcion")
     var description: String? = null,
+    @get:PropertyName("latitud") @set:PropertyName("latitud")
     var latitude: Double = 0.0,     // no-null con default
+    @get:PropertyName("longitud") @set:PropertyName("longitud")
     var longitude: Double = 0.0
 ) : Comparable<Users>, Serializable {
 
