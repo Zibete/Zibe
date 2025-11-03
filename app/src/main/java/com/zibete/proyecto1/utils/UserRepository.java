@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Typeface;
+import android.location.Location;
 import android.view.ContextThemeWrapper;
 import android.view.View;
 import android.widget.ImageView;
@@ -23,8 +24,8 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.POJOS.ChatWith;
-import com.zibete.proyecto1.POJOS.Estado;
+import com.zibete.proyecto1.model.ChatWith;
+import com.zibete.proyecto1.model.Estado;
 import com.zibete.proyecto1.R;
 
 import java.text.SimpleDateFormat;
@@ -439,7 +440,27 @@ public class UserRepository {
         });
     }
 
+    public static Double latitude;
+    public static Double longitude;
+    public static void updateLocationUI(Location mLastLocation) {
+        if (mLastLocation == null) return;
 
+        latitude = mLastLocation.getLatitude();
+        longitude = mLastLocation.getLongitude();
+
+        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("latitud").setValue(latitude);
+                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("longitud").setValue(longitude);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
 
 
 

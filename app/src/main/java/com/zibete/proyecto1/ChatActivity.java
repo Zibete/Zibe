@@ -80,9 +80,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.zibete.proyecto1.Adapters.AdapterChat;
-import com.zibete.proyecto1.POJOS.ChatWith;
-import com.zibete.proyecto1.POJOS.Chats;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.ChatWith;
+import com.zibete.proyecto1.model.Chats;
+import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.utils.CropHelper;
 import com.zibete.proyecto1.utils.UserRepository;
 
@@ -1538,7 +1538,7 @@ public class ChatActivity extends AppCompatActivity {
                             notification.put("novistos", count);
                             notification.put("user", myName);
                             notification.put("msg", suChat.getwMsg());
-                            notification.put("id_user", chatmsg.getEnvia());
+                            notification.put("id_user", chatmsg.getSender());
                             notification.put("type", refChatWith);
 
                             json.put("priority", "high");
@@ -2083,7 +2083,7 @@ public class ChatActivity extends AppCompatActivity {
 
                     Chats chat = snapshot.getValue(Chats.class);
 
-                    if (chat.getEnvia().equals(user.getUid())) {
+                    if (chat.getSender().equals(user.getUid())) {
                         if (chat.getType() == MSG_SENDER_DLT) {
                             String key = snapshot.getKey();
                             senderDelete.add(key);
@@ -2174,18 +2174,18 @@ public class ChatActivity extends AppCompatActivity {
                                 snapshot.child("type").getRef().setValue(PHOTO_SENDER_DLT);
                             }
                             if (type == PHOTO_RECEIVER_DLT) {
-                                int startString = chat.getMensaje().indexOf(id_user_final) + id_user_final.length() + 3;
-                                int endString = chat.getMensaje().indexOf(".jpg") + 4;
-                                refYourReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                int startString = chat.getMessage().indexOf(id_user_final) + id_user_final.length() + 3;
+                                int endString = chat.getMessage().indexOf(".jpg") + 4;
+                                refYourReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                 snapshot.getRef().removeValue();
                             }
                             if (type == AUDIO) {
                                 snapshot.child("type").getRef().setValue(AUDIO_SENDER_DLT);
                             }
                             if (type == AUDIO_RECEIVER_DLT) {
-                                int startString = chat.getMensaje().indexOf(id_user_final) + id_user_final.length() + 3;
-                                int endString = chat.getMensaje().indexOf(".mp3") + 4;
-                                refYourReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                int startString = chat.getMessage().indexOf(id_user_final) + id_user_final.length() + 3;
+                                int endString = chat.getMessage().indexOf(".mp3") + 4;
+                                refYourReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                 snapshot.getRef().removeValue();
                             }
 
@@ -2201,18 +2201,18 @@ public class ChatActivity extends AppCompatActivity {
                                 snapshot.child("type").getRef().setValue(PHOTO_RECEIVER_DLT);
                             }
                             if (type == PHOTO_SENDER_DLT) {
-                                int startString = chat.getMensaje().indexOf(user.getUid()) + user.getUid().length() + 3;
-                                int endString = chat.getMensaje().indexOf(".jpg") + 4;
-                                refMyReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                int startString = chat.getMessage().indexOf(user.getUid()) + user.getUid().length() + 3;
+                                int endString = chat.getMessage().indexOf(".jpg") + 4;
+                                refMyReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                 snapshot.getRef().removeValue();
                             }
                             if (type == AUDIO) {
                                 snapshot.child("type").getRef().setValue(AUDIO_RECEIVER_DLT);
                             }
                             if (type == AUDIO_SENDER_DLT) {
-                                int startString = chat.getMensaje().indexOf(user.getUid()) + user.getUid().length() + 3;
-                                int endString = chat.getMensaje().indexOf(".mp3") + 4;
-                                refMyReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                int startString = chat.getMessage().indexOf(user.getUid()) + user.getUid().length() + 3;
+                                int endString = chat.getMessage().indexOf(".mp3") + 4;
+                                refMyReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                 snapshot.getRef().removeValue();
                             }
                         }

@@ -61,8 +61,8 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.zibete.proyecto1.POJOS.ChatWith;
-import com.zibete.proyecto1.POJOS.ChatsGroup;
+import com.zibete.proyecto1.model.ChatWith;
+import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
 import com.zibete.proyecto1.ui.ChatList.ChatListFragment;
 import com.zibete.proyecto1.ui.EditProfileFragment;
@@ -127,8 +127,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewGroup viewGroup;
     @SuppressWarnings("unused")
     private ViewGroup viewGroup2;
-    public static Double latitud;
-    public static Double longitud;
+
 
     // Control de sesión por dispositivo
     private String myInstallId = null; // Identificador estable por instalación
@@ -172,10 +171,9 @@ public class MainActivity extends AppCompatActivity {
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
-                Location loc = locationResult.getLastLocation();
-                if (loc != null) {
-                    mLastLocation = loc;
-                    updateLocationUI();
+                mLastLocation = locationResult.getLastLocation();
+                if (mLastLocation != null) {
+                    UserRepository.updateLocationUI(mLastLocation);
                 }
             }
         };
@@ -720,10 +718,9 @@ public class MainActivity extends AppCompatActivity {
     private void processLastLocation() {
         if (!isLocationPermissionGranted()) return;
         fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        mLastLocation = location;
-                        updateLocationUI();
+                .addOnSuccessListener(mLastLocation -> {
+                    if (mLastLocation != null) {
+                        UserRepository.updateLocationUI(mLastLocation);
                     }
                 });
     }
@@ -765,25 +762,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateLocationUI() {
-        if (mLastLocation == null) return;
 
-        latitud = mLastLocation.getLatitude();
-        longitud = mLastLocation.getLongitude();
-
-        FirebaseRefs.ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("latitud").setValue(latitud);
-                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("longitud").setValue(longitud);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
-        });
-    }
 
     // ======= Menú / navegación ======= //
 

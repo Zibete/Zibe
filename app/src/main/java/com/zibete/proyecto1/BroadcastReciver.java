@@ -13,10 +13,9 @@ import androidx.core.app.NotificationCompat;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 
 import java.util.List;
-import java.util.Objects;
 
 public class BroadcastReciver extends BroadcastReceiver {
 

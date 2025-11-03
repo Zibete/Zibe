@@ -38,6 +38,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.AdapterPhotoReceived;
 import com.zibete.proyecto1.utils.DateUtils;
 import com.zibete.proyecto1.utils.FirebaseRefs;
+import com.zibete.proyecto1.utils.ProfileUiBinder;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.math.BigDecimal;
@@ -49,9 +50,6 @@ import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.maxChatSize;
-import static com.zibete.proyecto1.MainActivity.latitud;
-import static com.zibete.proyecto1.MainActivity.longitud;
-import static com.zibete.proyecto1.Constants.getDistanceMeters;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
@@ -275,14 +273,15 @@ public class PerfilActivity extends AppCompatActivity {
                 foto = dataSnapshot.child("foto").getValue(String.class);
                 nombre = dataSnapshot.child("nombre").getValue(String.class);
                 String descripcion = dataSnapshot.child("descripcion").getValue(String.class);
-                Double sulatitud = dataSnapshot.child("latitud").getValue(Double.class);
-                Double sulongitud = dataSnapshot.child("longitud").getValue(Double.class);
+                Double otherLatitude = dataSnapshot.child("latitud").getValue(Double.class);
+                Double otherLongitude = dataSnapshot.child("longitud").getValue(Double.class);
 
                 int edad = DateUtils.calcularEdad(birthDay);
                 age.setText(String.valueOf(edad));
 
                 //Calcular distancia
-                Double distanceMeters = getDistanceMeters(latitud, longitud, sulatitud, sulongitud);
+                double distanceMeters = ProfileUiBinder.getDistanceMeters(
+                        UserRepository.latitude, UserRepository.longitude, otherLatitude, otherLongitude);
 
                 //Como mostrar la distancia al user
                 if (distanceMeters > 10000) {

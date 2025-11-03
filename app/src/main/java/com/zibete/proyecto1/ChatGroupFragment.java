@@ -53,7 +53,7 @@ import com.canhub.cropper.CropImageContractOptions;
 
 
 import com.zibete.proyecto1.Adapters.AdapterChatGroup;
-import com.zibete.proyecto1.POJOS.ChatsGroup;
+import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.utils.CropHelper;
 
 import org.json.JSONException;

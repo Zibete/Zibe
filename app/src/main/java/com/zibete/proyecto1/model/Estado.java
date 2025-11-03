@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.POJOS;
+package com.zibete.proyecto1.model;
 
 public class Estado {
     String estado;

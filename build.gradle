@@ -1,20 +1,18 @@
 // Top-level build file
-
-
-
 buildscript {
+    ext {
+        kotlin_version = "2.1.0"
+    }
     repositories {
         google()
         mavenCentral()
-        // jcenter()  ← si aún está, quítalo
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.0'   // ← subir a AGP 8.1.4
+        classpath "com.android.tools.build:gradle:8.13.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.gms:google-services:4.4.4"
     }
 }
-
-
 // 👇 ESTE BLOQUE hay que borrarlo, o dejarlo vacío:
 // allprojects {
 //     repositories {

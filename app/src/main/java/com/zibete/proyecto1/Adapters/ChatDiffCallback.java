@@ -5,7 +5,7 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 
-import com.zibete.proyecto1.POJOS.ChatWith;
+import com.zibete.proyecto1.model.ChatWith;
 
 import java.util.ArrayList;
 import java.util.List;

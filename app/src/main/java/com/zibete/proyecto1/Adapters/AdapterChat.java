@@ -37,7 +37,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.zibete.proyecto1.POJOS.Chats;
+import com.zibete.proyecto1.model.Chats;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlidePhotoActivity;
 
@@ -120,7 +120,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
         if (msgList.get(position).getType() == INFO){
             return TYPE_INFO;
         }else {
-            if (msgList.get(position).getEnvia().equals(user.getUid())) {
+            if (msgList.get(position).getSender().equals(user.getUid())) {
                 return MSG_TYPE_RIGHT;
             } else {
                 return MSG_TYPE_LEFT;
@@ -170,7 +170,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
         if (chats.getType() == PHOTO | chats.getType() == PHOTO_RECEIVER_DLT | chats.getType() == PHOTO_SENDER_DLT) {
 
-            photoList.add(chats.getMensaje());
+            photoList.add(chats.getMessage());
 
         }
     }
@@ -182,7 +182,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
         if (index != -1) {
             msgList.set(index, chats);
 
-            if (chats.getEnvia().equals(user.getUid())) {
+            if (chats.getSender().equals(user.getUid())) {
 
                 if (chats.getType() == MSG_SENDER_DLT || chats.getType() == PHOTO_SENDER_DLT || chats.getType() == AUDIO_SENDER_DLT) {
                     msgList.remove(index);
@@ -282,7 +282,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
                         Intent intent = new Intent(context, SlidePhotoActivity.class);
                         intent.putExtra("photoList", photoList);
-                        intent.putExtra("position", photoList.indexOf(chats.getMensaje()));
+                        intent.putExtra("position", photoList.indexOf(chats.getMessage()));
                         intent.putExtra("rotation", 0);
                         v.getContext().startActivity(intent);
 
@@ -469,9 +469,9 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
     public void Checked(@NonNull viewHolderAdapterChat holder, Chats chats) {
 
-        if (chats.getEnvia().equals(user.getUid())) {
+        if (chats.getSender().equals(user.getUid())) {
 
-            switch (chats.getVisto()) {
+            switch (chats.getSeen()) {
 
                 case 1:
                     holder.checked.setVisibility(View.VISIBLE);
@@ -620,7 +620,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
             if (chats.getType() == INFO){
 
-                tv_info.setText(chats.getMensaje());
+                tv_info.setText(chats.getMessage());
 
             }
 
@@ -642,7 +642,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
                 tv_notFound.setVisibility(View.GONE);
                 loadingPhoto.setVisibility(View.VISIBLE);
                 Glide.with(context)
-                        .load(chats.getMensaje())
+                        .load(chats.getMessage())
                         .apply(new RequestOptions().transform( new CenterCrop(), new RoundedCorners(dp_15)))
                         .listener(new RequestListener<Drawable>() {
                             @Override
@@ -670,7 +670,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
                 linear_mensaje_pic.setVisibility(View.GONE);
                 linear_mensaje_msg.setVisibility(View.VISIBLE);
                 linear_mensaje_audio.setVisibility(View.GONE);
-                tv_msg.setText(chats.getMensaje());
+                tv_msg.setText(chats.getMessage());
 
             }
 
@@ -693,7 +693,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
                 stateMediaPlayer = notStarted;
 
-                if (chats.getEnvia().equals(user.getUid())){
+                if (chats.getSender().equals(user.getUid())){
                     Glide.with(context).load(myPhoto).into(circleImgAudio);
                 }else{
                     Glide.with(context).load(yourPhoto).into(circleImgAudio);
@@ -857,7 +857,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
 
             stateMediaPlayer = play;
 
-            stringAudio = chats.getMensaje();
+            stringAudio = chats.getMessage();
 
 
             mediaPlayer = new MediaPlayer();
@@ -957,7 +957,7 @@ public class AdapterChat extends RecyclerView.Adapter<AdapterChat.viewHolderAdap
             });
 
             try {
-                mediaPlayer.setDataSource(chats.getMensaje());
+                mediaPlayer.setDataSource(chats.getMessage());
                 mediaPlayer.prepare();
             } catch (IOException e) {
                 e.printStackTrace();

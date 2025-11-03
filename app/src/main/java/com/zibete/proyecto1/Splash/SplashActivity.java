@@ -27,7 +27,7 @@ import com.google.firebase.messaging.FirebaseMessaging; // (API nueva de FCM)
 import com.zibete.proyecto1.AuthActivity;
 import com.zibete.proyecto1.CustomPermission;
 import com.zibete.proyecto1.MainActivity;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;

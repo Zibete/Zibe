@@ -19,7 +19,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.AdapterGroupUsers;
-import com.zibete.proyecto1.POJOS.UserGroup;
+import com.zibete.proyecto1.model.UserGroup;
 
 import java.util.ArrayList;
 

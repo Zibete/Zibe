@@ -26,7 +26,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.AdapterGroups;
 import com.zibete.proyecto1.FixedSwipeRefreshLayout;
-import com.zibete.proyecto1.POJOS.Groups;
+import com.zibete.proyecto1.model.Groups;
 import com.zibete.proyecto1.R;
 
 import java.util.ArrayList;

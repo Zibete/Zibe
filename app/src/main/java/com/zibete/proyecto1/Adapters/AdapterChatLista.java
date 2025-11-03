@@ -27,9 +27,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.ChatActivity;
-import com.zibete.proyecto1.POJOS.ChatWith;
+import com.zibete.proyecto1.model.ChatWith;
 import com.zibete.proyecto1.R;
-import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;

@@ -20,7 +20,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.Adapters.SliderProfileAdapter;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class SlideProfileActivity extends AppCompatActivity {
 
         Users users = userList.get(viewPager.getCurrentItem());
         //Para el menu1
-        ref_datos.child(user.getUid()).child(chatWith).child(users.getID()).addValueEventListener(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWith).child(users.getId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -270,21 +270,21 @@ public class SlideProfileActivity extends AppCompatActivity {
             super.onBackPressed();
 
         } else if (id == R.id.action_silent) { // Silenciar notificaciones
-            UserRepository.Silent(users.getNombre(), users.getID(), chatWith);
+            UserRepository.Silent(users.getName(), users.getId(), chatWith);
             Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_notif) {
-            UserRepository.Silent(users.getNombre(), users.getID(), chatWith);
+            UserRepository.Silent(users.getName(), users.getId(), chatWith);
             Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show();
 
         } else if (id == R.id.action_bloq) { // Bloquear
-            UserRepository.setBlockUser(this, users.getNombre(), users.getID(), view, chatWith);
+            UserRepository.setBlockUser(this, users.getName(), users.getId(), view, chatWith);
 
         } else if (id == R.id.action_desbloq) { // Desbloquear
-            UserRepository.setUnBlockUser(this, users.getID(), users.getNombre(), view, chatWith);
+            UserRepository.setUnBlockUser(this, users.getId(), users.getName(), view, chatWith);
 
         } else if (id == R.id.action_delete) { // Eliminar
-            new Constants().DeleteChat(this, users.getID(), users.getNombre(), view, chatWith);
+            new Constants().DeleteChat(this, users.getId(), users.getName(), view, chatWith);
         }
 
         return super.onOptionsItemSelected(item);

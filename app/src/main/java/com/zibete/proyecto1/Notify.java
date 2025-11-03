@@ -1,32 +1,20 @@
 package com.zibete.proyecto1;
 
-import android.app.ActivityManager;
-import android.app.AlarmManager;
-import android.app.IntentService;
 import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.os.SystemClock;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.zibete.proyecto1.POJOS.Estado;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
 
 public class Notify extends Service {
 

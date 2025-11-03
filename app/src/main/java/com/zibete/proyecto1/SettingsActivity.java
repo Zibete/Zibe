@@ -51,7 +51,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
-import com.zibete.proyecto1.POJOS.ChatsGroup;
+import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
 import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.GruposFragment;

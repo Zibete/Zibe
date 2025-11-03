@@ -1,13 +1,7 @@
 package com.zibete.proyecto1;
 
-import static com.zibete.proyecto1.MainActivity.latitud;
-import static com.zibete.proyecto1.MainActivity.longitud;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
 import static java.lang.StrictMath.acos;
 import static java.lang.StrictMath.cos;
@@ -18,37 +12,23 @@ import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.view.ContextThemeWrapper;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import com.github.clans.fab.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.zibete.proyecto1.Adapters.AdapterPhotoReceived;
-import com.zibete.proyecto1.POJOS.ChatWith;
-import com.zibete.proyecto1.POJOS.Chats;
-import com.zibete.proyecto1.utils.DateUtils;
+import com.zibete.proyecto1.model.Chats;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Objects;
 
 public class Constants extends Application {
 
@@ -555,7 +535,7 @@ public class Constants extends Application {
 
                     Chats chat = snapshot.getValue(Chats.class);
 
-                    if (chat.getEnvia().equals(user.getUid())) {
+                    if (chat.getSender().equals(user.getUid())) {
                         if (chat.getType() == MSG | chat.getType() == MSG_RECEIVER_DLT) {
                             messages.add(chat);
                         }
@@ -664,18 +644,18 @@ public class Constants extends Application {
                                                             snapshot.child("type").getRef().setValue(PHOTO_SENDER_DLT);
                                                         }
                                                         if (type == PHOTO_RECEIVER_DLT) {
-                                                            int startString = chat.getMensaje().indexOf(id_user) + id_user.length() + 3;
-                                                            int endString = chat.getMensaje().indexOf(".jpg") + 4;
-                                                            refYourReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                                            int startString = chat.getMessage().indexOf(id_user) + id_user.length() + 3;
+                                                            int endString = chat.getMessage().indexOf(".jpg") + 4;
+                                                            refYourReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                                             snapshot.getRef().removeValue();
                                                         }
                                                         if (type == AUDIO) {
                                                             snapshot.child("type").getRef().setValue(AUDIO_SENDER_DLT);
                                                         }
                                                         if (type == AUDIO_RECEIVER_DLT) {
-                                                            int startString = chat.getMensaje().indexOf(id_user) + id_user.length() + 3;
-                                                            int endString = chat.getMensaje().indexOf(".mp3") + 4;
-                                                            refYourReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                                            int startString = chat.getMessage().indexOf(id_user) + id_user.length() + 3;
+                                                            int endString = chat.getMessage().indexOf(".mp3") + 4;
+                                                            refYourReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                                             snapshot.getRef().removeValue();
                                                         }
 
@@ -691,18 +671,18 @@ public class Constants extends Application {
                                                             snapshot.child("type").getRef().setValue(PHOTO_RECEIVER_DLT);
                                                         }
                                                         if (type == PHOTO_SENDER_DLT) {
-                                                            int startString = chat.getMensaje().indexOf(user.getUid()) + user.getUid().length() + 3;
-                                                            int endString = chat.getMensaje().indexOf(".jpg") + 4;
-                                                            refMyReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                                            int startString = chat.getMessage().indexOf(user.getUid()) + user.getUid().length() + 3;
+                                                            int endString = chat.getMessage().indexOf(".jpg") + 4;
+                                                            refMyReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                                             snapshot.getRef().removeValue();
                                                         }
                                                         if (type == AUDIO) {
                                                             snapshot.child("type").getRef().setValue(AUDIO_RECEIVER_DLT);
                                                         }
                                                         if (type == AUDIO_SENDER_DLT) {
-                                                            int startString = chat.getMensaje().indexOf(user.getUid()) + user.getUid().length() + 3;
-                                                            int endString = chat.getMensaje().indexOf(".mp3") + 4;
-                                                            refMyReceiverData.child(chat.getMensaje().substring(startString, endString)).delete();
+                                                            int startString = chat.getMessage().indexOf(user.getUid()) + user.getUid().length() + 3;
+                                                            int endString = chat.getMessage().indexOf(".mp3") + 4;
+                                                            refMyReceiverData.child(chat.getMessage().substring(startString, endString)).delete();
                                                             snapshot.getRef().removeValue();
                                                         }
                                                     }
@@ -746,19 +726,6 @@ public class Constants extends Application {
 
     }
 
-    public static Double getDistanceMeters(double milatitud, double milongitud, double sulatitud, double sulongitud) {
 
-        double l1 = toRadians(milatitud);
-        double l2 = toRadians(sulatitud);
-        double g1 = toRadians(milongitud);
-        double g2 = toRadians(sulongitud);
-
-        double dist = acos(sin(l1) * sin(l2) + cos(l1) * cos(l2) * cos(g1 - g2));
-        if(dist < 0) {
-            dist = dist + Math.PI;
-        }
-
-        return (double) Math.round(dist * 6378100);
-    }
 
 }

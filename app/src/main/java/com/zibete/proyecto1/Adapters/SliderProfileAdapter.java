@@ -36,8 +36,7 @@ import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.zibete.proyecto1.Constants;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.SlidePhotoActivity;
 import com.zibete.proyecto1.utils.ProfileUiBinder;
@@ -128,7 +127,7 @@ public class SliderProfileAdapter extends PagerAdapter {
 
         final Users users = userList.get(position);
 
-        nameUser.setText(users.getNombre());
+        nameUser.setText(users.getName());
 
 
         DisplayMetrics metrics = new DisplayMetrics();
@@ -152,7 +151,7 @@ public class SliderProfileAdapter extends PagerAdapter {
             @Override
             public void onClick(final View v) {
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getID()).setValue(users.getID());
+                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getId()).setValue(users.getId());
 
                 Toast.makeText(context, "Agregado a favoritos", Toast.LENGTH_SHORT).show();
 
@@ -163,7 +162,7 @@ public class SliderProfileAdapter extends PagerAdapter {
             @Override
             public void onClick(final View v) {
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getID()).removeValue();
+                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getId()).removeValue();
 
                 Toast.makeText(context, "Quitado de favoritos", Toast.LENGTH_SHORT).show();
 
@@ -172,9 +171,9 @@ public class SliderProfileAdapter extends PagerAdapter {
 
 
 //Set Data
-        if (!users.getDescripcion().isEmpty()) {
+        if (!users.getDescription().isEmpty()) {
             linear_desc.setVisibility(View.VISIBLE);
-            desc.setText(users.getDescripcion());
+            desc.setText(users.getDescription());
         }else{
             linear_desc.setVisibility(View.GONE);
         }
@@ -190,7 +189,7 @@ public class SliderProfileAdapter extends PagerAdapter {
         coordinatorLayoutPhoto.addView(progressBar);
 
         Glide.with(context)
-                .load(users.getFoto())
+                .load(users.getProfilePhoto())
                 .apply(new RequestOptions().transform( new CenterCrop(), new RoundedCorners(35)))
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(new RequestListener<Drawable>() {
@@ -215,7 +214,7 @@ public class SliderProfileAdapter extends PagerAdapter {
             @Override
             public void onClick(View v) {
 
-                photoList.add(users.getFoto());
+                photoList.add(users.getProfilePhoto());
                 Intent intent = new Intent(context, SlidePhotoActivity.class);
                 intent.putExtra("photoList",photoList);
                 intent.putExtra("position",0);
@@ -225,22 +224,22 @@ public class SliderProfileAdapter extends PagerAdapter {
         });
 
 
-        UserRepository.stateUser(context, users.getID(), icon_conectado, icon_desconectado, tv_estado, chatWith);
+        UserRepository.stateUser(context, users.getId(), icon_conectado, icon_desconectado, tv_estado, chatWith);
 
-        UserRepository.setUserOnline(context, users.getID());
+        UserRepository.setUserOnline(context, users.getId());
 
 
-        ProfileUiBinder.setFavorite(users.getID(), perfil_favorite_on, perfil_favorite_off);
+        ProfileUiBinder.setFavorite(users.getId(), perfil_favorite_on, perfil_favorite_off);
 
-        ProfileUiBinder.getBloqMe(users.getID(), perfil_bloq_me);
+        ProfileUiBinder.getBloqMe(users.getId(), perfil_bloq_me);
 
-        ProfileUiBinder.getAge(users.getID(), age);
+        ProfileUiBinder.getAge(users.getId(), age);
 
-        ProfileUiBinder.getDistanceToUser(users.getID(), distanceUser);
+        ProfileUiBinder.getDistanceToUser(users.getId(), distanceUser);
 
-        ProfileUiBinder.addPhotoReceived(users.getID(), adapterPhotoReceived, linearPhotos);
+        ProfileUiBinder.addPhotoReceived(users.getId(), adapterPhotoReceived, linearPhotos);
 
-        ProfileUiBinder.setMenuProfile(context, users.getID(), subMenu_chatWithUnknown,subMenu_chatWith);
+        ProfileUiBinder.setMenuProfile(context, users.getId(), subMenu_chatWithUnknown,subMenu_chatWith);
 
 
         container.addView(view);

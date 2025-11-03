@@ -14,8 +14,6 @@ import androidx.viewpager.widget.ViewPager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.zibete.proyecto1.Adapters.SliderPhotoAdapter;
-import com.zibete.proyecto1.Adapters.SliderProfileAdapter;
-import com.zibete.proyecto1.POJOS.Users;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.util.ArrayList;

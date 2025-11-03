@@ -5,10 +5,9 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 
-import com.zibete.proyecto1.POJOS.Groups;
+import com.zibete.proyecto1.model.Groups;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 

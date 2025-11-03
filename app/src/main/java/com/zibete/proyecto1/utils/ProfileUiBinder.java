@@ -3,15 +3,17 @@ package com.zibete.proyecto1.utils;
 import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.Constants.getDistanceMeters;
-import static com.zibete.proyecto1.MainActivity.latitud;
-import static com.zibete.proyecto1.MainActivity.longitud;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
+
+import static java.lang.StrictMath.acos;
+import static java.lang.StrictMath.cos;
+import static java.lang.StrictMath.sin;
+import static java.lang.StrictMath.toRadians;
 
 import android.content.Context;
 import android.content.Intent;
@@ -65,10 +67,10 @@ public class ProfileUiBinder {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                Double sulatitud = dataSnapshot.child("latitud").getValue(Double.class);
-                Double sulongitud = dataSnapshot.child("longitud").getValue(Double.class);
+                Double otherLatitude = dataSnapshot.child("latitud").getValue(Double.class);
+                Double otherLongitude = dataSnapshot.child("longitud").getValue(Double.class);
 
-                Double distanceMeters = getDistanceMeters(latitud, longitud, sulatitud, sulongitud);
+                double distanceMeters = getDistanceMeters(UserRepository.latitude, UserRepository.longitude, otherLatitude, otherLongitude);
 
                 //Como mostrar la distancia al user
                 if (distanceMeters > 10000) {
@@ -274,6 +276,21 @@ public class ProfileUiBinder {
         }
     }
 
+
+    public static double getDistanceMeters(double myLatitude, double myLongitude, double otherLatitude, double otherLongitude) {
+
+        double l1 = toRadians(myLatitude);
+        double l2 = toRadians(otherLatitude);
+        double g1 = toRadians(myLongitude);
+        double g2 = toRadians(otherLongitude);
+
+        double dist = acos(sin(l1) * sin(l2) + cos(l1) * cos(l2) * cos(g1 - g2));
+        if(dist < 0) {
+            dist = dist + Math.PI;
+        }
+
+        return (double) Math.round(dist * 6378100);
+    }
 
 
 

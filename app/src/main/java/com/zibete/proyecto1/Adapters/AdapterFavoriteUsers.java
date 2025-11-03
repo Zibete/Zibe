@@ -24,7 +24,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.POJOS.Users;
+import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.PerfilActivity;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.utils.DateUtils;

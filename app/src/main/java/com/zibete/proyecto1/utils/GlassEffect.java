@@ -9,7 +9,6 @@ import eightbitlab.com.blurview.BlurView;
 
 public class GlassEffect {
 
-
     public static void startGlowIfAny(View glowBorder) {
         if (glowBorder == null) return;
         Drawable bg = glowBorder.getBackground();
