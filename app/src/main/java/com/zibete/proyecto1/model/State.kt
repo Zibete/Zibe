@@ -4,11 +4,9 @@ import com.google.firebase.database.PropertyName
 
 class State (
     @get:PropertyName("estado") @set:PropertyName("estado")
-    var state: String?,
+    var state: String = "",
     @get:PropertyName("fecha") @set:PropertyName("fecha")
-    var date: String?,
+    var date: String = "",
     @get:PropertyName("hora") @set:PropertyName("hora")
-    var time: String?
-){
-    constructor() : this ("","","")
-}
+    var time: String = ""
+)

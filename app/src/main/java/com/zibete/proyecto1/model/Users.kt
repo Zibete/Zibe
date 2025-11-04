@@ -8,20 +8,21 @@ import java.util.Objects
 data class Users(
     var id: String = "",
     @get:PropertyName("nombre") @set:PropertyName("nombre")
-    var name: String? = null,
-    var birthDay: String? = null,
-    var date: String? = null,
-    var age: Int? = null,
-    var mail: String? = null,
+    var name: String = "",
+    var birthDay: String = "",
+    var date: String = "",
+    var age: Int = 0,
+    var mail: String = "",
     @get:PropertyName("foto") @set:PropertyName("foto")
-    var profilePhoto: String? = null,
-    var status: Boolean = false,
-    var token: String? = null,
+    var profilePhoto: String = "",
+    @get:PropertyName("estado") @set:PropertyName("estado")
+    var state: Boolean = false,
+    var token: String = "",
     var distance: Double = 0.0,
     @get:PropertyName("descripcion") @set:PropertyName("descripcion")
-    var description: String? = null,
+    var description: String = "",
     @get:PropertyName("latitud") @set:PropertyName("latitud")
-    var latitude: Double = 0.0,     // no-null con default
+    var latitude: Double = 0.0,
     @get:PropertyName("longitud") @set:PropertyName("longitud")
     var longitude: Double = 0.0
 ) : Comparable<Users>, Serializable {

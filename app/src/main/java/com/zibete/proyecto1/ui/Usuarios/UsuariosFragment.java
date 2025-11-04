@@ -465,7 +465,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
                                     if (check) {
 
-                                        if (users.getStatus()) {
+                                        if (users.getState()) {
 
                                             if (flag.equals("load")) {
 
@@ -507,7 +507,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
                                 if (check) {
 
-                                    if (users.getStatus()) {
+                                    if (users.getState()) {
                                         if (flag.equals("load")) {
                                             adapterUsers.addUser(users);
                                         } else {

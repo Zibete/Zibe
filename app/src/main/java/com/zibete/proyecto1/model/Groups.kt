@@ -1,16 +1,19 @@
 package com.zibete.proyecto1.model
 
 import androidx.annotation.Keep
+import com.google.firebase.database.PropertyName
 import java.io.Serializable
 
 @Keep
 data class Groups(
-    var name: String? = null,
-    var data: String? = null,
-    var ID_creator: String? = null,
-    var category: Int? = null,
-    var users: Int? = null,
-    var dateCreate: String? = null
+    var name: String = "",
+    var data: String = "",
+    @get:PropertyName("id_creator") @set:PropertyName("id_creator")
+    var idCreator: String = "",
+    var category: Int = 0,
+    var users: Int = 0,
+    @get:PropertyName("dateCreate") @set:PropertyName("dateCreate")
+    var creationDateTime: String? = null
 ) : Comparable<Groups>, Serializable {
 
     override fun compareTo(other: Groups): Int {
