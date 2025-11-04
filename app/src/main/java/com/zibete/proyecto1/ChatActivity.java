@@ -1537,7 +1537,7 @@ public class ChatActivity extends AppCompatActivity {
 
                             notification.put("novistos", count);
                             notification.put("user", myName);
-                            notification.put("msg", suChat.getwMsg());
+                            notification.put("msg", suChat.getMsg());
                             notification.put("id_user", chatmsg.getSender());
                             notification.put("type", refChatWith);
 

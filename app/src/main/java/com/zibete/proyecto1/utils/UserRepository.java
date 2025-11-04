@@ -25,7 +25,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.model.ChatWith;
-import com.zibete.proyecto1.model.Estado;
+import com.zibete.proyecto1.model.State;
 import com.zibete.proyecto1.R;
 
 import java.text.SimpleDateFormat;
@@ -45,7 +45,7 @@ public class UserRepository {
 
         // 🔸 Crear el objeto Estado con los textos de recursos
         // Estado = clase de modelo que representa el estado de conexión
-        Estado currentState = new Estado(
+        State currentState = new State(
                 context.getString(R.string.conectado), // "connected" → conectado
                 "",
                 ""
@@ -63,7 +63,7 @@ public class UserRepository {
             final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
             final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
-            final Estado cState = new Estado(
+            final State cState = new State(
                     context.getString(R.string.ultVez),
                     dateFormat.format(c.getTime()),
                     timeFormat.format(c.getTime()));

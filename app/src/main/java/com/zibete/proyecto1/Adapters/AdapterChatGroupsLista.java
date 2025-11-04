@@ -88,7 +88,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
                 for (ChatWith chat : chatArrayListAll){
 
-                    String name = chat.getwUserName().toLowerCase(Locale.ROOT).trim();
+                    String name = chat.getUserName().toLowerCase(Locale.ROOT).trim();
                     String search = constraint.toString().toLowerCase(Locale.ROOT).trim();
 
                     if (name.contains(search)) {
@@ -196,7 +196,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
         }
 
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).addValueEventListener(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -208,19 +208,19 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
         });
 
 
-        holder.tv_usuario.setText(wChat.getwUserName());
+        holder.tv_usuario.setText(wChat.getUserName());
 
 
-        Glide.with(context.getApplicationContext()).load(wChat.getwUserPhoto()).into(holder.img_user);
+        Glide.with(context.getApplicationContext()).load(wChat.getUserPhoto()).into(holder.img_user);
 
 
 //Mostrar estado
-        UserRepository.stateUser(context, wChat.getwUserID(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWithUnknown);
+        UserRepository.stateUser(context, wChat.getUserId(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWithUnknown);
 
 
 //Checked
 
-        ref_datos.child(wChat.getwUserID()).child(chatWithUnknown).child(user.getUid()).addValueEventListener(new ValueEventListener() {
+        ref_datos.child(wChat.getUserId()).child(chatWithUnknown).child(user.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -284,7 +284,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
 
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).child("noVisto").addValueEventListener(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).child("noVisto").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -320,21 +320,21 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
             @Override
             public void onClick(final View v) {
 
-                ref_group_users.child(groupName).child(wChat.getwUserID()).addListenerForSingleValueEvent(new ValueEventListener() {
+                ref_group_users.child(groupName).child(wChat.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
                         if (dataSnapshot.exists()){
 
                             Intent intent = new Intent(v.getContext(), ChatActivity.class);
-                            intent.putExtra("unknownName",wChat.getwUserName());
-                            intent.putExtra("idUserUnknown",wChat.getwUserID());
+                            intent.putExtra("unknownName",wChat.getUserName());
+                            intent.putExtra("idUserUnknown",wChat.getUserId());
                             v.getContext().startActivity(intent);
 
                         }else{
 
-                            Toast.makeText(context, "Lo sentimos, " + wChat.getwUserName() + " ya no está disponible", Toast.LENGTH_SHORT).show();
-                            ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).removeValue();
+                            Toast.makeText(context, "Lo sentimos, " + wChat.getUserName() + " ya no está disponible", Toast.LENGTH_SHORT).show();
+                            ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).removeValue();
 
                         }
                     }
@@ -377,7 +377,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
     private void loads(@NonNull final viewHolderAdapterChatGroupList holder, final ChatWith wChat) {
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).addValueEventListener(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -387,12 +387,12 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
                     if (holder.cardView.getVisibility() == View.VISIBLE){
 
-                        holder.ult_msg.setText(wChat.getwMsg());
+                        holder.ult_msg.setText(wChat.getMsg());
 
-                        if (wChat.getwMsg().equals(context.getResources().getString(R.string.photo_send))
-                                || wChat.getwMsg().equals(context.getResources().getString(R.string.photo_received))
-                                || wChat.getwMsg().equals(context.getResources().getString(R.string.audio_send))
-                                || wChat.getwMsg().equals(context.getResources().getString(R.string.audio_received))){
+                        if (wChat.getMsg().equals(context.getResources().getString(R.string.photo_send))
+                                || wChat.getMsg().equals(context.getResources().getString(R.string.photo_received))
+                                || wChat.getMsg().equals(context.getResources().getString(R.string.audio_send))
+                                || wChat.getMsg().equals(context.getResources().getString(R.string.audio_received))){
                             holder.ult_msg.setTypeface(null, Typeface.ITALIC);
                         }else{
                             holder.ult_msg.setTypeface(null, Typeface.NORMAL);
@@ -404,7 +404,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
                         setMyDoubleCheck(wChat);
                     }
 
-                    ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).child("wVisto").setValue(2);
+                    ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).child("wVisto").setValue(2);
                 }
             }
             @Override
@@ -417,7 +417,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
     public void setMyDoubleCheck(final ChatWith wChat) {
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getwUserID()).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
+        ref_datos.child(user.getUid()).child(chatWithUnknown).child(wChat.getUserId()).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -426,14 +426,14 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
                     final Integer noVistos = dataSnapshot.getValue(Integer.class);
                     if (noVistos > 0) {
 
-                        ref_chat_unknown.child(user.getUid() + " <---> " + wChat.getwUserID()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                        ref_chat_unknown.child(user.getUid() + " <---> " + wChat.getUserId()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 if (dataSnapshot.exists()) {
                                     setMyDoubleCheck(dataSnapshot);
                                 }else{
 
-                                    ref_chat_unknown.child(wChat.getwUserID() + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    ref_chat_unknown.child(wChat.getUserId() + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                             if (dataSnapshot.exists()) {
@@ -469,10 +469,10 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
         final Calendar c = Calendar.getInstance();
         final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
-        String date = wChat.getwDate().substring(0,10);
+        String date = wChat.getDateTime().substring(0,10);
 
         if (date.equals(dateFormat.format(c.getTime()))) {
-            holder.hora_ult_msg.setText(wChat.getwDate().substring(11,16));
+            holder.hora_ult_msg.setText(wChat.getDateTime().substring(11,16));
         } else {
 
             Calendar calendar = Calendar.getInstance();
@@ -482,7 +482,7 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
                 holder.hora_ult_msg.setText(context.getString(R.string.ayer));
             }else {
-                holder.hora_ult_msg.setText(wChat.getwDate().substring(0,10));
+                holder.hora_ult_msg.setText(wChat.getDateTime().substring(0,10));
             }
         }
     }
@@ -491,8 +491,8 @@ public class AdapterChatGroupsLista extends RecyclerView.Adapter<AdapterChatGrou
 
     private void cardView(@NonNull viewHolderAdapterChatGroupList holder, ChatWith wChat) {
 
-        String state = wChat.getEstado();
-        String photo = wChat.getwUserPhoto();
+        String state = wChat.getState();
+        String photo = wChat.getUserPhoto();
 
         if (state.equals(chatWithUnknown)){
             holder.cardView.setVisibility(View.VISIBLE);

@@ -917,10 +917,10 @@ public class MainActivity extends AppCompatActivity {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
                         ChatWith chat = snapshot.getValue(ChatWith.class);
-                        if (chat != null && "delete".equals(chat.getEstado())) {
+                        if (chat != null && "delete".equals(chat.getState())) {
 
-                            String name = chat.getwUserName();
-                            String user_id = chat.getwUserID();
+                            String name = chat.getUserName();
+                            String user_id = chat.getUserId();
                             listName.add(name);
                             listID.add(user_id);
                         }
@@ -1007,10 +1007,10 @@ public class MainActivity extends AppCompatActivity {
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
 
                         ChatWith chat = snapshot.getValue(ChatWith.class);
-                        if (chat != null && "bloq".equals(chat.getEstado())) {
+                        if (chat != null && "bloq".equals(chat.getState())) {
 
-                            String name = chat.getwUserName();
-                            String user_id = chat.getwUserID();
+                            String name = chat.getUserName();
+                            String user_id = chat.getUserId();
                             listName.add(name);
                             listID.add(user_id);
                         }

@@ -393,7 +393,7 @@ public class ChatGroupFragment extends Fragment {
 
                         Date dateChat = null;
                         try {
-                            dateChat = fmt.parse(chat.getDate());
+                            dateChat = fmt.parse(chat.getDateTime());
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }

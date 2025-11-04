@@ -97,10 +97,9 @@ public class ChatListGroupsFragment extends Fragment implements SearchView.OnQue
                     @SuppressLint("SimpleDateFormat") final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                     for (ChatWith wChat : chatsGroupArrayList){
 
-
                         try {
-                            Date date = dateFormat3.parse(wChat.getwDate());
-                            wChat.setDateDate(date);
+                            Date date = dateFormat3.parse(wChat.getDateTime());
+                            wChat.setDate(date);
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
@@ -138,8 +137,8 @@ public class ChatListGroupsFragment extends Fragment implements SearchView.OnQue
 
 
                                 try {
-                                    Date date = dateFormat3.parse(wChat.getwDate());
-                                    wChat.setDateDate(date);
+                                    Date date = dateFormat3.parse(wChat.getDateTime());
+                                    wChat.setDate(date);
                                 } catch (ParseException e) {
                                     e.printStackTrace();
                                 }

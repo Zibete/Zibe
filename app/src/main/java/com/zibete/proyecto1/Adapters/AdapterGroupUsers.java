@@ -77,17 +77,14 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
 
             }else{
 
-                for (UserGroup gUser : groupOriginalUsersList){
+                for (UserGroup u : groupOriginalUsersList){
 
-                    String name = gUser.getUser_name().toLowerCase(Locale.ROOT).trim();
+                    String name = u.getUserName().toLowerCase(Locale.ROOT).trim();
                     search = constraint.toString().toLowerCase(Locale.ROOT).trim();
 
                     if (name.contains(search)) {
 
-                        groupUserListFiltered.add(gUser);
-
-
-
+                        groupUserListFiltered.add(u);
 
                     }
 
@@ -173,7 +170,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
  */
 
 
-        if (groupUser.getUser_id().equals(user.getUid())){
+        if (groupUser.getUserId().equals(user.getUid())){
             holder.cardviewUserGroup.setCardBackgroundColor(context.getResources().getColor(R.color.accent_transparent));
         }else{
             holder.cardviewUserGroup.setCardBackgroundColor(context.getResources().getColor(R.color.zibe_night_start));
@@ -186,7 +183,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
 
                 String creator = dataSnapshot.getValue(String.class);
 
-                if (groupUser.getUser_id().equals(creator)){
+                if (groupUser.getUserId().equals(creator)){
 
                     holder.creator.setVisibility(View.VISIBLE);
 
@@ -210,7 +207,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
 
 
 
-        ref_cuentas.child(groupUser.getUser_id()).addValueEventListener(new ValueEventListener() {
+        ref_cuentas.child(groupUser.getUserId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -223,7 +220,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
                     if (groupUser.getType() == 0) {
 
                         Glide.with(context.getApplicationContext()).load(context.getString(R.string.URL_PHOTO_DEF)).into(holder.image_user_group);
-                        holder.name_user_group.setText(groupUser.getUser_name());
+                        holder.name_user_group.setText(groupUser.getUserName());
                         holder.masked.setVisibility(View.VISIBLE);
 
                     }else{
@@ -255,12 +252,12 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
             @Override
             public boolean onDoubleTap(MotionEvent e) {
 
-                if (!groupUser.getUser_id().equals(user.getUid())) {
+                if (!groupUser.getUserId().equals(user.getUid())) {
 
                     Intent intent = new Intent(context, ChatActivity.class);
 
-                    intent.putExtra("unknownName", groupUser.getUser_name()); //Nombre incógnito o UID
-                    intent.putExtra("idUserUnknown", groupUser.getUser_id()); //Su UID
+                    intent.putExtra("unknownName", groupUser.getUserName()); //Nombre incógnito o UID
+                    intent.putExtra("idUserUnknown", groupUser.getUserId()); //Su UID
 
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     context.startActivity(intent);
@@ -274,12 +271,12 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
             @Override
             public boolean onSingleTapConfirmed(MotionEvent event) {
 
-                if (!groupUser.getUser_id().equals(user.getUid())) {
+                if (!groupUser.getUserId().equals(user.getUid())) {
 
                     if (groupUser.getType() == 1){
 
                         Intent intent = new Intent(context, PerfilActivity.class);
-                        intent.putExtra("id_user", groupUser.getUser_id());
+                        intent.putExtra("id_user", groupUser.getUserId());
                         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                         context.startActivity(intent);
 

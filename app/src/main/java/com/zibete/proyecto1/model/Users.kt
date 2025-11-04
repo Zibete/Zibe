@@ -1,8 +1,10 @@
 package com.zibete.proyecto1.model
+import androidx.annotation.Keep
 import com.google.firebase.database.PropertyName
 import java.io.Serializable
 import java.util.Objects
 
+@Keep
 data class Users(
     var id: String = "",
     @get:PropertyName("nombre") @set:PropertyName("nombre")

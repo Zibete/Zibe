@@ -96,13 +96,13 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
         msgList.add(chats);
         notifyItemInserted(msgList.size());
 
-        if (chats.getType_msg() == PHOTO | chats.getType_msg() == PHOTO_RECEIVER_DLT | chats.getType_msg() == PHOTO_SENDER_DLT) {
+        if (chats.getTypeMsg() == PHOTO | chats.getTypeMsg() == PHOTO_RECEIVER_DLT | chats.getTypeMsg() == PHOTO_SENDER_DLT) {
 
             if (photoList.size() > maxSize) {
                 photoList.remove(0);
                 notifyItemRemoved(0);
             }
-            photoList.add(chats.getMensaje());
+            photoList.add(chats.getMessage());
 
         }
 
@@ -156,14 +156,14 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
 
 
-        if (chats.getType_msg() != 0) {
+        if (chats.getTypeMsg() != 0) {
             final GestureDetector gd = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
                 @Override
                 public boolean onDoubleTap(MotionEvent e) {
 
-                    if (!chats.getID().equals(user.getUid())) {
+                    if (!chats.getId().equals(user.getUid())) {
 
-                        ref_group_users.child(groupName).child(chats.getID()).addListenerForSingleValueEvent(new ValueEventListener() {
+                        ref_group_users.child(groupName).child(chats.getId()).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -177,7 +177,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
                                             Intent intent = new Intent(context, ChatActivity.class);
                                             intent.putExtra("unknownName", chats.getName()); //Nombre incógnito o UID
-                                            intent.putExtra("idUserUnknown", chats.getID()); //Su UID
+                                            intent.putExtra("idUserUnknown", chats.getId()); //Su UID
 
                                             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                                             context.startActivity(intent);
@@ -191,11 +191,11 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
                                     } else {
 
-                                        if (chats.getType_user() == 1) {
+                                        if (chats.getTypeUser() == 1) {
 
                                             Intent intent = new Intent(context, ChatActivity.class);
                                             intent.putExtra("unknownName", chats.getName()); //Nombre incógnito o UID
-                                            intent.putExtra("idUserUnknown", chats.getID()); //Su UID
+                                            intent.putExtra("idUserUnknown", chats.getId()); //Su UID
 
                                             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                                             context.startActivity(intent);
@@ -227,7 +227,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
                     String text;
 
-                    if (chats.getType_user() == 0) {
+                    if (chats.getTypeUser() == 0) {
                         text = "Lo sentimos, " + chats.getName() + " ya no está disponible";
                     } else {
                         text = "Lo sentimos, " + chats.getName() + " ya no está en este chat. Encuéntralo en Personas";
@@ -241,14 +241,14 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
                     snack.show();
 
 
-                    ref_datos.child(user.getUid()).child(chatWithUnknown).child(chats.getID()).removeValue();
+                    ref_datos.child(user.getUid()).child(chatWithUnknown).child(chats.getId()).removeValue();
                 }
 
 
                 @Override
                 public boolean onSingleTapConfirmed(final MotionEvent event) {
 
-                    if (chats.getType_user() == 0) {
+                    if (chats.getTypeUser() == 0) {
 
                         final Snackbar snack = Snackbar.make(holder.linear_mensaje_msg, "Perfil incógnito", Snackbar.LENGTH_SHORT);
                         snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
@@ -258,9 +258,9 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
                     } else {
 
-                        if (!chats.getID().equals(user.getUid())) {
+                        if (!chats.getId().equals(user.getUid())) {
                             Intent intent = new Intent(context, PerfilActivity.class);
-                            intent.putExtra("id_user", chats.getID());
+                            intent.putExtra("id_user", chats.getId());
                             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                             context.startActivity(intent);
                         }
@@ -355,7 +355,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
         public void bindView(final ChatsGroup chats){
 
-            if (chats.getType_msg() != 0){
+            if (chats.getTypeMsg() != 0){
 
                 checked = itemView.findViewById(R.id.checked);
                 checked2 = itemView.findViewById(R.id.checked2);
@@ -373,9 +373,9 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
             hora = itemView.findViewById(R.id.hora_msg);
             img_user = itemView.findViewById(R.id.img_user);
             name_user = itemView.findViewById(R.id.name_user);
-            hora.setText(chats.getDate().substring(11,16));
+            hora.setText(chats.getDateTime().substring(11,16));
 
-            if (chats.getType_msg() == PHOTO | chats.getType_msg() == PHOTO_RECEIVER_DLT | chats.getType_msg() == PHOTO_SENDER_DLT){
+            if (chats.getTypeMsg() == PHOTO | chats.getTypeMsg() == PHOTO_RECEIVER_DLT | chats.getTypeMsg() == PHOTO_SENDER_DLT){
 
                 DisplayMetrics metrics = new DisplayMetrics();
                 WindowManager windowManager = (WindowManager) context
@@ -393,12 +393,12 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
                 linear_mensaje_pic.setVisibility(View.VISIBLE);
                 linear_mensaje_msg.setVisibility(View.GONE);
 
-                Glide.with(context).load(chats.getMensaje()).into(img_pic);
+                Glide.with(context).load(chats.getMessage()).into(img_pic);
 
 
                 loadingPhoto.setVisibility(View.VISIBLE);
                 Glide.with(context)
-                        .load(chats.getMensaje())
+                        .load(chats.getMessage())
                         .apply(new RequestOptions().transform( new CenterCrop(), new RoundedCorners(35)))
                         .listener(new RequestListener<Drawable>() {
                             @Override
@@ -425,7 +425,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
                         Intent intent = new Intent(context, SlidePhotoActivity.class);
                         intent.putExtra("photoList", photoList);
-                        intent.putExtra("position", photoList.indexOf(chats.getMensaje()));
+                        intent.putExtra("position", photoList.indexOf(chats.getMessage()));
                         intent.putExtra("rotation", 0);
                         v.getContext().startActivity(intent);
 
@@ -437,19 +437,19 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
             }
 
-            if (chats.getType_msg() == MSG | chats.getType_msg() == MSG_RECEIVER_DLT | chats.getType_msg() == MSG_SENDER_DLT){
+            if (chats.getTypeMsg() == MSG | chats.getTypeMsg() == MSG_RECEIVER_DLT | chats.getTypeMsg() == MSG_SENDER_DLT){
                 linear_mensaje_pic.setVisibility(View.GONE);
                 linear_mensaje_msg.setVisibility(View.VISIBLE);
-                tv_msg.setText(chats.getMensaje());
+                tv_msg.setText(chats.getMessage());
             }
 
-            if (chats.getType_msg() == 0){
-                tv_msg.setText(chats.getMensaje());
+            if (chats.getTypeMsg() == 0){
+                tv_msg.setText(chats.getMessage());
             }
 
-            if (chats.getType_user() == 0){
+            if (chats.getTypeUser() == 0){
 
-                if (chats.getType_msg() == 0){
+                if (chats.getTypeMsg() == 0){
                     name_user.setText(chats.getName());
                 }else {
                     name_user.setText(chats.getName() + ":");
@@ -458,7 +458,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
 
             }else{
 
-                ref_cuentas.child(chats.getID()).addListenerForSingleValueEvent(new ValueEventListener() {
+                ref_cuentas.child(chats.getId()).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -467,7 +467,7 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
                             String name = dataSnapshot.child("nombre").getValue(String.class);
                             String foto = dataSnapshot.child("foto").getValue(String.class);
 
-                            if (chats.getType_msg() == 0){
+                            if (chats.getTypeMsg() == 0){
                                 name_user.setText(name);
                             }else {
                                 name_user.setText(name + ":");
@@ -501,10 +501,10 @@ public class AdapterChatGroup extends RecyclerView.Adapter<AdapterChatGroup.view
     @Override
     public int getItemViewType(int position) {
 
-        if(msgList.get(position).getType_msg() == 0){
+        if(msgList.get(position).getTypeMsg() == 0){
             return MSG_TYPE_MID;
         }else {
-            if (msgList.get(position).getID().equals(user.getUid())) {
+            if (msgList.get(position).getId().equals(user.getUid())) {
                 return MSG_TYPE_RIGHT;
             } else {
                 return MSG_TYPE_LEFT;

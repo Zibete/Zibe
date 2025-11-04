@@ -62,7 +62,7 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
         Collections.sort(list, new Comparator<ChatWith>() {
             @Override
             public int compare(ChatWith o1, ChatWith o2) {
-                return o1.getwDate().compareTo(o2.getwDate());
+                return o1.getDate().compareTo(o2.getDate());
             }
         });
 
@@ -150,8 +150,8 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
 
 
                         try {
-                            Date date = dateFormat3.parse(wChat.getwDate());
-                            wChat.setDateDate(date);
+                            Date date = dateFormat3.parse(wChat.getDateTime());
+                            wChat.setDate(date);
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
@@ -188,8 +188,8 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
                             for (ChatWith wChat : chatsArrayList2){
 
                                 try {
-                                    Date date = dateFormat3.parse(wChat.getwDate());
-                                    wChat.setDateDate(date);
+                                    Date date = dateFormat3.parse(wChat.getDateTime());
+                                    wChat.setDate(date);
                                 } catch (ParseException e) {
                                     e.printStackTrace();
                                 }
@@ -353,15 +353,15 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
 
             String type = chatWith;
             final ChatWith wChat = chatsArrayList.get(item.getOrder());
-            String id_user = wChat.getwUserID();
-            String name_user = wChat.getwUserName();
+            String id_user = wChat.getUserId();
+            String name_user = wChat.getUserName();
             RunItemSelected(item, type, id_user, name_user);
         }
 
         if(item.getGroupId() == FRAGMENT_ID_CHATGROUPLIST) {
             final ChatWith wChat = chatsGroupArrayList.get(item.getOrder());
-            String id_user = wChat.getwUserID();
-            String name_user = wChat.getwUserName();
+            String id_user = wChat.getUserId();
+            String name_user = wChat.getUserName();
             String type = chatWithUnknown;
             RunItemSelected(item, type, id_user, name_user);
         }
