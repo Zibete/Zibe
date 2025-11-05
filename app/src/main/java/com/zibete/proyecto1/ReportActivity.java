@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_zibe;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refZibe;
 
 public class ReportActivity extends AppCompatActivity {
 
@@ -76,11 +76,11 @@ public class ReportActivity extends AppCompatActivity {
                     .format(Calendar.getInstance().getTime());
 
             if (user != null) {
-                ref_zibe.child("Comentarios").child(date).child("ID").setValue(user.getUid());
-                ref_zibe.child("Comentarios").child(date).child("nombre").setValue(user.getDisplayName());
-                ref_zibe.child("Comentarios").child(date).child("email").setValue(user.getEmail());
+                refZibe.child("Comentarios").child(date).child("ID").setValue(user.getUid());
+                refZibe.child("Comentarios").child(date).child("nombre").setValue(user.getDisplayName());
+                refZibe.child("Comentarios").child(date).child("email").setValue(user.getEmail());
             }
-            ref_zibe.child("Comentarios").child(date).child("mensaje").setValue(mensaje);
+            refZibe.child("Comentarios").child(date).child("mensaje").setValue(mensaje);
 
             // Dialogo Material con overlay Zibe.Dialog (definido en styles)
             new MaterialAlertDialogBuilder(ReportActivity.this)

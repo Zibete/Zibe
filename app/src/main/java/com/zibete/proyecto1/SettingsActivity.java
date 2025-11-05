@@ -68,11 +68,11 @@ import static com.zibete.proyecto1.MainActivity.layoutSettings;
 import static com.zibete.proyecto1.Constants.listenerGroupBadge;
 import static com.zibete.proyecto1.Constants.listenerMsgUnreadBadge;
 import static com.zibete.proyecto1.Constants.listenerToken;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_unknown;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.PageAdapterGroup.valueEventListenerTitle;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
@@ -623,28 +623,28 @@ public class SettingsActivity extends AppCompatActivity {
         inGroup = false;
 
         if (listenerGroupBadge != null) {
-            ref_group_chat.child(groupName).removeEventListener(listenerGroupBadge);
+            refGroupChat.child(groupName).removeEventListener(listenerGroupBadge);
         }
         if (listenerMsgUnreadBadge != null) {
-            final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+            final Query query = refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.removeEventListener(listenerMsgUnreadBadge);
         }
         if (valueEventListenerTitle != null) {
-            ref_group_users.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
+            refGroupUsers.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
         }
         if (listenerGroupChat != null) {
-            ref_group_chat.child(groupName).removeEventListener(listenerGroupChat);
+            refGroupChat.child(groupName).removeEventListener(listenerGroupChat);
         }
 
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()){
                     String key = snapshot.getKey();
-                    ref_chat_unknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
-                    ref_chat_unknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
-                    ref_datos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
+                    refChatUnknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
+                    refChatUnknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
+                    refDatos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
                 }
             }
             @Override
@@ -653,7 +653,7 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
 
-        ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
+        refDatos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
 
 
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
@@ -665,11 +665,11 @@ public class SettingsActivity extends AppCompatActivity {
                 user.getUid(),
                 0,
                 userType);
-        ref_group_chat.child(groupName).push().setValue(chatmsg);
+        refGroupChat.child(groupName).push().setValue(chatmsg);
 
 
         //badgeDrawableGroup.setVisible(false);
-        ref_group_users.child(groupName).child(user.getUid()).removeValue();
+        refGroupUsers.child(groupName).child(user.getUid()).removeValue();
 
         inGroup = false;
         userName = "";
@@ -709,7 +709,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         if (listenerToken != null) {
-            ref_cuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
+            refCuentas.child(user.getUid()).child("token").removeEventListener(listenerToken);
         }
 
 
@@ -824,9 +824,9 @@ public class SettingsActivity extends AppCompatActivity {
         authEditor.apply();
 
 
-        ref_datos.child(user.getUid()).removeValue();
+        refDatos.child(user.getUid()).removeValue();
 
-        ref_cuentas.child(user.getUid()).removeValue();
+        refCuentas.child(user.getUid()).removeValue();
 
         FirebaseStorage.getInstance().getReference().child("Users/imgPerfil/" + user.getUid() + ".jpg").delete();
 

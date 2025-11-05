@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class PageAdapterGroup extends Fragment {
@@ -80,7 +80,7 @@ public class PageAdapterGroup extends Fragment {
         start(container);
 
 
-        final Query newQuery = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+        final Query newQuery = refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
         newQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -195,7 +195,7 @@ public class PageAdapterGroup extends Fragment {
                 }
             };
 
-            ref_group_users.child(groupName).addValueEventListener(valueEventListenerTitle);
+            refGroupUsers.child(groupName).addValueEventListener(valueEventListenerTitle);
 
 
         }

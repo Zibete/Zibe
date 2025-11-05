@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class SlideProfileActivity extends AppCompatActivity {
 
@@ -128,7 +128,7 @@ public class SlideProfileActivity extends AppCompatActivity {
 
         Users users = userList.get(viewPager.getCurrentItem());
         //Para el menu1
-        ref_datos.child(user.getUid()).child(chatWith).child(users.getId()).addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(users.getId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

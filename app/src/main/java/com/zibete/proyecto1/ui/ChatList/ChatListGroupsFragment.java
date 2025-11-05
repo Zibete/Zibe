@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.Date;
 
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class ChatListGroupsFragment extends Fragment implements SearchView.OnQueryTextListener{
 
@@ -80,7 +80,7 @@ public class ChatListGroupsFragment extends Fragment implements SearchView.OnQue
 
 //CREAR LISTA
         chatsGroupArrayList.clear();
-        ref_datos.child(user.getUid()).child(chatWithUnknown).addChildEventListener(new ChildEventListener() {
+        refDatos.child(user.getUid()).child(chatWithUnknown).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 
@@ -116,7 +116,7 @@ public class ChatListGroupsFragment extends Fragment implements SearchView.OnQue
 
 
 //CADA VEZ QUE CAMBIA ALGO
-                ref_datos.child(user.getUid()).child(chatWithUnknown).addValueEventListener(new ValueEventListener() {
+                refDatos.child(user.getUid()).child(chatWithUnknown).addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         if (dataSnapshot.exists()) {
@@ -199,7 +199,7 @@ public class ChatListGroupsFragment extends Fragment implements SearchView.OnQue
 
 
         //Mostrar NO HAS CHATEADO
-        ref_datos.child(user.getUid()).child(chatWithUnknown).addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWithUnknown).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {

@@ -50,9 +50,9 @@ import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.maxChatSize;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class PerfilActivity extends AppCompatActivity {
@@ -124,7 +124,7 @@ public class PerfilActivity extends AppCompatActivity {
         floatingActionMenu.setClosedOnTouchOutside(true);
 
 
-        ref_group_users.child(groupName).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupUsers.child(groupName).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
@@ -171,7 +171,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 //Favoritos
-        ref_datos.child(user.getUid()).child("FavoriteList").child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child("FavoriteList").child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -191,7 +191,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 //Bloquedo
-        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -211,7 +211,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
         //Me Bloqueó
-        FirebaseRefs.ref_datos.child(id_user).child("ChatWith").child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(id_user).child("ChatWith").child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -234,7 +234,7 @@ public class PerfilActivity extends AppCompatActivity {
             @Override
             public void onClick(final View v) {
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(id_user).setValue(id_user);
+                refDatos.child(user.getUid()).child("FavoriteList").child(id_user).setValue(id_user);
                 perfil_favorite_on.setVisibility(View.VISIBLE);
                 perfil_favorite_off.setVisibility(View.GONE);
                 Toast.makeText(PerfilActivity.this, "Agregado a favoritos", Toast.LENGTH_SHORT).show();
@@ -247,7 +247,7 @@ public class PerfilActivity extends AppCompatActivity {
             public void onClick(final View v) {
 
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(id_user).removeValue();
+                refDatos.child(user.getUid()).child("FavoriteList").child(id_user).removeValue();
                 perfil_favorite_on.setVisibility(View.GONE);
                 perfil_favorite_off.setVisibility(View.VISIBLE);
                 Toast.makeText(PerfilActivity.this, "Quitado de favoritos", Toast.LENGTH_SHORT).show();
@@ -265,7 +265,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 
-        FirebaseRefs.ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.refCuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -398,7 +398,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
 
-        ref_chat.child(user.getUid() + " <---> " + id_user).child("Mensajes").addChildEventListener(new ChildEventListener() {
+        refChat.child(user.getUid() + " <---> " + id_user).child("Mensajes").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 
@@ -419,7 +419,7 @@ public class PerfilActivity extends AppCompatActivity {
             }
         });
 
-        ref_chat.child(id_user+ " <---> " + user.getUid()).child("Mensajes").addChildEventListener(new ChildEventListener() {
+        refChat.child(id_user+ " <---> " + user.getUid()).child("Mensajes").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 
@@ -510,7 +510,7 @@ public class PerfilActivity extends AppCompatActivity {
 
 
         //Para el menu1
-        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(user.getUid()).child("ChatWith").child(id_user).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

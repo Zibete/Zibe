@@ -38,8 +38,8 @@ import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_groups;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupData;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.viewHolderAdapter> implements Filterable {
@@ -177,7 +177,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
         }
 
 
-        ref_groups.child(groupName).child("id_creator").addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupData.child(groupName).child("id_creator").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -207,7 +207,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
 
 
 
-        ref_cuentas.child(groupUser.getUserId()).addValueEventListener(new ValueEventListener() {
+        refCuentas.child(groupUser.getUserId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

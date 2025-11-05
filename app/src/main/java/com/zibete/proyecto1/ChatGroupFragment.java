@@ -73,10 +73,10 @@ import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SELECTED;
 import static com.zibete.proyecto1.Constants.maxChatSize;
 import static com.zibete.proyecto1.MainActivity.badgeDrawableGroup;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.MainActivity.toolbar;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.inGroup;
@@ -120,18 +120,7 @@ public class ChatGroupFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        cropImageLauncher = CropHelper.registerLauncher(
-                this,
-                refSendImages,
-                linear_photo_view,
-                linear_photo,
-                photo,
-                loadingPhoto,
-                msg,
-                btnCamera,
-                btnSendMsg,
-                uri -> { /* opcional */ }
-        );
+
 
     }
 
@@ -163,13 +152,13 @@ public class ChatGroupFragment extends Fragment {
 
 
 
-        ref_group_chat.child(groupName).addValueEventListener(new ValueEventListener() {
+        refGroupChat.child(groupName).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (toolbar.getTitle().equals(groupName)) {
                     if(!groupName.equals("")) {
                         int count = (int) snapshot.getChildrenCount();
-                        ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").setValue(count);
+                        refDatos.child(user.getUid()).child("ChatList").child("msgReadGroup").setValue(count);
                     }
                 }
             }
@@ -357,7 +346,7 @@ public class ChatGroupFragment extends Fragment {
             }
         });
 
-        ref_group_chat.child(groupName).addValueEventListener(new ValueEventListener() {
+        refGroupChat.child(groupName).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
@@ -428,7 +417,7 @@ public class ChatGroupFragment extends Fragment {
         };
 
 
-        ref_group_chat.child(groupName).addChildEventListener(listenerGroupChat);
+        refGroupChat.child(groupName).addChildEventListener(listenerGroupChat);
 
         adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
@@ -440,7 +429,18 @@ public class ChatGroupFragment extends Fragment {
             }
         });
 
-
+        cropImageLauncher = CropHelper.registerLauncherForFragment(
+                this,
+                refSendImages,
+                linear_photo_view,
+                linear_photo,
+                photo,
+                loadingPhoto,
+                msg,
+                btnCamera,
+                btnSendMsg,
+                uri -> { /* opcional */ }
+        );
 
         return view;
     }// FIN OnCreate
@@ -559,11 +559,11 @@ public class ChatGroupFragment extends Fragment {
                     user.getUid(),
                     msgType,
                     userType);
-            ref_group_chat.child(groupName).push().setValue(chatmsg);
+            refGroupChat.child(groupName).push().setValue(chatmsg);
 
 
 
-            ref_group_users.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
+            refGroupUsers.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -573,7 +573,7 @@ public class ChatGroupFragment extends Fragment {
 
                         if (!user_id.equals(user.getUid())) {
 
-                            ref_cuentas.child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
+                            refCuentas.child(user_id).addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -702,104 +702,6 @@ public class ChatGroupFragment extends Fragment {
 
         CropHelper.launchCrop(cropImageLauncher, imageUri);
 
-
-//        if (requestCode == CAMERA_SELECTED && resultCode == RESULT_OK) {
-//            CropImageOptions options = new CropImageOptions();
-//            options.guidelines = CropImageView.Guidelines.ON;
-//            options.outputRequestWidth = 1920;
-//            options.outputRequestHeight = 1080;
-//
-//            CropImageContractOptions contract = new CropImageContractOptions(imageUri, options);
-//            cropImageLauncher.launch(contract);
-//            return;
-//        }
-
-
-//        if (requestCode == PHOTO_SELECTED && resultCode == RESULT_OK && data != null && data.getData() != null) {
-//            Uri picked = data.getData();
-//
-//            CropImageOptions options = new CropImageOptions();
-//            options.imageSourceIncludeGallery = true;
-//            options.imageSourceIncludeCamera = false;
-//            options.guidelines = CropImageView.Guidelines.ON;
-//
-//            CropImageContractOptions contract = new CropImageContractOptions(picked, options);
-//            cropImageLauncher.launch(contract);
-//            return;
-//        }
-
-//
-//        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-//            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-//
-//            if (resultCode == RESULT_OK) {
-//                // ⬇️ Reemplazo directo
-//                resultUri = result.getUriContent();   // antes: result.getUri()
-//
-//                msgType = PHOTO;
-//                linear_photo_view.setVisibility(View.VISIBLE);
-//                msg.setVisibility(View.GONE);
-//                btnCamera.setVisibility(View.GONE);
-//                btnSendMsg.setVisibility(View.VISIBLE);
-//
-//
-//                DisplayMetrics metrics = new DisplayMetrics();
-//                getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-//                int widthPixels = metrics.widthPixels;
-//
-//                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-//                        widthPixels/3, widthPixels/3);
-//
-//                linear_photo.setLayoutParams(layoutParams);
-//
-//
-//
-//                //refSendImages.child(resultUri.getLastPathSegment());
-//                final StorageReference refPic = refSendImages.child(resultUri.getLastPathSegment());
-//
-//
-//                refPic.putFile(resultUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-//                    @Override
-//                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-//                        if (taskSnapshot.getMetadata() != null) {
-//                            if (taskSnapshot.getMetadata().getReference() != null) {
-//                                Task<Uri> result = taskSnapshot.getStorage().getDownloadUrl();
-//                                result.addOnSuccessListener(new OnSuccessListener<Uri>() {
-//                                    @Override
-//                                    public void onSuccess(Uri uri) {
-//
-//                                        stringMsg = uri.toString();
-//
-//                                        loadingPhoto.setVisibility(View.VISIBLE);
-//                                        Glide.with(ChatGroupFragment.this)
-//                                                .load(stringMsg)
-//                                                .apply(new RequestOptions().transform( new CenterCrop(), new RoundedCorners(35)))
-//                                                .listener(new RequestListener<Drawable>() {
-//                                                    @Override
-//                                                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-//                                                        loadingPhoto.setVisibility(View.GONE);
-//                                                        return false;
-//                                                    }
-//
-//                                                    @Override
-//                                                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-//                                                        loadingPhoto.setVisibility(View.GONE);
-//                                                        return false;
-//                                                    }
-//
-//                                                })
-//                                                .into(photo);
-//
-//
-//                                    }
-//                                });
-//                            }
-//                        }
-//                    }});
-//
-//
-//            }
-//        }
 
         progress.dismiss();
     }

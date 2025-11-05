@@ -43,7 +43,7 @@ import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATGROUPLIST;
 import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATLIST;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.ui.ChatList.ChatListGroupsFragment.chatsGroupArrayList;
 
 public class ChatListFragment extends Fragment implements SearchView.OnQueryTextListener{
@@ -132,7 +132,7 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
 //CHAT LISTA
 //CREAR LISTA
 
-        ref_datos.child(user.getUid()).child(chatWith).addChildEventListener(new ChildEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 
@@ -213,7 +213,7 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
                     }
                 };
 
-                ref_datos.child(user.getUid()).child(chatWith).addValueEventListener(listenerChangeChatList);
+                refDatos.child(user.getUid()).child(chatWith).addValueEventListener(listenerChangeChatList);
 
             }
 
@@ -277,7 +277,7 @@ public class ChatListFragment extends Fragment implements SearchView.OnQueryText
 
 
         //Mostrar NO HAS CHATEADO
-        ref_datos.child(user.getUid()).child(chatWith).addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {

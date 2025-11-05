@@ -235,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
         badgeDrawableChat.setBackgroundColor(getResources().getColor(R.color.accent));
         badgeDrawableChat.setVisible(false);
 
-        final Query newQuery = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWith).orderByChild("noVisto").startAt(1);
+        final Query newQuery = FirebaseRefs.refDatos.child(user.getUid()).child(chatWith).orderByChild("noVisto").startAt(1);
         newQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -277,13 +277,13 @@ public class MainActivity extends AppCompatActivity {
 
                         final long totalMsg = dataSnapshot.getChildrenCount();
 
-                        FirebaseRefs.ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
+                        FirebaseRefs.refDatos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
                                 if (dataSnapshot1.exists()) {
 
-                                    final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+                                    final Query query = FirebaseRefs.refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
                                     query.addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -347,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                         }
 
                         final int finalCountMsgUnread = countMsgUnread;
-                        FirebaseRefs.ref_group_chat.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
+                        FirebaseRefs.refGroupChat.child(groupName).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     final long totalMsg = dataSnapshot.getChildrenCount();
 
-                                    FirebaseRefs.ref_datos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
+                                    FirebaseRefs.refDatos.child(user.getUid()).child("ChatList").child("msgReadGroup").addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
@@ -391,8 +391,8 @@ public class MainActivity extends AppCompatActivity {
         };
 
         if (inGroup) {
-            FirebaseRefs.ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
-            final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+            FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listenerGroupBadge);
+            final Query query = FirebaseRefs.refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.addValueEventListener(listenerMsgUnreadBadge);
         }
 
@@ -475,7 +475,7 @@ public class MainActivity extends AppCompatActivity {
                                 if (tk.isSuccessful()) {
                                     myFcmToken = tk.getResult();
                                     // Guardamos/actualizamos FCM token (no se usa para comparar sesión)
-                                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
+                                    FirebaseRefs.refCuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
                                 }
                                 // Auto-heal + listener de installId
                                 registerInstallIdAndAttachListener();
@@ -494,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** Escribe mi installId si falta/difiere y luego engancha el listener de cambios remotos. */
     private void registerInstallIdAndAttachListener() {
-        final DatabaseReference installIdRef = FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId");
+        final DatabaseReference installIdRef = FirebaseRefs.refCuentas.child(user.getUid()).child("installId");
         installIdRef.get().addOnSuccessListener(snap -> {
             String current = snap.exists() ? snap.getValue(String.class) : null;
             if (myInstallId != null && (current == null || !current.equals(myInstallId))) {
@@ -627,7 +627,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         // Quitamos el listener del nodo "installId"
-        FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
+        FirebaseRefs.refCuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
         UserRepository.setUserOffline(getApplicationContext(),user.getUid());
         stopLocationUpdates();
     }
@@ -656,7 +656,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Quitamos el listener del nodo "installId"
-        FirebaseRefs.ref_cuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
+        FirebaseRefs.refCuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
 
         UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences(this);
@@ -789,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
                         .setCancelable(false)
                         .setPositiveButton("Si", (builder, id) ->
 
-                                FirebaseRefs.ref_cuentas.child(user.getUid()).child("birthDay").addListenerForSingleValueEvent(new ValueEventListener() {
+                                FirebaseRefs.refCuentas.child(user.getUid()).child("birthDay").addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -905,7 +905,7 @@ public class MainActivity extends AppCompatActivity {
             type = chatWith;
         }
 
-        FirebaseRefs.ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -937,7 +937,7 @@ public class MainActivity extends AppCompatActivity {
                                 .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
                                 .setPositiveButton("Mostrar", (builder, selectedIndex) ->
 
-                                        FirebaseRefs.ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        FirebaseRefs.refDatos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -995,7 +995,7 @@ public class MainActivity extends AppCompatActivity {
             type = chatWith;
         }
 
-        FirebaseRefs.ref_datos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(user.getUid()).child(type).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -1027,7 +1027,7 @@ public class MainActivity extends AppCompatActivity {
                                 .setSingleChoiceItems(listaName, itemSelected[0], (dialogInterface, selectedIndex) -> itemSelected[0] = selectedIndex)
                                 .setPositiveButton("Aceptar", (builder, selectedIndex) ->
 
-                                        FirebaseRefs.ref_datos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        FirebaseRefs.refDatos.child(user.getUid()).child(type).child(String.valueOf(listaID[itemSelected[0]])).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -1080,27 +1080,27 @@ public class MainActivity extends AppCompatActivity {
         inGroup = false;
 
         if (listenerGroupBadge != null) {
-            FirebaseRefs.ref_group_chat.child(groupName).removeEventListener(listenerGroupBadge);
+            FirebaseRefs.refGroupChat.child(groupName).removeEventListener(listenerGroupBadge);
         }
         if (listenerMsgUnreadBadge != null) {
-            final Query query = FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+            final Query query = FirebaseRefs.refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
             query.removeEventListener(listenerMsgUnreadBadge);
         }
         if (valueEventListenerTitle != null) {
-            FirebaseRefs.ref_group_users.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
+            FirebaseRefs.refGroupUsers.child(groupName).removeEventListener(valueEventListenerTitle); //Elimino el usuario
         }
         if (listenerGroupChat != null) {
-            FirebaseRefs.ref_group_chat.child(groupName).removeEventListener(listenerGroupChat);
+            FirebaseRefs.refGroupChat.child(groupName).removeEventListener(listenerGroupChat);
         }
 
-        FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
+        FirebaseRefs.refDatos.child(user.getUid()).child(chatWithUnknown).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     String key = snapshot.getKey();
-                    FirebaseRefs.ref_chat_unknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
-                    FirebaseRefs.ref_chat_unknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
-                    FirebaseRefs.ref_datos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
+                    FirebaseRefs.refChatUnknown.child(user.getUid() + " <---> " + key).removeValue(); //Elimino mi chat con él
+                    FirebaseRefs.refChatUnknown.child(key + " <---> " + user.getUid()).removeValue(); //Elimino su chat conmigo
+                    FirebaseRefs.refDatos.child(key).child(chatWithUnknown).child(user.getUid()).removeValue(); //Elimino su chat lista
                 }
             }
 
@@ -1108,7 +1108,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) { }
         });
 
-        FirebaseRefs.ref_datos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
+        FirebaseRefs.refDatos.child(user.getUid()).child(chatWithUnknown).removeValue(); //Elimino mis chat lista
 
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat dateFormat3 = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS");
 
@@ -1119,9 +1119,9 @@ public class MainActivity extends AppCompatActivity {
                 user.getUid(),
                 0,
                 userType);
-        FirebaseRefs.ref_group_chat.child(groupName).push().setValue(chatmsg);
+        FirebaseRefs.refGroupChat.child(groupName).push().setValue(chatmsg);
 
-        FirebaseRefs.ref_group_users.child(groupName).child(user.getUid()).removeValue();
+        FirebaseRefs.refGroupUsers.child(groupName).child(user.getUid()).removeValue();
 
         inGroup = false;
         userName = "";

@@ -60,10 +60,10 @@ import static com.zibete.proyecto1.Constants.chatWithUnknown;
 import static com.zibete.proyecto1.Constants.listenerGroupBadge;
 import static com.zibete.proyecto1.Constants.listenerMsgUnreadBadge;
 import static com.zibete.proyecto1.MainActivity.layoutSettings;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_groups;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupData;
 import static com.zibete.proyecto1.MainActivity.toolbar;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.inGroup;
@@ -216,7 +216,7 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
         holder.tv_data_group.setText(group.getData());
         holder.tv_data_group.setSelected(true);
 
-        ref_group_users.child(group.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupUsers.child(group.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -285,7 +285,7 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
             final String newGroupName = edt_name_new_group.getText().toString();
             final String newGroupData = edt_data_new_group.getText().toString();
 
-            ref_groups.child(newGroupName).addListenerForSingleValueEvent(new ValueEventListener() {
+            refGroupData.child(newGroupName).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if (dataSnapshot.exists()) {
                         Toast.makeText(context, "El nombre ya está en uso", Toast.LENGTH_SHORT).show();
@@ -298,7 +298,7 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
                                 PUBLIC_GROUP,
                                 0,
                                 dateFormat.format(Calendar.getInstance().getTime()));
-                        ref_groups.child(newGroupName).setValue(group);
+                        refGroupData.child(newGroupName).setValue(group);
                         goGroup(v, alertDialog, newGroupName, user.getDisplayName(), PUBLIC_GROUP);
                     }
                 }
@@ -346,7 +346,7 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
         final AlertDialog alertDialog = builder.show();
         btn_start_chat1.setOnClickListener(v -> goGroup(v, alertDialog, group.getName(), user.getDisplayName(), 1));
 
-        btn_start_chat2.setOnClickListener(v -> ref_group_users.child(group.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
+        btn_start_chat2.setOnClickListener(v -> refGroupUsers.child(group.getName()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     String name = snapshot.child("user_name").getValue(String.class);
@@ -386,11 +386,11 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
                 user.getUid(),
                 0,
                 userType);
-        ref_group_chat.child(groupName).push().setValue(chatmsg);
+        refGroupChat.child(groupName).push().setValue(chatmsg);
 
-        ref_group_chat.child(UsuariosFragment.groupName).addValueEventListener(listenerGroupBadge);
+        refGroupChat.child(UsuariosFragment.groupName).addValueEventListener(listenerGroupBadge);
 
-        final Query query = ref_datos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+        final Query query = refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
         query.addValueEventListener(listenerMsgUnreadBadge);
 
         toolbar.setVisibility(View.VISIBLE);
@@ -412,8 +412,8 @@ public class AdapterGroups extends RecyclerView.Adapter<AdapterGroups.viewHolder
         transaction.commit();
 
         UserGroup userGroup = new UserGroup(user.getUid(), getUser, type);
-        ref_group_users.getRef().child(groupName).child(user.getUid()).setValue(userGroup);
-        ref_group_chat.child(groupName).addValueEventListener(listenerGroupBadge);
+        refGroupUsers.getRef().child(groupName).child(user.getUid()).setValue(userGroup);
+        refGroupChat.child(groupName).addValueEventListener(listenerGroupBadge);
 
         alertDialog.dismiss();
     }

@@ -23,8 +23,8 @@ import com.zibete.proyecto1.Splash.SplashActivity;
 import static com.zibete.proyecto1.Constants.chat;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.unknown;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChats;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.MainActivity.toolbar;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupNotifications;
@@ -68,7 +68,7 @@ public class FCM extends FirebaseMessagingService {
 
                         if (userName != null) {
 
-                            final Query newQuery = ref_datos.child(user.getUid()).child(type).orderByChild("noVisto").startAt(1);
+                            final Query newQuery = refDatos.child(user.getUid()).child(type).orderByChild("noVisto").startAt(1);
                             newQuery.addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -196,9 +196,9 @@ public class FCM extends FirebaseMessagingService {
 
     public void DoubleCheck(final String id_user, final String type, final String ref) {
 
-        ref_datos.child(user.getUid()).child(type).child(id_user).child("wVisto").setValue(2);
+        refDatos.child(user.getUid()).child(type).child(id_user).child("wVisto").setValue(2);
 
-        ref_datos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -206,7 +206,7 @@ public class FCM extends FirebaseMessagingService {
 
                 if (noVistos > 0) {
 
-                    ref_chat_path.child(ref).child(user.getUid() + " <---> " + id_user).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                    refChats.child(ref).child(user.getUid() + " <---> " + id_user).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -215,7 +215,7 @@ public class FCM extends FirebaseMessagingService {
                         @Override public void onCancelled(@NonNull DatabaseError error) {
                         }
                     });
-                    ref_chat_path.child(ref).child(id_user + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                    refChats.child(ref).child(id_user + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

@@ -34,8 +34,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUsers.viewHolderAdapter> {
 
@@ -132,7 +132,7 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
     public void loadUserCard(@NonNull final viewHolderAdapter holder, final String favoriteUser) {
 
 
-        ref_cuentas.child(favoriteUser).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(favoriteUser).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -161,7 +161,7 @@ public class AdapterFavoriteUsers extends RecyclerView.Adapter<AdapterFavoriteUs
         });
 
 //Mostrar estado
-        ref_datos.child(favoriteUser).child("Estado").addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(favoriteUser).child("Estado").addListenerForSingleValueEvent(new ValueEventListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {

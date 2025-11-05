@@ -19,8 +19,8 @@ import java.util.HashMap;
 
 import static com.zibete.proyecto1.Constants.Calling;
 import static com.zibete.proyecto1.Constants.Ringing;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class CallingActivity extends AppCompatActivity {
 
@@ -33,7 +33,7 @@ public class CallingActivity extends AppCompatActivity {
     public void onStart(){
         super.onStart();
 
-        ref_datos.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -71,7 +71,7 @@ public class CallingActivity extends AppCompatActivity {
 
         id_user = getIntent().getExtras().getString("id_user");
 
-        ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

@@ -4,10 +4,10 @@ import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
 
 import static java.lang.StrictMath.acos;
@@ -42,7 +42,7 @@ public class ProfileUiBinder {
 
     public static void getAge (final String id_user, final TextView age){
 
-        ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -63,7 +63,7 @@ public class ProfileUiBinder {
 
     public static void getDistanceToUser (final String id_user, final TextView distanceUser){
 
-        ref_cuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -104,7 +104,7 @@ public class ProfileUiBinder {
 
     public static void setMenuProfile(final Context context, final String id_user, final FloatingActionButton subMenu_chatWithUnknown, FloatingActionButton subMenu_chatWith){
 
-        ref_group_users.child(groupName).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupUsers.child(groupName).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if(dataSnapshot.exists()){
@@ -151,7 +151,7 @@ public class ProfileUiBinder {
 
     public static void setFavorite (String user_id, final ImageView profile_favorite_on, final ImageView profile_favorite_off){
 
-        ref_datos.child(user.getUid()).child("FavoriteList").child(user_id).addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child("FavoriteList").child(user_id).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -173,7 +173,7 @@ public class ProfileUiBinder {
 
     public static void setBloq (String user_id, final ImageView profile_bloc){// bindBlockStatus = vincular estado de bloqueo
 
-        ref_datos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -192,7 +192,7 @@ public class ProfileUiBinder {
     public static void getBloqMe (String user_id, final ImageView profile_bloc_me){
 
         //Me Bloqueó
-        ref_datos.child(user_id).child(chatWith).child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user_id).child(chatWith).child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -212,7 +212,7 @@ public class ProfileUiBinder {
 
     public static void addPhotoReceived (String id_user, final AdapterPhotoReceived adapterPhotoReceived, final LinearLayout linearPhotos){
 
-        ref_chat.child(user.getUid() + " <---> " + id_user).child("Mensajes").addChildEventListener(new ChildEventListener() {
+        refChat.child(user.getUid() + " <---> " + id_user).child("Mensajes").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 
@@ -233,7 +233,7 @@ public class ProfileUiBinder {
             }
         });
 
-        ref_chat.child(id_user + " <---> " + user.getUid()).child("Mensajes").addChildEventListener(new ChildEventListener() {
+        refChat.child(id_user + " <---> " + user.getUid()).child("Mensajes").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
 

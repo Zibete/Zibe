@@ -3,7 +3,6 @@ package com.zibete.proyecto1.Adapters
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.view.ContextMenu
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -133,7 +132,7 @@ class AdapterChatGroup(
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (chats.id == userId) return true
 
-                FirebaseRefs.ref_group_users.child(UsuariosFragment.groupName)
+                FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
                     .child(chats.id)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -213,7 +212,7 @@ class AdapterChatGroup(
 
         // Limpia del "chat con desconocido"
         userId?.let { uid ->
-            FirebaseRefs.ref_datos.child(uid)
+            FirebaseRefs.refDatos.child(uid)
                 .child(Constants.chatWithUnknown)
                 .child(chats.id)
                 .removeValue()
@@ -345,7 +344,7 @@ class AdapterChatGroup(
             b.nameUser.text = if (chats.typeMsg == 0) chats.name else "${chats.name}:"
             Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
         } else {
-            FirebaseRefs.ref_cuentas.child(chats.id).addListenerForSingleValueEvent(object : ValueEventListener {
+            FirebaseRefs.refCuentas.child(chats.id).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val name = ds.child("nombre").getValue(String::class.java)

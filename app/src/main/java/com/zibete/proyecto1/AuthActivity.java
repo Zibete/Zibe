@@ -48,8 +48,8 @@ import com.zibete.proyecto1.Splash.SplashActivity;
 
 import java.util.Arrays;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -179,8 +179,8 @@ public class AuthActivity extends AppCompatActivity {
             FirebaseUser user = firebaseAuth.getCurrentUser();
             if (user != null) {
                 if (deleteUser) {
-                    ref_datos.child(user.getUid()).removeValue();
-                    ref_cuentas.child(user.getUid()).removeValue();
+                    refDatos.child(user.getUid()).removeValue();
+                    refCuentas.child(user.getUid()).removeValue();
                     FirebaseStorage.getInstance().getReference()
                             .child("Users/imgPerfil/" + user.getUid() + ".jpg").delete();
                     user.delete();

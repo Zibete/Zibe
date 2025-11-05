@@ -1,12 +1,8 @@
 package com.zibete.proyecto1;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat_path;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChats;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
-import static java.lang.StrictMath.acos;
-import static java.lang.StrictMath.cos;
-import static java.lang.StrictMath.sin;
-import static java.lang.StrictMath.toRadians;
 
 import android.app.AlertDialog;
 import android.app.Application;
@@ -419,7 +415,7 @@ public class Constants extends Application {
         builder.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface builder, int selectedIndex) {
 
-                ref_datos.child(user.getUid()).child(type).child(id_user).child("estado").setValue("delete");
+                refDatos.child(user.getUid()).child(type).child(id_user).child("estado").setValue("delete");
 
                 Snackbar snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT);
                 snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
@@ -452,8 +448,8 @@ public class Constants extends Application {
 
         final StorageReference refYourReceiverData = storageReference.child(type + "/" + id_user + "/");
         final StorageReference refMyReceiverData = storageReference.child(type + "/" + user.getUid() + "/");
-        final DatabaseReference startedByMe = ref_chat_path.child(ref).child(user.getUid() + " <---> " + id_user).child("Mensajes");
-        final DatabaseReference startedBeHim = ref_chat_path.child(ref).child(id_user + " <---> " + user.getUid()).child("Mensajes");
+        final DatabaseReference startedByMe = refChats.child(ref).child(user.getUid() + " <---> " + id_user).child("Mensajes");
+        final DatabaseReference startedBeHim = refChats.child(ref).child(id_user + " <---> " + user.getUid()).child("Mensajes");
 
 
 
@@ -608,7 +604,7 @@ public class Constants extends Application {
 
                             if (titles[itemSelected[0]].equals("Ocultar chat")) {
 
-                                ref_datos.child(user.getUid()).child(type).child(id_user).child("estado").setValue("delete");
+                                refDatos.child(user.getUid()).child(type).child(id_user).child("estado").setValue("delete");
 
                                 Snackbar snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT);
                                 snack.setBackgroundTint(context.getResources().getColor(R.color.colorC));
@@ -696,7 +692,7 @@ public class Constants extends Application {
                                     });
                                 }
 
-                                ref_datos.child(user.getUid()).child(type).child(id_user).removeValue();
+                                refDatos.child(user.getUid()).child(type).child(id_user).removeValue();
 
                                 if (count == 1) {
                                     Toast.makeText(context, count + " mensaje eliminado", Toast.LENGTH_SHORT).show();

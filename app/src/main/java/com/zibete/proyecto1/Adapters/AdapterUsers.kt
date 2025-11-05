@@ -209,7 +209,7 @@ class AdapterUsers(
         )
 
         // Favoritos
-        FirebaseRefs.ref_datos.child(user!!.uid).child("FavoriteList").child(users.id)
+        FirebaseRefs.refDatos.child(user!!.uid).child("FavoriteList").child(users.id)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {
                     h.favorite_on.isVisible = snap.exists()
@@ -219,7 +219,7 @@ class AdapterUsers(
             })
 
         // Bloqueado
-        FirebaseRefs.ref_datos.child(user.uid).child(Constants.chatWith).child(users.id)
+        FirebaseRefs.refDatos.child(user.uid).child(Constants.chatWith).child(users.id)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {
@@ -229,7 +229,7 @@ class AdapterUsers(
             })
 
         // Me bloqueó
-        FirebaseRefs.ref_datos.child(users.id).child(Constants.chatWith).child(user.uid)
+        FirebaseRefs.refDatos.child(users.id).child(Constants.chatWith).child(user.uid)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {

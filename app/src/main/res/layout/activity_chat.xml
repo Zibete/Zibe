@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/zibe_night_start"
-    android:animateLayoutChanges="true"
-    android:orientation="vertical">
+    android:animateLayoutChanges="true">
 
+    <!-- Contenedor principal vertical -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:animateLayoutChanges="true">
 
-
+        <!-- AppBar -->
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -23,108 +23,101 @@
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar_chat"
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorB"
                 app:contentInsetLeft="0dp"
                 app:contentInsetStart="0dp"
                 app:contentInsetStartWithNavigation="0dp"
-                android:layout_height="wrap_content"
-                android:background="@color/colorB"
                 app:popupTheme="@style/AppTheme.PopupOverlay">
 
                 <LinearLayout
                     android:id="@+id/linearNameUser"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
                     <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/image_user"
                         android:layout_width="60dp"
                         android:layout_height="60dp"
-                        android:padding="4dp"/>
+                        android:padding="4dp" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
                         android:layout_weight="1"
-                        android:layout_gravity="center"
-                        android:layout_marginLeft="5dp">
+                        android:layout_marginStart="5dp"
+                        android:orientation="vertical"
+                        android:gravity="center_vertical">
 
                         <TextView
-                            android:layout_marginStart="5dp"
                             android:id="@+id/nameUser"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="@dimen/text_size_large"
-                            android:gravity="center"
-                            android:singleLine="true"/>
+                            android:layout_marginStart="5dp"
+                            android:singleLine="true"
+                            android:textSize="@dimen/text_size_large" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_gravity="center">
+                            android:gravity="center_vertical">
 
                             <ImageView
-                                android:visibility="gone"
                                 android:id="@+id/icon_conectado"
                                 android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:src="@drawable/ic_circle_online" />
-
+                                android:layout_height="wrap_content"
+                                android:src="@drawable/ic_circle_online"
+                                android:visibility="gone" />
 
                             <ImageView
-                                android:visibility="gone"
                                 android:id="@+id/icon_desconectado"
                                 android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:src="@drawable/ic_circle_offline"/>
+                                android:layout_height="wrap_content"
+                                android:src="@drawable/ic_circle_offline"
+                                android:visibility="gone" />
 
                             <TextView
-                                android:layout_gravity="center_vertical"
                                 android:id="@+id/tv_estado"
-                                android:textSize="12sp"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"/>
-
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:textSize="12sp" />
                         </LinearLayout>
-
                     </LinearLayout>
-
 
                     <LinearLayout
                         android:id="@+id/linearDeleteMsg"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:layout_marginHorizontal="3dp"
-                        android:layout_gravity="center"
+                        android:gravity="center"
                         android:visibility="gone">
 
                         <TextView
                             android:id="@+id/countDeleteMsg"
-                            android:layout_gravity="center"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_gravity="center"
                             android:textSize="@dimen/text_size_xlarge" />
 
                         <com.airbnb.lottie.LottieAnimationView
                             android:id="@+id/trashAnimated"
                             android:layout_width="60dp"
                             android:layout_height="60dp"
-                            app:lottie_rawRes="@raw/trash"
                             android:layout_gravity="center"
                             android:layout_marginHorizontal="-10dp"
                             app:lottie_autoPlay="false"
-                            app:lottie_loop="false"/>
-
+                            app:lottie_loop="false"
+                            app:lottie_rawRes="@raw/trash" />
                     </LinearLayout>
-
                 </LinearLayout>
-
             </androidx.appcompat.widget.Toolbar>
-
         </com.google.android.material.appbar.AppBarLayout>
 
+        <!-- Título del chat -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cardview_title"
             android:layout_width="match_parent"
@@ -138,30 +131,26 @@
                 android:layout_gravity="center"
                 android:padding="2dp"
                 android:textStyle="bold"
-                android:textSize="@dimen/text_size_small"/>
-
-
+                android:textSize="@dimen/text_size_small" />
         </androidx.cardview.widget.CardView>
 
+        <!-- Zona de mensajes / scroll -->
         <androidx.coordinatorlayout.widget.CoordinatorLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:animateLayoutChanges="true"
-            android:layout_weight="1">
-
-
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:animateLayoutChanges="true">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvMsg"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:paddingHorizontal="5dp"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:layout_weight="1"/>
+                android:clipToPadding="false" />
 
-
+            <!-- Fecha flotante -->
             <LinearLayout
                 android:id="@+id/linearDate"
-                android:src="@drawable/ic_baseline_arrow_drop_down_24"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center|top"
@@ -169,63 +158,57 @@
 
                 <TextView
                     android:id="@+id/tv_date"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="4dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
-                    android:textSize="@dimen/text_size_small"
-                    android:background="@drawable/marco_color_b_date_chat"/>
-
-
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:background="@drawable/marco_color_b_date_chat"
+                    android:textSize="@dimen/text_size_small" />
             </LinearLayout>
 
+            <!-- Botón volver al fondo -->
             <LinearLayout
                 android:id="@+id/linearBack"
-                android:paddingBottom="4dp"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                android:visibility="gone">
-
-
+                android:visibility="gone"
+                android:paddingBottom="4dp">
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/buttonScrollBack"
-                    app:fabSize="mini"
-                    app:backgroundTint="@color/colorB"
-                    app:maxImageSize="46dp"
-                    android:src="@drawable/ic_baseline_arrow_drop_down_24"
                     android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="bottom"/>
-
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    app:backgroundTint="@color/colorB"
+                    app:fabSize="mini"
+                    app:maxImageSize="46dp"
+                    android:src="@drawable/ic_baseline_arrow_drop_down_24" />
             </LinearLayout>
-
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
+        <!-- Bloqueo -->
         <LinearLayout
             android:id="@+id/layoutBloq"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:orientation="horizontal"
-            android:gravity="center"
             android:layout_margin="10dp"
+            android:gravity="center"
+            android:orientation="horizontal"
             android:visibility="gone">
 
             <Button
                 android:id="@+id/btnDesbloq"
-                android:background="@drawable/marco_color_b_round"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="Desbloquear Usuario"/>
-
+                android:background="@drawable/marco_color_b_round"
+                android:text="Desbloquear Usuario" />
         </LinearLayout>
 
-
-
+        <!-- Caja de escritura / preview de foto -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -233,219 +216,170 @@
 
             <LinearLayout
                 android:id="@+id/layoutChat"
-                android:animateLayoutChanges="true"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:orientation="horizontal"
                 android:layout_weight="1"
-                android:background="@drawable/marco_color_b_round"
-                android:layout_marginVertical="10dp"
+                android:layout_marginStart="10dp"
                 android:layout_marginEnd="65dp"
-                android:layout_marginStart="10dp">
+                android:layout_marginVertical="10dp"
+                android:background="@drawable/marco_color_b_round"
+                android:orientation="horizontal"
+                android:animateLayoutChanges="true">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:padding="5dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="5dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
-
+                        <!-- Preview de foto -->
                         <LinearLayout
                             android:id="@+id/linear_photo_view"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:layout_weight="1"
-                            android:visibility="gone"
-                            android:orientation="horizontal">
-
+                            android:orientation="horizontal"
+                            android:visibility="gone">
 
                             <LinearLayout
                                 android:id="@+id/linear_photo"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
                                 android:gravity="center">
 
                                 <androidx.coordinatorlayout.widget.CoordinatorLayout
                                     android:layout_width="match_parent"
-                                    android:background="@drawable/marco_seekbar"
-                                    android:layout_height="match_parent">
+                                    android:layout_height="match_parent"
+                                    android:background="@drawable/marco_seekbar">
 
                                     <com.zibete.proyecto1.ui.ResizableImageView
                                         android:id="@+id/photo"
                                         android:layout_width="match_parent"
-                                        android:layout_height="match_parent"/>
+                                        android:layout_height="match_parent" />
 
                                     <ProgressBar
                                         android:id="@+id/loadingPhoto"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:indeterminate="true"
-                                        android:layout_gravity="center"/>
-
+                                        android:layout_gravity="center"
+                                        android:indeterminate="true" />
 
                                     <ImageView
                                         android:id="@+id/cancel_action"
-                                        android:layout_weight="1"
-                                        android:background="?selectableItemBackground"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
                                         android:layout_gravity="end"
                                         android:layout_marginEnd="6dp"
                                         android:layout_marginTop="3dp"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:src="@drawable/ic_baseline_cancel_24"/>
-
+                                        android:background="?attr/selectableItemBackground"
+                                        android:src="@drawable/ic_baseline_cancel_24" />
                                 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-
-
-
                             </LinearLayout>
-
-
                         </LinearLayout>
 
                         <com.airbnb.lottie.LottieAnimationView
                             android:id="@+id/trashAnimated2"
                             android:layout_width="50dp"
                             android:layout_height="50dp"
-                            app:lottie_rawRes="@raw/trash"
                             android:layout_gravity="center"
-                            android:layout_marginVertical="-10dp"
                             android:layout_marginStart="-10dp"
                             android:layout_marginEnd="-16dp"
+                            android:layout_marginVertical="-10dp"
+                            android:visibility="gone"
                             app:lottie_autoPlay="false"
                             app:lottie_loop="false"
-                            android:visibility="gone"/>
+                            app:lottie_rawRes="@raw/trash" />
 
                         <EditText
                             android:id="@+id/msg"
                             android:layout_width="match_parent"
                             android:layout_height="40dp"
+                            android:layout_marginHorizontal="9dp"
+                            android:layout_weight="1"
                             android:hint="Escribe un mensaje"
                             android:inputType="textCapSentences"
                             android:textColor="@color/blanco"
                             android:textColorHint="@color/zibe_text_muted"
-                            android:layout_marginHorizontal="9dp"
-                            android:layout_weight="1"
-                            android:visibility="visible"/>
+                            android:visibility="visible" />
 
                         <LinearLayout
                             android:id="@+id/linear_timer"
-                            android:layout_margin="10dp"
                             android:layout_width="match_parent"
                             android:layout_height="20dp"
-                            android:layout_weight="1"
+                            android:layout_margin="10dp"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal"
                             android:visibility="gone">
 
-
                             <Chronometer
-                                android:layout_gravity="center"
                                 android:id="@+id/timer"
-                                android:textSize="@dimen/text_size_normal"
-                                android:textColor="@color/accent"
-                                android:gravity="center|start"
-                                android:layout_weight="1"
                                 android:layout_width="0dp"
-                                android:layout_height="match_parent"/>
-
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:gravity="center|start"
+                                android:textColor="@color/accent"
+                                android:textSize="@dimen/text_size_normal" />
 
                             <TextView
                                 android:id="@+id/tv_cancel_audio"
-                                android:layout_gravity="center"
-                                android:paddingHorizontal="10dp"
-                                android:textSize="@dimen/text_size_normal"
                                 android:layout_width="wrap_content"
                                 android:layout_height="match_parent"
-                                android:text="Deslice para cancelar"/>
-
+                                android:paddingHorizontal="10dp"
+                                android:text="Deslice para cancelar"
+                                android:textSize="@dimen/text_size_normal" />
                         </LinearLayout>
-
-
 
                         <ImageView
                             android:id="@+id/btnCamera"
-                            android:visibility="gone"
-                            android:layout_gravity="center|bottom"
-                            android:paddingVertical="8dp"
-                            android:paddingEnd="9dp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:src="@drawable/ic_menu_camera" />
-
-
-
+                            android:layout_gravity="center|bottom"
+                            android:paddingEnd="9dp"
+                            android:paddingVertical="8dp"
+                            android:src="@drawable/ic_menu_camera"
+                            android:visibility="gone" />
                     </LinearLayout>
-
                 </LinearLayout>
-
             </LinearLayout>
-
-
-
-
-
         </LinearLayout>
-
-
-
-
     </LinearLayout>
 
+    <!-- Mic + enviar (superpuestos al final) -->
+    <LinearLayout
+        android:id="@+id/linearLottie"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|bottom"
+        android:gravity="end"
+        android:orientation="horizontal"
+        android:layout_marginEnd="-65dp"
+        android:layout_marginBottom="-65dp">
 
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/btnMic"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="bottom|end"
+            android:padding="-50dp"
+            android:visibility="gone"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/lf30_editor_24iqgref" />
+    </LinearLayout>
 
-
-
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:id="@+id/linearLottie"
-                android:layout_gravity="end|bottom"
-                android:gravity="end"
-                android:layout_marginBottom="-65dp"
-                android:layout_marginEnd="-65dp"
-                android:orientation="horizontal">
-
-
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/btnMic"
-                    android:layout_gravity="bottom|end"
-                    app:lottie_rawRes="@raw/lf30_editor_24iqgref"
-                    android:padding="-50dp"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-
-                    app:lottie_loop="true"
-                    android:visibility="gone"/>
-
-
-
-            </LinearLayout>
-
-
-
-
-            <ImageView
-                android:id="@+id/btnSendMsg"
-                android:layout_margin="10dp"
-                android:padding="16dp"
-                android:layout_gravity="end|bottom"
-                android:background="@drawable/marco_color_b_round"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:src="@drawable/ic_baseline_send_24"
-                android:visibility="gone"/>
-
+    <ImageView
+        android:id="@+id/btnSendMsg"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="10dp"
+        android:background="@drawable/marco_color_b_round"
+        android:padding="16dp"
+        android:src="@drawable/ic_baseline_send_24"
+        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

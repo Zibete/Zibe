@@ -32,8 +32,8 @@ import com.zibete.proyecto1.R;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_groups;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupData;
 
 
 public class GruposFragment extends Fragment implements SearchView.OnQueryTextListener{
@@ -125,7 +125,7 @@ public class GruposFragment extends Fragment implements SearchView.OnQueryTextLi
 
         progressbar.setVisibility(View.VISIBLE);
 
-        ref_groups.addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupData.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -147,7 +147,7 @@ public class GruposFragment extends Fragment implements SearchView.OnQueryTextLi
 
                         String nombre = snapshot.child("name").getValue(String.class);
 
-                        ref_group_users.child(nombre).addListenerForSingleValueEvent(new ValueEventListener() {
+                        refGroupUsers.child(nombre).addListenerForSingleValueEvent(new ValueEventListener() {
                             @SuppressLint("SetTextI18n")
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

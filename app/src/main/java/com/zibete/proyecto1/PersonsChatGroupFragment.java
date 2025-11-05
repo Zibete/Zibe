@@ -23,7 +23,7 @@ import com.zibete.proyecto1.model.UserGroup;
 
 import java.util.ArrayList;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_group_users;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
 
 public class PersonsChatGroupFragment extends Fragment implements SearchView.OnQueryTextListener{
@@ -83,7 +83,7 @@ public class PersonsChatGroupFragment extends Fragment implements SearchView.OnQ
 
 
 
-        ref_group_users.child(groupName).addValueEventListener(new ValueEventListener() {
+        refGroupUsers.child(groupName).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

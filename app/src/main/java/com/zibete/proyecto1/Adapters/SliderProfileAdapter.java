@@ -46,7 +46,7 @@ import java.util.ArrayList;
 
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.Constants.maxChatSize;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 public class SliderProfileAdapter extends PagerAdapter {
 
@@ -151,7 +151,7 @@ public class SliderProfileAdapter extends PagerAdapter {
             @Override
             public void onClick(final View v) {
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getId()).setValue(users.getId());
+                refDatos.child(user.getUid()).child("FavoriteList").child(users.getId()).setValue(users.getId());
 
                 Toast.makeText(context, "Agregado a favoritos", Toast.LENGTH_SHORT).show();
 
@@ -162,7 +162,7 @@ public class SliderProfileAdapter extends PagerAdapter {
             @Override
             public void onClick(final View v) {
 
-                ref_datos.child(user.getUid()).child("FavoriteList").child(users.getId()).removeValue();
+                refDatos.child(user.getUid()).child("FavoriteList").child(users.getId()).removeValue();
 
                 Toast.makeText(context, "Quitado de favoritos", Toast.LENGTH_SHORT).show();
 

@@ -3,8 +3,8 @@ package com.zibete.proyecto1.utils;
 import static com.zibete.proyecto1.Constants.Empty;
 import static com.zibete.proyecto1.Constants.chatWith;
 import static com.zibete.proyecto1.utils.FirebaseRefs.auth;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
 
 import android.annotation.SuppressLint;
@@ -52,8 +52,8 @@ public class UserRepository {
         );
 
         // 🔸 Guardar el estado en Firebase (dos ubicaciones distintas)
-        ref_datos.child(id_user).child("Estado").setValue(currentState);
-        ref_cuentas.child(id_user).child("estado").setValue(true);
+        refDatos.child(id_user).child("Estado").setValue(currentState);
+        refCuentas.child(id_user).child("estado").setValue(true);
     }
 
     public static void setUserOffline(Context context, String id_user){
@@ -68,8 +68,8 @@ public class UserRepository {
                     dateFormat.format(c.getTime()),
                     timeFormat.format(c.getTime()));
 
-            ref_datos.child(id_user).child("Estado").setValue(cState);
-            ref_cuentas.child(id_user).child("estado").setValue(false);
+            refDatos.child(id_user).child("Estado").setValue(cState);
+            refCuentas.child(id_user).child("estado").setValue(false);
         }
 
     }
@@ -82,7 +82,7 @@ public class UserRepository {
             final TextView tvStatus,                // tv_estado
             final String type                       // type → ej. "chatWith"
     ) {
-        ref_datos.child(userId).child("Estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(userId).child("Estado").addValueEventListener(new ValueEventListener() {
             @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -113,7 +113,7 @@ public class UserRepository {
 
                             // 📝 Escribiendo / 🎙 Grabando
                             // Tenemos que chequear si el chat actual es conmigo
-                            ref_datos.child(userId)
+                            refDatos.child(userId)
                                     .child("ChatList")
                                     .child("Actual")
                                     .addValueEventListener(new ValueEventListener() {
@@ -211,13 +211,13 @@ public class UserRepository {
 
     public static void setNoLeido(String id_user, String type){
 
-        ref_datos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(type).child(id_user).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataVistos) {
                 if (dataVistos.exists()) {
                     final Integer noVistos = dataVistos.getValue(Integer.class);
 
-                    ref_datos.child(user.getUid()).child("ChatList").child("msgNoLeidos").addListenerForSingleValueEvent(new ValueEventListener() {
+                    refDatos.child(user.getUid()).child("ChatList").child("msgNoLeidos").addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataLeidos) {
                             if (dataLeidos.exists()) {
@@ -247,7 +247,7 @@ public class UserRepository {
     public static void Silent(final String name_user, final String id_user, final String type){
 
 
-        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -323,7 +323,7 @@ public class UserRepository {
 
             public void onClick(DialogInterface builder, int id) {
 
-                ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+                refDatos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
 
@@ -378,7 +378,7 @@ public class UserRepository {
                 .setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface builder, int id) {
 
-                        ref_datos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
+                        refDatos.child(user.getUid()).child(type).child(id_user).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -424,7 +424,7 @@ public class UserRepository {
 
     { // bindBlockStatus = vincular estado de bloqueo
 
-        ref_datos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -448,12 +448,12 @@ public class UserRepository {
         latitude = mLastLocation.getLatitude();
         longitude = mLastLocation.getLongitude();
 
-        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("latitud").setValue(latitude);
-                    FirebaseRefs.ref_cuentas.child(user.getUid()).child("longitud").setValue(longitude);
+                    FirebaseRefs.refCuentas.child(user.getUid()).child("latitud").setValue(latitude);
+                    FirebaseRefs.refCuentas.child(user.getUid()).child("longitud").setValue(longitude);
                 }
             }
 

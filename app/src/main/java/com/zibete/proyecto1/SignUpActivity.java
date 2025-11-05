@@ -46,7 +46,7 @@ import com.google.android.material.datepicker.CalendarConstraints;
 import com.zibete.proyecto1.utils.SnackUtils;
 
 import static com.zibete.proyecto1.Constants.REQUEST_LOCATION;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 
 public class SignUpActivity extends AppCompatActivity {
 
@@ -284,7 +284,7 @@ public class SignUpActivity extends AppCompatActivity {
         data.put("longitud", 0);
 
         // Alta en /Cuentas/<uid>
-        DatabaseReference userRef = ref_cuentas.child(user.getUid());
+        DatabaseReference userRef = refCuentas.child(user.getUid());
         userRef.setValue(data).addOnCompleteListener(setTask -> {
             if (!setTask.isSuccessful()) {
                 progress.hide();

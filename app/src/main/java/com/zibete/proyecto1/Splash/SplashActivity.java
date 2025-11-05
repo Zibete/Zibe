@@ -31,7 +31,7 @@ import com.zibete.proyecto1.model.Users;
 import com.zibete.proyecto1.R;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 
 public class SplashActivity extends AppCompatActivity {
     private String userToken;
@@ -112,7 +112,7 @@ public class SplashActivity extends AppCompatActivity {
 
     public void QueryToken(final FirebaseUser user){
 
-        ref_cuentas.orderByChild("token").equalTo(userToken).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.orderByChild("token").equalTo(userToken).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -147,7 +147,7 @@ public class SplashActivity extends AppCompatActivity {
                     }
                 }else {
 
-                    ref_cuentas.child(user.getUid()).child("token").addListenerForSingleValueEvent(new ValueEventListener() {
+                    refCuentas.child(user.getUid()).child("token").addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 
@@ -174,7 +174,7 @@ public class SplashActivity extends AppCompatActivity {
 
         if(user != null) {
 
-            ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+            refCuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -269,7 +269,7 @@ public class SplashActivity extends AppCompatActivity {
         builder.setPositiveButton("Continuar", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface builder, int id) {
 
-                ref_cuentas.child(user.getUid()).child("token").setValue(userToken);
+                refCuentas.child(user.getUid()).child("token").setValue(userToken);
                 snapshot.getRef().child("token").setValue("");
                 updateUI(user);
             }
@@ -280,7 +280,7 @@ public class SplashActivity extends AppCompatActivity {
 
                 if (flag == 2){
 
-                    ref_cuentas.child(user.getUid()).child("token").setValue("");
+                    refCuentas.child(user.getUid()).child("token").setValue("");
                 }
 
                 updateUI(null);

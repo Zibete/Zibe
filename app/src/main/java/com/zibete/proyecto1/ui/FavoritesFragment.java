@@ -27,8 +27,8 @@ import com.zibete.proyecto1.R;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 
 public class FavoritesFragment extends Fragment {
@@ -119,7 +119,7 @@ public class FavoritesFragment extends Fragment {
 
 
 
-        ref_datos.child(user.getUid()).child("FavoriteList").addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child("FavoriteList").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -128,7 +128,7 @@ public class FavoritesFragment extends Fragment {
 
                         final String user = snapshot.getValue(String.class);
 
-                        ref_cuentas.child(user).addListenerForSingleValueEvent(new ValueEventListener() {
+                        refCuentas.child(user).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot1) {
 

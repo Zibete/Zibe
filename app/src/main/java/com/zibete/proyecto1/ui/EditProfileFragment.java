@@ -81,7 +81,7 @@ import java.util.Objects;
 import static com.zibete.proyecto1.Constants.CAMERA_SELECTED;
 import static com.zibete.proyecto1.Constants.PERMISSIONS_EDIT_PROFILE;
 import static com.zibete.proyecto1.Constants.PHOTO_SELECTED;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 
 public class EditProfileFragment extends Fragment {
 
@@ -187,7 +187,7 @@ public class EditProfileFragment extends Fragment {
         btnOk.setOnClickListener(v1 -> linearOnBoardingProfile.setVisibility(View.GONE));
         linearOnBoardingProfile.setOnClickListener(v12 -> linearOnBoardingProfile.setVisibility(View.GONE));
 
-        btnDone.setOnClickListener(v -> ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        btnDone.setOnClickListener(v -> refCuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()) return;
                 String bd = dataSnapshot.child("birthDay").getValue(String.class);
@@ -207,7 +207,7 @@ public class EditProfileFragment extends Fragment {
 
         // Nombre y desc desde Auth / DB
         if (edtNameUser != null) edtNameUser.setText(user.getDisplayName() != null ? user.getDisplayName() : "");
-        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()) return;
                 String desc = dataSnapshot.child("descripcion").getValue(String.class);
@@ -248,7 +248,7 @@ public class EditProfileFragment extends Fragment {
     }
 
     private void bindCurrentProfile() {
-        ref_cuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()) return;
 
@@ -561,7 +561,7 @@ public class EditProfileFragment extends Fragment {
                     }).addOnCompleteListener((OnCompleteListener<Uri>) task -> {
                         if (task.isSuccessful()) {
                             Uri downloadUri = task.getResult();
-                            ref_cuentas.child(user.getUid()).child("foto").setValue(downloadUri.toString());
+                            refCuentas.child(user.getUid()).child("foto").setValue(downloadUri.toString());
                             imageUri = downloadUri;
                             UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                     .setPhotoUri(downloadUri)
@@ -577,7 +577,7 @@ public class EditProfileFragment extends Fragment {
             UserProfileChangeRequest profileUpdates;
             if (imageurl != null && imageurl.equals(getString(R.string.URL_PHOTO_DEF))) {
                 try { refImgUser.delete(); } catch (Throwable ignored) { }
-                ref_cuentas.child(user.getUid()).child("foto").setValue(imageurl);
+                refCuentas.child(user.getUid()).child("foto").setValue(imageurl);
                 profileUpdates = new UserProfileChangeRequest.Builder()
                         .setDisplayName(name)
                         .setPhotoUri(imageUri)
@@ -592,18 +592,18 @@ public class EditProfileFragment extends Fragment {
             SimpleDateFormat stamp = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
             String nowStr = stamp.format(Calendar.getInstance().getTime());
 
-            ref_cuentas.child(user.getUid()).child("nombre").setValue(name);
-            ref_cuentas.child(user.getUid()).child("birthDay").setValue(fecha);
-            ref_cuentas.child(user.getUid()).child("age").setValue(edad);
-            ref_cuentas.child(user.getUid()).child("descripcion").setValue(desc);
-            ref_cuentas.child(user.getUid()).child("date").setValue(nowStr);
+            refCuentas.child(user.getUid()).child("nombre").setValue(name);
+            refCuentas.child(user.getUid()).child("birthDay").setValue(fecha);
+            refCuentas.child(user.getUid()).child("age").setValue(edad);
+            refCuentas.child(user.getUid()).child("descripcion").setValue(desc);
+            refCuentas.child(user.getUid()).child("date").setValue(nowStr);
 
             if (myInstallId != null && !myInstallId.isEmpty()) {
-                ref_cuentas.child(user.getUid()).child("installId").setValue(myInstallId);
-                ref_cuentas.child(user.getUid()).child("token").setValue(myInstallId);
+                refCuentas.child(user.getUid()).child("installId").setValue(myInstallId);
+                refCuentas.child(user.getUid()).child("token").setValue(myInstallId);
             }
             if (myFcmToken != null && !myFcmToken.isEmpty()) {
-                ref_cuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
+                refCuentas.child(user.getUid()).child("fcmToken").setValue(myFcmToken);
             }
 
             updateUI(user);

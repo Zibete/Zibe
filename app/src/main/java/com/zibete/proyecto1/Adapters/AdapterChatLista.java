@@ -42,9 +42,9 @@ import java.util.Locale;
 import static com.zibete.proyecto1.Constants.Empty;
 import static com.zibete.proyecto1.Constants.FRAGMENT_ID_CHATLIST;
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_chat;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_datos;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
 
 public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.viewHolderAdapterChatList> implements Filterable, View.OnCreateContextMenuListener {
@@ -193,7 +193,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
         }
 
 
-        ref_datos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -208,7 +208,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
 
 
         //Mostrar nombre
-        ref_cuentas.child(wChat.getUserId()).child("nombre").addValueEventListener(new ValueEventListener() {
+        refCuentas.child(wChat.getUserId()).child("nombre").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
@@ -226,7 +226,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
 
 
 //Mostrar foto
-        ref_cuentas.child(wChat.getUserId()).child("foto").addValueEventListener(new ValueEventListener() {
+        refCuentas.child(wChat.getUserId()).child("foto").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()){
@@ -247,7 +247,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
         UserRepository.stateUser(context, wChat.getUserId(), holder.icon_conectado, holder.icon_desconectado, holder.tv_estado, chatWith);
 //Checked
 
-        ref_datos.child(wChat.getUserId()).child(chatWith).child(user.getUid()).addValueEventListener(new ValueEventListener() {
+        refDatos.child(wChat.getUserId()).child(chatWith).child(user.getUid()).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -311,7 +311,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
 
 
 
-        ref_datos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("noVisto").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("noVisto").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
 
@@ -387,7 +387,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
     private void loads(@NonNull final viewHolderAdapterChatList holder, final ChatWith wChat) {
 
 
-        ref_datos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
@@ -414,7 +414,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
                         setMyDoubleCheck(wChat);
                     }
 
-                    ref_datos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("wVisto").setValue(2);
+                    refDatos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("wVisto").setValue(2);
                 }
             }
             @Override
@@ -427,7 +427,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
 
     public void setMyDoubleCheck(final ChatWith wChat) {
 
-        ref_datos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(chatWith).child(wChat.getUserId()).child("noVisto").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -436,14 +436,14 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
                     final Integer noVistos = dataSnapshot.getValue(Integer.class);
                     if (noVistos > 0) {
 
-                        ref_chat.child(user.getUid() + " <---> " + wChat.getUserId()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                        refChat.child(user.getUid() + " <---> " + wChat.getUserId()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 if (dataSnapshot.exists()) {
                                     setMyDoubleCheck(dataSnapshot);
                                 }else{
 
-                                    ref_chat.child(wChat.getUserId() + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    refChat.child(wChat.getUserId() + " <---> " + user.getUid()).child("Mensajes").limitToLast(noVistos).addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                             if (dataSnapshot.exists()) {

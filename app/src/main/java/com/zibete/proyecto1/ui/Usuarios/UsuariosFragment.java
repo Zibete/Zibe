@@ -3,7 +3,7 @@ package com.zibete.proyecto1.ui.Usuarios;
 import static com.firebase.ui.auth.AuthUI.getApplicationContext;
 import static com.zibete.proyecto1.MainActivity.filter;
 import static com.zibete.proyecto1.MainActivity.refresh;
-import static com.zibete.proyecto1.utils.FirebaseRefs.ref_cuentas;
+import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -427,7 +427,7 @@ public class UsuariosFragment extends Fragment implements SearchView.OnQueryText
 
         progressbar.setVisibility(View.VISIBLE);
 
-        ref_cuentas.addListenerForSingleValueEvent(new ValueEventListener() {
+        refCuentas.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
