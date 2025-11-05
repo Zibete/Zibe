@@ -5,6 +5,7 @@ plugins {
 }
 
 android {
+    buildFeatures { viewBinding true }
     namespace "com.zibete.proyecto1"
     compileSdk 36// ← NUEVO con AGP 8
     // ← subir a 34

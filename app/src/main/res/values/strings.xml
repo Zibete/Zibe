@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Zibe</string>
     <string name="iniciar_sesion1">Iniciar sesión con...</string>
     <string name="iniciar_sesion2">o utiliza tu cuenta</string>
@@ -77,6 +77,11 @@
     <string name="desbloquear">Desbloquear</string>
     <string name="salir">Salir</string>
     <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8]]></string>
+    <string name="photo_message">Photo message</string>
+    <string name="perfil_incognito">Perfil incógnito</string>
+    <string name="user_not_available_fmt">Lo sentimos, %1$s ya no está disponible.</string>
+    <string name="user_not_in_chat_anymore_fmt">Lo sentimos, %1$s ya no está en este chat. Encuéntralo en <xliff:g id="menu">@string/menu_usuarios</xliff:g>.</string>
+
 
     <string name="inicio">Inicio</string>
     <string name="unhide_chats">Chats ocultos</string>
