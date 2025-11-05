@@ -1,0 +1,128 @@
+ flowchart TD
+
+%% ==== Estilos comunes ====
+classDef object fill:#e0e0e0,stroke:#555,stroke-width:1px,color:#111;
+classDef string fill:#d0e8ff,stroke:#2b6cb0,color:#0b2c4a;
+classDef number fill:#d9f7d6,stroke:#2f855a,color:#0b3d2e;
+classDef boolean fill:#ffe9c2,stroke:#b7791f,color:#5a3a00;
+classDef id fill:#fbd3e9,stroke:#b83280,color:#521437;
+
+%% ===================== CHATS =====================
+subgraph CHATS
+direction TB
+  CHR["Chats"]:::object --> CHP["id &lt;--&gt; id (desde java/kt)"]:::object
+  CHP --> CHM["Mensajes"]:::object
+  CHM --> CHMID["Id push (desde java/kt)"]:::object
+  CHMID --> ch_date["date: string"]:::string
+  CHMID --> ch_envia["envia: id"]:::id
+  CHMID --> ch_msg["mensaje: string"]:::string
+  CHMID --> ch_type["type: number"]:::number
+  CHMID --> ch_visto["visto: number"]:::number
+end
+
+%% ===================== GROUPS =====================
+subgraph GROUPS
+direction TB
+  %% ---- Chat (mensajes de grupos) ----
+  GChat["Chat"]:::object --> GChatName["Nombre del grupo (desde java/kt)"]:::object
+  GChatName --> GPush["Id push (desde java/kt)"]:::object
+  GPush --> g_date["date: string"]:::string
+  GPush --> g_id["id: id"]:::id
+  GPush --> g_msg["mensaje: string"]:::string
+  GPush --> g_name["name: string"]:::string
+  GPush --> g_tmsg["type_msg: number"]:::number
+  GPush --> g_tuser["type_user: number"]:::number
+
+  %% ---- Data (metadatos de grupos) ----
+  GData["Data"]:::object --> GDataName["Nombre del grupo (desde java/kt)"]:::object
+  GDataName --> gd_category["category: number"]:::number
+  GDataName --> gd_data["data: string"]:::string
+  GDataName --> gd_dateCreate["dateCreate: string"]:::string
+  GDataName --> gd_creator["id_creator: id"]:::id
+  GDataName --> gd_name["name: string"]:::string
+  GDataName --> gd_users["users: number"]:::number
+
+  %% ---- Users (miembros por grupo) ----
+  GUsers["Users"]:::object --> GUsersName["Nombre del grupo (desde java/kt)"]:::object
+  GUsersName --> GUsersId["Id (desde java/kt)"]:::object
+  GUsersId --> gu_type["type: number"]:::number
+  GUsersId --> gu_userid["user_id: id"]:::id
+  GUsersId --> gu_username["user_name: string"]:::string
+end
+
+%% ===================== USUARIOS =====================
+subgraph USUARIOS
+direction TB
+  %% ---- Cuentas (perfil público) ----
+  UC["Cuentas"]:::object --> UId["Id"]:::object
+  UId --> u_age["age: number"]:::number
+  UId --> u_birth["birthDay: string"]:::string
+  UId --> u_date["date: string"]:::string
+  UId --> u_desc["descripcion: string"]:::string
+  UId --> u_dist["distance: number"]:::number
+  UId --> u_estado["estado: boolean"]:::boolean
+  UId --> u_fcm["fcmToken: string"]:::string
+  UId --> u_foto["foto: string (URL)"]:::string
+  UId --> u_id["id: id"]:::id
+  UId --> u_install["installId: string"]:::string
+  UId --> u_lat["latitud: number"]:::number
+  UId --> u_lng["longitud: number"]:::number
+  UId --> u_mail["mail: string"]:::string
+  UId --> u_nombre["nombre: string"]:::string
+  UId --> u_token["token: string"]:::string
+
+  %% ---- Datos (privado por usuario) ----
+  UDatos["Datos"]:::object --> UDatosId["Id (desde java/kt)"]:::object
+
+  %% ChatList
+  UDatosId --> UChatList["ChatList"]:::object
+  UChatList --> u_actual["Actual: string"]:::string
+  UChatList --> u_msgReadGroup["msgReadGroup: number"]:::number
+
+  %% ChatWith
+  UDatosId --> UChatWith["ChatWith"]:::object
+  UChatWith --> UChatWithId["Id (desde java/kt)"]:::object
+  UChatWithId --> ucw_estado["estado: string"]:::string
+  UChatWithId --> ucw_noVisto["noVisto: number"]:::number
+  UChatWithId --> ucw_wDate["wDate: string"]:::string
+  UChatWithId --> ucw_wEnvia["wEnvia: id"]:::id
+  UChatWithId --> ucw_wMsg["wMsg: string"]:::string
+  UChatWithId --> ucw_wUserID["wUserID: id"]:::id
+  UChatWithId --> ucw_wUserName["wUserName: string"]:::string
+  UChatWithId --> ucw_wUserPhoto["wUserPhoto: string"]:::string
+  UChatWithId --> ucw_wVisto["wVisto: number"]:::number
+
+  %% Estado (presencia)
+  UDatosId --> UEstado["Estado"]:::object
+  UEstado --> ue_estado["estado: string"]:::string
+  UEstado --> ue_fecha["fecha: string"]:::string
+  UEstado --> ue_hora["hora: string"]:::string
+
+  %% FavoriteList
+  UDatosId --> UFav["FavoriteList"]:::object
+  UFav --> UFavId["Id (desde java/kt)"]:::object
+end
+
+%% ===================== ZIBE / COMENTARIOS =====================
+subgraph ZIBE_COMENTARIOS
+direction TB
+  ZRoot["Zibe"]:::object --> ZCom["Comentarios"]:::object
+  ZCom --> ZYear["año (desde java/kt)"]:::object
+  ZYear --> ZMonth["mes (desde java/kt)"]:::object
+  ZMonth --> ZDay["dia (desde java/kt)"]:::object
+  ZDay --> ZHour["HH:MM:ss (desde java/kt)"]:::object
+  ZHour --> z_id["ID: id"]:::id
+  ZHour --> z_email["email: string"]:::string
+  ZHour --> z_msj["mensaje: string"]:::string
+  ZHour --> z_name["nombre: string"]:::string
+end
+
+%% ===== Leyenda rápida =====
+subgraph LEGEND
+direction LR
+  L1["id"]:::id
+  L2["string"]:::string
+  L3["number"]:::number
+  L4["boolean"]:::boolean
+  L5["object"]:::object
+end
