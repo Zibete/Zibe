@@ -347,28 +347,6 @@
         </LinearLayout>
     </LinearLayout>
 
-<!--    &lt;!&ndash; Mic + enviar (superpuestos al final) &ndash;&gt;-->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/linearLottieTrash"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:layout_gravity="end|bottom"-->
-<!--        android:gravity="end"-->
-<!--        android:orientation="horizontal"-->
-<!--        android:layout_marginEnd="-65dp"-->
-<!--        android:layout_marginBottom="-65dp">-->
-
-<!--        <com.airbnb.lottie.LottieAnimationView-->
-<!--            android:id="@+id/btnMic"-->
-<!--            android:layout_width="200dp"-->
-<!--            android:layout_height="200dp"-->
-<!--            android:layout_gravity="bottom|end"-->
-<!--            android:padding="-50dp"-->
-<!--            android:visibility="gone"-->
-<!--            app:lottie_loop="true"-->
-<!--            app:lottie_rawRes="@raw/lf30_editor_24iqgref" />-->
-<!--    </LinearLayout>-->
-
     <!-- Mic + enviar (superpuestos al final) -->
     <LinearLayout
         android:id="@+id/linearLottie"

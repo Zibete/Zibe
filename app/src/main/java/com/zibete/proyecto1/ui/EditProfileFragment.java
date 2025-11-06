@@ -40,6 +40,7 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -385,10 +386,10 @@ public class EditProfileFragment extends Fragment {
         ImageView cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
         ImageView storageSelected = viewFilter.findViewById(R.id.storageSelected);
         TextView tv_title = viewFilter.findViewById(R.id.tv_title);
-        LinearLayout linear_edit_delete = viewFilter.findViewById(R.id.linear_edit_delete);
+        MaterialCardView card_edit_delete = viewFilter.findViewById(R.id.card_edit_delete);
         ImageView img_cancel_dialog = viewFilter.findViewById(R.id.img_cancel_dialog);
 
-        linear_edit_delete.setVisibility(View.VISIBLE);
+        card_edit_delete.setVisibility(View.VISIBLE);
         tv_title.setText(getResources().getString(R.string.editar_foto_de_perfil));
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getContext(), R.style.AlertDialogApp));

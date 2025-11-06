@@ -37,6 +37,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -94,7 +95,9 @@ public class ChatGroupFragment extends Fragment {
     AdapterChatGroup adapter;
     FloatingActionButton buttonScrollBack;
     LinearLayoutManager mLayoutManager;
-    LinearLayout layoutChat, linear_photo_view, linearBack, linear_edit_delete;
+    LinearLayout layoutChat, linear_photo_view, linearBack;
+
+    MaterialCardView card_edit_delete;
     ProgressDialog progress;
     ProgressBar loadingPhoto;
     LinearLayout linearOnBoardingGroupChat;
@@ -454,10 +457,10 @@ public class ChatGroupFragment extends Fragment {
         cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
         storageSelected = viewFilter.findViewById(R.id.storageSelected);
         tv_title = viewFilter.findViewById(R.id.tv_title);
-        linear_edit_delete = viewFilter.findViewById(R.id.linear_edit_delete);
+        card_edit_delete = viewFilter.findViewById(R.id.card_edit_delete);
 
         tv_title.setText(getResources().getString(R.string.enviar_desde));
-        linear_edit_delete.setVisibility(View.GONE);
+        card_edit_delete.setVisibility(View.GONE);
 
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getContext(), R.style.AlertDialogApp));

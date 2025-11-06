@@ -13,8 +13,10 @@ import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.provider.MediaStore
@@ -39,9 +41,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.cardview.widget.CardView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.isGone
+import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
@@ -52,6 +55,7 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
 import com.canhub.cropper.CropImageContractOptions
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.ChildEventListener
@@ -60,7 +64,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.UploadTask
 import com.zibete.proyecto1.Adapters.AdapterChat
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
@@ -72,8 +75,8 @@ import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.UserRepository
 import de.hdodenhof.circleimageview.CircleImageView
 import org.json.JSONObject
+import java.io.File
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -129,11 +132,15 @@ class ChatActivity : AppCompatActivity() {
 
     // --------- media / storage ---------
     private var imageUriCamera: Uri? = null
-    private var currentAudioUri: Uri? = null
-    private var mediaRecorder: MediaRecorder? = null
-    private var nameAudio: String? = null
     private var msgType = Constants.MSG
     private var stringMsg: String? = null
+
+    private var mediaRecorder: MediaRecorder? = null
+    private var currentAudioUri: Uri? = null
+    private var currentPfd: ParcelFileDescriptor? = null
+    private var nameAudio: String? = null
+    private var recordStartElapsed: Long = 0L
+
 
     private lateinit var refActual: DatabaseReference
     private var startedByMe: DatabaseReference? = null
@@ -198,7 +205,6 @@ class ChatActivity : AppCompatActivity() {
         ObjectAnimator.ofFloat(tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
             duration = 800; repeatCount = ValueAnimator.INFINITE; start()
         }
-
 
         currentAudioUri = null
         iconVibrator = getSystemService(VIBRATOR_SERVICE) as android.os.Vibrator
@@ -300,8 +306,8 @@ class ChatActivity : AppCompatActivity() {
                 val first = mLayoutManager.findFirstVisibleItemPosition()
                 val atEnd = last + 1 >= total
                 if (total > 0 && !atEnd) {
-                    findViewById<View>(R.id.linearBack).isVisible = true
-                    findViewById<View>(R.id.linearDate).isVisible = true
+                    findViewById<View>(R.id.linearBack).visibility = View.VISIBLE
+                    findViewById<View>(R.id.linearDate).visibility = View.VISIBLE
                     Handler(Looper.getMainLooper()).postDelayed({
                         findViewById<View>(R.id.linearDate).visibility = View.GONE
                     }, 2000)
@@ -495,7 +501,7 @@ class ChatActivity : AppCompatActivity() {
         val cameraOpt = viewFilter.findViewById<ImageView>(R.id.cameraSelected)
         val storageOpt = viewFilter.findViewById<ImageView>(R.id.storageSelected)
         val title = viewFilter.findViewById<TextView>(R.id.tv_title)
-        viewFilter.findViewById<LinearLayout>(R.id.linear_edit_delete).visibility = View.GONE
+        viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).visibility = View.GONE
         title.text = getString(R.string.enviar_desde)
 
         val dialog = AlertDialog.Builder(this, R.style.AlertDialogApp)
@@ -540,7 +546,7 @@ class ChatActivity : AppCompatActivity() {
 
     // ----------------------------- Audio (MediaStore, sin rutas directas) -----------------------------
     private fun startRecordAudio() {
-        // 1) Chequeo de permisos (mic y, si hace falta, almacenamiento en ≤28)
+        // 1) Permisos
         val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
         val needsLegacyWrite = Build.VERSION.SDK_INT <= 28
         if (needsLegacyWrite) perms += Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -550,53 +556,48 @@ class ChatActivity : AppCompatActivity() {
             ensurePermissions(perms.toTypedArray()) { startRecordAudio() }
             return
         }
-
         if (mediaRecorder != null) return
 
-        // 2) Crear destino según versión:
-        //    - ≥29: MediaStore + RELATIVE_PATH (scoped storage)
-        //    - ≤28: archivo en app-specific external dir (no requiere WRITE en la práctica, pero protegemos por compat)
+        // 2) Preparar destino
         val sdf = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
         nameAudio = "AUD_${sdf.format(java.util.Date())}.m4a"
 
-        var pfd: android.os.ParcelFileDescriptor? = null
-        var fileToDeleteOnCancel: java.io.File? = null
+        currentPfd = null
+        currentAudioUri = null
 
         try {
             if (Build.VERSION.SDK_INT >= 29) {
+                // MediaStore con scoped storage
                 val values = ContentValues().apply {
                     put(MediaStore.Audio.Media.DISPLAY_NAME, nameAudio)
                     put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
                     put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Zibe")
                     put(MediaStore.Audio.Media.IS_PENDING, 1)
                 }
-                currentAudioUri = contentResolver.insert(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values
-                )
-                pfd = currentAudioUri?.let { contentResolver.openFileDescriptor(it, "w") }
-                if (pfd == null) throw IllegalStateException("No se pudo abrir el archivo de audio")
+                currentAudioUri = contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+                    ?: throw IllegalStateException("No se pudo crear el URI de audio")
+                currentPfd = contentResolver.openFileDescriptor(currentAudioUri!!, "w")
+                    ?: throw IllegalStateException("No se pudo abrir el archivo de audio")
             } else {
-                // App-specific external (Android ≤28)
-                val dir = getExternalFilesDir(android.os.Environment.DIRECTORY_MUSIC)
+                // ≤28: archivo app-specific + FileProvider
+                val dir = getExternalFilesDir(Environment.DIRECTORY_MUSIC)
                     ?: throw IllegalStateException("No hay directorio de música disponible")
-                val outFile = java.io.File(dir, nameAudio!!)
-                fileToDeleteOnCancel = outFile
-                currentAudioUri = androidx.core.content.FileProvider.getUriForFile(
-                    this, "${packageName}.provider", outFile
-                )
-                pfd = android.os.ParcelFileDescriptor.open(
-                    outFile, android.os.ParcelFileDescriptor.MODE_READ_WRITE or android.os.ParcelFileDescriptor.MODE_CREATE
+                val outFile = File(dir, nameAudio!!)
+                currentAudioUri = FileProvider.getUriForFile(this, "$packageName.provider", outFile)
+                currentPfd = ParcelFileDescriptor.open(
+                    outFile,
+                    ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE
                 )
             }
-        } catch (e: SecurityException) {
-            snackCenter("Sin permisos para guardar audio")
-            return
         } catch (e: Exception) {
             snackCenter("No se pudo iniciar la grabación")
+            currentPfd?.closeQuietly()
+            currentPfd = null
+            currentAudioUri = null
             return
         }
 
-        // 3) Configurar y empezar a grabar
+        // 3) Grabar
         try {
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -604,30 +605,34 @@ class ChatActivity : AppCompatActivity() {
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
                 setAudioEncodingBitRate(128000)
                 setAudioSamplingRate(44100)
-                setOutputFile(pfd!!.fileDescriptor)
+                setOutputFile(currentPfd!!.fileDescriptor)
                 prepare()
                 start()
             }
         } catch (e: Exception) {
-            try { pfd?.close() } catch (_: Exception) {}
-            // limpiar si en ≤28 creamos archivo
-            fileToDeleteOnCancel?.delete()
-            // revertir IS_PENDING si ≥29
+            currentPfd?.closeQuietly()
+            currentPfd = null
+            // Si quedó pendiente en ≥29, cerramos el pending para que el sistema lo limpie
             if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
-                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
-                contentResolver.update(currentAudioUri!!, cv, null, null)
+                runCatching {
+                    val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                    contentResolver.update(currentAudioUri!!, cv, null, null)
+                    contentResolver.delete(currentAudioUri!!, null, null)
+                }
             }
+            currentAudioUri = null
             mediaRecorder = null
             snackCenter("Error al grabar audio")
             return
         }
 
         // 4) UI grabando
+        recordStartElapsed = SystemClock.elapsedRealtime()
         setMicAnimated()
         msg.visibility = View.GONE
         btnCamera.visibility = View.GONE
         linearTimer.visibility = View.VISIBLE
-        timer.base = android.os.SystemClock.elapsedRealtime()
+        timer.base = recordStartElapsed
         timer.start()
 
         FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado")
@@ -635,73 +640,91 @@ class ChatActivity : AppCompatActivity() {
         FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
     }
 
-
     private fun stopRecordAudio() {
-        // Si no hay recorder, sólo normalizo UI
+        // Si no hay recorder, normalizar UI
         if (mediaRecorder == null) {
             cancelRecordAudio()
             return
         }
 
-        val elapsedText = timer.text?.toString() ?: "00:00"
-        val tooShort = elapsedText == "00:00"
+        val elapsedMs = SystemClock.elapsedRealtime() - recordStartElapsed
+        val tooShort = elapsedMs < 1000L // < 1s lo consideramos demasiado corto
 
         try {
             mediaRecorder?.apply {
-                stop()
-                release()
+                try { stop() } catch (_: Exception) {}
+                try { release() } catch (_: Exception) {}
             }
-        } catch (_: Exception) { /* noop */ }
-        mediaRecorder = null
+        } finally {
+            mediaRecorder = null
+            currentPfd?.closeQuietly()
+            currentPfd = null
+        }
 
-        // Cerrar pendiente de MediaStore en ≥29
+        // Cerrar pending en ≥29
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
-            try {
+            runCatching {
                 val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
                 contentResolver.update(currentAudioUri!!, cv, null, null)
-            } catch (_: Exception) {}
+            }
         }
 
         if (tooShort || currentAudioUri == null) {
+            // Borramos el archivo si existe
+            runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
             cancelRecordAudio()
             return
         }
 
-        // Subir a Firebase
+        // ---------- Subir a Firebase con putFile(uri) (robusto para content://) ----------
         val name = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
-        contentResolver.openInputStream(currentAudioUri!!)?.use { stream ->
-            refYourReceiverData!!.child(name).putStream(stream)
-                .addOnSuccessListener { task ->
-                    task.storage.downloadUrl.addOnSuccessListener { uri ->
+        val localUri = currentAudioUri!!
+
+        refYourReceiverData!!.child(name).putFile(localUri)
+            .addOnSuccessListener { task ->
+                task.storage.downloadUrl
+                    .addOnSuccessListener { uri ->
                         stringMsg = uri.toString()
                         msgType = Constants.AUDIO
+                        val mm = (elapsedMs / 1000 / 60).toInt().toString().padStart(2, '0')
+                        val ss = ((elapsedMs / 1000) % 60).toInt().toString().padStart(2, '0')
+                        val elapsedText = "$mm:$ss"
                         sendMessage(elapsedText)
+                        // Limpieza local: opcional (si querés conservarlo, comentá la línea de abajo)
+                        runCatching { contentResolver.delete(localUri, null, null) }
                     }
-                }
-        } ?: run { snackCenter("No se pudo leer el audio grabado") }
+                    .addOnFailureListener {
+                        snackCenter("No se pudo obtener URL del audio")
+                    }
+            }
+            .addOnFailureListener {
+                snackCenter("Fallo al subir el audio")
+            }
 
         normalizeUiCancelRecordAudio()
-
         UserRepository.setUserOnline(applicationContext, user!!.uid)
+        // No anulamos immediately el URI por si falla la subida; si preferís, podés setearlo en null acá.
     }
 
-
     private fun cancelRecordAudio() {
-        try {
-            mediaRecorder?.reset()
-            mediaRecorder?.release()
-        } catch (_: Exception) {}
+        // Detener/limpiar recorder si quedaba algo
+        runCatching { mediaRecorder?.reset() }
+        runCatching { mediaRecorder?.release() }
         mediaRecorder = null
 
-        // Si fue ≥29 y dejamos un IS_PENDING colgado, lo marcamos como no pendiente para que el sistema lo limpie si está vacío
+        // Cerrar PFD si quedó abierto
+        currentPfd?.closeQuietly()
+        currentPfd = null
+
+        // Si fue ≥29 y quedó pendiente, cerramos y borramos
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
-            try {
+            runCatching {
                 val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
                 contentResolver.update(currentAudioUri!!, cv, null, null)
-            } catch (_: Exception) {}
+            }
         }
 
-        // Trash audio
+        // Animación de trash y ocultar al terminar
         trashAnimated2.apply {
             visibility = View.VISIBLE
             playAnimation()
@@ -710,12 +733,13 @@ class ChatActivity : AppCompatActivity() {
             })
         }
 
-
         normalizeUiCancelRecordAudio()
-
         UserRepository.setUserOnline(applicationContext, user!!.uid)
 
+        // Borrado del archivo (si existe)
+        runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
         currentAudioUri = null
+        nameAudio = null
     }
 
     private fun normalizeUiCancelRecordAudio() {
@@ -726,6 +750,10 @@ class ChatActivity : AppCompatActivity() {
         linearTimer.visibility = View.GONE
         msg.visibility = View.VISIBLE
         btnCamera.visibility = View.VISIBLE
+    }
+
+    private fun ParcelFileDescriptor.closeQuietly() {
+        try { close() } catch (_: Exception) {}
     }
 
     // ----------------------------- Mic Gesture -----------------------------

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingHorizontal="20dp"
+    style="@style/Zibe.Card"
     android:paddingTop="10dp"
-    android:orientation="vertical"
-    android:background="@drawable/bg_glow_zibe_0">
+    android:orientation="vertical">
 
     <!-- Header: título + cerrar -->
     <LinearLayout
@@ -56,14 +56,14 @@
 
             <!-- Card: Eliminar -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_edit_delete"
                 android:layout_width="0dp"
                 android:layout_height="110dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginHorizontal="8dp"
                 android:layout_weight="1"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="@android:color/transparent"
-                app:shapeAppearanceOverlay="@style/Shape.Zibe.Card.Large"
                 android:foreground="@drawable/fg_card_ripple">
 
                 <FrameLayout
@@ -73,7 +73,6 @@
                     android:padding="12dp">
 
                     <LinearLayout
-                        android:id="@+id/linear_edit_delete"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:orientation="vertical"
@@ -83,8 +82,9 @@
                             android:id="@+id/deleteSelected"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
+                            app:tint="@color/zibe_text_light"
                             android:contentDescription="@string/eliminar"
-                            android:backgroundTint="@android:color/transparent"
+                            android:backgroundTint="@android:color/white"
                             android:src="@drawable/ic_baseline_delete_24" />
 
                         <TextView
