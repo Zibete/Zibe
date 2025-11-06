@@ -53,8 +53,8 @@
     <string name="archivar">Archivar</string>
     <string name="mostrar_notif">Mostrar notificaciones</string>
     <string name="ultVez">últ. vez</string>
-    <string name="hoy">hoy</string>
-    <string name="ayer">ayer</string>
+    <string name="today">hoy</string>
+    <string name="yesterday">ayer</string>
     <string name="a_las">a las</string>
     <string name="conectado">conectado</string>
     <string name="escribiendo">escribiendo...</string>
@@ -96,6 +96,7 @@
     <string name="cuenta">Cuenta</string>
     <string name="notificaciones">Notificaciones</string>
     <string name="guardar">Guardar</string>
+    <string name="cerrar">cerrar</string>
 
     <string-array name="edad">
         <item>18</item>

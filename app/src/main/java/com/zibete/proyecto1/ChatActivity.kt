@@ -1,18 +1,38 @@
 package com.zibete.proyecto1
 
 import android.Manifest
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.os.VibrationEffect
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.*
-import android.widget.*
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Chronometer
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +41,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,35 +50,40 @@ import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.bumptech.glide.Glide
 import com.canhub.cropper.CropImageContractOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.Firebase
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.zibete.proyecto1.Adapters.AdapterChat
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.UserRepository
 import de.hdodenhof.circleimageview.CircleImageView
 import org.json.JSONObject
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
-import androidx.core.view.isVisible
-import com.bumptech.glide.Glide
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment
-import com.zibete.proyecto1.utils.FirebaseRefs.user
 
 class ChatActivity : AppCompatActivity() {
 
-    // --------- UI refs (solo las que usamos en este refactor) ----------
+    // --------- UI refs ----------
     private lateinit var imgUser: CircleImageView
     private lateinit var nameUser: TextView
+    private lateinit var tvCancelAudio: TextView
     private lateinit var tvState: TextView
     private lateinit var msg: EditText
     private lateinit var btnCamera: ImageView
@@ -68,10 +95,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var photo: ImageView
     private lateinit var rvMsg: RecyclerView
     private lateinit var buttonScrollBack: FloatingActionButton
-    private lateinit var linearTimer: LinearLayout
     private lateinit var timer: Chronometer
-    private lateinit var linearDeleteMsg: LinearLayout
-    private lateinit var countDeleteMsg: TextView
     private lateinit var trashAnimated: LottieAnimationView
     private lateinit var trashAnimated2: LottieAnimationView
     private lateinit var linearLottie: LinearLayout
@@ -79,6 +103,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var layoutBloq: LinearLayout
     private lateinit var iconConnected: ImageView
     private lateinit var iconDisconnected: ImageView
+    private lateinit var tvDate: TextView
 
     // --------- Estado / datos ---------
     private var idUser: String? = null
@@ -127,6 +152,9 @@ class ChatActivity : AppCompatActivity() {
     private val hasMicPermission = AtomicBoolean(false)
     private val hasCameraPermission = AtomicBoolean(false)
 
+    // callback pendiente para ejecutar luego de otorgar permisos
+    private var onPermissionsGranted: (() -> Unit)? = null
+
     // ==================================== onCreate ====================================
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,7 +173,7 @@ class ChatActivity : AppCompatActivity() {
         nameUser = findViewById(R.id.nameUser)
         tvState = findViewById(R.id.tv_estado)
         msg = findViewById(R.id.msg)
-
+        tvDate = findViewById(R.id.tv_date)
         btnCamera = findViewById(R.id.btnCamera)
         btnSendMsg = findViewById(R.id.btnSendMsg)
         btnMic = findViewById(R.id.btnMic)
@@ -165,7 +193,14 @@ class ChatActivity : AppCompatActivity() {
         iconConnected = findViewById(R.id.icon_conectado)
         iconDisconnected = findViewById(R.id.icon_desconectado)
         buttonScrollBack = findViewById(R.id.buttonScrollBack)
+        tvCancelAudio = findViewById(R.id.tv_cancel_audio)
 
+        ObjectAnimator.ofFloat(tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
+            duration = 800; repeatCount = ValueAnimator.INFINITE; start()
+        }
+
+
+        currentAudioUri = null
         iconVibrator = getSystemService(VIBRATOR_SERVICE) as android.os.Vibrator
 
         // --- Recycler ---
@@ -182,6 +217,7 @@ class ChatActivity : AppCompatActivity() {
         initActivityResultLaunchers()
 
         // --- estado inicial botones ---
+        msg.visibility = View.VISIBLE
         btnMic.visibility = View.VISIBLE
         btnCamera.visibility = View.VISIBLE
         btnSendMsg.visibility = View.GONE
@@ -189,14 +225,16 @@ class ChatActivity : AppCompatActivity() {
         loadingPhoto.visibility = View.GONE
 
         // --- extras ---
+        UserRepository.setUserOnline(applicationContext, user!!.uid)
+
         idUser = intent.extras?.getString("id_user")
         unknownName = intent.extras?.getString("unknownName")
         idUserUnknown = intent.extras?.getString("idUserUnknown")
 
-        // ===== Config chat (igual que tu lógica, sólo ordenado) =====
+        // ===== Config chat =====
         setupChatHeaderAndRefs()
 
-        // ===== CropHelper: registramos el launcher apuntando a mi carpeta de envío =====
+        // ===== CropHelper =====
         cropLauncher = CropHelper.registerLauncher(
             caller = this,
             ctx = this,
@@ -212,8 +250,16 @@ class ChatActivity : AppCompatActivity() {
         )
 
         // ===== UI listeners =====
-        btnCamera.setOnClickListener { sendPhoto() }
-        btnSendMsg.setOnClickListener { sendMessage(null) }
+        btnCamera.setOnClickListener {
+            sendPhoto()
+        }
+        btnSendMsg.setOnClickListener {
+            sendMessage(null)
+        }
+        linearDeleteMsg.setOnClickListener {
+            trashAnimated.playAnimation()
+            DeleteMsgs()
+        }
 
         msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -230,7 +276,7 @@ class ChatActivity : AppCompatActivity() {
                     btnSendMsg.visibility = View.VISIBLE
                     FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado")
                         .setValue(getString(R.string.escribiendo))
-                    FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
+                    FirebaseRefs.refCuentas.child(user!!.uid).child("estado").setValue(true)
                 }
             }
             override fun afterTextChanged(s: Editable?) {
@@ -243,7 +289,7 @@ class ChatActivity : AppCompatActivity() {
             }
         })
 
-        // ===== Mic (mantengo tu gesto; sólo quité lo deprecado) =====
+        // ===== Mic gesture =====
         setupMicGesture()
 
         // ===== Scroll / fecha =====
@@ -254,12 +300,13 @@ class ChatActivity : AppCompatActivity() {
                 val first = mLayoutManager.findFirstVisibleItemPosition()
                 val atEnd = last + 1 >= total
                 if (total > 0 && !atEnd) {
-                    findViewById<View>(R.id.linearBack).visibility = View.VISIBLE
-                    findViewById<View>(R.id.linearDate).visibility = View.VISIBLE
+                    findViewById<View>(R.id.linearBack).isVisible = true
+                    findViewById<View>(R.id.linearDate).isVisible = true
                     Handler(Looper.getMainLooper()).postDelayed({
                         findViewById<View>(R.id.linearDate).visibility = View.GONE
                     }, 2000)
-                    adapter.getDate(first)
+                    val date = adapter.getDate(first)
+                    tvDate.text = date
                 } else {
                     findViewById<View>(R.id.linearBack).visibility = View.GONE
                     findViewById<View>(R.id.linearDate).visibility = View.GONE
@@ -268,25 +315,19 @@ class ChatActivity : AppCompatActivity() {
         })
         buttonScrollBack.setOnClickListener { setScrollbar() }
 
-        // ===== Observadores de mensajes (igual que tenías) =====
+        // ===== Observadores =====
         hookChatListeners()
-
         // ===== Estados / block =====
         hookBlockAndPresence()
 
-        hookChatListeners()
-
-        hookBlockAndPresence()
+        setMicButton()
 
         visto()
-
-    }// ===== ON CREATE
-
+    }
 
     // ---------------- Ciclo de vida ----------------
     override fun onPause() {
         super.onPause()
-        // Estado offline cuando salís del chat
         user?.let {
             UserRepository.setUserOffline(applicationContext, it.uid)
             refActual.setValue("") // Limpia referencia de chat activo
@@ -295,33 +336,28 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Estado online al volver
         user?.let {
             UserRepository.setUserOnline(applicationContext, it.uid)
-            refActual.setValue("${idUserFinal}${refChatWith}")
+            // Alineado con la comparación suActual != user.uid + refChatWith
+            refActual.setValue(it.uid + (refChatWith ?: ""))
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        // Detener audio si hay reproducción activa
         AdapterChat.mediaPlayer?.let { player ->
-            player.stop()
+            try { player.stop() } catch (_: Exception) {}
             AdapterChat.mediaPlayer = null
         }
 
-        // Quitar listener si era chat “unknown”
-        if (refChatWith == Constants.chatWithUnknown && listenerChatUnknown != null) {
+        if (refChatWith == Constants.chatWithUnknown && listenerChatUnknown != null && idUserFinal != null) {
             FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
         }
 
-        // Limpia “chat actual” en Firebase
         refActual.setValue("")
     }
-
 
     // ---------------- Menú ----------------
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -329,7 +365,6 @@ class ChatActivity : AppCompatActivity() {
         return true
     }
 
-    /** Menú superior: estados de acción según 'estado' */
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         super.onPrepareOptionsMenu(menu)
         val actionSilent = menu.findItem(R.id.action_silent)
@@ -382,7 +417,6 @@ class ChatActivity : AppCompatActivity() {
         return true
     }
 
-    /** Acciones del menú */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val view = findViewById<View>(android.R.id.content)
         when (item.itemId) {
@@ -411,9 +445,6 @@ class ChatActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-
-
-
     // ----------------------------- Activity Result Launchers -----------------------------
     private fun initActivityResultLaunchers() {
         // Galería moderna
@@ -421,7 +452,6 @@ class ChatActivity : AppCompatActivity() {
             ActivityResultContracts.PickVisualMedia()
         ) { uri ->
             if (uri != null) {
-                // lanzamos crop directamente
                 CropHelper.launchCrop(cropLauncher, uri)
             }
         }
@@ -443,6 +473,13 @@ class ChatActivity : AppCompatActivity() {
         ) { result ->
             hasCameraPermission.set(result[Manifest.permission.CAMERA] == true)
             hasMicPermission.set(result[Manifest.permission.RECORD_AUDIO] == true)
+
+            // Si se otorgaron todos los solicitados, ejecutar el callback pendiente
+            val allGranted = result.values.all { it == true }
+            if (allGranted) {
+                onPermissionsGranted?.invoke()
+            }
+            onPermissionsGranted = null
         }
     }
 
@@ -474,11 +511,9 @@ class ChatActivity : AppCompatActivity() {
         }
 
         storageOpt.setOnClickListener {
-            // No hace falta permiso para leer en Android 13+ con el picker
             pickImageLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
-
             dialog.dismiss()
         }
 
@@ -486,7 +521,6 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun startCameraModern() {
-        // Insertamos un placeholder en MediaStore y disparamos TakePicture()
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
@@ -506,68 +540,111 @@ class ChatActivity : AppCompatActivity() {
 
     // ----------------------------- Audio (MediaStore, sin rutas directas) -----------------------------
     private fun startRecordAudio() {
-        if (!hasMicPermission.get()) {
-            ensurePermissions(arrayOf(Manifest.permission.RECORD_AUDIO)) { startRecordAudio() }
+        // 1) Chequeo de permisos (mic y, si hace falta, almacenamiento en ≤28)
+        val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        val needsLegacyWrite = Build.VERSION.SDK_INT <= 28
+        if (needsLegacyWrite) perms += Manifest.permission.WRITE_EXTERNAL_STORAGE
+
+        val anyDenied = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (anyDenied) {
+            ensurePermissions(perms.toTypedArray()) { startRecordAudio() }
             return
         }
+
         if (mediaRecorder != null) return
 
-        val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        nameAudio = "AUD_${sdf.format(Date())}.m4a"
+        // 2) Crear destino según versión:
+        //    - ≥29: MediaStore + RELATIVE_PATH (scoped storage)
+        //    - ≤28: archivo en app-specific external dir (no requiere WRITE en la práctica, pero protegemos por compat)
+        val sdf = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
+        nameAudio = "AUD_${sdf.format(java.util.Date())}.m4a"
 
-        val values = ContentValues().apply {
-            put(MediaStore.Audio.Media.DISPLAY_NAME, nameAudio)
-            put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
+        var pfd: android.os.ParcelFileDescriptor? = null
+        var fileToDeleteOnCancel: java.io.File? = null
+
+        try {
             if (Build.VERSION.SDK_INT >= 29) {
-                put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Zibe")
+                val values = ContentValues().apply {
+                    put(MediaStore.Audio.Media.DISPLAY_NAME, nameAudio)
+                    put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
+                    put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Zibe")
+                    put(MediaStore.Audio.Media.IS_PENDING, 1)
+                }
+                currentAudioUri = contentResolver.insert(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values
+                )
+                pfd = currentAudioUri?.let { contentResolver.openFileDescriptor(it, "w") }
+                if (pfd == null) throw IllegalStateException("No se pudo abrir el archivo de audio")
+            } else {
+                // App-specific external (Android ≤28)
+                val dir = getExternalFilesDir(android.os.Environment.DIRECTORY_MUSIC)
+                    ?: throw IllegalStateException("No hay directorio de música disponible")
+                val outFile = java.io.File(dir, nameAudio!!)
+                fileToDeleteOnCancel = outFile
+                currentAudioUri = androidx.core.content.FileProvider.getUriForFile(
+                    this, "${packageName}.provider", outFile
+                )
+                pfd = android.os.ParcelFileDescriptor.open(
+                    outFile, android.os.ParcelFileDescriptor.MODE_READ_WRITE or android.os.ParcelFileDescriptor.MODE_CREATE
+                )
             }
-        }
-        currentAudioUri = contentResolver.insert(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values
-        )
-
-        val pfd = currentAudioUri?.let { contentResolver.openFileDescriptor(it, "w") }
-        if (pfd == null) {
+        } catch (e: SecurityException) {
+            snackCenter("Sin permisos para guardar audio")
+            return
+        } catch (e: Exception) {
             snackCenter("No se pudo iniciar la grabación")
             return
         }
 
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setAudioEncodingBitRate(128000)
-            setAudioSamplingRate(44100)
-            setOutputFile(pfd.fileDescriptor)
-            try {
+        // 3) Configurar y empezar a grabar
+        try {
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                setOutputFile(pfd!!.fileDescriptor)
                 prepare()
                 start()
-            } catch (e: Exception) {
-                release()
-                mediaRecorder = null
-                snackCenter("Error al grabar audio")
-                return
             }
+        } catch (e: Exception) {
+            try { pfd?.close() } catch (_: Exception) {}
+            // limpiar si en ≤28 creamos archivo
+            fileToDeleteOnCancel?.delete()
+            // revertir IS_PENDING si ≥29
+            if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
+                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                contentResolver.update(currentAudioUri!!, cv, null, null)
+            }
+            mediaRecorder = null
+            snackCenter("Error al grabar audio")
+            return
         }
 
-        // UI grabando
+        // 4) UI grabando
         setMicAnimated()
         msg.visibility = View.GONE
         btnCamera.visibility = View.GONE
         linearTimer.visibility = View.VISIBLE
-        timer.base = SystemClock.elapsedRealtime()
+        timer.base = android.os.SystemClock.elapsedRealtime()
         timer.start()
 
-        FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado").setValue(getString(R.string.grabando))
-        FirebaseRefs.refCuentas.child(user!!.uid).child("estado").setValue(true)
+        FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado")
+            .setValue(getString(R.string.grabando))
+        FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
     }
 
+
     private fun stopRecordAudio() {
-        val elapsed = timer.text.toString()
-        if (elapsed == "00:00") {
+        // Si no hay recorder, sólo normalizo UI
+        if (mediaRecorder == null) {
             cancelRecordAudio()
             return
         }
+
+        val elapsedText = timer.text?.toString() ?: "00:00"
+        val tooShort = elapsedText == "00:00"
 
         try {
             mediaRecorder?.apply {
@@ -577,60 +654,81 @@ class ChatActivity : AppCompatActivity() {
         } catch (_: Exception) { /* noop */ }
         mediaRecorder = null
 
-        // Subir el audio a Firebase (como hacías)
-        val name = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
-        val localUri = currentAudioUri
-        if (localUri != null) {
-            val stream = contentResolver.openInputStream(localUri)
-            if (stream != null) {
-                refYourReceiverData!!.child(name).putStream(stream)
-                    .addOnSuccessListener { task: UploadTask.TaskSnapshot ->
-                        task.storage.downloadUrl.addOnSuccessListener { uri ->
-                            stringMsg = uri.toString()
-                            msgType = Constants.AUDIO
-                            sendMessage(elapsed)
-                        }
-                    }
-            } else {
-                snackCenter("No se pudo leer el audio grabado")
-            }
+        // Cerrar pendiente de MediaStore en ≥29
+        if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
+            try {
+                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                contentResolver.update(currentAudioUri!!, cv, null, null)
+            } catch (_: Exception) {}
         }
 
-        vibrate(80)
-        timer.stop()
-        linearTimer.visibility = View.GONE
-        btnMic.cancelAnimation()
-        btnMic.clearAnimation()
-        setMicButton()
+        if (tooShort || currentAudioUri == null) {
+            cancelRecordAudio()
+            return
+        }
 
-        msg.visibility = View.VISIBLE
-        btnCamera.visibility = View.VISIBLE
+        // Subir a Firebase
+        val name = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
+        contentResolver.openInputStream(currentAudioUri!!)?.use { stream ->
+            refYourReceiverData!!.child(name).putStream(stream)
+                .addOnSuccessListener { task ->
+                    task.storage.downloadUrl.addOnSuccessListener { uri ->
+                        stringMsg = uri.toString()
+                        msgType = Constants.AUDIO
+                        sendMessage(elapsedText)
+                    }
+                }
+        } ?: run { snackCenter("No se pudo leer el audio grabado") }
+
+        normalizeUiCancelRecordAudio()
+
         UserRepository.setUserOnline(applicationContext, user!!.uid)
     }
+
 
     private fun cancelRecordAudio() {
         try {
-            mediaRecorder?.apply {
-                reset()
-                release()
-            }
+            mediaRecorder?.reset()
+            mediaRecorder?.release()
         } catch (_: Exception) {}
         mediaRecorder = null
 
+        // Si fue ≥29 y dejamos un IS_PENDING colgado, lo marcamos como no pendiente para que el sistema lo limpie si está vacío
+        if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
+            try {
+                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                contentResolver.update(currentAudioUri!!, cv, null, null)
+            } catch (_: Exception) {}
+        }
+
+        // Trash audio
+        trashAnimated2.apply {
+            visibility = View.VISIBLE
+            playAnimation()
+            addAnimatorListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(a: Animator) { visibility = View.GONE }
+            })
+        }
+
+
+        normalizeUiCancelRecordAudio()
+
+        UserRepository.setUserOnline(applicationContext, user!!.uid)
+
+        currentAudioUri = null
+    }
+
+    private fun normalizeUiCancelRecordAudio() {
         vibrate(80)
         btnMic.cancelAnimation()
         btnMic.clearAnimation()
-        trashAnimated2.visibility = View.VISIBLE
-        trashAnimated2.playAnimation()
         timer.stop()
         linearTimer.visibility = View.GONE
         msg.visibility = View.VISIBLE
         btnCamera.visibility = View.VISIBLE
-        UserRepository.setUserOnline(applicationContext, user!!.uid)
-        currentAudioUri = null
     }
 
-    // ----------------------------- Mic Gesture (idéntico a tu UX, limpiado) -----------------------------
+    // ----------------------------- Mic Gesture -----------------------------
     @SuppressLint("ClickableViewAccessibility")
     private fun setupMicGesture() {
         var firstTouchX = 0f
@@ -660,6 +758,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 MotionEvent.ACTION_UP -> {
                     xAnim.start()
+                    setMicButton()
                     stopRecordAudio()
                     true
                 }
@@ -669,6 +768,7 @@ class ChatActivity : AppCompatActivity() {
                             val move = event.rawX + dX
                             btnMic.animate().x(move).setDuration(0).start()
                         } else {
+                            setMicButton()
                             cancelRecordAudio()
                             xAnim.start()
                         }
@@ -680,11 +780,10 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    // ----------------------------- Envío de mensajes (tu misma lógica) -----------------------------
+    // ----------------------------- Envío de mensajes -----------------------------
     private fun sendMessage(timerText: String?) {
         val (textMiChatw, textSuChatw) = when (msgType) {
             Constants.PHOTO -> {
-                // reset UI foto
                 linearPhotoView.visibility = View.GONE
                 msg.visibility = View.VISIBLE
                 btnCamera.visibility = View.VISIBLE
@@ -735,7 +834,6 @@ class ChatActivity : AppCompatActivity() {
         )
         FirebaseRefs.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
 
-        // Card en receptor + notificación (igual que tenías; limpieza menor)
         if (suActual != user!!.uid + refChatWith || suActual == null) {
             val count = noVisto + 1
             val suChat = ChatWith(
@@ -782,7 +880,7 @@ class ChatActivity : AppCompatActivity() {
         msgType = Constants.MSG
     }
 
-    // ----------------------------- Helpers varios -----------------------------
+    // ----------------------------- Helpers -----------------------------
     private fun setScrollbar() = rvMsg.scrollToPosition(adapter.itemCount - 1)
 
     private fun snackCenter(text: String) {
@@ -798,38 +896,41 @@ class ChatActivity : AppCompatActivity() {
 
     private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
         val need = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-        if (need) requestPermissionsLauncher.launch(perms) else onGranted()
+        if (need) {
+            onPermissionsGranted = onGranted
+            requestPermissionsLauncher.launch(perms)
+        } else {
+            onGranted()
+        }
     }
 
-// ========================= Bloques que mantengo (sin cambios de lógica) =========================
+    // ========================= Bloques mantenidos =========================
 
-    /** Construye id_user_final, refChatWith, myName/fotos y referencias Firebase */
     private fun setupChatHeaderAndRefs() {
         val me = user ?: return
 
         if (idUser != null) {
-            // Chat 1 a 1
+            // 1 a 1
             findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
             idUserFinal = idUser
             refChat = Constants.chat
             refChatWith = Constants.chatWith
-            myPhoto = me.photoUrl?.toString()
-            myName = me.displayName
+            myPhoto = me.photoUrl?.toString() ?: ""
+            myName = me.displayName ?: ""
 
-            // Nombre y foto del otro usuario
             FirebaseRefs.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val thisUser = ds.getValue(Users::class.java)
                         extraUserList.add(thisUser)
-                        yourPhoto = ds.child("foto").getValue(String::class.java)
+                        yourPhoto = ds.child("foto").getValue(String::class.java).orEmpty()
                         nameUserFinal = ds.child("nombre").getValue(String::class.java)
                         nameUser.text = nameUserFinal
                         Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
                     } else {
                         FirebaseRefs.refDatos.child(me.uid).child(Constants.chatWith).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
-                                yourPhoto = snap.child("wUserPhoto").getValue(String::class.java)
+                                yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
                                 nameUserFinal = snap.child("wUserName").getValue(String::class.java)
                                 nameUser.text = nameUserFinal
                                 Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
@@ -841,7 +942,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
         } else {
-            // Chat UNKNOWN (grupal / privado temporal)
+            // Chat UNKNOWN
             findViewById<View>(R.id.cardview_title)?.visibility = View.VISIBLE
             findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${UsuariosFragment.groupName}"
 
@@ -856,7 +957,7 @@ class ChatActivity : AppCompatActivity() {
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         if (ds.exists()) {
-                            val type = ds.getValue(Int::class.java) ?: 0
+                            val type = ds.getValue(Int::class.java)
                             if (type == 0) {
                                 yourPhoto = getString(R.string.URL_PHOTO_DEF)
                                 Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
@@ -864,7 +965,7 @@ class ChatActivity : AppCompatActivity() {
                                 FirebaseRefs.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object : ValueEventListener {
                                     override fun onDataChange(d2: DataSnapshot) {
                                         if (d2.exists()) {
-                                            yourPhoto = d2.child("foto").getValue(String::class.java)
+                                            yourPhoto = d2.child("foto").getValue(String::class.java).orEmpty()
                                             Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
                                         }
                                     }
@@ -879,7 +980,7 @@ class ChatActivity : AppCompatActivity() {
             myPhoto = if (UsuariosFragment.userType == 0) {
                 getString(R.string.URL_PHOTO_DEF)
             } else {
-                me.photoUrl?.toString()
+                me.photoUrl?.toString() ?: ""
             }
 
             listenerChatUnknown = object : ValueEventListener {
@@ -900,23 +1001,25 @@ class ChatActivity : AppCompatActivity() {
         }
 
         // Token del receptor
-        FirebaseRefs.refCuentas.child(idUserFinal!!).child("token").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(ds: DataSnapshot) { token = ds.getValue(String::class.java) }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+        if (idUserFinal != null) {
+            FirebaseRefs.refCuentas.child(idUserFinal!!).child("token")
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(ds: DataSnapshot) { token = ds.getValue(String::class.java) }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
 
-        // Storage refs (carpetas por conversación)
-        refYourReceiverData = Constants.storageReference.child("$refChatWith/$idUserFinal/")
-        refMyReceiverData = Constants.storageReference.child("$refChatWith/${me.uid}/")
+        // Storage refs
+        refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
+        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${me.uid}/")
 
-        refActual = FirebaseRefs.refDatos.child(user.uid).child("ChatList").child("Actual")
+        refActual = FirebaseRefs.refDatos.child(user!!.uid).child("ChatList").child("Actual")
 
-        // Ramas de mensajes (iniciados por mí / por él)
+        // Ramas de mensajes
         startedByMe  = FirebaseRefs.refChats.child(refChat!!).child("${me.uid} <---> $idUserFinal").child("Mensajes")
         startedByHim = FirebaseRefs.refChats.child(refChat!!).child("$idUserFinal <---> ${me.uid}").child("Mensajes")
     }
 
-    /** Listeners de mensajes para ambos sentidos */
     private fun hookChatListeners() {
         val childListener = object : ChildEventListener {
             override fun onChildAdded(ds: DataSnapshot, prev: String?)    { addChat(ds) }
@@ -933,18 +1036,15 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
-    /** Bloqueos / presencia / estado de la conversación */
     private fun hookBlockAndPresence() {
         val me = user ?: return
 
-        // Su "Actual"
         FirebaseRefs.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) { suActual = ds.getValue(String::class.java) ?: "" }
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        // Estado online/typing/iconos
         UserRepository.stateUser(
             applicationContext,
             idUserFinal,
@@ -954,7 +1054,6 @@ class ChatActivity : AppCompatActivity() {
             refChatWith
         )
 
-        // Si lo bloqueaste
         FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -972,7 +1071,6 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        // Cómo me tiene él
         FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(me.uid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
@@ -981,7 +1079,6 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        // Mi estado respecto a él
         FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
@@ -991,7 +1088,6 @@ class ChatActivity : AppCompatActivity() {
             })
     }
 
-    /** UI del mic animado (igual que tu UX, sin deprecados) */
     private fun setMicAnimated() {
         val scale = resources.displayMetrics.density
         val dp200 = (200 * scale + 0.5f).toInt()
@@ -1013,15 +1109,14 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /** Botón mic por defecto */
     private fun setMicButton() {
+        btnMic.setBackgroundResource(R.drawable.marco_color_b_round)
+        btnMic.setImageResource(R.drawable.ic_baseline_mic_24)
+
         val scale = resources.displayMetrics.density
         val dp10 = (10 * scale + 0.5f).toInt()
         val dp13 = (13 * scale + 0.5f).toInt()
         val dp50 = (50 * scale + 0.5f).toInt()
-
-        btnMic.setBackgroundResource(R.drawable.marco_color_b_round)
-        btnMic.setImageResource(R.drawable.ic_baseline_mic_24)
 
         linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
@@ -1033,7 +1128,6 @@ class ChatActivity : AppCompatActivity() {
         btnMic.setPadding(dp13, dp13, dp13, dp13)
     }
 
-    /** Vistos / doble check / reseteo de contadores */
     private fun visto() {
         val me = user ?: return
         FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!)
@@ -1071,7 +1165,6 @@ class ChatActivity : AppCompatActivity() {
             })
     }
 
-    /** Eliminar mensajes seleccionados (misma lógica) */
     fun DeleteMsgs() {
         for (chat in msgSelected) {
             startedByMe!!.orderByChild("date").equalTo(chat.date)
@@ -1115,7 +1208,7 @@ class ChatActivity : AppCompatActivity() {
                     Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_SENDER_DLT)
                     Constants.AUDIO_RECEIVER_DLT -> {
                         val start = chat.message.indexOf(idUserFinal!!) + idUserFinal!!.length + 3
-                        val end = chat.message.indexOf(".mp3") + 4
+                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
@@ -1134,7 +1227,7 @@ class ChatActivity : AppCompatActivity() {
                     Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
                     Constants.AUDIO_SENDER_DLT -> {
                         val start = chat.message.indexOf(user!!.uid) + user!!.uid.length + 3
-                        val end = chat.message.indexOf(".mp3") + 4
+                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
@@ -1143,7 +1236,6 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    /** Remueve la card de ChatWith si quedó sin mensajes */
     fun RemoveChatWith(countList: Int) {
         startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(ds: DataSnapshot) {
@@ -1182,45 +1274,36 @@ class ChatActivity : AppCompatActivity() {
         })
     }
 
-    /** Cuando Firebase agrega un mensaje (onChildAdded) */
     private fun addChat(ds: DataSnapshot) {
         val chat = ds.getValue(Chats::class.java) ?: return
         adapter.addChat(chat)
     }
 
-    /** Cuando Firebase actualiza un mensaje (onChildChanged) */
     private fun actualizeChat(ds: DataSnapshot) {
         val chat = ds.getValue(Chats::class.java) ?: return
         adapter.actualizeMsg(chat)
     }
 
-    /** Cuando Firebase borra un mensaje (onChildRemoved) */
     private fun deleteChat(ds: DataSnapshot) {
         val chat = ds.getValue(Chats::class.java) ?: return
         adapter.deleteMsg(chat)
     }
 
+    // ---------------- Companion ----------------
     companion object {
-        // Campos “globales” que usás desde el Adapter u otros lugares
-        var myPhoto: String? = null
-        var yourPhoto: String? = null
+        var msgSelected: ArrayList<Chats> = ArrayList()
+        lateinit var linearTimer: LinearLayout
+        lateinit var linearDeleteMsg: LinearLayout
+        lateinit var countDeleteMsg: TextView
+        lateinit var myPhoto: String
+        lateinit var yourPhoto: String
 
-        // Selección múltiple (lo usa AdapterChat)
-        val msgSelected: ArrayList<Chats> = ArrayList()
-
-        // Referencias UI compartidas (si las manipulás desde Adapter)
-        var countDeleteMsg: TextView? = null
-        var tv_date: TextView? = null
-        var linearDeleteMsg: LinearLayout? = null
-        var linear_timer: LinearLayout? = null
-
-        // Utilidades para selección (idénticas a tus firmas actuales)
         fun selectedDeleteMsg(chats: Chats?) {
             if (chats == null) return
             msgSelected.add(chats)
             if (msgSelected.size > 1) {
-                linearDeleteMsg?.visibility = View.VISIBLE
-                countDeleteMsg?.text = msgSelected.size.toString()
+                linearDeleteMsg.visibility = View.VISIBLE
+                countDeleteMsg.text = msgSelected.size.toString()
             }
         }
 
@@ -1230,19 +1313,10 @@ class ChatActivity : AppCompatActivity() {
             if (idx != -1) {
                 msgSelected.removeAt(idx)
                 if (msgSelected.isEmpty()) {
-                    linearDeleteMsg?.visibility = View.GONE
+                    linearDeleteMsg.visibility = View.GONE
                 }
-                countDeleteMsg?.text = msgSelected.size.toString()
+                countDeleteMsg.text = msgSelected.size.toString()
             }
         }
-
-        fun setDate(date: String?) {
-            tv_date?.text = date ?: ""
-        }
     }
-
-
-
 }
-
-

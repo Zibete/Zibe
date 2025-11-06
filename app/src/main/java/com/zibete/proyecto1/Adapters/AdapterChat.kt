@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.Handler
 import android.os.SystemClock
 import android.os.VibrationEffect
@@ -42,7 +41,7 @@ class AdapterChat(
 ) : ListAdapter<Chats, RecyclerView.ViewHolder>(DIFF),
     View.OnCreateContextMenuListener {
 
-    private val mutable = msgList.toMutableList()
+    private val mutableMsgList = msgList.toMutableList()
     private val photoList = arrayListOf<String?>()
     private var positionForContext = 0
     private var handler: Handler? = null
@@ -55,7 +54,7 @@ class AdapterChat(
 
     init {
         msgList.forEach { if (it.type.isPhoto()) photoList.add(it.message) }
-        submitList(mutable.toList())
+        submitList(mutableMsgList.toList())
         setHasStableIds(false)
     }
 
@@ -124,7 +123,6 @@ class AdapterChat(
             }
             val pos = h.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) setPosition(pos)
-
             false
         }
         h.bindingRoot.linearCardMsg.setOnLongClickListener(longClick)
@@ -206,48 +204,61 @@ class AdapterChat(
     }
 
     private fun vibrateShort() {
-        vibrator?.let {
-            if (Build.VERSION.SDK_INT >= 26) {
-                it.vibrate(VibrationEffect.createOneShot(75, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION") it.vibrate(75)
-            }
-        }
+        vibrator?.vibrate(VibrationEffect.createOneShot(75, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
     // ==== API pública compatible ====
 
     fun addChat(chats: Chats) {
-        if (mutable.size > maxSize) {
-            mutable.removeAt(0)
+        if (mutableMsgList.size > maxSize) {
+            mutableMsgList.removeAt(0)
         }
 
-        if (mutable.isNotEmpty()) {
-            val c = Calendar.getInstance()
-            val ayer = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
+        // ------- separador de fecha (FIX: "ayer" no muta el calendar de "hoy")
+        if (mutableMsgList.isNotEmpty()) {
+            val today = Calendar.getInstance()
+            val yesterday = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
 
-            val last = mutable.last()
+            val last = mutableMsgList.last()
             val thisDate = chats.date.safeSub(0, 10)
             val lastDate = last.date.safeSub(0, 10)
 
             if (thisDate != lastDate) {
                 when (thisDate) {
-                    dateFormat.format(c.time)    -> mutable.add(Chats(context.getString(R.string.hoy), thisDate, "", Constants.INFO, 0))
-                    dateFormat.format(ayer.time) -> mutable.add(Chats(context.getString(R.string.ayer), thisDate, "", Constants.INFO, 0))
-                    else                         -> mutable.add(Chats(thisDate, thisDate, "", Constants.INFO, 0))
+                    dateFormat.format(today.time) -> mutableMsgList.add(
+                        Chats(
+                            context.getString(R.string.today),
+                            thisDate,
+                            "",
+                            Constants.INFO,
+                            0))
+                    dateFormat.format(yesterday.time) -> mutableMsgList.add(
+                        Chats(
+                            context.getString(R.string.yesterday),
+                            thisDate,
+                            "",
+                            Constants.INFO,
+                            0))
+                    else -> mutableMsgList.add(
+                        Chats(
+                            thisDate,
+                            thisDate,
+                            "",
+                            Constants.INFO,
+                            0))
                 }
             }
         }
 
-        mutable.add(chats)
+        mutableMsgList.add(chats)
         if (chats.type.isPhoto()) photoList.add(chats.message)
-        submitList(mutable.toList())
+        submitList(mutableMsgList.toList())
     }
 
     fun actualizeMsg(chats: Chats) {
-        val idx = mutable.indexOf(chats)
+        val idx = mutableMsgList.indexOf(chats)
         if (idx != -1) {
-            mutable[idx] = chats
+            mutableMsgList[idx] = chats
             val iAmSender = chats.sender == userId
             val deleteType = if (iAmSender)
                 listOf(Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT)
@@ -255,9 +266,9 @@ class AdapterChat(
                 listOf(Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT)
 
             if (deleteType.contains(chats.type)) {
-                mutable.removeAt(idx)
+                mutableMsgList.removeAt(idx)
             }
-            submitList(mutable.toList())
+            submitList(mutableMsgList.toList())
         } else {
             addChat(chats)
         }
@@ -265,22 +276,21 @@ class AdapterChat(
 
     fun deleteMsg(chats: Chats?) {
         chats ?: return
-        val idx = mutable.indexOf(chats)
+        val idx = mutableMsgList.indexOf(chats)
         if (idx != -1) {
-            mutable.removeAt(idx)
-            submitList(mutable.toList())
+            mutableMsgList.removeAt(idx)
+            submitList(mutableMsgList.toList())
         }
     }
 
-    fun getDate(position: Int) {
-        val c = Calendar.getInstance()
+    fun getDate(position: Int): String {
+        val today = Calendar.getInstance()
         val ayer = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
-        val fecha = getItemOrNull(position)?.date?.safeSub(0, 10) ?: return
-
-        when (fecha) {
-            dateFormat.format(c.time)    -> ChatActivity.setDate(context.getString(R.string.hoy))
-            dateFormat.format(ayer.time) -> ChatActivity.setDate(context.getString(R.string.ayer))
-            else                         -> ChatActivity.setDate(fecha)
+        val fecha = getItemOrNull(position)?.date?.safeSub(0, 10) ?: ""
+        return when (fecha) {
+            dateFormat.format(today.time) -> context.getString(R.string.today)
+            dateFormat.format(ayer.time)  -> context.getString(R.string.yesterday)
+            else                          -> fecha
         }
     }
 
@@ -307,7 +317,6 @@ class AdapterChat(
         var stateMediaPlayer: MediaState = MediaState.NOT_STARTED
     }
 
-    // Hago estas clases "inner" para poder llamar a métodos y usar miembros del Adapter (fix bindCommonFields)
     private inner class RightVH(val b: RowMsgRightBinding) : BaseMsgVH(b.root) {
         override val bindingRoot: CommonBindingAccessor = CommonBindingAccessor.from(b)
         fun bindCommon(model: Chats, attach: (BaseMsgVH) -> Unit) {
@@ -385,10 +394,9 @@ class AdapterChat(
                 seekBar = b.seekBar
             )
         }
-
     }
 
-    // LÓGICA COMÚN: ahora accesible desde inner VHs
+    // Lógica común
     private fun bindCommonFields(bCommon: CommonBindingAccessor, model: Chats, isMe: Boolean) {
         bCommon.hora?.text = model.date.safeSub(11, 16)
 
@@ -427,7 +435,6 @@ class AdapterChat(
                         }
                     })
                     .into(bCommon.imgPic!!)
-                // Evito dependencia a string resource inexistente
                 bCommon.imgPic.contentDescription = context.getString(R.string.photo_message)
             }
 
@@ -466,7 +473,6 @@ class AdapterChat(
     }
 
     // ==== Media ====
-
     private fun playAudio(h: BaseMsgVH, chats: Chats) {
         mediaPlayer?.let { onCompletion(h) }
         h.stateMediaPlayer = MediaState.PLAY
@@ -559,7 +565,6 @@ class AdapterChat(
     }
 
     // ==== Utils ====
-
     private fun Int?.isPhoto(): Boolean = when (this) {
         Constants.PHOTO, Constants.PHOTO_RECEIVER_DLT, Constants.PHOTO_SENDER_DLT -> true
         else -> false

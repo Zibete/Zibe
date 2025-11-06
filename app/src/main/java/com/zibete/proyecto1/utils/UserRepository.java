@@ -166,7 +166,7 @@ public class UserRepository {
                                 // hoy
                                 tvStatus.setText(
                                         context.getString(R.string.ultVez) + " " +
-                                                context.getString(R.string.hoy) + " " +
+                                                context.getString(R.string.today) + " " +
                                                 context.getString(R.string.a_las) + " " +
                                                 hora
                                 );
@@ -178,7 +178,7 @@ public class UserRepository {
                                 if (fecha != null && fecha.equals(dateFormat.format(calendar.getTime()))) {
                                     tvStatus.setText(
                                             context.getString(R.string.ultVez) + " " +
-                                                    context.getString(R.string.ayer) + " " +
+                                                    context.getString(R.string.yesterday) + " " +
                                                     context.getString(R.string.a_las) + " " +
                                                     hora
                                     );

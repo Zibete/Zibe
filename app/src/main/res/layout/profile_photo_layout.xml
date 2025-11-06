@@ -1,120 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    style="@style/AlertDialogApp"
     android:paddingHorizontal="20dp"
     android:paddingTop="10dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@drawable/bg_glow_zibe_0">
 
+    <!-- Header: título + cerrar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <TextView
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginVertical="10dp"
             android:id="@+id/tv_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginVertical="10dp"
             android:textAlignment="center"
-            android:textSize="@dimen/text_size_normal"/>
+            android:textSize="@dimen/text_size_normal"
+            android:textColor="@color/zibe_text_light"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
         <ImageView
             android:id="@+id/img_cancel_dialog"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cerrar"
+            app:tint="@color/zibe_text_light"
             android:src="@drawable/ic_baseline_close_24"/>
-
-
     </LinearLayout>
 
+    <!-- Cuerpo -->
     <LinearLayout
-
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-
+        <!-- Fila de acciones -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_gravity="center"
-            android:paddingVertical="15dp">
+            android:gravity="center"
+            android:paddingVertical="16dp"
+            android:baselineAligned="false">
 
-            <LinearLayout
-                android:id="@+id/linear_edit_delete"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:layout_weight="1">
-
-
-                <ImageView
-                    android:id="@+id/deleteSelected"
-                    android:layout_width="match_parent"
-                    android:src="@drawable/ic_baseline_delete_24"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:backgroundTint="@color/blanco" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/eliminar"/>
-
-
-            </LinearLayout>
-
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:layout_weight="1">
-
-
-                <ImageView
-                    android:id="@+id/cameraSelected"
-                    android:layout_width="match_parent"
-                    android:src="@drawable/ic_menu_camera"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    app:tint="@color/blanco" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/camera"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+            <!-- Card: Eliminar -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:shapeAppearanceOverlay="@style/Shape.Zibe.Card.Large"
+                android:foreground="@drawable/fg_card_ripple">
 
-                <ImageView
-                    android:id="@+id/storageSelected"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:src="@drawable/ic_menu_gallery"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    app:tint="@color/blanco" />
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_glass_morphism"
+                    android:padding="12dp">
 
-                <TextView
+                    <LinearLayout
+                        android:id="@+id/linear_edit_delete"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:id="@+id/deleteSelected"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="@string/eliminar"
+                            android:backgroundTint="@android:color/transparent"
+                            android:src="@drawable/ic_baseline_delete_24" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/eliminar"
+                            android:textColor="@color/zibe_text_light"
+                            android:textSize="@dimen/text_size_normal"/>
+                    </LinearLayout>
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card: Cámara -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_weight="1"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                android:foreground="@drawable/fg_card_ripple">
+
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/gallery"/>
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_glass_morphism"
+                    android:padding="12dp">
 
-            </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:id="@+id/cameraSelected"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="@string/camera"
+                            app:tint="@color/zibe_text_light"
+                            android:src="@drawable/ic_menu_camera" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/camera"
+                            android:textColor="@color/zibe_text_light"
+                            android:textSize="@dimen/text_size_normal"/>
+                    </LinearLayout>
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card: Galería -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="110dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                android:foreground="@drawable/fg_card_ripple">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_glass_morphism"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:id="@+id/storageSelected"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="@string/gallery"
+                            app:tint="@color/zibe_text_light"
+                            android:src="@drawable/ic_menu_gallery" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/gallery"
+                            android:textColor="@color/zibe_text_light"
+                            android:textSize="@dimen/text_size_normal"/>
+                    </LinearLayout>
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 

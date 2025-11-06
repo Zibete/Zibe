@@ -490,7 +490,7 @@ public class AdapterChatLista extends RecyclerView.Adapter<AdapterChatLista.view
 
             if (date.equals(dateFormat.format(calendar.getTime()))) {
 
-                holder.hora_ult_msg.setText(context.getString(R.string.ayer));
+                holder.hora_ult_msg.setText(context.getString(R.string.yesterday));
             }else {
                 holder.hora_ult_msg.setText(wChat.getDateTime().substring(0,10));
             }

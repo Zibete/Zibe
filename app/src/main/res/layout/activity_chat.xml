@@ -14,21 +14,22 @@
         android:orientation="vertical"
         android:animateLayoutChanges="true">
 
-        <!-- AppBar -->
+        <!-- AppBar moderna -->
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/AppTheme.AppBarOverlay">
+            android:fitsSystemWindows="true"
+            app:liftOnScroll="true">
 
-            <androidx.appcompat.widget.Toolbar
+            <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar_chat"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/colorB"
-                app:contentInsetLeft="0dp"
-                app:contentInsetStart="0dp"
+                android:layout_height="?attr/actionBarSize"
+                android:paddingHorizontal="8dp"
                 app:contentInsetStartWithNavigation="0dp"
-                app:popupTheme="@style/AppTheme.PopupOverlay">
+                app:popupTheme="@style/ThemeOverlay.Material3.MaterialAlertDialog"
+                app:title=""
+                app:layout_scrollFlags="scroll|enterAlways">
 
                 <LinearLayout
                     android:id="@+id/linearNameUser"
@@ -114,7 +115,7 @@
                             app:lottie_rawRes="@raw/trash" />
                     </LinearLayout>
                 </LinearLayout>
-            </androidx.appcompat.widget.Toolbar>
+            </com.google.android.material.appbar.MaterialToolbar>
         </com.google.android.material.appbar.AppBarLayout>
 
         <!-- Título del chat -->
@@ -282,18 +283,15 @@
                             </LinearLayout>
                         </LinearLayout>
 
-                        <com.airbnb.lottie.LottieAnimationView
-                            android:id="@+id/trashAnimated2"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:layout_gravity="center"
-                            android:layout_marginStart="-10dp"
-                            android:layout_marginEnd="-16dp"
-                            android:layout_marginVertical="-10dp"
-                            android:visibility="gone"
-                            app:lottie_autoPlay="false"
-                            app:lottie_loop="false"
-                            app:lottie_rawRes="@raw/trash" />
+                            <com.airbnb.lottie.LottieAnimationView
+                                android:id="@+id/trashAnimated2"
+                                android:layout_width="40dp"
+                                android:layout_height="match_parent"
+                                android:layout_gravity="center"
+                                app:lottie_autoPlay="false"
+                                app:lottie_loop="false"
+                                android:visibility="gone"
+                                app:lottie_rawRes="@raw/trash" />
 
                         <EditText
                             android:id="@+id/msg"
@@ -348,6 +346,28 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
+<!--    &lt;!&ndash; Mic + enviar (superpuestos al final) &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/linearLottieTrash"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_gravity="end|bottom"-->
+<!--        android:gravity="end"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:layout_marginEnd="-65dp"-->
+<!--        android:layout_marginBottom="-65dp">-->
+
+<!--        <com.airbnb.lottie.LottieAnimationView-->
+<!--            android:id="@+id/btnMic"-->
+<!--            android:layout_width="200dp"-->
+<!--            android:layout_height="200dp"-->
+<!--            android:layout_gravity="bottom|end"-->
+<!--            android:padding="-50dp"-->
+<!--            android:visibility="gone"-->
+<!--            app:lottie_loop="true"-->
+<!--            app:lottie_rawRes="@raw/lf30_editor_24iqgref" />-->
+<!--    </LinearLayout>-->
 
     <!-- Mic + enviar (superpuestos al final) -->
     <LinearLayout
