@@ -30,7 +30,7 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.Adapters.AdapterPhotoReceived;
+import com.zibete.proyecto1.adapters.AdapterPhotoReceived;
 import com.zibete.proyecto1.ChatActivity;
 
 import java.math.BigDecimal;

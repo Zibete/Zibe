@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.Adapters;
+package com.zibete.proyecto1.adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

@@ -153,6 +153,10 @@
             android:parentActivityName=".AuthActivity"
             android:theme="@style/AuthTheme.Zibe" />
 
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Base.Theme.AppCompat" />
+
         <!-- FCM (Android 12+ requiere exported) -->
         <service
             android:name=".FCM"

@@ -8,6 +8,7 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
@@ -28,6 +29,7 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.Chronometer
 import android.widget.EditText
 import android.widget.ImageView
@@ -41,7 +43,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.cardview.widget.CardView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -64,7 +65,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
-import com.zibete.proyecto1.Adapters.AdapterChat
+import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
@@ -98,6 +99,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var photo: ImageView
     private lateinit var rvMsg: RecyclerView
     private lateinit var buttonScrollBack: FloatingActionButton
+    private lateinit var buttonUnlockUser: Button
     private lateinit var timer: Chronometer
     private lateinit var trashAnimated: LottieAnimationView
     private lateinit var trashAnimated2: LottieAnimationView
@@ -106,6 +108,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var layoutBloq: LinearLayout
     private lateinit var iconConnected: ImageView
     private lateinit var iconDisconnected: ImageView
+    private lateinit var cancelAction: ImageView
     private lateinit var tvDate: TextView
 
     // --------- Estado / datos ---------
@@ -185,6 +188,7 @@ class ChatActivity : AppCompatActivity() {
         btnSendMsg = findViewById(R.id.btnSendMsg)
         btnMic = findViewById(R.id.btnMic)
         linearPhotoView = findViewById(R.id.linear_photo_view)
+        cancelAction = findViewById(R.id.cancel_action)
         linearPhoto = findViewById(R.id.linear_photo)
         loadingPhoto = findViewById(R.id.loadingPhoto)
         photo = findViewById(R.id.photo)
@@ -200,6 +204,7 @@ class ChatActivity : AppCompatActivity() {
         iconConnected = findViewById(R.id.icon_conectado)
         iconDisconnected = findViewById(R.id.icon_desconectado)
         buttonScrollBack = findViewById(R.id.buttonScrollBack)
+        buttonUnlockUser = findViewById(R.id.btnDesbloq)
         tvCancelAudio = findViewById(R.id.tv_cancel_audio)
 
         ObjectAnimator.ofFloat(tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
@@ -256,6 +261,7 @@ class ChatActivity : AppCompatActivity() {
         )
 
         // ===== UI listeners =====
+        val photoList = ArrayList<String>()
         btnCamera.setOnClickListener {
             sendPhoto()
         }
@@ -266,6 +272,23 @@ class ChatActivity : AppCompatActivity() {
             trashAnimated.playAnimation()
             DeleteMsgs()
         }
+        cancelAction.setOnClickListener {
+            cancelSendPhoto()
+        }
+        photo.setOnClickListener {
+            photoList.add(stringMsg!!)
+            val intent = Intent(this@ChatActivity, SlidePhotoActivity::class.java).apply {
+                putExtra("photoList", photoList)
+                putExtra("position", 0)
+                putExtra("rotation", 180)
+            }
+            startActivity(intent)
+        }
+        buttonUnlockUser.setOnClickListener {
+            val view = findViewById<View>(android.R.id.content)
+            UserRepository.setUnBlockUser(this@ChatActivity, idUserFinal, nameUserFinal, view, refChatWith)
+        }
+
 
         msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -1315,6 +1338,16 @@ class ChatActivity : AppCompatActivity() {
     private fun deleteChat(ds: DataSnapshot) {
         val chat = ds.getValue(Chats::class.java) ?: return
         adapter.deleteMsg(chat)
+    }
+
+    private fun cancelSendPhoto(){
+        linearPhotoView.visibility = View.GONE;
+        msg.visibility = View.VISIBLE;
+        btnCamera.visibility = View.VISIBLE;
+        btnMic.visibility = View.VISIBLE;
+        btnSendMsg.visibility = View.GONE;
+        msgType = Constants.MSG;
+
     }
 
     // ---------------- Companion ----------------

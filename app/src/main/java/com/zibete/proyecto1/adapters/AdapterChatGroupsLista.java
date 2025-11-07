@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.Adapters;
+package com.zibete.proyecto1.adapters;
 
 import android.content.Context;
 import android.content.Intent;

@@ -79,7 +79,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.zibete.proyecto1.Adapters.AdapterChat;
+import com.zibete.proyecto1.adapters.AdapterChat;
 import com.zibete.proyecto1.model.ChatWith;
 import com.zibete.proyecto1.model.Chats;
 import com.zibete.proyecto1.model.Users;
@@ -105,7 +105,7 @@ import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-import static com.zibete.proyecto1.Adapters.AdapterChat.mediaPlayer;
+import static com.zibete.proyecto1.adapters.AdapterChat.mediaPlayer;
 import static com.zibete.proyecto1.Constants.AUDIO;
 import static com.zibete.proyecto1.Constants.AUDIO_RECEIVER_DLT;
 import static com.zibete.proyecto1.Constants.AUDIO_SENDER_DLT;

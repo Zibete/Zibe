@@ -40,7 +40,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.Adapters.AdapterUsers;
+import com.zibete.proyecto1.adapters.AdapterUsers;
 import com.zibete.proyecto1.FixedSwipeRefreshLayout;
 import com.zibete.proyecto1.R;
 import com.zibete.proyecto1.model.Users;

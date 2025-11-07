@@ -25,7 +25,7 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.zibete.proyecto1.Adapters.AdapterChatLista;
+import com.zibete.proyecto1.adapters.AdapterChatLista;
 import com.zibete.proyecto1.Constants;
 import com.zibete.proyecto1.model.ChatWith;
 import com.zibete.proyecto1.R;

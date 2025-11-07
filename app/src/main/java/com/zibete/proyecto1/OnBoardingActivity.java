@@ -12,7 +12,7 @@ import android.widget.Button;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
-import com.zibete.proyecto1.Adapters.SliderAdapter;
+import com.zibete.proyecto1.adapters.SliderAdapter;
 
 public class OnBoardingActivity extends AppCompatActivity {
 

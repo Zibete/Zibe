@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.Adapters
+package com.zibete.proyecto1.adapters
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -21,7 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.Adapters.AdapterUsers.ViewHolderAdapter
+import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.Constants
 import com.zibete.proyecto1.R

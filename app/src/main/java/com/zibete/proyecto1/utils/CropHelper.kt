@@ -3,7 +3,6 @@ package com.zibete.proyecto1.utils
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -170,33 +169,4 @@ object CropHelper {
         ) { uri -> onCroppedUri.accept(uri) }
     }
 
-    @JvmStatic
-    fun registerLauncherForActivity(
-        activity: androidx.appcompat.app.AppCompatActivity,
-        refSendImages: StorageReference,
-        linearPhotoView: LinearLayout,
-        linearPhoto: LinearLayout,
-        photo: ImageView,
-        loadingPhoto: ProgressBar,
-        msg: EditText,
-        btnCamera: ImageView,
-        btnSendMsg: ImageView,
-        onCroppedUri: java.util.function.Consumer<Uri>
-    ): ActivityResultLauncher<CropImageContractOptions> {
-
-        return registerLauncher(
-            caller = activity,
-            ctx = activity,
-            refSendImages = refSendImages,
-            linearPhotoView = linearPhotoView,
-            linearPhoto = linearPhoto,
-            photo = photo,
-            loadingPhoto = loadingPhoto,
-            msg = msg,
-            btnCamera = btnCamera,
-            btnSendMsg = btnSendMsg
-        ) { uri ->
-            onCroppedUri.accept(uri)
-        }
-    }
 }

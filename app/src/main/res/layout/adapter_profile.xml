@@ -3,16 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:fab="http://schemas.android.com/tools"
     android:background="@color/zibe_night_start"
     android:layout_gravity="center"
     android:orientation="vertical"
     android:id="@+id/coordinatorLayout">
-
-
-
-
-
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -27,21 +21,15 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-
-
-
-
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/scrollable">
 
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
-
 
                 <LinearLayout
                     android:id="@+id/linearImageActivity"
@@ -105,7 +93,6 @@
                         android:src="@drawable/ic_baseline_cancel_schedule_send_24"
                         android:visibility="gone"/>
 
-
                 </LinearLayout>
 
                 <LinearLayout
@@ -116,13 +103,11 @@
                     android:padding="10dp"
                     android:background="@drawable/marco_color_bt">
 
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
 
                         <LinearLayout
                             android:layout_width="wrap_content"
@@ -178,9 +163,6 @@
 
                 </LinearLayout>
 
-
-
-
                 <LinearLayout
                     android:visibility="gone"
                     android:id="@+id/linearPhotos"
@@ -208,7 +190,6 @@
 
                 </LinearLayout>
 
-
                 <LinearLayout
                     android:id="@+id/linear_desc"
                     android:layout_width="match_parent"
@@ -232,15 +213,7 @@
 
             </LinearLayout>
 
-
-
-
         </ScrollView>
-
-
-
-
-
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar_profile"
@@ -286,16 +259,7 @@
             android:layout_marginBottom="15dp"
             app:fab_label="Chat de ZibeApp"/>
 
-
     </com.github.clans.fab.FloatingActionMenu>
-
-
-
-
-
-
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

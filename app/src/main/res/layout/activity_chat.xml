@@ -231,11 +231,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:padding="5dp">
+                    android:padding="8dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
                         android:orientation="horizontal">
 
                         <!-- Preview de foto -->
@@ -243,9 +244,7 @@
                             android:id="@+id/linear_photo_view"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:visibility="gone">
+                            android:orientation="horizontal">
 
                             <LinearLayout
                                 android:id="@+id/linear_photo"
@@ -256,6 +255,7 @@
                                 <androidx.coordinatorlayout.widget.CoordinatorLayout
                                     android:layout_width="match_parent"
                                     android:layout_height="match_parent"
+                                    android:gravity="center"
                                     android:background="@drawable/marco_seekbar">
 
                                     <com.zibete.proyecto1.ui.ResizableImageView
