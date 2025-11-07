@@ -21,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -105,9 +106,12 @@ public class ChatGroupFragment extends Fragment {
     private int msgType;
     LinearLayout linear_photo, layout_chat_group;
     RecyclerView rvMsg;
-    ImageView cameraSelected, storageSelected, photo, cancel_action, img_cancel_dialog;
+    ImageView photo, cancel_action, img_cancel_dialog;
+    MaterialCardView cameraSelection, gallerySelection;
     TextView tv_title;
     ProgressBar progressbar;
+
+    FrameLayout frameSendMsg;
     private ContentValues values;
     private Uri imageUri;
     private Uri resultUri;
@@ -186,6 +190,7 @@ public class ChatGroupFragment extends Fragment {
         buttonScrollBack = view.findViewById(R.id.buttonScrollBack);
         linearBack = view.findViewById(R.id.linearBack);
         layoutChat = view.findViewById(R.id.layoutChat);
+        frameSendMsg = view.findViewById(R.id.frameSendMsg);
         progressbar = view.findViewById(R.id.progressbar2);
 
         cancel_action = view.findViewById(R.id.cancel_action);
@@ -439,6 +444,8 @@ public class ChatGroupFragment extends Fragment {
                 linear_photo,
                 photo,
                 loadingPhoto,
+                loadingPhoto,
+                frameSendMsg,
                 msg,
                 btnCamera,
                 btnSendMsg,
@@ -451,11 +458,11 @@ public class ChatGroupFragment extends Fragment {
     public void sendPhoto() {
 
 
-        final View viewFilter = getLayoutInflater().inflate(R.layout.profile_photo_layout, null);
+        final View viewFilter = getLayoutInflater().inflate(R.layout.select_source_pic, null);
 
         img_cancel_dialog = viewFilter.findViewById(R.id.img_cancel_dialog);
-        cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
-        storageSelected = viewFilter.findViewById(R.id.storageSelected);
+        cameraSelection = viewFilter.findViewById(R.id.cameraSelection);
+        gallerySelection = viewFilter.findViewById(R.id.gallerySelection);
         tv_title = viewFilter.findViewById(R.id.tv_title);
         card_edit_delete = viewFilter.findViewById(R.id.card_edit_delete);
 
@@ -471,7 +478,7 @@ public class ChatGroupFragment extends Fragment {
         dialog.show();
 
 
-        cameraSelected.setOnClickListener(new View.OnClickListener() {
+        cameraSelection.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -499,7 +506,7 @@ public class ChatGroupFragment extends Fragment {
 
         });
 
-        storageSelected.setOnClickListener(new View.OnClickListener() {
+        gallerySelection.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 

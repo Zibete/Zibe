@@ -4,12 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar2"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
-        android:theme="@style/ThemeOverlay.Material3.ActionBar" />
+
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
@@ -23,5 +18,10 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_gravity="center" />
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar2"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

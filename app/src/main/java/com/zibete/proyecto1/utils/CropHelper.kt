@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -49,6 +50,8 @@ object CropHelper {
         linearPhoto: LinearLayout,
         photo: ImageView,
         loadingPhoto: ProgressBar,
+        loadingButton: ProgressBar,
+        frameSendMsg: FrameLayout,
         msg: EditText,
         btnCamera: ImageView,
         btnSendMsg: ImageView,
@@ -66,10 +69,14 @@ object CropHelper {
             val resultUri = result.uriContent ?: return@registerForActivityResult
 
             // 1) Mostrar UI de “foto lista para enviar”
-            linearPhotoView.isVisible = true
+            frameSendMsg.isVisible = true
+            btnSendMsg.isVisible = false
             msg.isVisible = false
             btnCamera.isVisible = false
-            btnSendMsg.isVisible = true
+
+            linearPhotoView.isVisible = true
+            loadingPhoto.isVisible = true
+            loadingButton.isVisible = true
 
             // 2) Ajustar tamaño de preview (cuadrado = 1/3 del ancho)
             val width = ctx.resources.displayMetrics.widthPixels
@@ -85,8 +92,6 @@ object CropHelper {
                 .addOnSuccessListener { snap ->
                     snap.storage.downloadUrl.addOnSuccessListener { downloadUri ->
                         // Mostrar spinner mientras carga Glide
-                        loadingPhoto.isVisible = true
-
                         Glide.with(ctx)
                             .load(downloadUri.toString())
                             .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
@@ -97,7 +102,6 @@ object CropHelper {
                                     target: Target<Drawable>?,
                                     isFirstResource: Boolean
                                 ): Boolean {
-                                    loadingPhoto.isVisible = false
                                     return false
                                 }
 
@@ -108,7 +112,6 @@ object CropHelper {
                                     dataSource: DataSource?,
                                     isFirstResource: Boolean
                                 ): Boolean {
-                                    loadingPhoto.isVisible = false
                                     return false
                                 }
                             })
@@ -120,7 +123,6 @@ object CropHelper {
         }
     }
 
-
     @JvmStatic
     fun launchCrop(
         launcher: ActivityResultLauncher<CropImageContractOptions>,
@@ -130,14 +132,8 @@ object CropHelper {
             guidelines = CropImageView.Guidelines.ON
             outputRequestWidth = 1920
             outputRequestHeight = 1080
-            fixAspectRatio = true
-            aspectRatioX = 1
-            aspectRatioY = 1
-            activityMenuIconColor = 0xFFFFFFFF.toInt()
-            toolbarColor = 0xFF222222.toInt()
-            toolbarTitleColor = 0xFFFFFFFF.toInt()
-            progressBarColor = 0xFFFFFFFF.toInt()
         }
+
         val contract = CropImageContractOptions(imageUri, options)
         launcher.launch(contract)
     }
@@ -150,6 +146,8 @@ object CropHelper {
         linearPhoto: LinearLayout,
         photo: ImageView,
         loadingPhoto: ProgressBar,
+        loadingButton: ProgressBar,
+        frameSendMsg : FrameLayout,
         msg: EditText,
         btnCamera: ImageView,
         btnSendMsg: ImageView,
@@ -163,6 +161,8 @@ object CropHelper {
             linearPhoto = linearPhoto,
             photo = photo,
             loadingPhoto = loadingPhoto,
+            loadingButton = loadingButton,
+            frameSendMsg = frameSendMsg,
             msg = msg,
             btnCamera = btnCamera,
             btnSendMsg = btnSendMsg

@@ -32,6 +32,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Chronometer
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -96,6 +97,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var linearPhotoView: LinearLayout
     private lateinit var linearPhoto: LinearLayout
     private lateinit var loadingPhoto: ProgressBar
+    private lateinit var loadingButton: ProgressBar
     private lateinit var photo: ImageView
     private lateinit var rvMsg: RecyclerView
     private lateinit var buttonScrollBack: FloatingActionButton
@@ -106,6 +108,8 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var linearLottie: LinearLayout
     private lateinit var layoutChat: LinearLayout
     private lateinit var layoutBloq: LinearLayout
+
+    private lateinit var frameSendMsg: FrameLayout
     private lateinit var iconConnected: ImageView
     private lateinit var iconDisconnected: ImageView
     private lateinit var cancelAction: ImageView
@@ -191,6 +195,7 @@ class ChatActivity : AppCompatActivity() {
         cancelAction = findViewById(R.id.cancel_action)
         linearPhoto = findViewById(R.id.linear_photo)
         loadingPhoto = findViewById(R.id.loadingPhoto)
+        loadingButton = findViewById(R.id.loadingButton)
         photo = findViewById(R.id.photo)
         linearTimer = findViewById(R.id.linear_timer)
         timer = findViewById(R.id.timer)
@@ -201,6 +206,7 @@ class ChatActivity : AppCompatActivity() {
         linearLottie = findViewById(R.id.linearLottie)
         layoutChat = findViewById(R.id.layoutChat)
         layoutBloq = findViewById(R.id.layoutBloq)
+        frameSendMsg = findViewById(R.id.frameSendMsg)
         iconConnected = findViewById(R.id.icon_conectado)
         iconDisconnected = findViewById(R.id.icon_desconectado)
         buttonScrollBack = findViewById(R.id.buttonScrollBack)
@@ -228,12 +234,14 @@ class ChatActivity : AppCompatActivity() {
         initActivityResultLaunchers()
 
         // --- estado inicial botones ---
-        msg.visibility = View.VISIBLE
-        btnMic.visibility = View.VISIBLE
-        btnCamera.visibility = View.VISIBLE
-        btnSendMsg.visibility = View.GONE
-        linearPhotoView.visibility = View.GONE
-        loadingPhoto.visibility = View.GONE
+        msg.isVisible = true
+        btnMic.isVisible = true
+        btnCamera.isVisible = true
+        loadingButton.isVisible = false
+        frameSendMsg.isVisible = false
+        btnSendMsg.isVisible = false
+        linearPhotoView.isVisible = false
+        loadingPhoto.isVisible = false
 
         // --- extras ---
         UserRepository.setUserOnline(applicationContext, user!!.uid)
@@ -254,11 +262,29 @@ class ChatActivity : AppCompatActivity() {
             linearPhoto = linearPhoto,
             photo = photo,
             loadingPhoto = loadingPhoto,
+            loadingButton = loadingButton,
+            frameSendMsg = frameSendMsg,
             msg = msg,
             btnCamera = btnCamera,
-            btnSendMsg = btnSendMsg,
-            onCroppedUri = { /* opcional */ }
-        )
+            btnSendMsg = btnSendMsg
+        ) { uri ->
+            if (uri != null) {
+                // Hay foto lista para enviar
+                msgType = Constants.PHOTO
+                stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
+                btnMic.isVisible = false
+                loadingPhoto.isVisible = false
+                loadingButton.isVisible = false
+                frameSendMsg.isVisible = true
+                btnSendMsg.isVisible = true
+
+            } else {
+                // Se canceló / falló el crop
+                msgType = Constants.MSG
+                stringMsg = null
+                cancelSendPhoto()
+            }
+        }
 
         // ===== UI listeners =====
         val photoList = ArrayList<String>()
@@ -293,27 +319,30 @@ class ChatActivity : AppCompatActivity() {
         msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 if (msg.text.isEmpty()) {
-                    btnCamera.visibility = View.VISIBLE
-                    btnMic.visibility = View.VISIBLE
-                    btnSendMsg.visibility = View.GONE
+                    btnCamera.isVisible = true
+                    btnMic.isVisible = true
+                    btnSendMsg.isVisible = false
+                    frameSendMsg.isVisible = false
                 }
             }
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (msg.text.isNotEmpty()) {
-                    btnCamera.visibility = View.GONE
-                    btnMic.visibility = View.GONE
-                    btnSendMsg.visibility = View.VISIBLE
-                    FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado")
+                    btnCamera.isVisible = false
+                    btnMic.isVisible = false
+                    btnSendMsg.isVisible = true
+                    frameSendMsg.isVisible = true
+                    FirebaseRefs.refDatos.child(user.uid).child("Estado").child("estado")
                         .setValue(getString(R.string.escribiendo))
-                    FirebaseRefs.refCuentas.child(user!!.uid).child("estado").setValue(true)
+                    FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
                 }
             }
             override fun afterTextChanged(s: Editable?) {
                 if (msg.text.isEmpty()) {
-                    btnCamera.visibility = View.VISIBLE
-                    btnMic.visibility = View.VISIBLE
-                    btnSendMsg.visibility = View.GONE
-                    UserRepository.setUserOnline(applicationContext, user!!.uid)
+                    btnCamera.isVisible = true
+                    btnMic.isVisible = true
+                    btnSendMsg.isVisible = false
+                    frameSendMsg.isVisible = false
+                    UserRepository.setUserOnline(applicationContext, user.uid)
                 }
             }
         })
@@ -514,15 +543,16 @@ class ChatActivity : AppCompatActivity() {
 
     // ----------------------------- Cámara / Galería / Crop -----------------------------
     private fun sendPhoto() {
+
         if (estadoUser == "bloq") {
             snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
             return
         }
 
-        val viewFilter = layoutInflater.inflate(R.layout.profile_photo_layout, null)
+        val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
         val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
-        val cameraOpt = viewFilter.findViewById<ImageView>(R.id.cameraSelected)
-        val storageOpt = viewFilter.findViewById<ImageView>(R.id.storageSelected)
+        val cameraSelection = viewFilter.findViewById<MaterialCardView>(R.id.cameraSelection)
+        val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
         val title = viewFilter.findViewById<TextView>(R.id.tv_title)
         viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).visibility = View.GONE
         title.text = getString(R.string.enviar_desde)
@@ -532,21 +562,23 @@ class ChatActivity : AppCompatActivity() {
             .create()
         dialog.show()
 
-        cameraOpt.setOnClickListener {
+        cameraSelection.setOnClickListener {
             ensurePermissions(arrayOf(Manifest.permission.CAMERA)) {
                 startCameraModern()
             }
             dialog.dismiss()
         }
 
-        storageOpt.setOnClickListener {
+        gallerySelection.setOnClickListener {
             pickImageLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
             dialog.dismiss()
         }
 
-        imgCancel.setOnClickListener { dialog.dismiss() }
+        imgCancel.setOnClickListener {
+            dialog.dismiss()
+        }
     }
 
     private fun startCameraModern() {
@@ -860,7 +892,12 @@ class ChatActivity : AppCompatActivity() {
         val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
         val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
 
-        val chatmsg = Chats(stringMsg!!, finalDate, user!!.uid, msgType, visto)
+        val chatmsg = Chats(
+            stringMsg!!,
+            finalDate,
+            user.uid,
+            msgType,
+            visto)
 
         startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(sbMe: DataSnapshot) {
@@ -880,16 +917,16 @@ class ChatActivity : AppCompatActivity() {
         })
 
         val miChat = ChatWith(
-            textMiChatw!!, finalDate, null, user!!.uid,
-            idUserFinal!!, nameUserFinal!!, yourPhoto!!, estadoYo!!, miNoVisto, 0
+            textMiChatw!!, finalDate, null, user.uid,
+            idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
         )
-        FirebaseRefs.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
+        FirebaseRefs.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
 
-        if (suActual != user!!.uid + refChatWith || suActual == null) {
+        if (suActual != user.uid + refChatWith || suActual == null) {
             val count = noVisto + 1
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, user!!.uid,
-                user!!.uid, myName!!, myPhoto!!, estadoUser!!, count, 1
+                textSuChatw!!, finalDate, null, user.uid,
+                user.uid, myName!!, myPhoto, estadoUser!!, count, 1
             )
             FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user!!.uid)
                 .setValue(suChat)
@@ -912,17 +949,17 @@ class ChatActivity : AppCompatActivity() {
                 ) {
                     override fun getHeaders(): MutableMap<String, String> = hashMapOf(
                         "content-type" to "application/json",
-                        "authorization" to "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_..." // tu key
+                        "authorization" to "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
                     )
                 }
                 Volley.newRequestQueue(applicationContext).add(req)
             }
         } else {
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, user!!.uid,
-                user!!.uid, myName!!, myPhoto!!, estadoUser!!, 0, 3
+                textSuChatw!!, finalDate, null, user.uid,
+                user.uid, myName!!, myPhoto, estadoUser!!, 0, 3
             )
-            FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user!!.uid)
+            FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user.uid)
                 .setValue(suChat)
         }
 
@@ -1341,12 +1378,14 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun cancelSendPhoto(){
-        linearPhotoView.visibility = View.GONE;
-        msg.visibility = View.VISIBLE;
-        btnCamera.visibility = View.VISIBLE;
-        btnMic.visibility = View.VISIBLE;
-        btnSendMsg.visibility = View.GONE;
-        msgType = Constants.MSG;
+        linearPhotoView.isVisible = false
+        msg.isVisible = true
+        btnCamera.isVisible = true
+        btnMic.isVisible = true
+        btnSendMsg.isVisible = false
+        frameSendMsg.isVisible = false
+
+        msgType = Constants.MSG
 
     }
 

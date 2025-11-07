@@ -381,10 +381,10 @@ public class EditProfileFragment extends Fragment {
             return;
         }
 
-        final View viewFilter = getLayoutInflater().inflate(R.layout.profile_photo_layout, null);
+        final View viewFilter = getLayoutInflater().inflate(R.layout.select_source_pic, null);
         ImageView deleteSelected = viewFilter.findViewById(R.id.deleteSelected);
-        ImageView cameraSelected = viewFilter.findViewById(R.id.cameraSelected);
-        ImageView storageSelected = viewFilter.findViewById(R.id.storageSelected);
+        MaterialCardView cameraSelection = viewFilter.findViewById(R.id.cameraSelection);
+        MaterialCardView gallerySelection = viewFilter.findViewById(R.id.gallerySelection);
         TextView tv_title = viewFilter.findViewById(R.id.tv_title);
         MaterialCardView card_edit_delete = viewFilter.findViewById(R.id.card_edit_delete);
         ImageView img_cancel_dialog = viewFilter.findViewById(R.id.img_cancel_dialog);
@@ -424,14 +424,14 @@ public class EditProfileFragment extends Fragment {
             dialog.dismiss();
         });
 
-        cameraSelected.setOnClickListener(v -> {
+        cameraSelection.setOnClickListener(v -> {
             startCamera();
             dialog.dismiss();
         });
 
         img_cancel_dialog.setOnClickListener(v -> dialog.dismiss());
 
-        storageSelected.setOnClickListener(v -> {
+        gallerySelection.setOnClickListener(v -> {
             Intent gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             try {
                 startActivityForResult(gallery, PHOTO_SELECTED);

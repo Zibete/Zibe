@@ -83,7 +83,7 @@
 
         <activity
             android:name=".SlidePhotoActivity"
-            android:theme="@style/AppTheme.MainActivity" />
+            android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".SlideProfileActivity"
             android:theme="@style/AppTheme.MainActivity" />
