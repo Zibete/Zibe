@@ -53,7 +53,7 @@ import static com.zibete.proyecto1.Constants.maxChatSize;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 
 public class PerfilActivity extends AppCompatActivity {
 

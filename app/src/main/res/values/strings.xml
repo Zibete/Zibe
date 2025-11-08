@@ -97,6 +97,7 @@
     <string name="notificaciones">Notificaciones</string>
     <string name="guardar">Guardar</string>
     <string name="cerrar">cerrar</string>
+    <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
 
     <string-array name="edad">
         <item>18</item>

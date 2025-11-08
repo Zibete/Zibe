@@ -203,14 +203,32 @@
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_menu_camera" />
 
-                    <ImageView
-                        android:id="@+id/btnSendMsg"
-                        android:layout_gravity="center|bottom"
-                        android:padding="9dp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_baseline_send_24"
-                        android:visibility="gone"/>
+                    <FrameLayout
+                        android:id="@+id/frameSendMsg"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_gravity="end|bottom"
+                        android:background="@drawable/marco_color_b_round"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:clipToPadding="false">
+
+                        <!-- Botón enviar -->
+                        <ImageView
+                            android:id="@+id/btnSendMsg"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="16dp"
+                            android:src="@drawable/ic_baseline_send_24"/>
+
+                        <ProgressBar
+                            android:id="@+id/loadingButton"
+                            style="?android:attr/progressBarStyleSmall"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:indeterminate="true" />
+                    </FrameLayout>
+
 
                 </LinearLayout>
 

@@ -20,35 +20,30 @@
         app:strokeColor="#99FFFFFF"
         app:strokeWidth="0dp">
 
-        <!-- Fondo tipo vidrio (translúcido + leve degradado) -->
         <FrameLayout
             android:id="@+id/glass_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/bg_glass_morphism">
 
-            <!-- capa de glow animado -->
             <View
                 android:id="@+id/glow_border"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_glow_zibe"
-                android:alpha="0.9"/>
+                android:alpha="0.9" />
 
-            <!-- Blur real -->
             <eightbitlab.com.blurview.BlurView
-                android:id="@+id/blur_view_groups"
+                android:id="@+id/blur_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-            <!-- CONTENIDO -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="12dp">
 
-                <!-- Título + divisor -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -73,7 +68,6 @@
                         android:background="#33FFFFFF" />
                 </LinearLayout>
 
-                <!-- Data scrolling/marquee -->
                 <TextView
                     android:id="@+id/tv_data_group"
                     android:layout_width="match_parent"
@@ -87,14 +81,8 @@
                     android:scrollHorizontally="true"
                     android:singleLine="true"
                     android:textColor="@color/zibe_text_light"
-                    android:textSize="@dimen/text_size_normal">
-                    <requestFocus
-                        android:focusable="true"
-                        android:focusableInTouchMode="true"
-                        android:duplicateParentState="true" />
-                </TextView>
+                    android:textSize="@dimen/text_size_normal" />
 
-                <!-- Fila inferior: icono grupo + cantidad -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -116,7 +104,6 @@
                         android:textColor="@color/zibe_text_light"
                         android:textSize="@dimen/text_size_normal" />
                 </LinearLayout>
-
             </LinearLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>

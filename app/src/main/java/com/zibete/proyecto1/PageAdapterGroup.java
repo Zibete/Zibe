@@ -26,7 +26,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.rahimlis.badgedtablayout.BadgedTabLayout;
-import com.zibete.proyecto1.ui.ChatList.ChatListGroupsFragment;
+import com.zibete.proyecto1.adapters.ChatListGroupsFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ import java.util.List;
 import static com.zibete.proyecto1.Constants.chatWithUnknown;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 
 public class PageAdapterGroup extends Fragment {
 

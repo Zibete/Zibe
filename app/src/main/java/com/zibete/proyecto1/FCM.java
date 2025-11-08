@@ -26,9 +26,9 @@ import static com.zibete.proyecto1.Constants.unknown;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChats;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.MainActivity.toolbar;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupNotifications;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.individualNotifications;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupNotifications;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.individualNotifications;
 
 public class FCM extends FirebaseMessagingService {
 

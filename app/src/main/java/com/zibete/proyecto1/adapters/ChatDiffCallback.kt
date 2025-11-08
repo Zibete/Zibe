@@ -5,8 +5,8 @@ import androidx.recyclerview.widget.DiffUtil
 import com.zibete.proyecto1.model.ChatWith
 
 class ChatDiffCallback(
-    private val newList: ArrayList<ChatWith>,
-    private val oldList: ArrayList<ChatWith>
+    private val newList: List<ChatWith>,
+    private val oldList: List<ChatWith>
 ) : DiffUtil.Callback() {
 
     override fun getOldListSize() = oldList.size

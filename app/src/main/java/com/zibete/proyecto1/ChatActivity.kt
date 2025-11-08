@@ -70,7 +70,7 @@ import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment
+import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.user
@@ -136,6 +136,7 @@ class ChatActivity : AppCompatActivity() {
     private val extraUserList = ArrayList<Users?>()
     private lateinit var adapter: AdapterChat
     private lateinit var mLayoutManager: LinearLayoutManager
+    private lateinit var linearNameUser: LinearLayout
 
     // --------- media / storage ---------
     private var imageUriCamera: Uri? = null
@@ -204,6 +205,7 @@ class ChatActivity : AppCompatActivity() {
         trashAnimated = findViewById(R.id.trashAnimated)
         trashAnimated2 = findViewById(R.id.trashAnimated2)
         linearLottie = findViewById(R.id.linearLottie)
+        linearNameUser = findViewById(R.id.linearNameUser)
         layoutChat = findViewById(R.id.layoutChat)
         layoutBloq = findViewById(R.id.layoutBloq)
         frameSendMsg = findViewById(R.id.frameSendMsg)
@@ -312,8 +314,20 @@ class ChatActivity : AppCompatActivity() {
         }
         buttonUnlockUser.setOnClickListener {
             val view = findViewById<View>(android.R.id.content)
-            UserRepository.setUnBlockUser(this@ChatActivity, idUserFinal, nameUserFinal, view, refChatWith)
+            UserRepository.setUnBlockUser(this@ChatActivity, idUserFinal!!, nameUserFinal!!, view, refChatWith!!)
         }
+
+        linearNameUser.setOnClickListener { v ->
+            if (extraUserList.size == 1) {
+                val intent = Intent(this, SlideProfileActivity::class.java)
+                extraUserList.reverse()
+                intent.putExtra("userList", extraUserList)
+                intent.putExtra("position", 0)
+                intent.putExtra("rotation", 0)
+                v.context.startActivity(intent)
+            }
+        }
+
 
 
         msg.addTextChangedListener(object : TextWatcher {
@@ -1135,7 +1149,7 @@ class ChatActivity : AppCompatActivity() {
 
         UserRepository.stateUser(
             applicationContext,
-            idUserFinal,
+            idUserFinal!!,
             iconConnected,
             iconDisconnected,
             tvState,

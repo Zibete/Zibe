@@ -64,11 +64,10 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.zibete.proyecto1.model.ChatWith;
 import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
-import com.zibete.proyecto1.ui.ChatList.ChatListFragment;
+import com.zibete.proyecto1.adapters.ChatListFragment;
 import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.FavoritesFragment;
 import com.zibete.proyecto1.ui.GruposFragment;
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
 import com.zibete.proyecto1.utils.FirebaseRefs;
 import com.zibete.proyecto1.utils.UserRepository;
 
@@ -85,13 +84,13 @@ import static com.zibete.proyecto1.Constants.listenerGroupBadge;
 import static com.zibete.proyecto1.Constants.listenerMsgUnreadBadge;
 import static com.zibete.proyecto1.Constants.listenerToken; // Usamos este handle global existente
 import static com.zibete.proyecto1.PageAdapterGroup.valueEventListenerTitle;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.inGroup;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.readGroupMsg;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userDate;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userName;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.editor;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.inGroup;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.readGroupMsg;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userDate;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userType;
 import static com.zibete.proyecto1.utils.FirebaseRefs.user;
 
 public class MainActivity extends AppCompatActivity {
@@ -406,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
                     layoutSettings.setVisibility(View.VISIBLE);
                     invalidateOptionsMenu();
 
-                    Fragment newFragment = new UsuariosFragment();
+                    Fragment newFragment = new EditProfileFragment.UsuariosFragment();
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.nav_host_fragment, newFragment);
                     toolbar.setTitle(R.string.menu_usuarios);
@@ -658,7 +657,7 @@ public class MainActivity extends AppCompatActivity {
         // Quitamos el listener del nodo "installId"
         FirebaseRefs.refCuentas.child(user.getUid()).child("installId").removeEventListener(listenerToken);
 
-        UsuariosFragment.DeletePreferences();
+        EditProfileFragment.UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences(this);
 
         FirebaseAuth.getInstance().signOut();

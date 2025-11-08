@@ -40,7 +40,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupData;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 
 public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.viewHolderAdapter> implements Filterable {
 

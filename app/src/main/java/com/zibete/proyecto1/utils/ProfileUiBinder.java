@@ -3,7 +3,7 @@ package com.zibete.proyecto1.utils;
 import static com.zibete.proyecto1.Constants.PHOTO;
 import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
 import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;

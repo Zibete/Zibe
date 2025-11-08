@@ -27,7 +27,7 @@ import com.zibete.proyecto1.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment
+import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
 import com.zibete.proyecto1.utils.DateUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.GlassEffect

@@ -55,7 +55,6 @@ import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
 import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.GruposFragment;
-import com.zibete.proyecto1.ui.Usuarios.UsuariosFragment;
 import com.zibete.proyecto1.utils.UserRepository;
 
 import java.text.SimpleDateFormat;
@@ -74,15 +73,15 @@ import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.PageAdapterGroup.valueEventListenerTitle;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.editor;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.groupNotifications;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.inGroup;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.individualNotifications;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.readGroupMsg;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userDate;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userName;
-import static com.zibete.proyecto1.ui.Usuarios.UsuariosFragment.userType;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.editor;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupNotifications;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.inGroup;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.individualNotifications;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.readGroupMsg;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userDate;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userName;
+import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.userType;
 
 
 public class SettingsActivity extends AppCompatActivity {
@@ -713,7 +712,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
 
-        UsuariosFragment.DeletePreferences();
+        EditProfileFragment.UsuariosFragment.DeletePreferences();
         EditProfileFragment.DeleteProfilePreferences(this);
 
         FirebaseAuth.getInstance().signOut();

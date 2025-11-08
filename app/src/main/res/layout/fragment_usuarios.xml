@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@mipmap/logo_zibe"
-    tools:context=".ui.Usuarios.UsuariosFragment">
+    tools:context=".ui.EditProfileFragment$UsuariosFragment">
 
     <com.zibete.proyecto1.FixedSwipeRefreshLayout
         android:id="@+id/swipe_refresh"

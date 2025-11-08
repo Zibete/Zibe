@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Contenedor principal -->
     <com.zibete.proyecto1.FixedSwipeRefreshLayout
         android:id="@+id/group_swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
         <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <!-- Lista de grupos -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_groups"
                 android:layout_width="match_parent"
@@ -25,14 +21,12 @@
                 android:paddingHorizontal="8dp"
                 android:clipToPadding="false" />
 
-            <!-- Círculo de progreso -->
             <ProgressBar
                 android:id="@+id/progressbar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:paddingHorizontal="120dp" />
 
-            <!-- Botón flotante para nuevo grupo -->
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab_new_group"
                 android:layout_width="wrap_content"
@@ -46,5 +40,4 @@
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     </com.zibete.proyecto1.FixedSwipeRefreshLayout>
-
 </LinearLayout>
