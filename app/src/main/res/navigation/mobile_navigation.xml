@@ -21,7 +21,7 @@
 
     <fragment
         android:id="@+id/nav_chat"
-        android:name="com.zibete.proyecto1.adapters.ChatListFragment"
+        android:name="com.zibete.proyecto1.ui.ChatListFragment"
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_chat_list"/>
 

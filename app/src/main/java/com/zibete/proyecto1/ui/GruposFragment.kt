@@ -8,18 +8,15 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterGroups
 import com.zibete.proyecto1.databinding.FragmentGruposBinding
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import java.util.*
 
 class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
@@ -29,11 +26,15 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private lateinit var adapter: AdapterGroups
     private lateinit var layoutManager: GridLayoutManager
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     private val groupsArrayList = ArrayList<Groups>()
     private val originalGroupsArrayList = ArrayList<Groups>()
     private val groupsArrayList2 = ArrayList<Groups>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,7 +42,6 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentGruposBinding.inflate(inflater, container, false)
-        setHasOptionsMenu(true)
 
         setupRecycler()
         setupSwipeRefresh()
@@ -51,14 +51,19 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         return binding.root
     }
 
-    // --- Inicialización UI ---
+    // ---------- UI / Recycler ----------
 
     private fun setupRecycler() = with(binding) {
         layoutManager = GridLayoutManager(requireContext(), 2).apply {
             reverseLayout = false
         }
 
-        adapter = AdapterGroups(groupsArrayList, originalGroupsArrayList, requireContext())
+        adapter = AdapterGroups(
+            groupsList = groupsArrayList,
+            originalGroupsArrayList = originalGroupsArrayList,
+            context = requireContext()
+        )
+
         rvGroups.layoutManager = layoutManager
         rvGroups.adapter = adapter
     }
@@ -77,13 +82,16 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         }
     }
 
-    // --- Lógica principal de carga de grupos ---
+    // ---------- Carga de grupos ----------
 
     fun loadGroups(flag: String) {
-        binding.progressbar.isVisible = true
+        val b = _binding ?: return
+        b.progressbar.isVisible = true
 
         refGroupData.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val binding = _binding ?: return  // vista destruida, salimos
+
                 if (!dataSnapshot.exists()) {
                     binding.progressbar.isVisible = false
                     Toast.makeText(requireContext(), "No hay Grupos", Toast.LENGTH_SHORT).show()
@@ -96,15 +104,19 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
                 originalGroupsArrayList.clear()
 
+                // Por cada grupo en DB
                 for (snapshot in dataSnapshot.children) {
                     val group = snapshot.getValue(Groups::class.java) ?: continue
                     val nombre = snapshot.child("name").getValue(String::class.java) ?: continue
 
+                    // Obtener cantidad de usuarios del grupo
                     refGroupUsers.child(nombre)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             @SuppressLint("SetTextI18n")
-                            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                val counter = dataSnapshot.childrenCount.toInt()
+                            override fun onDataChange(usersSnap: DataSnapshot) {
+                                val bindingInner = _binding ?: return
+
+                                val counter = usersSnap.childrenCount.toInt()
                                 group.users = counter
 
                                 if (flag == "load") {
@@ -122,16 +134,23 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
                                 }
 
                                 setScrollbar()
+                                bindingInner.progressbar.isVisible = false
                             }
 
-                            override fun onCancelled(error: DatabaseError) {}
+                            override fun onCancelled(error: DatabaseError) {
+                                // Si falla este hijo, ocultamos progress solo si sigue visible
+                                _binding?.progressbar?.isVisible = false
+                            }
                         })
                 }
 
+                // Si no hay hijos o ya terminó el loop sin callbacks extra
                 binding.progressbar.isVisible = false
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                _binding?.progressbar?.isVisible = false
+            }
         })
     }
 
@@ -142,21 +161,24 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun setScrollbar() {
-        if (adapter.itemCount > 0) {
-            binding.rvGroups.scrollToPosition(0)
+        val b = _binding ?: return
+        if (::adapter.isInitialized && adapter.itemCount > 0) {
+            b.rvGroups.scrollToPosition(0)
         }
     }
 
-    // --- Filtro de búsqueda ---
+    // ---------- SearchView ----------
 
     override fun onQueryTextSubmit(query: String?): Boolean = false
 
     override fun onQueryTextChange(newText: String?): Boolean {
-        adapter.filter.filter(newText)
+        if (::adapter.isInitialized) {
+            adapter.filter.filter(newText)
+        }
         return true
     }
 
-    // --- Menú superior ---
+    // ---------- Menú ----------
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
@@ -176,6 +198,8 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         val searchView = actionSearch.actionView as? SearchView
         searchView?.setOnQueryTextListener(this)
     }
+
+    // ---------- Ciclo de vida ----------
 
     override fun onDestroyView() {
         super.onDestroyView()

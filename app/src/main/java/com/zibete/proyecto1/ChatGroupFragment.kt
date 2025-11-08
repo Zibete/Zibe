@@ -3,6 +3,7 @@ package com.zibete.proyecto1
 import android.Manifest
 import android.app.Activity
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.NotificationManager
 import android.app.ProgressDialog
 import android.content.ContentValues
@@ -10,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.Editable
@@ -23,6 +25,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -51,6 +55,7 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.FirebaseRefs.user
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
@@ -63,8 +68,6 @@ class ChatGroupFragment : Fragment() {
 
     private var _binding: FragmentGroupBinding? = null
     private val binding get() = _binding!!
-
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     private val chatsArrayList: ArrayList<ChatsGroup> = ArrayList()
     private var adapter: AdapterChatGroup? = null
@@ -79,6 +82,14 @@ class ChatGroupFragment : Fragment() {
 
     private val photoList: ArrayList<String?> = ArrayList()
 
+    // Camera / gallery
+    private var imageUriCamera: Uri? = null
+    private lateinit var pickImageLauncher: ActivityResultLauncher<PickVisualMediaRequest>
+    private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
+    private lateinit var requestPermissionsLauncher: ActivityResultLauncher<Array<String>>
+    private var onPermissionsGranted: (() -> Unit)? = null
+
+
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageReference: StorageReference = storage.reference
     private val refSendImages: StorageReference by lazy {
@@ -91,6 +102,7 @@ class ChatGroupFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+        initActivityResultLaunchers()
     }
 
     @SuppressLint("InflateParams")
@@ -177,6 +189,7 @@ class ChatGroupFragment : Fragment() {
         // Estado inicial
         btnCamera.isVisible = true
         btnSendMsg.isVisible = false
+        frameSendMsg.isVisible = false
         loadingButton.isVisible = false
         linearPhotoView.isVisible = false
 
@@ -341,63 +354,27 @@ class ChatGroupFragment : Fragment() {
         tvTitle.text = getString(R.string.enviar_desde)
         cardEditDelete.isVisible = false
 
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(
+        val dialog = AlertDialog.Builder(
             ContextThemeWrapper(requireContext(), R.style.AlertDialogApp)
         )
             .setView(viewFilter)
-            .setCancelable(true)
             .create()
 
         dialog.show()
 
+        // Cámara
         cameraSelection.setOnClickListener {
-            val permissions = arrayOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-
-            val ctx = requireContext()
-            val readGranted = ContextCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-            val writeGranted = ContextCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-            val camGranted = ContextCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!camGranted || !writeGranted || !readGranted) {
-                requestPermissions(permissions, Constants.CAMERA_SELECTED)
-            } else {
-                startCamera()
+            ensurePermissions(arrayOf(Manifest.permission.CAMERA)) {
+                startCameraModern()
             }
             dialog.dismiss()
         }
 
+        // Galería
         gallerySelection.setOnClickListener {
-            val ctx = requireContext()
-            val writeGranted = ContextCompat.checkSelfPermission(
-                ctx,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!writeGranted) {
-                requestPermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    Constants.PHOTO_SELECTED
-                )
-            } else {
-                val gallery = Intent(
-                    Intent.ACTION_PICK,
-                    MediaStore.Images.Media.INTERNAL_CONTENT_URI
-                )
-                startActivityForResult(gallery, Constants.PHOTO_SELECTED)
-            }
+            pickImageLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
             dialog.dismiss()
         }
 
@@ -531,9 +508,13 @@ class ChatGroupFragment : Fragment() {
     // ================== SCROLL ==================
 
     private fun setScrollbar() {
+        val b = _binding ?: return              // Si la vista ya no existe, no hacemos nada
         val count = adapter?.itemCount ?: return
-        if (count > 0) binding.rvMsg.scrollToPosition(count - 1)
+        if (count > 0) {
+            b.rvMsg.scrollToPosition(count - 1)
+        }
     }
+
 
     // ================== MENU ==================
 
@@ -554,80 +535,156 @@ class ChatGroupFragment : Fragment() {
 
     // ================== CAMERA / GALLERY (LEGACY) ==================
 
-    private fun startCamera() {
-        values = ContentValues().apply {
-            put(
-                MediaStore.Images.Media.DESCRIPTION,
-                System.currentTimeMillis().toString()
-            )
+    private fun initActivityResultLaunchers() {
+        // Galería (Photo Picker)
+        pickImageLauncher = registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
+            if (uri != null) {
+                // Mismo flujo que cuando viene de cámara
+                CropHelper.launchCrop(
+                    cropImageLauncher,
+                    uri
+                )
+            }
         }
 
-        imageUri = requireContext().contentResolver.insert(
+        // Cámara moderna
+        takePictureLauncher = registerForActivityResult(
+            ActivityResultContracts.TakePicture()
+        ) { success ->
+            if (success && imageUriCamera != null) {
+                CropHelper.launchCrop(
+                    cropImageLauncher,
+                    imageUriCamera!!
+                )
+            } else {
+                imageUriCamera = null
+            }
+        }
+
+        // Permisos múltiples
+        requestPermissionsLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { result ->
+            val allGranted = result.values.all { it == true }
+            if (allGranted) {
+                onPermissionsGranted?.invoke()
+            }
+            onPermissionsGranted = null
+        }
+    }
+
+    private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
+        val need = perms.any {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (need) {
+            onPermissionsGranted = onGranted
+            requestPermissionsLauncher.launch(perms)
+        } else {
+            onGranted()
+        }
+    }
+
+    private fun startCameraModern() {
+        val ctx = requireContext()
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT >= 29) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Zibe")
+            }
+        }
+
+        imageUriCamera = ctx.contentResolver.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             values
         )
 
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+        if (imageUriCamera == null) {
+            // si querés, usa un Toast o similar
+            // Toast.makeText(ctx, "No se pudo abrir la cámara", Toast.LENGTH_SHORT).show()
+            return
         }
-        startActivityForResult(intent, Constants.CAMERA_SELECTED)
+
+        takePictureLauncher.launch(imageUriCamera)
     }
 
-    @Deprecated("startActivityForResult legacy usage, mantenido por compatibilidad")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+//    private fun startCamera() {
+//        values = ContentValues().apply {
+//            put(
+//                MediaStore.Images.Media.DESCRIPTION,
+//                System.currentTimeMillis().toString()
+//            )
+//        }
+//
+//        imageUri = requireContext().contentResolver.insert(
+//            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+//            values
+//        )
+//
+//        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+//            putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
+//        }
+//        startActivityForResult(intent, Constants.CAMERA_SELECTED)
+//    }
 
-        if (resultCode != Activity.RESULT_OK) return
-
-        progress?.apply {
-            setMessage("Espere...")
-            setCanceledOnTouchOutside(false)
-            show()
-        }
-
-        when (requestCode) {
-            Constants.CAMERA_SELECTED -> {
-                imageUri?.let { uri ->
-                    CropHelper.launchCrop(cropImageLauncher, uri)
-                }
-            }
-            Constants.PHOTO_SELECTED -> {
-                val selected = data?.data
-                if (selected != null) {
-                    CropHelper.launchCrop(cropImageLauncher, selected)
-                }
-            }
-        }
-
-        progress?.dismiss()
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == Constants.CAMERA_SELECTED &&
-            grantResults.isNotEmpty() &&
-            grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-        ) {
-            startCamera()
-        }
-
-        if (requestCode == Constants.PHOTO_SELECTED &&
-            grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            val gallery = Intent(
-                Intent.ACTION_PICK,
-                MediaStore.Images.Media.INTERNAL_CONTENT_URI
-            )
-            startActivityForResult(gallery, Constants.PHOTO_SELECTED)
-        }
-    }
+//    @Deprecated("startActivityForResult legacy usage, mantenido por compatibilidad")
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//
+//        if (resultCode != Activity.RESULT_OK) return
+//
+//        progress?.apply {
+//            setMessage("Espere...")
+//            setCanceledOnTouchOutside(false)
+//            show()
+//        }
+//
+//        when (requestCode) {
+//            Constants.CAMERA_SELECTED -> {
+//                imageUri?.let { uri ->
+//                    CropHelper.launchCrop(cropImageLauncher, uri)
+//                }
+//            }
+//            Constants.PHOTO_SELECTED -> {
+//                val selected = data?.data
+//                if (selected != null) {
+//                    CropHelper.launchCrop(cropImageLauncher, selected)
+//                }
+//            }
+//        }
+//
+//        progress?.dismiss()
+//    }
+//
+//    @Deprecated("Deprecated in Java")
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<out String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//
+//        if (requestCode == Constants.CAMERA_SELECTED &&
+//            grantResults.isNotEmpty() &&
+//            grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+//        ) {
+//            startCamera()
+//        }
+//
+//        if (requestCode == Constants.PHOTO_SELECTED &&
+//            grantResults.isNotEmpty() &&
+//            grantResults[0] == PackageManager.PERMISSION_GRANTED
+//        ) {
+//            val gallery = Intent(
+//                Intent.ACTION_PICK,
+//                MediaStore.Images.Media.INTERNAL_CONTENT_URI
+//            )
+//            startActivityForResult(gallery, Constants.PHOTO_SELECTED)
+//        }
+//    }
 
     // ================== LIFECYCLE ==================
 

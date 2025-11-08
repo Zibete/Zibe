@@ -64,7 +64,7 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.zibete.proyecto1.model.ChatWith;
 import com.zibete.proyecto1.model.ChatsGroup;
 import com.zibete.proyecto1.Splash.SplashActivity;
-import com.zibete.proyecto1.adapters.ChatListFragment;
+import com.zibete.proyecto1.ui.ChatListFragment;
 import com.zibete.proyecto1.ui.EditProfileFragment;
 import com.zibete.proyecto1.ui.FavoritesFragment;
 import com.zibete.proyecto1.ui.GruposFragment;
