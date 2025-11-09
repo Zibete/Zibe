@@ -20,11 +20,12 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.adapters.AdapterChatLista
 import com.zibete.proyecto1.adapters.ChatListGroupsFragment
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserRepository
 import java.text.ParseException
@@ -102,7 +103,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     // ---------- Listener principal de lista de chats ----------
 
     private fun setupChatListListener(userId: String) {
-        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.chatWith)
+        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH)
 
         val listener = object : ChildEventListener {
             // Nuevo chat
@@ -166,7 +167,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     // ---------- Empty state / onboarding ----------
 
     private fun setupEmptyStateListener(userId: String) {
-        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.chatWith)
+        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -179,8 +180,8 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
                         val state = snapshot.child("estado").getValue(String::class.java)
                         val photo = snapshot.child("wUserPhoto").getValue(String::class.java)
 
-                        if (photo != Constants.Empty &&
-                            (state == Constants.chatWith || state == "silent")
+                        if (photo != Constants.EMPTY &&
+                            (state == Constants.CHATWITH || state == "silent")
                         ) {
                             count++
                         }
@@ -247,7 +248,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     override fun onContextItemSelected(item: MenuItem): Boolean {
         // Chat individual
         if (item.groupId == Constants.FRAGMENT_ID_CHATLIST) {
-            val type = Constants.chatWith
+            val type = Constants.CHATWITH
             val wChat = chatsArrayList[item.order]
             runItemSelected(item, type, wChat.userId, wChat.userName)
         }
@@ -255,7 +256,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
         // Chat unknown / grupos
         if (item.groupId == Constants.FRAGMENT_ID_CHATGROUPLIST) {
             val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
-            val type = Constants.chatWithUnknown
+            val type = Constants.CHATWITHUNKNOWN
             runItemSelected(item, type, wChat.userId, wChat.userName)
         }
 
@@ -266,7 +267,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
         item: MenuItem,
         type: String,
         idUser: String,
-        nameUser: String?
+        nameUser: String
     ) {
         val view = requireActivity().findViewById<View>(R.id.content)
 
@@ -274,8 +275,8 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
             1 -> UserRepository.setNoLeido(idUser, type)
             2 -> UserRepository.Silent(nameUser, idUser, type)
             3 -> UserRepository.setBlockUser(requireContext(), nameUser, idUser, view, type)
-            4 -> Constants().UnhiddenChat(requireContext(), idUser, nameUser, view, type)
-            5 -> Constants().DeleteChat(requireContext(), idUser, nameUser, view, type)
+            4 -> ChatUtils.unhiddenChat(requireContext(), idUser, nameUser, view, type)
+            5 -> ChatUtils.deleteChat(requireContext(), idUser, nameUser, view, type)
         }
     }
 
@@ -309,7 +310,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     override fun onDestroyView() {
         val u = currentUser
         if (u != null) {
-            val ref = FirebaseRefs.refDatos.child(u.uid).child(Constants.chatWith)
+            val ref = FirebaseRefs.refDatos.child(u.uid).child(Constants.CHATWITH)
             chatListChildListener?.let { ref.removeEventListener(it) }
             emptyStateListener?.let { ref.removeEventListener(it) }
         }

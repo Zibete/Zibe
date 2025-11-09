@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.*
 import com.zibete.proyecto1.*
+import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.databinding.DialogGoGroupBinding
 import com.zibete.proyecto1.databinding.DialogGoNewGroupBinding
 import com.zibete.proyecto1.databinding.RowGroupBinding
@@ -32,12 +33,9 @@ import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
-import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.GlassEffect
-import de.hdodenhof.circleimageview.CircleImageView
 import eightbitlab.com.blurview.BlurView
 import java.text.SimpleDateFormat
 import java.util.*
@@ -83,8 +81,6 @@ class AdapterGroups(
         val blurView: BlurView = binding.blurView
         val glowBorder: View = binding.glowBorder
         val card = binding.cardviewGroups
-        var borderAnimator: ValueAnimator? = null
-        var fallbackStrokeDrawable: GradientDrawable? = null
 
         init {
             GlassEffect.applyGlassEffect(blurView, itemView)
@@ -116,7 +112,7 @@ class AdapterGroups(
         tvDataGroup.text = group.data
         tvDataGroup.isSelected = true
 
-        refGroupUsers.child(group.name).addListenerForSingleValueEvent(object : ValueEventListener {
+        FirebaseRefs.refGroupUsers.child(group.name).addListenerForSingleValueEvent(object : ValueEventListener {
             @SuppressLint("SetTextI18n")
             override fun onDataChange(snapshot: DataSnapshot) {
                 tvNumberPersons.text = snapshot.childrenCount.toString()
@@ -159,7 +155,7 @@ class AdapterGroups(
             val name = binding.edtNameNewGroup.text.toString()
             val data = binding.edtDataNewGroup.text.toString()
 
-            refGroupData.child(name)
+            FirebaseRefs.refGroupData.child(name)
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.exists()) {
@@ -171,7 +167,7 @@ class AdapterGroups(
                         val date = SimpleDateFormat("dd/MM/yyyy HH:mm").format(Date())
                         val group = Groups(name, data, user!!.uid, Constants.PUBLIC_GROUP, 0, date)
 
-                        refGroupData.child(name).setValue(group)
+                        FirebaseRefs.refGroupData.child(name).setValue(group)
                         goGroup(it, dialog, name, user.displayName ?: "", Constants.PUBLIC_GROUP)
                     }
 
@@ -214,7 +210,7 @@ class AdapterGroups(
         }
 
         binding.btnStartChat2.setOnClickListener { v ->
-            refGroupUsers.child(group.name)
+            FirebaseRefs.refGroupUsers.child(group.name)
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         for (child in snapshot.children) {
@@ -253,30 +249,39 @@ class AdapterGroups(
         UsuariosFragment.editor.apply()
 
         val chatMsg = ChatsGroup("se unió a la sala", date, userName, user!!.uid, 0, type)
-        refGroupChat.child(groupName).push().setValue(chatMsg)
+        FirebaseRefs.refGroupChat.child(groupName).push().setValue(chatMsg)
 
-        refGroupChat.child(groupName).addValueEventListener(Constants.listenerGroupBadge)
+        MainActivity.listenerGroupBadge?.let { listener ->
+            FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listener)
+        }
 
-        val query: Query = refDatos.child(user.uid)
-            .child(Constants.chatWithUnknown)
+
+        val query: Query = FirebaseRefs.refDatos.child(user.uid)
+            .child(Constants.CHATWITHUNKNOWN)
             .orderByChild("noVisto").startAt(1.0)
-        query.addValueEventListener(Constants.listenerMsgUnreadBadge)
 
-        MainActivity.toolbar.isVisible = true
-        MainActivity.layoutSettings.isVisible = false
+        MainActivity.listenerMsgUnreadBadge?.let { listener ->
+            query.addValueEventListener(listener)
+        }
+
+        MainActivity.toolbar?.isVisible = true
+        MainActivity.layoutSettings?.isVisible = false
         (context as MainActivity).invalidateOptionsMenu()
 
         val newFragment = PageAdapterGroup()
         val activity = v.context as AppCompatActivity
         val transaction = activity.supportFragmentManager.beginTransaction()
         transaction.replace(R.id.nav_host_fragment, newFragment)
-        MainActivity.toolbar.title = groupName
+        MainActivity.toolbar?.title = groupName
         (context as MainActivity).invalidateOptionsMenu()
         transaction.commit()
 
         val userGroup = UserGroup(user.uid, userName, type)
-        refGroupUsers.child(groupName).child(user.uid).setValue(userGroup)
-        refGroupChat.child(groupName).addValueEventListener(Constants.listenerGroupBadge)
+        FirebaseRefs.refGroupUsers.child(groupName).child(user.uid).setValue(userGroup)
+
+        MainActivity.listenerGroupBadge?.let { listener ->
+            FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listener)
+        }
 
         dialog.dismiss()
     }

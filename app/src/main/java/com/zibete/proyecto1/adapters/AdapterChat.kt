@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.databinding.RowDateChatBinding

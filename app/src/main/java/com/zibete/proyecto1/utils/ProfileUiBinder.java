@@ -1,8 +1,8 @@
 package com.zibete.proyecto1.utils;
 
-import static com.zibete.proyecto1.Constants.PHOTO;
-import static com.zibete.proyecto1.Constants.PHOTO_SENDER_DLT;
-import static com.zibete.proyecto1.Constants.chatWith;
+import static com.zibete.proyecto1.utils.Constants.PHOTO;
+import static com.zibete.proyecto1.utils.Constants.PHOTO_SENDER_DLT;
+import static com.zibete.proyecto1.utils.Constants.CHATWITH;
 import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChat;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
@@ -173,7 +173,7 @@ public class ProfileUiBinder {
 
     public static void setBloq (String user_id, final ImageView profile_bloc){// bindBlockStatus = vincular estado de bloqueo
 
-        refDatos.child(user.getUid()).child(chatWith).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user.getUid()).child(CHATWITH).child(user_id).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -192,7 +192,7 @@ public class ProfileUiBinder {
     public static void getBloqMe (String user_id, final ImageView profile_bloc_me){
 
         //Me Bloqueó
-        refDatos.child(user_id).child(chatWith).child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
+        refDatos.child(user_id).child(CHATWITH).child(user.getUid()).child("estado").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

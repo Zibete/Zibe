@@ -45,7 +45,7 @@ import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.zibete.proyecto1.utils.SnackUtils;
 
-import static com.zibete.proyecto1.Constants.REQUEST_LOCATION;
+import static com.zibete.proyecto1.utils.Constants.REQUEST_LOCATION;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 
 public class SignUpActivity extends AppCompatActivity {

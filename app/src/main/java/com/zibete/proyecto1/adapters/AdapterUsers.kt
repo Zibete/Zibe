@@ -23,7 +23,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.model.Users
@@ -205,7 +205,7 @@ class AdapterUsers(
             h.icon_conectado,
             h.icon_desconectado,
             h.tv_estado,
-            Constants.chatWith
+            Constants.CHATWITH
         )
 
         // Favoritos
@@ -219,7 +219,7 @@ class AdapterUsers(
             })
 
         // Bloqueado
-        FirebaseRefs.refDatos.child(user.uid).child(Constants.chatWith).child(users.id)
+        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(users.id)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {
@@ -229,7 +229,7 @@ class AdapterUsers(
             })
 
         // Me bloqueó
-        FirebaseRefs.refDatos.child(users.id).child(Constants.chatWith).child(user.uid)
+        FirebaseRefs.refDatos.child(users.id).child(Constants.CHATWITH).child(user.uid)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {

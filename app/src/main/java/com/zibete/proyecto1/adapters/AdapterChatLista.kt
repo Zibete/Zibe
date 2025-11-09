@@ -9,7 +9,6 @@ import android.view.ContextMenu
 import android.view.View
 import android.view.ViewGroup
 import android.view.View.OnCreateContextMenuListener
-import android.view.View.OnLongClickListener
 import android.widget.Filter
 import android.widget.Filterable
 import androidx.core.content.ContextCompat
@@ -22,7 +21,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.ChatWith
@@ -158,12 +157,12 @@ class AdapterChatLista(
             binding.iconConectado,
             binding.iconDesconectado,
             binding.tvEstado,
-            Constants.chatWith
+            Constants.CHATWITH
         )
 
         // Checks (double check, leído, etc.)
         refDatos.child(chat.userId)
-            .child(Constants.chatWith)
+            .child(Constants.CHATWITH)
             .child(u.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -214,7 +213,7 @@ class AdapterChatLista(
 
         // No vistos
         refDatos.child(u.uid)
-            .child(Constants.chatWith)
+            .child(Constants.CHATWITH)
             .child(chat.userId)
             .child("noVisto")
             .addValueEventListener(object : ValueEventListener {
@@ -233,7 +232,7 @@ class AdapterChatLista(
 
         // Último mensaje + hora
         refDatos.child(u.uid)
-            .child(Constants.chatWith)
+            .child(Constants.CHATWITH)
             .child(chat.userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -257,7 +256,7 @@ class AdapterChatLista(
                     }
 
                     refDatos.child(u.uid)
-                        .child(Constants.chatWith)
+                        .child(Constants.CHATWITH)
                         .child(chat.userId)
                         .child("wVisto")
                         .setValue(2)
@@ -325,7 +324,7 @@ class AdapterChatLista(
         val photo = chat.userPhoto
 
         when (state) {
-            Constants.chatWith -> {
+            Constants.CHATWITH -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
@@ -337,7 +336,7 @@ class AdapterChatLista(
                 binding.cardview.isVisible = false
             }
             else -> {
-                binding.cardview.isVisible = photo != Constants.Empty
+                binding.cardview.isVisible = photo != Constants.EMPTY
             }
         }
     }
@@ -348,7 +347,7 @@ class AdapterChatLista(
         val u = currentUser ?: return
 
         refDatos.child(u.uid)
-            .child(Constants.chatWith)
+            .child(Constants.CHATWITH)
             .child(chat.userId)
             .child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {

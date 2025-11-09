@@ -15,6 +15,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.SliderProfileAdapter
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.utils.ChatUtils
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserRepository
 
@@ -67,7 +69,7 @@ class SlideProfileActivity : AppCompatActivity() {
         val currentIdx = viewPager.currentItem
         val current = userList.getOrNull(currentIdx)
         if (current != null && user != null) {
-            FirebaseRefs.refDatos.child(user.uid).child(Constants.chatWith).child(current.id)
+            FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(current.id)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         val state = ds.child("estado").getValue(String::class.java)
@@ -78,7 +80,7 @@ class SlideProfileActivity : AppCompatActivity() {
                                 actionDesbloq.isVisible = false
                                 actionBloq.isVisible = true
                             }
-                            Constants.chatWith, "delete", null -> {
+                            Constants.CHATWITH, "delete", null -> {
                                 actionSilent.isVisible = true
                                 actionNotif.isVisible = false
                                 actionDesbloq.isVisible = false
@@ -104,16 +106,16 @@ class SlideProfileActivity : AppCompatActivity() {
         when (item.itemId) {
             android.R.id.home -> onBackPressedDispatcher.onBackPressed()
             R.id.action_silent -> {
-                UserRepository.Silent(u.name, u.id, Constants.chatWith)
+                UserRepository.Silent(u.name, u.id, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_notif -> {
-                UserRepository.Silent(u.name, u.id, Constants.chatWith)
+                UserRepository.Silent(u.name, u.id, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
             }
-            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.chatWith)
-            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.chatWith)
-            R.id.action_delete -> Constants().DeleteChat(this, u.id, u.name, root, Constants.chatWith)
+            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)
+            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.CHATWITH)
+            R.id.action_delete -> ChatUtils.deleteChat(this, u.id, u.name, root, Constants.CHATWITH)
         }
         return super.onOptionsItemSelected(item)
     }

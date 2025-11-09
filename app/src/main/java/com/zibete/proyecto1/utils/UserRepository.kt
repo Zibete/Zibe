@@ -14,7 +14,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.State
@@ -249,7 +248,7 @@ object UserRepository {
                         val photo =
                             dataSnapshot.child("wUserPhoto").getValue<String?>(String::class.java)
 
-                        if (photo == Constants.Empty) {
+                        if (photo == Constants.EMPTY) {
                             dataSnapshot.ref.removeValue()
                         } else {
                             if (state == "silent") {
@@ -278,7 +277,7 @@ object UserRepository {
             "",
             id_user,
             name_user,
-            Constants.Empty,
+            Constants.EMPTY,
             state,
             0,
             1
@@ -349,7 +348,7 @@ object UserRepository {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val photo = dataSnapshot.child("wUserPhoto")
                                 .getValue(String::class.java)
-                            if (photo == Constants.Empty) {
+                            if (photo == Constants.EMPTY) {
                                 dataSnapshot.ref.removeValue()
                             } else {
                                 dataSnapshot.ref.child("estado").setValue(type)
@@ -379,7 +378,7 @@ object UserRepository {
         profile_bloc: ImageView
     ) { // bindBlockStatus = vincular estado de bloqueo
 
-        refDatos.child(user!!.uid).child(Constants.chatWith).child(user_id).child("estado")
+        refDatos.child(user!!.uid).child(Constants.CHATWITH).child(user_id).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.getValue<String?>(String::class.java) == "bloq") {

@@ -105,9 +105,9 @@ import java.util.Locale;
 import java.util.Objects;
 
 import static com.firebase.ui.auth.AuthUI.getApplicationContext;
-import static com.zibete.proyecto1.Constants.CAMERA_SELECTED;
-import static com.zibete.proyecto1.Constants.PERMISSIONS_EDIT_PROFILE;
-import static com.zibete.proyecto1.Constants.PHOTO_SELECTED;
+import static com.zibete.proyecto1.utils.Constants.CAMERA_SELECTED;
+import static com.zibete.proyecto1.utils.Constants.PERMISSIONS_EDIT_PROFILE;
+import static com.zibete.proyecto1.utils.Constants.PHOTO_SELECTED;
 import static com.zibete.proyecto1.MainActivity.filter;
 import static com.zibete.proyecto1.MainActivity.refresh;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;

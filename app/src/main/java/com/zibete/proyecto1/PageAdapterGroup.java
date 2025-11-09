@@ -31,7 +31,7 @@ import com.zibete.proyecto1.adapters.ChatListGroupsFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.zibete.proyecto1.Constants.chatWithUnknown;
+import static com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
 import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
@@ -80,7 +80,7 @@ public class PageAdapterGroup extends Fragment {
         start(container);
 
 
-        final Query newQuery = refDatos.child(user.getUid()).child(chatWithUnknown).orderByChild("noVisto").startAt(1);
+        final Query newQuery = refDatos.child(user.getUid()).child(CHATWITHUNKNOWN).orderByChild("noVisto").startAt(1);
         newQuery.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {

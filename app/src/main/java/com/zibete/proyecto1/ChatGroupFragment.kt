@@ -1,7 +1,6 @@
 package com.zibete.proyecto1
 
 import android.Manifest
-import android.app.Activity
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.NotificationManager
@@ -37,9 +36,6 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.canhub.cropper.CropImageContractOptions
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -50,6 +46,7 @@ import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
@@ -61,8 +58,6 @@ import org.json.JSONObject
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.function.Consumer
 
 class ChatGroupFragment : Fragment() {
 
@@ -115,13 +110,13 @@ class ChatGroupFragment : Fragment() {
         val view = binding.root
 
         // Ocultar badge de grupos al entrar
-        MainActivity.badgeDrawableGroup.isVisible = false
+        MainActivity.badgeDrawableGroup?.isVisible = false
 
         // Marcar mensajes leídos del grupo activo
         refGroupChat.child(UsuariosFragment.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (MainActivity.toolbar.title == UsuariosFragment.groupName &&
+                    if (MainActivity.toolbar?.title == UsuariosFragment.groupName &&
                         UsuariosFragment.groupName.isNotEmpty() &&
                         user != null
                     ) {
@@ -160,7 +155,7 @@ class ChatGroupFragment : Fragment() {
         }
 
         rvMsg.layoutManager = mLayoutManager
-        adapter = AdapterChatGroup(chatsArrayList, Constants.maxChatSize, requireContext())
+        adapter = AdapterChatGroup(chatsArrayList, Constants.MAXCHATSIZE, requireContext())
         rvMsg.adapter = adapter
 
         rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -192,6 +187,7 @@ class ChatGroupFragment : Fragment() {
         frameSendMsg.isVisible = false
         loadingButton.isVisible = false
         linearPhotoView.isVisible = false
+        linearBack.isVisible = false
 
         // Ver foto a pantalla completa
         photo.setOnClickListener {
@@ -322,26 +318,23 @@ class ChatGroupFragment : Fragment() {
             frameSendMsg,
             msg,
             btnCamera,
-            btnSendMsg,
-            Consumer { uri: Uri? ->
-                if (uri != null) {
-                    msgType = Constants.PHOTO
-                    stringMsg = uri.toString()
-                    // El helper ya dejó todo visible, acá sólo aseguramos estado
-                    btnSendMsg.isVisible = true
-                    frameSendMsg.isVisible = true
-                } else {
-                    msgType = Constants.MSG
-                    stringMsg = null
-                    cancelPreviewPhoto()
-                }
+            btnSendMsg
+        ) { uri: Uri? ->
+            if (uri != null) {
+                msgType = Constants.PHOTO
+                stringMsg = uri.toString()
+                loadingPhoto.isVisible = false
+                loadingButton.isVisible = false
+                frameSendMsg.isVisible = true
+                btnSendMsg.isVisible = true
+            } else {
+                cancelPreviewPhoto()
             }
-        )
+        }
     }
 
     // ================== FOTO ==================
 
-    @SuppressLint("InflateParams")
     fun sendPhoto() {
         val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
 

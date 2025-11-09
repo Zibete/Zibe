@@ -20,9 +20,9 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.zibete.proyecto1.Splash.SplashActivity;
 
-import static com.zibete.proyecto1.Constants.chat;
-import static com.zibete.proyecto1.Constants.chatWith;
-import static com.zibete.proyecto1.Constants.unknown;
+import static com.zibete.proyecto1.utils.Constants.CHAT;
+import static com.zibete.proyecto1.utils.Constants.CHATWITH;
+import static com.zibete.proyecto1.utils.Constants.UNKNOWN;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChats;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.MainActivity.toolbar;
@@ -53,10 +53,10 @@ public class FCM extends FirebaseMessagingService {
 
             final String ref;
 
-            if (type.equals(chatWith)) {
-                ref = chat;
+            if (type.equals(CHATWITH)) {
+                ref = CHAT;
             } else {
-                ref = unknown;
+                ref = UNKNOWN;
             }
 
 

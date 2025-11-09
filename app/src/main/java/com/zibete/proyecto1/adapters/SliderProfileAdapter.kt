@@ -21,11 +21,10 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.github.chrisbanes.photoview.PhotoView
 import com.github.clans.fab.FloatingActionButton
 import com.github.clans.fab.FloatingActionMenu
 import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.model.Users
@@ -79,8 +78,8 @@ class SliderProfileAdapter(
         holder.floatingActionMenu.setClosedOnTouchOutside(true)
 
         // Carrusel de “fotos recibidas”
-        val receivedPhotos = ArrayList<String?>()
-        val adapterPhotoReceived = AdapterPhotoReceived(receivedPhotos, Constants.maxChatSize, context)
+        val receivedPhotos = ArrayList<String>()
+        val adapterPhotoReceived = AdapterPhotoReceived(receivedPhotos, Constants.MAXCHATSIZE, context)
         holder.recyclerPhotos.apply {
             val lm = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, true).apply { stackFromEnd = true }
             layoutManager = lm
@@ -125,7 +124,7 @@ class SliderProfileAdapter(
             layoutParams = CoordinatorLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).also { (it as CoordinatorLayout.LayoutParams).gravity = Gravity.CENTER }
+            ).also { it.gravity = Gravity.CENTER }
             isIndeterminate = true
         }
         holder.coordinatorLayoutPhoto.addView(progressBar)
@@ -171,7 +170,7 @@ class SliderProfileAdapter(
             holder.iconConectado,
             holder.iconDesconectado,
             holder.tvEstado,
-            Constants.chatWith
+            Constants.CHATWITH
         )
         UserRepository.setUserOnline(context, user.id)
 

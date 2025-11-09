@@ -15,7 +15,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.zibete.proyecto1.Splash.SplashActivity;
 
-import static com.zibete.proyecto1.Constants.REQUEST_LOCATION;
+import static com.zibete.proyecto1.utils.Constants.REQUEST_LOCATION;
 
 public class CustomPermission extends AppCompatActivity {
 

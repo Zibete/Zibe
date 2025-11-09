@@ -71,6 +71,8 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.utils.ChatUtils
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.user
@@ -229,7 +231,7 @@ class ChatActivity : AppCompatActivity() {
             stackFromEnd = true
         }
         rvMsg.layoutManager = mLayoutManager
-        adapter = AdapterChat(chatsArrayList as ArrayList<Chats>, Constants.maxChatSize, applicationContext)
+        adapter = AdapterChat(chatsArrayList as ArrayList<Chats>, Constants.MAXCHATSIZE, applicationContext)
         rvMsg.adapter = adapter
 
         // --- init launchers ---
@@ -270,22 +272,15 @@ class ChatActivity : AppCompatActivity() {
             btnCamera = btnCamera,
             btnSendMsg = btnSendMsg
         ) { uri ->
-            if (uri != null) {
-                // Hay foto lista para enviar
-                msgType = Constants.PHOTO
-                stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
-                btnMic.isVisible = false
-                loadingPhoto.isVisible = false
-                loadingButton.isVisible = false
-                frameSendMsg.isVisible = true
-                btnSendMsg.isVisible = true
+            // Hay foto lista para enviar
+            msgType = Constants.PHOTO
+            stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
+            btnMic.isVisible = false
+            loadingPhoto.isVisible = false
+            loadingButton.isVisible = false
+            frameSendMsg.isVisible = true
+            btnSendMsg.isVisible = true
 
-            } else {
-                // Se canceló / falló el crop
-                msgType = Constants.MSG
-                stringMsg = null
-                cancelSendPhoto()
-            }
         }
 
         // ===== UI listeners =====
@@ -422,7 +417,7 @@ class ChatActivity : AppCompatActivity() {
             AdapterChat.mediaPlayer = null
         }
 
-        if (refChatWith == Constants.chatWithUnknown && listenerChatUnknown != null && idUserFinal != null) {
+        if (refChatWith == Constants.CHATWITHUNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
             FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
@@ -511,7 +506,7 @@ class ChatActivity : AppCompatActivity() {
                 UserRepository.setUnBlockUser(this, idUserFinal, nameUserFinal, view, refChatWith)
             }
             R.id.action_delete -> {
-                Constants().DeleteChat(this, idUserFinal, nameUserFinal, view, refChatWith)
+                ChatUtils.deleteChat(this, idUserFinal!!, nameUserFinal, view, refChatWith!!)
             }
         }
         return super.onOptionsItemSelected(item)
@@ -1015,8 +1010,8 @@ class ChatActivity : AppCompatActivity() {
             // 1 a 1
             findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
             idUserFinal = idUser
-            refChat = Constants.chat
-            refChatWith = Constants.chatWith
+            refChat = Constants.CHAT
+            refChatWith = Constants.CHATWITH
             myPhoto = me.photoUrl?.toString() ?: ""
             myName = me.displayName ?: ""
 
@@ -1030,7 +1025,7 @@ class ChatActivity : AppCompatActivity() {
                         nameUser.text = nameUserFinal
                         Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
                     } else {
-                        FirebaseRefs.refDatos.child(me.uid).child(Constants.chatWith).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
+                        FirebaseRefs.refDatos.child(me.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
                                 yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
                                 nameUserFinal = snap.child("wUserName").getValue(String::class.java)
@@ -1050,8 +1045,8 @@ class ChatActivity : AppCompatActivity() {
 
             idUserFinal = idUserUnknown
             nameUserFinal = unknownName
-            refChat = Constants.unknown
-            refChatWith = Constants.chatWithUnknown
+            refChat = Constants.UNKNOWN
+            refChatWith = Constants.CHATWITHUNKNOWN
             myName = UsuariosFragment.userName
             nameUser.text = nameUserFinal
 

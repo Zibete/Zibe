@@ -33,7 +33,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.Constants
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
@@ -144,12 +144,12 @@ class AdapterChatGroupsLista(
             binding.iconConectado,
             binding.iconDesconectado,
             binding.tvEstado,
-            Constants.chatWithUnknown
+            Constants.CHATWITHUNKNOWN
         )
 
         // Checked (visto) para unknown
         refDatos.child(chat.userId)
-            .child(Constants.chatWithUnknown)
+            .child(Constants.CHATWITHUNKNOWN)
             .child(u.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -199,7 +199,7 @@ class AdapterChatGroupsLista(
 
         // No vistos
         refDatos.child(u.uid)
-            .child(Constants.chatWithUnknown)
+            .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .child("noVisto")
             .addValueEventListener(object : ValueEventListener {
@@ -218,7 +218,7 @@ class AdapterChatGroupsLista(
 
         // Último mensaje + hora
         refDatos.child(u.uid)
-            .child(Constants.chatWithUnknown)
+            .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -242,7 +242,7 @@ class AdapterChatGroupsLista(
                     }
 
                     refDatos.child(u.uid)
-                        .child(Constants.chatWithUnknown)
+                        .child(Constants.CHATWITHUNKNOWN)
                         .child(chat.userId)
                         .child("wVisto")
                         .setValue(2)
@@ -271,7 +271,7 @@ class AdapterChatGroupsLista(
                             ).show()
 
                             refDatos.child(u.uid)
-                                .child(Constants.chatWithUnknown)
+                                .child(Constants.CHATWITHUNKNOWN)
                                 .child(chat.userId)
                                 .removeValue()
                         }
@@ -309,7 +309,7 @@ class AdapterChatGroupsLista(
         val photo = chat.userPhoto
 
         when (state) {
-            Constants.chatWithUnknown -> {
+            Constants.CHATWITHUNKNOWN -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
@@ -321,7 +321,7 @@ class AdapterChatGroupsLista(
                 binding.cardview.isVisible = false
             }
             else -> {
-                binding.cardview.isVisible = photo != Constants.Empty
+                binding.cardview.isVisible = photo != Constants.EMPTY
             }
         }
     }
@@ -356,7 +356,7 @@ class AdapterChatGroupsLista(
         val u = currentUser ?: return
 
         refDatos.child(u.uid)
-            .child(Constants.chatWithUnknown)
+            .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -549,7 +549,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         // Reset lista compartida
         chatsGroupArrayList.clear()
 
-        refDatos.child(u.uid).child(Constants.chatWithUnknown)
+        refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
             .addChildEventListener(object : ChildEventListener {
 
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -567,7 +567,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    refDatos.child(u.uid).child(Constants.chatWithUnknown)
+                    refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(dataSnapshot: DataSnapshot) {
                                 if (!dataSnapshot.exists()) {
@@ -619,7 +619,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     private fun setupEmptyStateListener() {
         val u = user ?: return
 
-        refDatos.child(u.uid).child(Constants.chatWithUnknown)
+        refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
@@ -627,7 +627,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                         for (snapshot in dataSnapshot.children) {
                             val state =
                                 snapshot.child("estado").getValue(String::class.java).orEmpty()
-                            if (state == Constants.chatWithUnknown || state == "silent") {
+                            if (state == Constants.CHATWITHUNKNOWN || state == "silent") {
                                 count++
                             }
                         }

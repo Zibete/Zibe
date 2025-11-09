@@ -52,6 +52,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.Zibe"
         android:usesCleartextTraffic="true"
+        android:name=".utils.ZibeApp"
         tools:targetApi="tiramisu">
 
         <!-- Facebook: meta-data único (resuelve conflicto con firebase-ui-auth) -->

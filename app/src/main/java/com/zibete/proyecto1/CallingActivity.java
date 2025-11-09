@@ -17,8 +17,8 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 
-import static com.zibete.proyecto1.Constants.Calling;
-import static com.zibete.proyecto1.Constants.Ringing;
+import static com.zibete.proyecto1.utils.Constants.CALLING;
+import static com.zibete.proyecto1.utils.Constants.RINGING;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 
@@ -37,7 +37,7 @@ public class CallingActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                if (!dataSnapshot.hasChild(Calling) && !dataSnapshot.hasChild(Ringing)) {
+                if (!dataSnapshot.hasChild(CALLING) && !dataSnapshot.hasChild(RINGING)) {
 
                     HashMap <String,Object> callingInfo = new HashMap<>();
 
