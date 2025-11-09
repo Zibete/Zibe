@@ -289,65 +289,63 @@ object UserRepository {
     @JvmStatic
     fun setBlockUser(
         context: Context,
-        name_user: String?,
-        id_user: String?,
+        nameUser: String?,
+        idUser: String?,
         view: View,
         type: String?
     ) {
-        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
-        builder.setTitle("Bloquear")
-        builder.setMessage("¿Desea baroque a $name_user?")
+        if (nameUser == null || idUser == null || type == null) return
 
-        builder.setCancelable(false)
-        builder.setPositiveButton("Aceptar") { builder, id ->
-            refDatos.child(user!!.uid).child(type!!).child(id_user!!)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(dataSnapshot: DataSnapshot) {
-                        if (dataSnapshot.exists()) {
-                            dataSnapshot.ref.child("estado").setValue("bloq")
-                        } else {
-                            newChatWith(dataSnapshot, id_user, name_user!!, "bloq")
+        UserMessageUtils.confirm(
+            context = context,
+            title = "Bloquear",
+            message = "¿Desea bloquear a $nameUser?",
+            onConfirm = {
+                refDatos.child(user!!.uid).child(type).child(idUser)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                dataSnapshot.ref.child("estado").setValue("bloq")
+                            } else {
+                                newChatWith(dataSnapshot, idUser, nameUser, "bloq")
+                            }
                         }
-                    }
 
-                    override fun onCancelled(error: DatabaseError) {
-                    }
-                })
+                        override fun onCancelled(error: DatabaseError) {}
+                    })
 
-            val snack = Snackbar.make(
-                view,
-                "Bloqueaste a $name_user, podrás desbloquearlo cuando desees",
-                Snackbar.LENGTH_INDEFINITE
-            )
-            snack.setAction("OK") { snack.dismiss() }
-            snack.setBackgroundTint(context.resources.getColor(R.color.colorC))
-            val tv = snack.getView()
-                .findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-            tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
-            snack.show()
-        }
-        builder.setNegativeButton("Cancelar",
-            DialogInterface.OnClickListener { builder, id -> return@OnClickListener })
-        builder.show()
+                UserMessageUtils.showSnack(
+                    root = view,
+                    message = "Bloqueaste a $nameUser, podrás desbloquearlo cuando desees",
+                    duration = Snackbar.LENGTH_INDEFINITE,
+                    actionText = "OK",
+                    action = {},
+                    iconRes = R.drawable.ic_info_24
+                )
+            }
+        )
     }
+
 
     @JvmStatic
     fun setUnBlockUser(
         context: Context,
-        id_user: String?,
-        name_user: String?,
+        idUser: String?,
+        nameUser: String?,
         view: View,
         type: String?
     ) {
-        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+        if (idUser == null || nameUser == null || type == null) return
 
-            .setMessage("¿Desea desbloquear a $name_user?")
-            .setPositiveButton("Aceptar") { builder, id ->
-                refDatos.child(user!!.uid).child(type!!).child(id_user!!)
+        UserMessageUtils.confirm(
+            context = context,
+            title = "Desbloquear",
+            message = "¿Desea desbloquear a $nameUser?",
+            onConfirm = {
+                refDatos.child(user!!.uid).child(type).child(idUser)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            val photo = dataSnapshot.child("wUserPhoto")
-                                .getValue(String::class.java)
+                            val photo = dataSnapshot.child("wUserPhoto").getValue(String::class.java)
                             if (photo == Constants.EMPTY) {
                                 dataSnapshot.ref.removeValue()
                             } else {
@@ -355,22 +353,19 @@ object UserRepository {
                             }
                         }
 
-                        override fun onCancelled(error: DatabaseError) {
-                        }
+                        override fun onCancelled(error: DatabaseError) {}
                     })
 
-                val snack =
-                    Snackbar.make(view, "Desbloqueaste a $name_user", Snackbar.LENGTH_SHORT)
-                snack.setBackgroundTint(context.resources.getColor(R.color.colorC))
-                val tv = snack.getView()
-                    .findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-                tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
-                snack.show()
+                UserMessageUtils.showSnack(
+                    root = view,
+                    message = "Desbloqueaste a $nameUser",
+                    duration = Snackbar.LENGTH_SHORT,
+                    iconRes = R.drawable.ic_info_24
+                )
             }
-            .setNegativeButton("Cancelar",
-                DialogInterface.OnClickListener { builder, id -> return@OnClickListener })
-            .show()
+        )
     }
+
 
 
     fun bindBlockStatus(

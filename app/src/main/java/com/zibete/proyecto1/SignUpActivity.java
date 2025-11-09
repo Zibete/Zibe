@@ -43,7 +43,7 @@ import java.util.Map;
 
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.CalendarConstraints;
-import com.zibete.proyecto1.utils.SnackUtils;
+import com.zibete.proyecto1.utils.UserMessageUtils;
 
 import static com.zibete.proyecto1.utils.Constants.REQUEST_LOCATION;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
@@ -199,7 +199,7 @@ public class SignUpActivity extends AppCompatActivity {
             LocalDate fechaNac = LocalDate.parse(birthday, fmt);
             LocalDate ahora = LocalDate.now();
             if (Period.between(fechaNac, ahora).getYears() < 18) {
-                SnackUtils.showInfo(findViewById(android.R.id.content),
+                UserMessageUtils.showInfo(findViewById(android.R.id.content),
                         "Lo sentimos, debe ser mayor de 18 años para utilizar la App"
                 );
                 return;

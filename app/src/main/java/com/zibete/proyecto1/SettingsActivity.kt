@@ -49,7 +49,7 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
 import com.zibete.proyecto1.utils.FirebaseRefs.user
-import com.zibete.proyecto1.utils.SnackUtils
+import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import java.text.SimpleDateFormat
@@ -169,7 +169,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupNotificationSwitches() {
-        // Estado inicial desde prefs (UsuariosFragment.*)
+        val root = findViewById<View>(android.R.id.content)
+
+        // Estado inicial desde prefs
         switchGroupNotifications.isChecked = UsuariosFragment.groupNotifications
         switchIndividualNotifications.isChecked = UsuariosFragment.individualNotifications
 
@@ -178,11 +180,14 @@ class SettingsActivity : AppCompatActivity() {
             val enabled = switchGroupNotifications.isChecked
             UsuariosFragment.groupNotifications = enabled
             UsuariosFragment.editor.putBoolean("groupNotifications", enabled).apply()
-            Toast.makeText(
-                this,
-                if (enabled) "Notificaciones grupales encendidas" else "Notificaciones grupales apagadas",
-                Toast.LENGTH_SHORT
-            ).show()
+
+            UserMessageUtils.showInfo(
+                root,
+                if (enabled)
+                    "Notificaciones grupales encendidas"
+                else
+                    "Notificaciones grupales apagadas"
+            )
         }
 
         // Individuales
@@ -190,11 +195,14 @@ class SettingsActivity : AppCompatActivity() {
             val enabled = switchIndividualNotifications.isChecked
             UsuariosFragment.individualNotifications = enabled
             UsuariosFragment.editor.putBoolean("individualNotifications", enabled).apply()
-            Toast.makeText(
-                this,
-                if (enabled) "Notificaciones individuales encendidas" else "Notificaciones individuales apagadas",
-                Toast.LENGTH_SHORT
-            ).show()
+
+            UserMessageUtils.showInfo(
+                root,
+                if (enabled)
+                    "Notificaciones individuales encendidas"
+                else
+                    "Notificaciones individuales apagadas"
+            )
         }
     }
 
@@ -301,7 +309,7 @@ class SettingsActivity : AppCompatActivity() {
                     arrowUpChangeEmail.visibility = View.GONE
                 }
             } else {
-                SnackUtils.show(
+                UserMessageUtils.showSnack(
                     root = root,
                     message = "No disponible para usuarios autenticados con $provider",
                     duration = Snackbar.LENGTH_INDEFINITE,
@@ -323,7 +331,7 @@ class SettingsActivity : AppCompatActivity() {
                     arrowUpChangePass.isVisible = false
                 }
             } else {
-                SnackUtils.show(
+                UserMessageUtils.showSnack(
                     root = root,
                     message = "No disponible para usuarios autenticados con $provider",
                     duration = Snackbar.LENGTH_INDEFINITE,

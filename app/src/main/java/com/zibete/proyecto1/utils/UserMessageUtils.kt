@@ -1,5 +1,8 @@
 package com.zibete.proyecto1.utils
 
+import android.app.AlertDialog
+import android.content.Context
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
@@ -11,10 +14,17 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.zibete.proyecto1.R
 
-object SnackUtils {
+/**
+ * Utilidades centralizadas para mensajes al usuario:
+ * - Snackbars custom (Zibe)
+ * - Diálogos de confirmación con estilo AlertDialogApp
+ */
+object UserMessageUtils {
+
+    // ========= SNACKBARS =========
 
     @JvmStatic
-    fun show(
+    fun showSnack(
         root: View,
         message: String,
         duration: Int = Snackbar.LENGTH_SHORT,
@@ -26,7 +36,7 @@ object SnackUtils {
         val snackbar = Snackbar.make(root, "", duration)
 
         val layout = snackbar.view as SnackbarLayout
-        layout.setBackgroundColor(0x00000000) // transparente
+        layout.setBackgroundColor(0x00000000) // fondo del snackbar transparente
 
         val customView = LayoutInflater.from(root.context)
             .inflate(R.layout.layout_snackbar_zibe, layout, false)
@@ -56,18 +66,19 @@ object SnackUtils {
             tvAction.visibility = View.GONE
         }
 
-        // Color fondo card
+        // Color fondo de la card
         customView.backgroundTintList =
             ContextCompat.getColorStateList(root.context, bgColor)
 
         layout.removeAllViews()
         layout.addView(customView)
+
         snackbar.show()
     }
 
     @JvmStatic
     fun showInfo(root: View, message: String) {
-        show(
+        showSnack(
             root = root,
             message = message,
             duration = Snackbar.LENGTH_SHORT,
@@ -76,5 +87,36 @@ object SnackUtils {
             action = null,
             iconRes = R.drawable.ic_info_24
         )
+    }
+
+    // ========= DIÁLOGOS =========
+
+    /**
+     * Diálogo de confirmación genérico con estilo AlertDialogApp.
+     * Úsalo para acciones sensibles: bloquear, eliminar, salir de grupo, etc.
+     */
+    @JvmStatic
+    fun confirm(
+        context: Context,
+        title: String,
+        message: String,
+        positiveText: String = "Aceptar",
+        negativeText: String = "Cancelar",
+        onConfirm: () -> Unit,
+        onCancel: (() -> Unit)? = null
+    ) {
+        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+            .setTitle(title)
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton(positiveText) { dialog, _ ->
+                dialog.dismiss()
+                onConfirm()
+            }
+            .setNegativeButton(negativeText) { dialog, _ ->
+                dialog.dismiss()
+                onCancel?.invoke()
+            }
+            .show()
     }
 }
