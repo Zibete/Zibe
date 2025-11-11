@@ -39,8 +39,8 @@ import com.google.firebase.storage.FirebaseStorage
 import com.zibete.proyecto1.Splash.SplashActivity
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
 import com.zibete.proyecto1.ui.GruposFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
@@ -592,8 +592,8 @@ class SettingsActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        UsuariosFragment.DeletePreferences()
-        EditProfileFragment.DeleteProfilePreferences(this)
+        UsuariosFragment.deletePreferences()
+        EditProfileFragment.deleteProfilePreferences(this)
 
         FirebaseAuth.getInstance().signOut()
         LoginManager.getInstance().logOut()

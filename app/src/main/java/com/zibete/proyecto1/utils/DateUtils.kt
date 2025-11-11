@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 
 object DateUtils {
     @JvmStatic
-    fun calcularEdad(birthDay: String?): Int {
+    fun calcAge(birthDay: String?): Int {
         try {
             val fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val fechaNac = LocalDate.parse(birthDay, fmt)

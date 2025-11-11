@@ -31,8 +31,9 @@
     <string name="usuario">Usuario</string>
     <string name="atras">Atrás</string>
     <string name="siguiente">Siguiente</string>
-
+    <string name="comenzar">Comenzar</string>
     <string name="desconectado">Desconectado</string>
+    <string name="saltar">Saltar</string>
 
     <string name="facebook_app_id">fb971156603326191</string>
     <string name="fb_login_protocol_scheme">fbfb971156603326191</string>
@@ -99,6 +100,8 @@
     <string name="cerrar">cerrar</string>
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
+    <string name="espere">Espere...</string>
+    <string name="imagen_no_disponible">Imagen no disponible</string>
 
     <string-array name="edad">
         <item>18</item>

@@ -1,12 +1,13 @@
 package com.zibete.proyecto1.utils
 
-import android.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.content.Context
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
@@ -119,4 +120,33 @@ object UserMessageUtils {
             }
             .show()
     }
+
+    // ========= PROGRESS DIALOG =========
+
+    /**
+     * Muestra un diálogo de progreso moderno, estilo Zibe.
+     * Retorna el AlertDialog para poder ocultarlo luego con .dismiss().
+     */
+    @JvmStatic
+    fun showProgress(context: Context, message: String): AlertDialog {
+        val view = LayoutInflater.from(context).inflate(R.layout.layout_progress_zibe, null)
+        view.findViewById<TextView>(R.id.progress_text).text = message
+
+        val dialog = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+            .setView(view)
+            .setCancelable(false)
+            .create()
+
+        dialog.show()
+        return dialog
+    }
+
+
+    /**
+     * Muestra un Toast con el mensaje dado estilo Zibe.
+     */
+    private fun toast(ctx: Context, msg: String) {
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+    }
+
 }

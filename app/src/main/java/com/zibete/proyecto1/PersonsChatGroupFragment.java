@@ -20,11 +20,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.zibete.proyecto1.adapters.AdapterGroupUsers;
 import com.zibete.proyecto1.model.UserGroup;
+import com.zibete.proyecto1.ui.UsuariosFragment;
 
 import java.util.ArrayList;
 
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers;
-import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 
 public class PersonsChatGroupFragment extends Fragment implements SearchView.OnQueryTextListener{
 
@@ -83,7 +83,7 @@ public class PersonsChatGroupFragment extends Fragment implements SearchView.OnQ
 
 
 
-        refGroupUsers.child(groupName).addValueEventListener(new ValueEventListener() {
+        refGroupUsers.child(UsuariosFragment.groupName).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

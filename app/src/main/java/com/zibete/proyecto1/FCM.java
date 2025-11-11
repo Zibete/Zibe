@@ -19,6 +19,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.zibete.proyecto1.Splash.SplashActivity;
+import com.zibete.proyecto1.ui.UsuariosFragment;
 
 import static com.zibete.proyecto1.utils.Constants.CHAT;
 import static com.zibete.proyecto1.utils.Constants.CHATWITH;
@@ -26,9 +27,6 @@ import static com.zibete.proyecto1.utils.Constants.UNKNOWN;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refChats;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refDatos;
 import static com.zibete.proyecto1.MainActivity.toolbar;
-import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
-import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupNotifications;
-import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.individualNotifications;
 
 public class FCM extends FirebaseMessagingService {
 
@@ -60,9 +58,9 @@ public class FCM extends FirebaseMessagingService {
             }
 
 
-            if (!type.equals(groupName)) {
+            if (!type.equals(UsuariosFragment.groupName)) {
 
-                if (individualNotifications) {
+                if (UsuariosFragment.individualNotifications) {
 
                     if (remoteMessage.getData().size() > 0) {
 
@@ -129,15 +127,15 @@ public class FCM extends FirebaseMessagingService {
 
             } else {
 
-                if (groupNotifications) {
+                if (UsuariosFragment.groupNotifications) {
 
-                    if (remoteMessage.getData().size() > 0) {
+                    if (!remoteMessage.getData().isEmpty()) {
 
                         if (userName != null) {
 
                             if (toolbar != null) {
 
-                                if (!toolbar.getTitle().equals(groupName)) {
+                                if (!toolbar.getTitle().equals(UsuariosFragment.groupName)) {
 
                                     String title = "Nuevo mensaje de " + type;
                                     String text = userName + ": " + msg;
@@ -188,7 +186,7 @@ public class FCM extends FirebaseMessagingService {
 
         notificationManager.notify(NOTIFICATION_ID,builder.build());
 
-        if (!type.equals(groupName)) {
+        if (!type.equals(UsuariosFragment.groupName)) {
             DoubleCheck(id_user, type, ref);
         }
 

@@ -34,7 +34,7 @@ import com.zibete.proyecto1.utils.UserRepository
 
 class SliderProfileAdapter(
     private val context: Context,
-    private val userList: ArrayList<Users>,
+    private val userList: MutableList<Users>,
     private val rotation: Int
 ) : RecyclerView.Adapter<SliderProfileAdapter.VH>() {
 

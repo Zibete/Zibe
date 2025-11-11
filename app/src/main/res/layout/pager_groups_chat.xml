@@ -20,14 +20,12 @@
             app:badgeBackgroundColor="@color/colorAccent"
             android:id="@+id/tab_layout"/>
 
-
         <androidx.viewpager.widget.ViewPager
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/viewPager"/>
 
     </LinearLayout>
-
 
     <LinearLayout
         android:id="@+id/linearProgressBar"
@@ -37,7 +35,6 @@
         android:gravity="center"
         android:visibility="gone">
 
-
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_gravity="center"
@@ -46,9 +43,4 @@
 
     </LinearLayout>
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-
-
-
-
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

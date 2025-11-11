@@ -229,28 +229,18 @@
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="80dp"/>
-
-
             </LinearLayout>
-
-
-
 
         </ScrollView>
 
-
-
-
-
-
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar_profile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
         android:background="@color/transparent">
 
-    </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/floatingActionMenu"
@@ -286,7 +276,6 @@
             android:src="@drawable/ic_baseline_send_24"
             android:layout_marginBottom="15dp"
             app:fab_label="Chat de ZibeApp"/>
-
 
     </com.github.clans.fab.FloatingActionMenu>
 

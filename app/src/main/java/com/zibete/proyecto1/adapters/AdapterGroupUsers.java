@@ -29,6 +29,7 @@ import com.zibete.proyecto1.ChatActivity;
 import com.zibete.proyecto1.model.UserGroup;
 import com.zibete.proyecto1.PerfilActivity;
 import com.zibete.proyecto1.R;
+import com.zibete.proyecto1.ui.UsuariosFragment;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +41,6 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 import static com.zibete.proyecto1.utils.FirebaseRefs.refCuentas;
 import static com.zibete.proyecto1.utils.FirebaseRefs.refGroupData;
-import static com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment.groupName;
 
 public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.viewHolderAdapter> implements Filterable {
 
@@ -177,7 +177,7 @@ public class AdapterGroupUsers extends RecyclerView.Adapter<AdapterGroupUsers.vi
         }
 
 
-        refGroupData.child(groupName).child("id_creator").addListenerForSingleValueEvent(new ValueEventListener() {
+        refGroupData.child(UsuariosFragment.groupName).child("id_creator").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 

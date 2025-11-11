@@ -33,10 +33,10 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.Constants
-import com.zibete.proyecto1.utils.DateUtils.calcularEdad
+import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
@@ -278,7 +278,7 @@ class PerfilActivity : AppCompatActivity() {
                     val otherLongitude = snapshot.child("longitud").getValue(Double::class.java)
 
                     // Edad
-                    val edad = calcularEdad(birthDay)
+                    val edad = calcAge(birthDay)
                     age.text = edad?.toString() ?: ""
 
                     // Distancia

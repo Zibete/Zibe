@@ -12,6 +12,7 @@ import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Chronometer
 import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
@@ -351,8 +352,8 @@ class AdapterChat(
         val linearMensajeAudio: View,
         val circleImgAudio: de.hdodenhof.circleimageview.CircleImageView?,
         val icPlayPause: ImageView?,
-        val tvTimer: android.widget.Chronometer?,
-        val seekBar: android.widget.SeekBar?
+        val tvTimer: Chronometer?,
+        val seekBar: SeekBar?
     ) {
         companion object {
             fun from(b: RowMsgRightBinding): CommonBindingAccessor = CommonBindingAccessor(

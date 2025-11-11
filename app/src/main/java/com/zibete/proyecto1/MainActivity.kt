@@ -64,9 +64,9 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.ChatListFragment
 import com.zibete.proyecto1.ui.EditProfileFragment
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
 import com.zibete.proyecto1.ui.FavoritesFragment
 import com.zibete.proyecto1.ui.GruposFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.Constants.CHATWITH
 import com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN
@@ -801,8 +801,8 @@ class MainActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        UsuariosFragment.DeletePreferences()
-        EditProfileFragment.DeleteProfilePreferences(this)
+        UsuariosFragment.deletePreferences()
+        EditProfileFragment.deleteProfilePreferences(this)
 
         FirebaseAuth.getInstance().signOut()
         LoginManager.getInstance().logOut()
@@ -942,7 +942,7 @@ class MainActivity : AppCompatActivity() {
                     if (searchView != null && !searchView!!.isIconified) {
                         searchView?.onActionViewCollapsed()
                     } else {
-                        super.onBackPressed()
+                        onBackPressedDispatcher.onBackPressed()
                     }
                 } else {
                     NavChatList()
@@ -950,12 +950,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    override fun onBackPressed() {
-        // Redirigido al handler legacy para mantener compatibilidad con onBackPressedDispatcher
-        onBackPressedLegacy()
-    }
-
     // ========= Acciones de chat =========
 
     fun unlockUser() {

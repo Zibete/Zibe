@@ -27,9 +27,10 @@ import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.DateUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.GlassEffect
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
@@ -42,7 +43,6 @@ class AdapterUsers(
     private val usersListAll: MutableList<Users>,
     private val context: Context
 ) : RecyclerView.Adapter<ViewHolderAdapter?>(), Filterable {
-    private val user = FirebaseAuth.getInstance().getCurrentUser()
 
     // --------------------- Filtro --------------------- //
     override fun getFilter(): Filter {
@@ -65,7 +65,7 @@ class AdapterUsers(
 
         override fun publishResults(constraint: CharSequence?, results: FilterResults) {
             usersList.clear()
-            usersList.addAll(results.values as List<Users>)
+            usersList.addAll(results.values as MutableList<Users>)
             notifyDataSetChanged()
             UsuariosFragment.setScrollbar()
         }
@@ -137,21 +137,21 @@ class AdapterUsers(
         }
 
         // Acciones
-        holder.goChat.setOnClickListener(View.OnClickListener { v: View? ->
+        holder.goChat.setOnClickListener { v: View? ->
             val intent = Intent(v!!.context, ChatActivity::class.java)
             intent.putExtra("id_user", u.id)
             v.context.startActivity(intent)
-        })
+        }
 
-        holder.cardView.setOnClickListener(View.OnClickListener { v: View? ->
+        holder.cardView.setOnClickListener { v: View? ->
             val intent = Intent(context, SlideProfileActivity::class.java)
-            val extra = ArrayList<Users?>(usersList)
+            val extra = ArrayList<Users>(usersList)
             extra.reverse()
             intent.putExtra("userList", extra)
             intent.putExtra("position", extra.indexOf(u))
             intent.putExtra("rotation", 0)
             v?.context?.startActivity(intent)
-        })
+        }
     }
 
     override fun onBindViewHolder(holder: ViewHolderAdapter, position: Int) { /* manejado arriba */
@@ -186,13 +186,13 @@ class AdapterUsers(
         }
 
         // Edad
-        val edad = DateUtils.calcularEdad(users.birthDay)
+        val edad = DateUtils.calcAge(users.birthDay)
         h.tv_edad.text = edad.toString()
 
 
         // Descripción
-        if (users.description != null && !users.description!!.isEmpty()) {
-            h.tv_desc.setText(users.description)
+        if (!users.description.isEmpty()) {
+            h.tv_desc.text = users.description
             h.linear_desc.visibility = View.VISIBLE
         } else {
             h.linear_desc.visibility = View.GONE
@@ -219,7 +219,7 @@ class AdapterUsers(
             })
 
         // Bloqueado
-        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(users.id)
+        FirebaseRefs.refDatos.child(user!!.uid).child(Constants.CHATWITH).child(users.id)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {

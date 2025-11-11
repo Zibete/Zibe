@@ -3,8 +3,8 @@ package com.zibete.proyecto1.adapters
 import androidx.recyclerview.widget.DiffUtil
 
 class FavoritesDiffCallback(
-    private val newList: ArrayList<String>,
-    private val oldList: ArrayList<String>
+    private val newList: List<String>,
+    private val oldList: List<String>
 ) :  DiffUtil.Callback() {
 
     override fun getOldListSize() = newList.size

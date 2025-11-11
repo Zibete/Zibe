@@ -38,7 +38,7 @@ import com.zibete.proyecto1.databinding.RowGroupMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowGroupMsgRightBinding
 import com.zibete.proyecto1.databinding.RowNotifBinding
 import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.FirebaseRefs
 
 class AdapterChatGroup(

@@ -61,8 +61,6 @@
 
                 </LinearLayout>
 
-
-
                 <!-- Campo de comentarios con Material TextInput -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
@@ -85,9 +83,6 @@
                         android:textColor="@color/colorClaro"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
-
-
-
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_send"
                     style="@style/Zibe.Button.Primary"
@@ -96,27 +91,18 @@
                     android:layout_marginTop="16dp"
                     android:text="Enviar" />
 
-
             </LinearLayout>
-
 
         </com.google.android.material.card.MaterialCardView>
 
-
-
-
-
     </androidx.core.widget.NestedScrollView>
 
-
-
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar_ajustes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
         android:background="@color/transparent"/>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

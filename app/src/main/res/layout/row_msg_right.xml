@@ -8,7 +8,7 @@
     android:id="@+id/linearCardMsg">
 
     <FrameLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
         <LinearLayout
@@ -66,7 +66,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="No disponible"
+                        android:text="@string/imagen_no_disponible"
+                        android:textColor="@color/zibe_text_muted"
+                        android:paddingVertical="15dp"
                         android:visibility="gone" />
 
                     <ProgressBar

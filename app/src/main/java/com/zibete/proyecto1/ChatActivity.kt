@@ -70,7 +70,7 @@ import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.CropHelper

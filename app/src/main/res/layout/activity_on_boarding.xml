@@ -1,60 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android2="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android2:layout_height="match_parent"
-    android2:layout_width="match_parent"
-    android2:fitsSystemWindows="true"
-    android2:theme="@style/AppTheme.NoActionBar"
-    android2:excludeFromRecents="true"
-    android2:background="@drawable/side_nav_bar">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/side_nav_bar"
+    android:fitsSystemWindows="true">
 
-    <androidx.viewpager.widget.ViewPager
-        android2:id="@+id/viewPager"
-        android2:layout_above="@+id/dots"
-        android2:layout_width="match_parent"
-        android2:layout_height="wrap_content">
+    <!-- Páginas -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Controles inferiores -->
+    <LinearLayout
+        android:id="@+id/bottomContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp"
+        android:gravity="center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Dots -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/dots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            app:tabGravity="center"
+            app:tabIndicatorHeight="0dp" />
 
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp">
 
-    </androidx.viewpager.widget.ViewPager>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/atras"
+                android:textAllCaps="false"
+                android:visibility="invisible" />
 
-    <Button
-        android2:id="@+id/btnBack"
-        android2:visibility="gone"
-        android2:text="@string/atras"
-        android2:textAllCaps="false"
-        android2:textColor="@drawable/btn1_color_txt"
-        android2:background="@android:color/transparent"
-        android2:textSize="23sp"
-        android2:layout_alignParentBottom="true"
-        android2:layout_width="wrap_content"
-        android2:layout_height="wrap_content"
-        android2:layout_marginLeft="2dp"
-        />
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
-    <Button
-        android2:id="@+id/btnNext"
-        android2:layout_width="wrap_content"
-        android2:layout_height="wrap_content"
-        android2:layout_alignParentEnd="true"
-        android2:layout_alignParentBottom="true"
-        android2:layout_marginRight="8dp"
-        android2:background="@android:color/transparent"
-        android2:text="@string/siguiente"
-        android2:textAllCaps="false"
-        android2:textColor="@drawable/btn1_color_txt"
-        android2:textSize="23sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSkip"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/saltar"
+                android:textAllCaps="false" />
 
-    <com.google.android.material.tabs.TabLayout
-        android2:id="@+id/dots"
-        android2:layout_alignParentBottom="true"
-        android2:layout_centerHorizontal="true"
-        app:tabGravity="center"
-        app:tabIndicatorHeight="0dp"
-        android2:layout_width="wrap_content"
-        android2:layout_height="wrap_content"
-        />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNext"
+                style="@style/Zibe.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/siguiente"
+                android:textAllCaps="false" />
+        </LinearLayout>
+    </LinearLayout>
 
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

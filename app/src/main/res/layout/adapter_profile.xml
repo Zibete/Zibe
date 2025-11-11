@@ -215,14 +215,12 @@
 
         </ScrollView>
 
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar_profile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Arrow"
-        android:background="@color/transparent">
-
-    </androidx.appcompat.widget.Toolbar>
+        android:background="@color/transparent"/>
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/floatingActionMenu"

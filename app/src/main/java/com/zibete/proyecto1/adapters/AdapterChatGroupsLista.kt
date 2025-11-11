@@ -38,7 +38,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.ui.EditProfileFragment.UsuariosFragment
+import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers

@@ -24,7 +24,7 @@ class SlideProfileActivity : AppCompatActivity() {
 
     private val user = FirebaseAuth.getInstance().currentUser
     private lateinit var progressbarImage: ProgressBar
-    private lateinit var userList: ArrayList<Users>
+    private lateinit var userList: MutableList<Users>
     private lateinit var viewPager: ViewPager2
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,7 +44,7 @@ class SlideProfileActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         @Suppress("UNCHECKED_CAST")
-        userList = (intent.extras?.getSerializable("userList") as? ArrayList<Users>) ?: arrayListOf()
+        userList = (intent.extras?.getSerializable("userList") as? MutableList<Users>) ?: mutableListOf()
         val position = intent.extras?.getInt("position") ?: 0
         val rotation = intent.extras?.getInt("rotation") ?: 0
 
