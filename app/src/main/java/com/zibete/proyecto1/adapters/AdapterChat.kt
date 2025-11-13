@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.adapters
 
+import android.app.ActionBar
 import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
@@ -30,6 +31,8 @@ import com.zibete.proyecto1.databinding.RowDateChatBinding
 import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.heightPx
+import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.widthPx
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -130,7 +133,7 @@ class AdapterChat(
         h.bindingRoot.imgPic?.setOnLongClickListener(longClick)
 
         if (chats.sender == userId) {
-            when (chats.seen ?: 0) {
+            when (chats.seen) {
                 1 -> {
                     h.bindingRoot.checked?.visibility = View.VISIBLE
                     h.bindingRoot.checked?.setColorFilter(ContextCompat.getColor(context, R.color.blanco), PorterDuff.Mode.SRC_IN)
@@ -350,6 +353,7 @@ class AdapterChat(
         val linearMensajeMsg: View,
         val linearMensajePic: View,
         val linearMensajeAudio: View,
+        val linearBubble: View,
         val circleImgAudio: de.hdodenhof.circleimageview.CircleImageView?,
         val icPlayPause: ImageView?,
         val tvTimer: Chronometer?,
@@ -370,6 +374,7 @@ class AdapterChat(
                 linearMensajeMsg = b.linearMensajeMsg,
                 linearMensajePic = b.linearMensajePic,
                 linearMensajeAudio = b.linearMensajeAudio,
+                linearBubble = b.linearBubble,
                 circleImgAudio = b.circleImgAudio,
                 icPlayPause = b.icPlayPause,
                 tvTimer = b.tvTimer,
@@ -389,6 +394,7 @@ class AdapterChat(
                 linearMensajeMsg = b.linearMensajeMsg,
                 linearMensajePic = b.linearMensajePic,
                 linearMensajeAudio = b.linearMensajeAudio,
+                linearBubble = b.linearBubble,
                 circleImgAudio = b.circleImgAudio,
                 icPlayPause = b.icPlayPause,
                 tvTimer = b.tvTimer,
@@ -401,12 +407,18 @@ class AdapterChat(
     private fun bindCommonFields(bCommon: CommonBindingAccessor, model: Chats, isMe: Boolean) {
         bCommon.hora?.text = model.date.safeSub(11, 16)
 
+        val paramsBubble = bCommon.linearBubble.layoutParams as ViewGroup.MarginLayoutParams
+
+        if (model.type.isPhoto()) {
+            if (isMe) paramsBubble.marginStart = (widthPx / 3) else paramsBubble.marginEnd = (widthPx / 3)
+        }else{
+            if (isMe) paramsBubble.marginStart = (widthPx / 6) else paramsBubble.marginEnd = (widthPx / 6)
+        }
         when {
             model.type.isPhoto() -> {
                 bCommon.linearMensajePic.visibility = View.VISIBLE
                 bCommon.linearMensajeMsg.visibility = View.GONE
                 bCommon.linearMensajeAudio.visibility = View.GONE
-
                 bCommon.tvNotFound?.visibility = View.GONE
                 bCommon.loadingPhoto?.visibility = View.VISIBLE
 

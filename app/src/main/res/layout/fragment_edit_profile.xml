@@ -158,7 +158,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="top"
-                                android:hint="@string/Descipcion"
+                                android:hint="@string/description"
                                 android:inputType="textMultiLine|textCapSentences"
                                 android:maxLines="5"
                                 android:minLines="3"

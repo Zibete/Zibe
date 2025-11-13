@@ -76,8 +76,7 @@ import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import com.zibete.proyecto1.utils.UserRepository.updateLocationUI
-import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.heightPx
-import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.init
+import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -188,10 +187,11 @@ class MainActivity : AppCompatActivity() {
         val editPerfil = headerView?.findViewById<LinearLayout>(R.id.editPerfil)
 
         // Screen utils
-        init(this)
+        ScreenUtils.init(this)
+
         linearImageUser?.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            heightPx / 2
+            ScreenUtils.heightPx / 2
         )
 
         tvUsuario?.text = user.displayName

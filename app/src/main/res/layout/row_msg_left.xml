@@ -1,175 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    android:id="@+id/linearCardMsg"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:backgroundTint="@color/zibe_night_start"
-    android:id="@+id/linearCardMsg">
+    android:gravity="start">
 
-    <!-- Contenedor para overlay de selección -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+    <!-- CONTENIDO DEL MENSAJE -->
+    <LinearLayout
+        android:id="@+id/linearBubble"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginVertical="2dp">
 
-        <!-- CONTENIDO DEL MENSAJE -->
+        <!-- BLOQUE TEXTO -->
         <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
+            android:id="@+id/linear_mensaje_msg"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginVertical="2dp"
-            android:gravity="start|bottom">
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/chat_left"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="16dp">
 
-            <!-- BLOQUE TEXTO -->
-            <LinearLayout
-                android:id="@+id/linear_mensaje_msg"
+            <TextView
+                android:id="@+id/tvMsg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/chat_left"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:visibility="gone">
+                android:textIsSelectable="true"
+                android:text="sfgh fhg fgh fhg fhg fhg fgh fgh fgh fgh fgh fgh fghj fjh fj zfjgzfg j fgjfjg fzjg zfxgj "
+                android:textSize="16sp" />
+        </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvMsg"
+        <!-- BLOQUE FOTO -->
+        <LinearLayout
+            android:id="@+id/linear_mensaje_pic"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/chat_left"
+            android:padding="2dp"
+            android:visibility="gone">
+
+            <androidx.coordinatorlayout.widget.CoordinatorLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <com.zibete.proyecto1.ui.ResizableImageView
+                    android:id="@+id/img_pic"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textIsSelectable="true"
-                    android:textSize="16sp" />
-            </LinearLayout>
+                    android:contentDescription="Photo message" />
 
-            <!-- BLOQUE FOTO -->
-            <LinearLayout
-                android:id="@+id/linear_mensaje_pic"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/chat_left"
-                android:padding="2dp"
-                android:visibility="gone">
-
-                <androidx.coordinatorlayout.widget.CoordinatorLayout
+                <TextView
+                    android:id="@+id/tv_notFound"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/imagen_no_disponible"
+                    android:textColor="@color/zibe_text_muted"
+                    android:paddingVertical="15dp"
+                    android:visibility="gone" />
 
-                    <com.zibete.proyecto1.ui.ResizableImageView
-                        android:id="@+id/img_pic"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:contentDescription="Photo message" />
+                <ProgressBar
+                    android:id="@+id/loadingPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true"
+                    android:layout_gravity="center" />
+            </androidx.coordinatorlayout.widget.CoordinatorLayout>
+        </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tv_notFound"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:text="No disponible"
-                        android:visibility="gone" />
+        <!-- BLOQUE AUDIO -->
+        <LinearLayout
+            android:id="@+id/linear_mensaje_audio"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="@drawable/chat_left"
+            android:padding="4dp"
+            android:visibility="gone">
 
-                    <ProgressBar
-                        android:id="@+id/loadingPhoto"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:indeterminate="true"
-                        android:layout_gravity="center" />
-                </androidx.coordinatorlayout.widget.CoordinatorLayout>
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/ic_play_pause"
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="6dp"
+                android:contentDescription="ic_play_pause"
+                android:src="@drawable/ic_baseline_play_arrow_24" />
 
-            <!-- BLOQUE AUDIO -->
             <LinearLayout
-                android:id="@+id/linear_mensaje_audio"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/chat_left"
-                android:padding="4dp"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/ic_play_pause"
-                    android:layout_width="40dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="6dp"
-                    android:contentDescription="ic_play_pause"
-                    android:src="@drawable/ic_baseline_play_arrow_24" />
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:layout_marginEnd="6dp">
 
-                    <LinearLayout
+                    <SeekBar
+                        android:id="@+id/seekBar"
+                        android:layout_width="180dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+
+                    <Chronometer
+                        android:id="@+id/tv_timer"
                         android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:layout_marginEnd="6dp">
-
-                        <SeekBar
-                            android:id="@+id/seekBar"
-                            android:layout_width="180dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp" />
-
-                        <Chronometer
-                            android:id="@+id/tv_timer"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:textSize="@dimen/text_size_small" />
-                    </LinearLayout>
-
-                    <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/circleImgAudio"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_gravity="center_vertical" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textSize="@dimen/text_size_small" />
                 </LinearLayout>
-            </LinearLayout>
 
-            <!-- HORA + TILDES -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="bottom|start"
-                android:layout_marginStart="6dp">
-
-                <TextView
-                    android:id="@+id/hora_msg"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="00:00"
-                    android:textSize="12sp"
-                    android:paddingBottom="2dp" />
-
-                <ImageView
-                    android:id="@+id/checked"
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginStart="4dp"
-                    android:visibility="gone"
-                    android:src="@drawable/ic_check_24" />
-
-                <ImageView
-                    android:id="@+id/checked2"
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginStart="2dp"
-                    android:visibility="gone"
-                    android:src="@drawable/ic_check_24" />
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/circleImgAudio"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_vertical" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- OVERLAY DE SELECCIÓN -->
-        <androidx.coordinatorlayout.widget.CoordinatorLayout
-            android:id="@+id/selectedItem"
-            android:layout_width="match_parent"
+        <!-- HORA + TILDES -->
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:background="@color/transparent" />
-    </FrameLayout>
-</androidx.cardview.widget.CardView>
+            android:orientation="horizontal"
+            android:gravity="bottom|start"
+            android:layout_marginStart="6dp">
+
+            <TextView
+                android:id="@+id/hora_msg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="12sp"
+                android:paddingBottom="2dp" />
+
+            <ImageView
+                android:id="@+id/checked"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:visibility="gone"
+                android:src="@drawable/ic_check_24" />
+
+            <ImageView
+                android:id="@+id/checked2"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="2dp"
+                android:visibility="gone"
+                android:src="@drawable/ic_check_24" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- OVERLAY DE SELECCIÓN -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/selectedItem"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/transparent" />
+
+
+</FrameLayout>

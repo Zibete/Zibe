@@ -17,7 +17,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/transparent"
             app:navigationIcon="@drawable/ic_baseline_arrow_back_24"
-            app:titleTextColor="@android:color/white" />
+            app:titleTextColor="@android:color/white"
+            android:elevation="0dp"/>
 
     </LinearLayout>
 
@@ -119,21 +120,22 @@
 
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Zibe.Input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                app:startIconDrawable="@drawable/ic_info_24">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edt_descripcion"
                     android:layout_width="match_parent"
-                    android:layout_height="120dp"
-                    android:hint="@string/Descipcion"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:gravity="start|top"
-                    android:padding="8dp"/>
+                    android:layout_height="160dp"
+                    android:hint="@string/description"
+                    android:inputType="textMultiLine|textCapSentences" />
 
             </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Tip/Hints -->
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/bt_registro"

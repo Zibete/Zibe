@@ -1,75 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/linearCardMsg"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:backgroundTint="@color/zibe_night_start"
-    android:id="@+id/linearCardMsg">
+    android:backgroundTint="@android:color/transparent"
+    app:cardElevation="0dp">
 
     <FrameLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
+        <!-- CONTENIDO DEL MENSAJE -->
         <LinearLayout
+            android:id="@+id/linearBubble"
+            android:baselineAligned="false"
             android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginEnd="6dp"
             android:layout_marginVertical="2dp"
-            android:gravity="end|bottom">
+            android:layout_gravity="end|bottom">
 
-            <!-- TEXTO -->
+            <!-- BLOQUE TEXTO -->
             <LinearLayout
                 android:id="@+id/linear_mensaje_msg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:orientation="vertical"
                 android:background="@drawable/chat_right"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingVertical="8dp"
+                android:paddingHorizontal="16dp"
+
                 android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tvMsg"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textIsSelectable="true"
+                    android:text="Hola"
                     android:textSize="16sp" />
             </LinearLayout>
 
-            <!-- FOTO -->
+            <!-- BLOQUE FOTO -->
             <LinearLayout
                 android:id="@+id/linear_mensaje_pic"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:orientation="vertical"
                 android:background="@drawable/chat_right"
-                android:padding="2dp"
-                android:visibility="gone">
+                android:padding="2dp">
 
                 <androidx.coordinatorlayout.widget.CoordinatorLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content">
 
-                    <com.zibete.proyecto1.ui.ResizableImageView
+                    <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/img_pic"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:contentDescription="Photo message" />
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/Shape.Bubble.Right"/>
+
 
                     <TextView
                         android:id="@+id/tv_notFound"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
+                        android:textAlignment="center"
                         android:text="@string/imagen_no_disponible"
                         android:textColor="@color/zibe_text_muted"
-                        android:paddingVertical="15dp"
-                        android:visibility="gone" />
+                        android:layout_margin="20dp"
+                        android:paddingVertical="15dp"/>
 
                     <ProgressBar
                         android:id="@+id/loadingPhoto"
@@ -80,11 +87,12 @@
                 </androidx.coordinatorlayout.widget.CoordinatorLayout>
             </LinearLayout>
 
-            <!-- AUDIO -->
+            <!-- BLOQUE AUDIO -->
             <LinearLayout
                 android:id="@+id/linear_mensaje_audio"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:orientation="horizontal"
                 android:background="@drawable/chat_right"
                 android:padding="4dp"
@@ -150,19 +158,19 @@
                     android:id="@+id/checked"
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="4dp"
-                    android:visibility="gone"
+                    android:layout_marginStart="2dp"
                     android:src="@drawable/ic_check_24" />
 
                 <ImageView
                     android:id="@+id/checked2"
                     android:layout_width="14dp"
                     android:layout_height="14dp"
-                    android:layout_marginStart="2dp"
-                    android:visibility="gone"
+                    android:layout_marginStart="-10.5dp"
                     android:src="@drawable/ic_check_24" />
             </LinearLayout>
+
         </LinearLayout>
+
 
         <!-- OVERLAY DE SELECCIÓN -->
         <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -170,5 +178,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/transparent" />
+
+
+
     </FrameLayout>
+
+
+
 </androidx.cardview.widget.CardView>

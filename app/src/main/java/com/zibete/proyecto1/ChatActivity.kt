@@ -605,7 +605,7 @@ class ChatActivity : AppCompatActivity() {
             snackCenter("No se pudo abrir la cámara")
             return
         }
-        takePictureLauncher.launch(imageUriCamera)
+        takePictureLauncher.launch(imageUriCamera!!)
     }
 
     // ----------------------------- Audio (MediaStore, sin rutas directas) -----------------------------

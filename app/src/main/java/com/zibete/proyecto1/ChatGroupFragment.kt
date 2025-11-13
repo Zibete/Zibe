@@ -601,7 +601,7 @@ class ChatGroupFragment : Fragment() {
             return
         }
 
-        takePictureLauncher.launch(imageUriCamera)
+        takePictureLauncher.launch(imageUriCamera!!)
     }
 
 //    private fun startCamera() {

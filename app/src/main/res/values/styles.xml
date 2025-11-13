@@ -101,15 +101,16 @@
     </style>
 
     <style name="Zibe.Input" parent="Widget.MaterialComponents.TextInputLayout.FilledBox.Dense">
+        <!-- Lo tuyo -->
         <item name="boxBackgroundColor">@color/zibe_night_end</item>
-        <item name="boxStrokeColor">@color/zibe_input_border</item>
-        <item name="android:textColorHint">@color/zibe_hint_text</item> <!-- en reposo -->
-        <item name="hintTextColor">@color/zibe_hint_text</item> <!-- flotante -->
-        <item name="hintTextAppearance">@style/Zibe.HintText</item> <!-- refuerza color -->
-        <!-- <item name="placeholderTextColor">@color/zibe_hint_text</item> -->
+        <item name="boxStrokeColor">@color/zibe_purple</item>
+        <item name="android:textColorHint">@color/zibe_hint_text</item> <!-- reposo -->
+        <item name="hintTextColor">@color/zibe_hint_text</item>        <!-- flotante -->
+        <item name="hintTextAppearance">@style/Zibe.HintText</item>
         <item name="startIconTint">@color/zibe_text_muted</item>
         <item name="endIconTint">@color/zibe_text_muted</item>
     </style>
+
 
     <!-- EditText interno (si lo aplicás aparte) -->
     <style name="Zibe.EditText" parent="Widget.MaterialComponents.TextInputEditText.FilledBox.Dense">
@@ -250,6 +251,18 @@
         <item name="cornerSize">16dp</item>
     </style>
 
+    <!-- CHAT bubble -->
+    <style name="Shape.Bubble">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="Shape.Bubble.Right">
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="Shape.Bubble.Left">
+        <item name="cornerSizeBottomLeft">0dp</item>
+    </style>
 
 
 </resources>

@@ -11,7 +11,7 @@
     <string name="fin_registro">Finalizar registro</string>
     <string name="fecha_nacimiento">Fecha de nacimiento</string>
     <string name="Edad">Edad</string>
-    <string name="Descipcion">¿Algo sobre vos?</string>
+    <string name="description">¿Algo sobre vos?</string>
     <string name="Entrar">Entrar</string>
     <string name="Logout">Cerrar sesión</string>
     <string name="datos">Complete sus datos</string>
@@ -101,7 +101,7 @@
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
     <string name="espere">Espere...</string>
-    <string name="imagen_no_disponible">Imagen no disponible</string>
+    <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
 
     <string-array name="edad">
         <item>18</item>

@@ -11,6 +11,8 @@ buildscript {
         classpath 'com.android.tools.build:gradle:8.13.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.gms:google-services:4.4.4"
+        classpath "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:2.2.21"
+
     }
 }
 // 👇 ESTE BLOQUE hay que borrarlo, o dejarlo vacío:
