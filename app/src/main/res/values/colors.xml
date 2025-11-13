@@ -32,7 +32,8 @@
     <color name="zibe_purple">#8B3CFF</color>
     <color name="zibe_purple_dark">#6A28C8</color>
     <color name="zibe_gradient_start">#FF3B93</color>
-    <color name="zibe_gradient_end">#8B3CFF</color>
+    <color name="zibe_gradient_medium">#8B3CFF</color>
+    <color name="zibe_gradient_end">#3A54BF</color>
     <color name="zibe_pink_24">#40FF4081</color>
 
 

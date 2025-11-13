@@ -3,8 +3,8 @@
     <gradient
         android:angle="315"
         android:startColor="@color/zibe_gradient_start"
-        android:centerColor="@color/zibe_gradient_end"
-        android:endColor="@color/zibe_blue"
+        android:centerColor="@color/zibe_gradient_medium"
+        android:endColor="@color/zibe_gradient_end"
         android:type="linear"/>
 </shape>
 

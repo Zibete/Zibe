@@ -150,7 +150,7 @@
             android:theme="@style/AppTheme.MainActivity" />
 
         <activity
-            android:name=".SignUpActivity"
+            android:name=".ui.signup.SignUpActivity"
             android:parentActivityName=".AuthActivity"
             android:theme="@style/AuthTheme.Zibe" />
 

@@ -45,6 +45,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.storage.FirebaseStorage;
 import com.zibete.proyecto1.Splash.SplashActivity;
+import com.zibete.proyecto1.ui.signup.SignUpActivity;
 
 import java.util.Arrays;
 
