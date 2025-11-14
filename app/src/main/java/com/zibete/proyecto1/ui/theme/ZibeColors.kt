@@ -9,7 +9,7 @@ val LocalZibeExtendedColors = staticCompositionLocalOf { ZibeExtendedColorSet() 
 
 class ZibeExtendedColorSet(
 
-    val surfaceBright: Color = Color(0xFF1E2A38),
+    val snackbarSurface: Color = Color(0xFF1E2A38),
     val zibeGradientStart: Color = Color(0xFFFF3B93),
     val zibeGradientMedium: Color = Color(0xFF8B3CFF),
     val zibeGradientEnd: Color = Color(0xFF3A54BF),
@@ -24,6 +24,12 @@ class ZibeExtendedColorSet(
     val border: Color = Color(0xFFF6286D),
 
     val mutedText: Color = Color(0xFFA3B1C6),
+
+    val zibeRed: Color = Color(0xFFFF4C4C),
+    val zibeYellow: Color = Color(0xFFFFD93B),
+    val zibeGreen: Color = Color(0xFF4CAF50),
+    val zibeBlue: Color = Color(0xFF3A7BFF),
+
 
     val gradientZibe: Brush = Brush.verticalGradient(
         colors = listOf(zibeGradientStart,

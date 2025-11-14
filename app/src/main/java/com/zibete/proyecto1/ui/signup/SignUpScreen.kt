@@ -17,12 +17,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,10 +44,15 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeInputField
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
+import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -52,19 +61,25 @@ import java.util.Locale
 @Composable
 fun PreviewSignUpScreen() {
     ZibeTheme {
+        val fakeFlow = MutableSharedFlow<SignUpActivity.SignUpEvent>()
+
         SignUpScreen(
             onBack = {},
-            onRegister = { _, _, _, _, _ -> }
+            onRegister = { _, _, _, _, _ -> },
+            signUpEvents = fakeFlow
         )
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onBack: () -> Unit,
-    onRegister: (String, String, String, String, String) -> Unit
-) {
+    onRegister: (String, String, String, String, String) -> Unit,
+    signUpEvents: MutableSharedFlow<SignUpActivity.SignUpEvent>
+)
+ {
     var email by rememberSaveable { mutableStateOf("") }
     var pass by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -73,11 +88,33 @@ fun SignUpScreen(
     var desc by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+     LaunchedEffect(Unit) {
+         signUpEvents.collect { event ->
+             scope.launch {
+                 snackbarHostState.currentSnackbarData?.dismiss()
+                 snackbarHostState.showZibeMessage(
+                     type = event.type,
+                     message = event.message
+                 )
+             }
+         }
+     }
+
+
+
+
+
     val gradientZibe = LocalZibeExtendedColors.current.gradientZibe
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        snackbarHost = {
+            ZibeSnackbarHost(hostState = snackbarHostState)
+        },
         topBar = {
             ZibeToolbar(
                 title = "Tus datos",
