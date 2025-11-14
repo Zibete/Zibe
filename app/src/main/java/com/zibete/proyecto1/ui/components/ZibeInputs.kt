@@ -11,10 +11,11 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
 fun ZibeInputField(
@@ -33,16 +34,19 @@ fun ZibeInputField(
     readOnly: Boolean = false
 )
  {
-    val containerColor = colorResource(id = R.color.zibe_night_end)
-    val borderColor = colorResource(id = R.color.accent)
-    val hintColor = colorResource(id = R.color.zibe_hint_text)
-    val iconTint = colorResource(id = R.color.zibe_text_muted)
-    val textColor = colorResource(id = R.color.white)
+     val zibeColors = LocalZibeExtendedColors.current
+
+     val containerColor = zibeColors.inputBackground
+     val borderColor = zibeColors.border
+     val hintColor = zibeColors.mutedText
+     val iconTint = zibeColors.mutedText
+     val textColor = Color.White
 
     Box(
         modifier = Modifier
             .padding(bottom = 8.dp)
             .fillMaxWidth()
+            .shadow(8.dp)
     ) {
         TextField(
             value = value,
@@ -53,8 +57,8 @@ fun ZibeInputField(
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
             shape = RoundedCornerShape(
-                topStart = 8.dp,
-                topEnd = 8.dp,
+                topStart = 12.dp,
+                topEnd = 12.dp,
                 bottomStart = 0.dp,
                 bottomEnd = 0.dp
             ),
