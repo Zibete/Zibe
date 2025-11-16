@@ -31,7 +31,9 @@ fun ZibeInputField(
 
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+
+    enabled: Boolean = true
 )
  {
      val zibeColors = LocalZibeExtendedColors.current

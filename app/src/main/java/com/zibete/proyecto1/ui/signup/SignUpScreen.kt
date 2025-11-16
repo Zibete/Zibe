@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -41,10 +42,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.auth.AuthActivity
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
@@ -66,48 +67,46 @@ fun PreviewSignUpScreen() {
         SignUpScreen(
             onBack = {},
             onRegister = { _, _, _, _, _ -> },
-            signUpEvents = fakeFlow
+            signUpEvents = fakeFlow,
+            isLoading = false
         )
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onBack: () -> Unit,
     onRegister: (String, String, String, String, String) -> Unit,
-    signUpEvents: MutableSharedFlow<SignUpActivity.SignUpEvent>
+    signUpEvents: MutableSharedFlow<SignUpActivity.SignUpEvent>,
+    isLoading: Boolean
 )
  {
     var email by rememberSaveable { mutableStateOf("") }
-    var pass by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var birthday by rememberSaveable { mutableStateOf("") }
     var desc by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+     val snackbarHostState = remember { SnackbarHostState() }
+     val scope = rememberCoroutineScope()
 
      LaunchedEffect(Unit) {
          signUpEvents.collect { event ->
-             scope.launch {
-                 snackbarHostState.currentSnackbarData?.dismiss()
-                 snackbarHostState.showZibeMessage(
-                     type = event.type,
-                     message = event.message
-                 )
+             when (event) {
+                 is SignUpActivity.SignUpEvent.ShowSnackbar -> {
+                     scope.launch {
+                         snackbarHostState.showZibeMessage(
+                             type = event.type,
+                             message = event.message
+                         )
+                     }
+                 }
              }
          }
      }
-
-
-
-
-
-    val gradientZibe = LocalZibeExtendedColors.current.gradientZibe
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -125,45 +124,48 @@ fun SignUpScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(gradientZibe)
+                .background(LocalZibeExtendedColors.current.gradientZibe)
         ) {
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
-                    .padding(start = 16.dp,
+                    .padding(
+                        start = 16.dp,
                         end = 16.dp,
                         bottom = innerPadding.calculateTopPadding(),
-                        top = innerPadding.calculateTopPadding())
+                        top = innerPadding.calculateTopPadding()
+                    )
             )
             {
                 // EMAIL
                 ZibeInputField(
                     value = email,
                     onValueChange = { email = it },
-                    label = "Correo electrónico",
+                    label = stringResource(id = R.string.email),
 
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_mail_24),
-                            contentDescription = "Correo electrónico"
+                            contentDescription = stringResource(id = R.string.email)
                         )
                     },
+                    enabled = !isLoading
                 )
 
                 // PASSWORD
                 ZibeInputField(
-                    value = pass,
-                    onValueChange = { pass = it },
-                    label = "Contraseña",
+                    value = password,
+                    onValueChange = { password = it },
+                    label = stringResource(id = R.string.password),
 
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_lock_24),
-                            contentDescription = "Contraseña"
+                            contentDescription = stringResource(id = R.string.password)
                         )
                     },
                     trailingIcon = {
@@ -183,6 +185,7 @@ fun SignUpScreen(
                         VisualTransformation.None
                     else
                         PasswordVisualTransformation(),
+                    enabled = !isLoading
                 )
 
                 // NOMBRE
@@ -197,6 +200,7 @@ fun SignUpScreen(
                             contentDescription = "Nombre"
                         )
                     },
+                    enabled = !isLoading
                 )
 
                 // FECHA DE NACIMIENTO
@@ -214,6 +218,7 @@ fun SignUpScreen(
                                 tint = colorResource(id = R.color.zibe_text_muted)
                             )
                         },
+                        enabled = !isLoading,
                         readOnly = true,
                     )
                     Box(
@@ -267,11 +272,11 @@ fun SignUpScreen(
                             contentDescription = "Descripción"
                         )
                     },
-
                     keyboardOptions = KeyboardOptions.Default.copy(
                         imeAction = ImeAction.Default,
                         capitalization = KeyboardCapitalization.Sentences
-                    )
+                    ),
+                    enabled = !isLoading
                 )
 
                 // 💡 Tip dinámico
@@ -286,10 +291,11 @@ fun SignUpScreen(
                 ZibeButton(
                     modifier = Modifier
                         .padding(top = 8.dp),
-                    text = "Finalizar registro",
-                    onClick = { onRegister(email, pass, name, birthday, desc) }
+                    text = stringResource(R.string.finalizar_registro),
+                    onClick = { onRegister(email, password, name, birthday, desc) },
+                    enabled = !isLoading,
+                    isLoading = isLoading
                 )
-
             }
         }
     }

@@ -1,0 +1,55 @@
+package com.zibete.proyecto1.ui.components
+
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+
+@Composable
+fun ZibeDialog(
+    title: String,
+    textContent: @Composable () -> Unit,
+    confirmText: String,
+    onConfirm: () -> Unit,
+    dismissText: String = "Cancelar",
+    onDismiss: () -> Unit,
+    enabled: Boolean = true
+) {
+
+    val zibeColors = LocalZibeExtendedColors.current
+
+    AlertDialog(
+        onDismissRequest = { if (enabled) onDismiss() },
+        containerColor = zibeColors.snackbarSurface,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+
+        text = textContent,
+
+        confirmButton = {
+            TextButton(
+                onClick = { if (enabled) onConfirm() },
+                enabled = enabled
+            ) {
+                Text(confirmText)
+            }
+        },
+
+        dismissButton = {
+            TextButton(
+                onClick = { if (enabled) onDismiss() },
+                enabled = enabled
+            ) {
+                Text(dismissText)
+            }
+        }
+    )
+}
+
+

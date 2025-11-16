@@ -1,12 +1,14 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
     <string name="app_name">Zibe</string>
-    <string name="iniciar_sesion1">Iniciar sesión con...</string>
-    <string name="iniciar_sesion2">o utiliza tu cuenta</string>
-    <string name="iniciar_sesion3">¿No tienes una cuenta?</string>
-    <string name="nombre">Nombre/Apodo</string>
-    <string name="email">Ingrese el email</string>
-    <string name="pass1">Ingrese una contraseña</string>
-    <string name="pass2">Repita la contraseña</string>
+    <string name="sign_in_with">Iniciar sesión con...</string>
+    <string name="or_use_your_account">o utilizá tu cuenta</string>
+    <string name="dont_have_an_account">¿No tenés una cuenta?</string>
+    <string name="name">Nombre/Apodo</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="repeat_password">Repita la contraseña</string>
+
     <string name="registro">Registrarse</string>
     <string name="fin_registro">Finalizar registro</string>
     <string name="fecha_nacimiento">Fecha de nacimiento</string>
@@ -89,9 +91,8 @@
     <string name="ocultar">Ocultar</string>
     <string name="grabando">grabando audio...</string>
     <string name="dont_delete_account">Ya no quiero eliminar mi cuenta</string>
-    <string name="olvidaste_contra">¿Olvidaste tu contraseña?</string>
-    <string name="enivar_comentarios">Enivar comentarios</string>
-    <string name="eliminar_cuenta">Eliminar Cuenta</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="send_feedback">Enivar comentarios</string>
     <string name="version">2025</string>
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
@@ -102,6 +103,7 @@
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
     <string name="espere">Espere...</string>
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
+    <string name="finalizar_registro">Finalizar registro</string>
 
     <string-array name="edad">
         <item>18</item>

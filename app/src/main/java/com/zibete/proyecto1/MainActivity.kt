@@ -59,7 +59,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
-import com.zibete.proyecto1.Splash.SplashActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.ChatListFragment

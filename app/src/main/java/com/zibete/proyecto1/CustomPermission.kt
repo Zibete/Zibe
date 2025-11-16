@@ -12,7 +12,7 @@ import androidx.core.app.ActivityCompat
 import com.facebook.login.LoginManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.Splash.SplashActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.Constants.REQUEST_LOCATION
 
 class CustomPermission : AppCompatActivity() {

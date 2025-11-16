@@ -36,7 +36,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.Splash.SplashActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
@@ -54,6 +54,7 @@ import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import androidx.core.content.edit
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -370,7 +371,7 @@ class SettingsActivity : AppCompatActivity() {
                     )
                         .setTitle("Atención")
                         .setMessage(
-                            "Si continúa se eliminarán todos sus datos personales, también las fotos y las conversaciones. ¿Desea continuar?"
+                            "Si continúa se eliminarán todos sus datos personales, las fotos y las conversaciones. ¿Desea continuar?"
                         )
                         .setCancelable(false)
                         .setPositiveButton("Si") { _, _ ->
@@ -616,21 +617,19 @@ class SettingsActivity : AppCompatActivity() {
     ) {
         val credential: AuthCredential?
 
-        when {
-            provider == null && password != null -> {
+        when (provider) {
+            null if password != null -> {
                 credential = EmailAuthProvider.getCredential(user!!.email!!, password)
                 reAuthenticate(newEmail, newPassword, deleteUser, credential)
             }
-
-            provider == "Facebook" -> {
+            "Facebook" -> {
                 val token = AccessToken.getCurrentAccessToken()
                 if (token != null) {
                     credential = FacebookAuthProvider.getCredential(token.token)
                     reAuthenticate(newEmail, newPassword, deleteUser, credential)
                 }
             }
-
-            provider == "Google" -> {
+            "Google" -> {
                 val acct = GoogleSignIn.getLastSignedInAccount(this)
                 if (acct != null) {
                     credential = GoogleAuthProvider.getCredential(acct.idToken, null)
@@ -666,9 +665,9 @@ class SettingsActivity : AppCompatActivity() {
                             .setPositiveButton("Ok") { _, _ ->
                                 val authPreferences =
                                     getSharedPreferences("AuthPreferences", MODE_PRIVATE)
-                                authPreferences.edit()
-                                    .putBoolean("deleteUser", true)
-                                    .apply()
+                                authPreferences.edit {
+                                    putBoolean("deleteUser", true)
+                                }
                                 logOut(null)
                             }
                             .show()

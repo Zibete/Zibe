@@ -76,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:textSize="@dimen/text_size_normal"
-                android:text="@string/iniciar_sesion2"
+                android:text="@string/or_use_your_account"
                 android:layout_marginTop="12dp"
                 android:layout_marginBottom="12dp"/>
 
@@ -122,7 +122,7 @@
                     android:id="@+id/edt_pass"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/pass1"
+                    android:hint="@string/password"
                     android:inputType="textPassword" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -133,7 +133,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="4dp"
-                android:text="@string/olvidaste_contra"
+                android:text="@string/forgot_password"
                 android:textStyle="bold"
                 android:onClick="resetPassword"
                 android:textSize="@dimen/text_size_normal" />
@@ -162,7 +162,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/text_size_normal"
-                    android:text="@string/iniciar_sesion3"
+                    android:text="@string/dont_have_an_account"
                     android:layout_marginEnd="6dp"/>
 
                 <TextView

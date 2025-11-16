@@ -18,7 +18,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import com.zibete.proyecto1.Splash.SplashActivity;
+import com.zibete.proyecto1.ui.splash.SplashActivity;
 import com.zibete.proyecto1.ui.UsuariosFragment;
 
 import static com.zibete.proyecto1.utils.Constants.CHAT;

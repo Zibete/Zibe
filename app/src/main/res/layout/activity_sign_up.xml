@@ -79,7 +79,7 @@
                     android:id="@+id/edt_pass2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/pass1"
+                    android:hint="@string/password"
                     android:inputType="textPassword" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -95,7 +95,7 @@
                     android:id="@+id/edt_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/nombre"/>
+                    android:hint="@string/name"/>
 
             </com.google.android.material.textfield.TextInputLayout>
 

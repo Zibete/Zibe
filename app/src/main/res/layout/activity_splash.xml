@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/zibe_night_start"
-    tools:context=".Splash.SplashActivity">
+    tools:context=".ui.splash.SplashActivity">
 
     <LinearLayout
         android:layout_width="wrap_content"

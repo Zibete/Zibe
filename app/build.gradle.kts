@@ -69,6 +69,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.foundation:foundation:1.9.4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.animation:animation")
@@ -87,7 +88,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-basement:18.9.0")
 
     // Firebase con BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
@@ -132,7 +133,7 @@ dependencies {
     }
 
     // Facebook Login
-    implementation("com.facebook.android:facebook-login:16.3.0")
+    implementation("com.facebook.android:facebook-login:18.1.3")
 
     // Tests
     testImplementation("junit:junit:4.12")

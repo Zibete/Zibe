@@ -62,7 +62,7 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
-import com.zibete.proyecto1.Splash.SplashActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import java.io.File
 import java.io.FileNotFoundException

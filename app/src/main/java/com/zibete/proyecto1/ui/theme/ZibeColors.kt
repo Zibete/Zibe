@@ -45,6 +45,9 @@ val ZibeColorScheme = darkColorScheme(
     primary = Color(0xFFF6286D),              // Pink principal
     onPrimary = Color(0xFFFFFFFF),            // Texto blanco sobre primary
 
+    surfaceContainerHigh = Color(0xFF1E2A38),   // Superficies principales -- Lo usa DatePicker y Dialog
+
+
     )
 
 

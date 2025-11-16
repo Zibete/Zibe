@@ -98,7 +98,7 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
-            android:name=".Splash.SplashActivity"
+            android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/AppTheme.MainActivity">
             <intent-filter>
@@ -108,7 +108,7 @@
         </activity>
 
         <activity
-            android:name=".AuthActivity"
+            android:name=".ui.auth.AuthActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
             android:theme="@style/AuthTheme.Zibe" />
 
@@ -151,7 +151,7 @@
 
         <activity
             android:name=".ui.signup.SignUpActivity"
-            android:parentActivityName=".AuthActivity"
+            android:parentActivityName=".ui.auth.AuthActivity"
             android:theme="@style/AuthTheme.Zibe" />
 
         <activity
