@@ -25,6 +25,7 @@ import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
 import com.zibete.proyecto1.adapters.ChatListGroupsFragment
 import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
@@ -107,7 +108,7 @@ class PageAdapterGroup : Fragment() {
 
                 val snack = Snackbar.make(
                     viewPager,
-                    "No hay conexión a Internet en este momento",
+                    NO_INTERNET,
                     Snackbar.LENGTH_INDEFINITE
                 )
                 snack.setAction("Reintentar") {

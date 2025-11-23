@@ -42,7 +42,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.auth.AuthActivity
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeInputField
@@ -52,6 +51,7 @@ import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -62,7 +62,7 @@ import java.util.Locale
 @Composable
 fun PreviewSignUpScreen() {
     ZibeTheme {
-        val fakeFlow = MutableSharedFlow<SignUpActivity.SignUpEvent>()
+        val fakeFlow = MutableSharedFlow<SignUpUiEvent>()
 
         SignUpScreen(
             onBack = {},
@@ -78,10 +78,9 @@ fun PreviewSignUpScreen() {
 fun SignUpScreen(
     onBack: () -> Unit,
     onRegister: (String, String, String, String, String) -> Unit,
-    signUpEvents: MutableSharedFlow<SignUpActivity.SignUpEvent>,
+    signUpEvents: Flow<SignUpUiEvent>,
     isLoading: Boolean
-)
- {
+) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
@@ -90,23 +89,26 @@ fun SignUpScreen(
     var desc by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-     val snackbarHostState = remember { SnackbarHostState() }
-     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-     LaunchedEffect(Unit) {
-         signUpEvents.collect { event ->
-             when (event) {
-                 is SignUpActivity.SignUpEvent.ShowSnackbar -> {
-                     scope.launch {
-                         snackbarHostState.showZibeMessage(
-                             type = event.type,
-                             message = event.message
-                         )
-                     }
-                 }
-             }
-         }
-     }
+    LaunchedEffect(Unit) {
+        signUpEvents.collect { event ->
+            when (event) {
+                is SignUpUiEvent.ShowSnackbar -> {
+                    scope.launch {
+                        snackbarHostState.showZibeMessage(
+                            type = event.type,
+                            message = event.message
+                        )
+                    }
+                }
+                SignUpUiEvent.RequestLocationPermission -> {
+                    // Esto lo maneja la Activity; acá no hacemos nada.
+                }
+            }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -137,14 +139,12 @@ fun SignUpScreen(
                         bottom = innerPadding.calculateTopPadding(),
                         top = innerPadding.calculateTopPadding()
                     )
-            )
-            {
+            ) {
                 // EMAIL
                 ZibeInputField(
                     value = email,
                     onValueChange = { email = it },
                     label = stringResource(id = R.string.email),
-
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
@@ -160,7 +160,6 @@ fun SignUpScreen(
                     value = password,
                     onValueChange = { password = it },
                     label = stringResource(id = R.string.password),
-
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
@@ -209,7 +208,6 @@ fun SignUpScreen(
                         value = birthday,
                         onValueChange = { },
                         label = "Fecha de nacimiento",
-
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
@@ -261,7 +259,6 @@ fun SignUpScreen(
                     value = desc,
                     onValueChange = { desc = it },
                     label = "¿Algo sobre vos?",
-
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(140.dp),

@@ -54,6 +54,8 @@ import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.SharedFlow
+
 
 @Composable
 fun AuthScreen(
@@ -64,7 +66,7 @@ fun AuthScreen(
     onGoogleClick: () -> Unit,
     onFacebookClick: () -> Unit,
     onDoNotDelete: () -> Unit,
-    authEvents: MutableSharedFlow<AuthActivity.AuthEvent>,
+    authEvents: SharedFlow<AuthUiEvent>,
     isLoading: Boolean
 ) {
     // Inputs
@@ -83,13 +85,20 @@ fun AuthScreen(
     LaunchedEffect(Unit) {
         authEvents.collect { event ->
             when (event) {
-                is AuthActivity.AuthEvent.ShowSnackbar -> {
+                is AuthUiEvent.ShowSnackbar -> {
                     scope.launch {
                         snackbarHostState.showZibeMessage(
                             type = event.type,
                             message = event.message
                         )
                     }
+                }
+                AuthUiEvent.ClearDeletePrefs -> {
+                    // este no muestra UI → solo lo ignorás
+                }
+                AuthUiEvent.NavigateToSplash -> {
+                    // si la UI de Auth no navega, acá no hacés nada
+                    // si querés navegar desde Compose se puede emitir callback
                 }
             }
         }

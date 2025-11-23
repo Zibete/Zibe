@@ -18,11 +18,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
-fun SplashScreen(
-    isLoading: Boolean
-) {
+fun SplashScreen() {
+
     val zibeColors = LocalZibeExtendedColors.current
 
     Surface(
@@ -43,13 +43,12 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    strokeWidth = 4.dp,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
+            // Siempre visible mientras exista el Splash
+            CircularProgressIndicator(
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 4.dp,
+                modifier = Modifier.size(48.dp)
+            )
         }
     }
 }
@@ -57,5 +56,7 @@ fun SplashScreen(
 @Preview(showBackground = true, showSystemUi = false)
 @Composable
 fun SplashScreenPreview() {
-    SplashScreen(isLoading = true)
+    ZibeTheme {
+        SplashScreen()
+    }
 }
