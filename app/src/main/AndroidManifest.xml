@@ -73,7 +73,7 @@
 
         <!-- Activities -->
         <activity
-            android:name=".CustomPermission"
+            android:name=".ui.custompermission.CustomPermissionActivity"
             android:theme="@style/AppTheme.MainActivity" />
 
         <activity
@@ -134,19 +134,14 @@
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation" />
 
         <activity
-            android:name=".OnBoardingActivity"
+            android:name=".ui.onboarding.OnBoardingActivity"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.MainActivity" />
-        <activity
-            android:name=".CallActivity"
-            android:theme="@style/AppTheme.MainActivity" />
-        <activity
-            android:name=".CallingActivity"
             android:theme="@style/AppTheme.MainActivity" />
 
         <activity

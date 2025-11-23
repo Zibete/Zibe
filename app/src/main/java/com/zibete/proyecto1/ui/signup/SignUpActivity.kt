@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.signup
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.custompermission.CustomPermissionActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import com.zibete.proyecto1.utils.Constants
 import kotlinx.coroutines.launch
@@ -57,16 +59,19 @@ class SignUpActivity : ComponentActivity() {
                     when (event) {
 
                         is SignUpUiEvent.ShowSnackbar -> {
-                            // El snackbar lo maneja directamente SignUpScreen (Compose).
-                            // No hacemos nada acá para no duplicar.
+                            // Lo maneja Compose
                         }
 
                         SignUpUiEvent.RequestLocationPermission -> {
-                            ActivityCompat.requestPermissions(
-                                this@SignUpActivity,
-                                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                                Constants.REQUEST_LOCATION
+                            // En lugar de pedir el permiso directo, vamos a la pantalla personalizada
+                            startActivity(
+                                Intent(
+                                    this@SignUpActivity,
+                                    CustomPermissionActivity::class.java
+                                )
                             )
+                            // Opcional: si no querés que vuelvan al registro:
+                            // finish()
                         }
                     }
                 }

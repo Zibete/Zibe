@@ -22,7 +22,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
-import com.zibete.proyecto1.OnBoardingActivity
+import com.zibete.proyecto1.ui.onboarding.OnBoardingActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.signup.SignUpActivity

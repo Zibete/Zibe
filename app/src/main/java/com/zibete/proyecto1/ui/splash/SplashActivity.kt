@@ -6,21 +6,20 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zibete.proyecto1.ui.custompermission.CustomPermissionActivity
 import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.ui.auth.AuthActivity
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.CustomPermission
-import kotlinx.coroutines.launch
-import androidx.compose.material3.Text
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
+import com.zibete.proyecto1.ui.theme.ZibeTheme
+import kotlinx.coroutines.launch
 
 class SplashActivity : ComponentActivity() {
 
@@ -128,7 +127,7 @@ class SplashActivity : ComponentActivity() {
                             startActivity(
                                 Intent(
                                     this@SplashActivity,
-                                    CustomPermission::class.java
+                                    CustomPermissionActivity::class.java
                                 )
                             )
                             finish()
