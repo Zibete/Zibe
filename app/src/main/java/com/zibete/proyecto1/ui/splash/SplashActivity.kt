@@ -1,140 +1,432 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.core.content.edit
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import com.zibete.proyecto1.ui.custompermission.CustomPermissionActivity
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.zibete.proyecto1.MainActivity
-import com.zibete.proyecto1.ui.auth.AuthActivity
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.OnboardingPage
+import com.zibete.proyecto1.ui.auth.AuthScreen
+import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.constants.NO_INTERNET
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
+import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
+import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
+import com.zibete.proyecto1.ui.signup.SignUpScreen
+import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import com.zibete.proyecto1.utils.FirebaseRefs.auth
 import kotlinx.coroutines.launch
 
+@Suppress("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
 
-    private val viewModel: SplashViewModel by viewModels()
+    private val splashVM: SplashViewModel by viewModels()
+    private val authVM: AuthViewModel by viewModels()
 
-    // Estado efímero para el diálogo de token
+    private var tokenDialogState by mutableStateOf<TokenDialogState?>(null)
+    private var noInternetDialog by mutableStateOf(false)
+
     private data class TokenDialogState(
         val mail: String,
         val flag: Int
     )
 
-    private var tokenDialogState by mutableStateOf<TokenDialogState?>(null)
+    // ===============================
+    // SharedPrefs
+    // ===============================
+    private val prefs: SharedPreferences by lazy {
+        getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
+    }
+
+    // ===============================
+    // Google & Facebook
+    // ===============================
+
+    private lateinit var callbackManager: CallbackManager
+    private lateinit var loginManager: LoginManager
+    private lateinit var facebookLauncher: ActivityResultLauncher<Collection<String>>
+    private var googleSignInClient: GoogleSignInClient? = null
+
+    // Google Launcher
+    private val googleSignInLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            handleGoogleResult(result, authVM)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Iniciar lógica del splash
-        viewModel.start(this)
+        // Inyectar prefs al SplashViewModel
+        splashVM.initPrefs(prefs)
 
-        observeEvents()
+        // Iniciar Splash
+        splashVM.start(this)
+
+        // Configurar Google/Facebook
+        setupGoogleSignIn()
+        setupFacebookSignIn(authVM)
 
         setContent {
             ZibeTheme {
 
-                // Pantalla de splash (logo + progress)
-                SplashScreen()
+                val navController = rememberNavController()
+                val snackbarHostState = remember { SnackbarHostState() }
 
-                // Diálogo de token (si corresponde)
-                val dialogState = tokenDialogState
-                if (dialogState != null) {
-                    ZibeDialog(
-                        title = "Un momento…",
-                        textContent = {
-                            Text(
-                                text = "Este dispositivo ya tiene una cuenta vinculada. " +
-                                        "Si continuás, se desvinculará la cuenta asociada a ${dialogState.mail}. ¿Querés seguir?"
-                            )
-                        },
-                        confirmText = "Continuar",
-                        onConfirm = {
-                            // Confirmar en ViewModel y cerrar diálogo
-                            lifecycleScope.launch {
-                                viewModel.onTokenDialogConfirmed(dialogState.flag)
-                                tokenDialogState = null
-                            }
-                        },
-                        dismissText = "Cancelar",
-                        onDismiss = {
-                            lifecycleScope.launch {
-                                viewModel.onTokenDialogCancelled(dialogState.flag)
-                                tokenDialogState = null
-                            }
-                        },
-                        enabled = true
-                    )
-                }
-            }
-        }
-    }
+                Box(modifier = Modifier.fillMaxSize()) {
 
-    private fun observeEvents() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.events.collect { event ->
-                    when (event) {
-                        is SplashUiEvent.NavigateAuth -> {
-                            startActivity(Intent(this@SplashActivity, AuthActivity::class.java))
-                            finish()
+                    NavHost(
+                        navController = navController,
+                        startDestination = "splash"
+                    ) {
+
+                        // ======================================
+                        // SPLASH
+                        // ======================================
+                        composable("splash") {
+                            SplashScreen()
                         }
 
-                        is SplashUiEvent.NavigateEditProfile -> {
-                            startActivity(
-                                Intent(this@SplashActivity, MainActivity::class.java).apply {
-                                    putExtra("flagIntent", 0)
-                                }
-                            )
-                            finish()
-                        }
+                        // ======================================
+                        // ONBOARDING
+                        // ======================================
+                        composable("onboarding") {
 
-                        is SplashUiEvent.NavigateMain -> {
-                            startActivity(
-                                Intent(this@SplashActivity, MainActivity::class.java).apply {
-                                    putExtra("flagIntent", 1)
-                                }
-                            )
-                            finish()
-                        }
-
-                        is SplashUiEvent.ShowNoInternet -> {
-                            Toast.makeText(
-                                this@SplashActivity,
-                                NO_INTERNET,
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-
-                        is SplashUiEvent.ShowTokenDialog -> {
-                            tokenDialogState = TokenDialogState(
-                                mail = event.mail,
-                                flag = event.flag
-                            )
-                        }
-
-                        is SplashUiEvent.RequestLocationPermission -> {
-                            startActivity(
-                                Intent(
-                                    this@SplashActivity,
-                                    CustomPermissionActivity::class.java
+                            val pages = listOf(
+                                OnboardingPage(
+                                    animationRes = R.raw.chat_right,
+                                    title = "Chatea",
+                                    description = "Chatea con familiares y amigos en tiempo real."
+                                ),
+                                OnboardingPage(
+                                    animationRes = R.raw.lf30_editor_miibzys8,
+                                    title = "Descubre",
+                                    description = "Encuentra personas cercanas y hace nuevos contactos."
+                                ),
+                                OnboardingPage(
+                                    animationRes = R.raw.onboarding_persons,
+                                    title = "Socializa",
+                                    description = "Crea salas o unite a salas de chat."
                                 )
                             )
-                            finish()
+
+                            OnboardingScreen(
+                                pages = pages,
+                                onFinished = {
+                                    prefs.edit { putBoolean("onBoarding", true) }
+                                    navController.navigate("auth") {
+                                        popUpTo("onboarding") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        // ======================================
+                        // AUTH
+                        // ======================================
+                        composable("auth") {
+
+                            val uiState by authVM.uiState.collectAsStateWithLifecycle()
+
+                            val deleteUser = prefs.getBoolean("deleteUser", false)
+                            val deleteFirebaseAccount = prefs.getBoolean("deleteFirebaseAccount", false)
+                            authVM.initFromPrefs(deleteUser, deleteFirebaseAccount)
+
+                            AuthScreen(
+                                deleteUser = uiState.deleteUser,
+
+                                onLogin = { email, password ->
+                                    authVM.onEmailLogin(email, password)
+                                },
+
+                                onNavigateToSignUp = {
+                                    navController.navigate("signup")
+                                },
+
+                                onResetPassword = { email ->
+                                    authVM.onResetPassword(email)
+                                },
+
+                                onGoogleClick = {
+                                    googleSignInClient?.signOut()
+                                        ?.addOnCompleteListener {
+                                            val intent = googleSignInClient?.signInIntent
+                                            if (intent != null) {
+                                                googleSignInLauncher.launch(intent)
+                                            } else {
+                                                authVM.showMessage(
+                                                    "No se pudo abrir Google Sign-In",
+                                                    ZibeSnackType.ERROR
+                                                )
+                                            }
+                                        }
+                                },
+
+                                onFacebookClick = {
+                                    facebookLauncher.launch(listOf("public_profile", "email"))
+                                },
+
+                                onDoNotDelete = {
+                                    authVM.onDoNotDeleteClicked()
+                                },
+
+                                isLoading = uiState.isLoading,
+                                authEvents = authVM.events,
+
+                                onNavigateToSplash = {
+                                    navController.navigate("splash") {
+                                        popUpTo("auth") { inclusive = true }
+                                    }
+                                },
+
+                                onClearDeletePrefs = {
+                                    prefs.edit {
+                                        putBoolean("deleteUser", false)
+                                        putBoolean("deleteFirebaseAccount", false)
+                                    }
+                                }
+                            )
+                        }
+
+                        // ======================================
+                        // SIGN UP
+                        // ======================================
+                        composable("signup") {
+
+                            val vm: SignUpViewModel = viewModel()
+                            val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+                            SignUpScreen(
+                                onBack = { navController.popBackStack() },
+
+                                onRegister = { email, pass, name, birthday, desc ->
+                                    val defaultPhotoUrl = getString(R.string.URL_PHOTO_DEF)
+                                    vm.onRegister(
+                                        email = email,
+                                        password = pass,
+                                        name = name,
+                                        birthday = birthday,
+                                        desc = desc,
+                                        defaultPhotoUrl = defaultPhotoUrl
+                                    )
+                                },
+
+                                signUpEvents = vm.events,
+                                isLoading = uiState.isLoading,
+
+                                onNavigateToPermission = {
+                                    navController.navigate("permission")
+                                }
+                            )
+                        }
+
+                        // ======================================
+                        // CUSTOM PERMISSION
+                        // ======================================
+                        composable("permission") {
+
+                            CustomPermissionScreen(
+                                onPermissionGranted = {
+                                    navController.navigate("splash") {
+                                        popUpTo("permission") { inclusive = true }
+                                    }
+                                },
+
+                                onForceLogout = {
+                                    auth.signOut()
+                                    LoginManager.getInstance().logOut()
+                                    navController.navigate("auth") {
+                                        popUpTo("permission") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    // SNACKBAR HOST
+                    ZibeSnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+
+                    // TOKEN DIALOG
+                    val dialogState = tokenDialogState
+                    if (dialogState != null) {
+                        ZibeDialog(
+                            title = "Un momento…",
+                            textContent = {
+                                Text(
+                                    "Este dispositivo ya tiene una cuenta vinculada.\n" +
+                                            "Continuar desvinculará la cuenta asociada a ${dialogState.mail}."
+                                )
+                            },
+                            confirmText = "Continuar",
+                            onConfirm = {
+                                lifecycleScope.launch {
+                                    splashVM.onTokenDialogConfirmed(dialogState.flag)
+                                    tokenDialogState = null
+                                }
+                            },
+                            dismissText = "Cancelar",
+                            onDismiss = {
+                                lifecycleScope.launch {
+                                    splashVM.onTokenDialogCancelled(dialogState.flag)
+                                    tokenDialogState = null
+                                }
+                            }
+                        )
+                    }
+
+                    // NO INTERNET DIALOG
+                    if (noInternetDialog) {
+                        ZibeDialog(
+                            title = "Sin conexión",
+                            textContent = { Text("Revisá tu conexión e intentá nuevamente.") },
+                            confirmText = "Reintentar",
+                            onConfirm = {
+                                noInternetDialog = false
+                                splashVM.start(this@SplashActivity, isRetry = true)
+                            },
+                            dismissText = "Salir",
+                            onDismiss = {
+                                noInternetDialog = false
+                                finish()
+                            }
+                        )
+                    }
+                }
+
+                // ====== EVENTOS DEL SPLASH VIEWMODEL ======
+                LaunchedEffect(Unit) {
+                    splashVM.events.collect { event ->
+                        when (event) {
+
+                            is SplashUiEvent.ShowSnackbar ->
+                                snackbarHostState.showZibeMessage(event.type, event.message)
+
+                            is SplashUiEvent.ShowNoInternetDialog ->
+                                noInternetDialog = true
+
+                            is SplashUiEvent.ShowTokenDialog ->
+                                tokenDialogState = TokenDialogState(event.mail, event.flag)
+
+                            SplashUiEvent.NavigateOnBoarding ->
+                                navController.navigate("onboarding") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+
+                            SplashUiEvent.NavigateAuth ->
+                                navController.navigate("auth") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+
+                            SplashUiEvent.RequestLocationPermission ->
+                                navController.navigate("permission")
+
+                            SplashUiEvent.NavigateEditProfile -> {
+                                startActivity(
+                                    Intent(this@SplashActivity, MainActivity::class.java)
+                                        .apply { putExtra("flagIntent", 0) }
+                                )
+                                finish()
+                            }
+
+                            SplashUiEvent.NavigateMain -> {
+                                startActivity(
+                                    Intent(this@SplashActivity, MainActivity::class.java)
+                                        .apply { putExtra("flagIntent", 1) }
+                                )
+                                finish()
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // ======================================
+    // GOOGLE
+    // ======================================
+    private fun setupGoogleSignIn() {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+    }
+
+    private fun handleGoogleResult(result: ActivityResult, vm: AuthViewModel) {
+        if (result.resultCode == RESULT_OK && result.data != null) {
+            try {
+                val account = GoogleSignIn
+                    .getSignedInAccountFromIntent(result.data)
+                    .getResult(ApiException::class.java)
+
+                vm.onGoogleAccountReceived(account)
+
+            } catch (e: ApiException) {
+                vm.showMessage("Error de Google: ${e.statusCode}", ZibeSnackType.ERROR)
+            }
+        } else {
+            vm.showMessage("Inicio cancelado", ZibeSnackType.INFO)
+        }
+    }
+
+    // ======================================
+    // FACEBOOK
+    // ======================================
+    private fun setupFacebookSignIn(vm: AuthViewModel) {
+        callbackManager = CallbackManager.Factory.create()
+        loginManager = LoginManager.getInstance()
+
+        facebookLauncher = registerForActivityResult(
+            loginManager.createLogInActivityResultContract(callbackManager, null)
+        ) {}
+
+        loginManager.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+            override fun onSuccess(result: LoginResult) {
+                vm.onFacebookAccessToken(result.accessToken)
+            }
+
+            override fun onCancel() {
+                vm.showMessage("Inicio con Facebook cancelado", ZibeSnackType.INFO)
+            }
+
+            override fun onError(error: FacebookException) {
+                vm.showMessage("Error con Facebook: ${error.localizedMessage}", ZibeSnackType.ERROR)
+            }
+        })
     }
 }

@@ -20,9 +20,9 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.ChatListGroupsFragment
 import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.adapters.AdapterChatLista
-import com.zibete.proyecto1.adapters.ChatListGroupsFragment
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.utils.ChatUtils
@@ -273,7 +273,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
         when (item.itemId) {
             1 -> UserRepository.setNoLeido(idUser, type)
-            2 -> UserRepository.Silent(nameUser, idUser, type)
+            2 -> UserRepository.silent(nameUser, idUser, type)
             3 -> UserRepository.setBlockUser(requireContext(), nameUser, idUser, view, type)
             4 -> ChatUtils.unhiddenChat(requireContext(), idUser, nameUser, view, type)
             5 -> ChatUtils.deleteChat(requireContext(), idUser, nameUser, view, type)

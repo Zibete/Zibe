@@ -15,12 +15,15 @@ import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.DateUtils.calcAge
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.*
 
 object ProfileUiBinder {
+
+    private val user get() = currentUser!!
+
 
     // === Edad ===
     fun getAge(idUser: String, ageView: TextView) {
@@ -135,7 +138,7 @@ object ProfileUiBinder {
         favOn: ImageView,
         favOff: ImageView
     ) {
-        FirebaseRefs.refDatos.child(user!!.uid).child("FavoriteList").child(userId)
+        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList").child(userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val exists = snapshot.exists()
@@ -152,7 +155,7 @@ object ProfileUiBinder {
         userId: String,
         blockIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(user!!.uid).child(Constants.CHATWITH).child(userId).child("estado")
+        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(userId).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val isBlocked = snapshot.getValue(String::class.java) == "bloq"
@@ -187,10 +190,8 @@ object ProfileUiBinder {
     ) {
         if (idUser.isNullOrEmpty()) return
 
-        val myId = user!!.uid
-
         // Mis mensajes hacia él
-        FirebaseRefs.refChat.child("$myId <---> $idUser").child("Mensajes")
+        FirebaseRefs.refChat.child("${user.uid} <---> $idUser").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)
@@ -203,7 +204,7 @@ object ProfileUiBinder {
             })
 
         // Sus mensajes hacia mí
-        FirebaseRefs.refChat.child("$idUser <---> $myId").child("Mensajes")
+        FirebaseRefs.refChat.child("$idUser <---> ${user.uid}").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)
@@ -227,7 +228,7 @@ object ProfileUiBinder {
         val sender = snapshot.child("envia").getValue(String::class.java)
         val url = snapshot.child("mensaje").getValue(String::class.java)
 
-        if (sender != user!!.uid && url != null && (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT)) {
+        if (sender != user.uid && url != null && (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT)) {
             adapter.addString(url)
             linearPhotos.visibility = View.VISIBLE
         }

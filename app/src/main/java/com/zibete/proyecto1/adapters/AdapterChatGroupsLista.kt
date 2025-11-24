@@ -42,7 +42,7 @@ import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -56,12 +56,11 @@ class AdapterChatGroupsLista(
     Filterable,
     OnCreateContextMenuListener {
 
-    private val currentUser = user
     private val fullChatList: MutableList<ChatWith> = mutableListOf()
-
     private var menu1: String? = null
     private var menu2: String? = null
     private var contextMenuPosition: Int = 0
+    private val user get() = currentUser!!
 
     // -------- ViewHolder --------
 
@@ -86,7 +85,7 @@ class AdapterChatGroupsLista(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatGroupViewHolder {
         val binding = RowChatlistaBinding.inflate(
-            android.view.LayoutInflater.from(parent.context),
+            LayoutInflater.from(parent.context),
             parent,
             false
         )
@@ -123,7 +122,7 @@ class AdapterChatGroupsLista(
     // -------- Bind principal --------
 
     private fun bindFull(holder: ChatGroupViewHolder, chat: ChatWith) {
-        val u = currentUser ?: return
+
         val binding = holder.binding
 
         // Mostrar/ocultar card según estado
@@ -150,7 +149,7 @@ class AdapterChatGroupsLista(
         // Checked (visto) para unknown
         refDatos.child(chat.userId)
             .child(Constants.CHATWITHUNKNOWN)
-            .child(u.uid)
+            .child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -163,7 +162,7 @@ class AdapterChatGroupsLista(
                     val sender = snapshot.child("wEnvia").getValue(String::class.java)
                     val visto = snapshot.child("wVisto").getValue(Int::class.java)
 
-                    if (sender == u.uid && visto != null) {
+                    if (sender == user.uid && visto != null) {
                         binding.relativeLayout.isVisible = true
                         when (visto) {
                             1 -> {
@@ -198,7 +197,7 @@ class AdapterChatGroupsLista(
             })
 
         // No vistos
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .child("noVisto")
@@ -217,7 +216,7 @@ class AdapterChatGroupsLista(
             })
 
         // Último mensaje + hora
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .addValueEventListener(object : ValueEventListener {
@@ -241,7 +240,7 @@ class AdapterChatGroupsLista(
                         setMyDoubleCheck(chat)
                     }
 
-                    refDatos.child(u.uid)
+                    refDatos.child(user.uid)
                         .child(Constants.CHATWITHUNKNOWN)
                         .child(chat.userId)
                         .child("wVisto")
@@ -270,7 +269,7 @@ class AdapterChatGroupsLista(
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            refDatos.child(u.uid)
+                            refDatos.child(user.uid)
                                 .child(Constants.CHATWITHUNKNOWN)
                                 .child(chat.userId)
                                 .removeValue()
@@ -353,9 +352,8 @@ class AdapterChatGroupsLista(
     // -------- Double check unknown --------
 
     private fun setMyDoubleCheck(chat: ChatWith) {
-        val u = currentUser ?: return
 
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITHUNKNOWN)
             .child(chat.userId)
             .child("noVisto")
@@ -370,7 +368,7 @@ class AdapterChatGroupsLista(
                         }
                     }
 
-                    refChatUnknown.child("${u.uid} <---> ${chat.userId}")
+                    refChatUnknown.child("${user.uid} <---> ${chat.userId}")
                         .child("Mensajes")
                         .limitToLast(noVistos)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -378,7 +376,7 @@ class AdapterChatGroupsLista(
                                 if (ds.exists()) {
                                     markSeen(ds)
                                 } else {
-                                    refChatUnknown.child("${chat.userId} <---> ${u.uid}")
+                                    refChatUnknown.child("${chat.userId} <---> ${user.uid}")
                                         .child("Mensajes")
                                         .limitToLast(noVistos)
                                         .addListenerForSingleValueEvent(object :
@@ -403,6 +401,7 @@ class AdapterChatGroupsLista(
     // -------- Filter --------
 
     private val filterChats = object : Filter() {
+
         override fun performFiltering(constraint: CharSequence?): FilterResults {
             val query = constraint?.toString()?.lowercase()?.trim().orEmpty()
             val filtered: MutableList<ChatWith> = if (query.isEmpty()) {
@@ -413,7 +412,7 @@ class AdapterChatGroupsLista(
                 }.toMutableList()
             }
 
-            Collections.sort(filtered)
+            filtered.sort()
             return FilterResults().apply { values = filtered }
         }
 
@@ -474,254 +473,5 @@ class AdapterChatGroupsLista(
         fullChatList.addAll(newList)
 
         diffResult.dispatchUpdatesTo(this)
-    }
-
-}
-
-class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
-
-    private var _binding: FragmentChatListBinding? = null
-    private val binding get() = _binding!!
-
-    private lateinit var adapterChatGroupsLista: AdapterChatGroupsLista
-    private lateinit var layoutManager: LinearLayoutManager
-
-    private val user: FirebaseUser?
-        get() = FirebaseAuth.getInstance().currentUser
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentChatListBinding.inflate(inflater, container, false)
-        setHasOptionsMenu(true)
-
-        if (user == null) {
-            setupInitialUi()
-            showOnBoarding()
-            return binding.root
-        }
-
-        setupRecycler()
-        setupInitialUi()
-        setupGroupChatListListener()
-        setupEmptyStateListener()
-        setupAdapterObserver()
-
-        return binding.root
-    }
-
-    // ---------- UI inicial ----------
-
-    private fun setupInitialUi() = with(binding) {
-        // Estado inicial: cargando
-        rv.isVisible = true
-        linearOnBoardingChatList.isVisible = false
-        progressbar2.isVisible = true
-
-        lottieChatLeft.cancelAnimation()
-        lottieChatRight.cancelAnimation()
-    }
-
-    private fun setupRecycler() {
-        layoutManager = LinearLayoutManager(requireContext()).apply {
-            reverseLayout = true
-            stackFromEnd = true
-        }
-
-        // Usamos la lista compartida del companion como fuente inicial
-        adapterChatGroupsLista = AdapterChatGroupsLista(chatsGroupArrayList, requireContext())
-
-        binding.rv.apply {
-            layoutManager = this@ChatListGroupsFragment.layoutManager
-            adapter = adapterChatGroupsLista
-        }
-
-        registerForContextMenu(binding.rv)
-    }
-
-    // ---------- Listener principal: chatWithUnknown ----------
-
-    private fun setupGroupChatListListener() {
-        val u = user ?: return
-
-        // Reset lista compartida
-        chatsGroupArrayList.clear()
-
-        refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
-            .addChildEventListener(object : ChildEventListener {
-
-                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (!snapshot.exists()) return
-
-                    // Solo agregamos si tiene foto (misma lógica original)
-                    val photo = snapshot.child("wUserPhoto").getValue(String::class.java).orEmpty()
-                    if (photo.isNotEmpty()) {
-                        val chat = snapshot.getValue(ChatWith::class.java) ?: return
-                        adapterChatGroupsLista.addChats(chat)
-                        updateDatesAndSort(chatsGroupArrayList)
-                    }
-
-                    Collections.sort(chatsGroupArrayList)
-                }
-
-                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
-                        .addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                if (!dataSnapshot.exists()) {
-                                    binding.progressbar2.isVisible = false
-                                    return
-                                }
-
-                                val updatedList = ArrayList<ChatWith>()
-                                for (child in dataSnapshot.children) {
-                                    val chat = child.getValue(ChatWith::class.java)
-                                    if (chat != null) updatedList.add(chat)
-                                }
-
-                                updateDatesAndSort(updatedList)
-                                Collections.sort(updatedList)
-
-                                adapterChatGroupsLista.updateData(updatedList)
-                            }
-
-                            override fun onCancelled(error: DatabaseError) {}
-                        })
-                }
-
-                override fun onChildRemoved(snapshot: DataSnapshot) {
-                    val chat = snapshot.getValue(ChatWith::class.java) ?: return
-                    adapterChatGroupsLista.deleteChat(chat)
-                }
-
-                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
-
-    @SuppressLint("SimpleDateFormat")
-    private fun updateDatesAndSort(list: MutableList<ChatWith>) {
-        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-        list.forEach { chat ->
-            try {
-                val parsed = format.parse(chat.dateTime)
-                chat.date = parsed
-            } catch (_: ParseException) {
-            }
-        }
-        Collections.sort(list)
-    }
-
-    // ---------- Empty state / Onboarding ----------
-
-    private fun setupEmptyStateListener() {
-        val u = user ?: return
-
-        refDatos.child(u.uid).child(Constants.CHATWITHUNKNOWN)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    if (dataSnapshot.exists()) {
-                        var count = 0L
-                        for (snapshot in dataSnapshot.children) {
-                            val state =
-                                snapshot.child("estado").getValue(String::class.java).orEmpty()
-                            if (state == Constants.CHATWITHUNKNOWN || state == "silent") {
-                                count++
-                            }
-                        }
-
-                        if (count == 0L) {
-                            showOnBoarding()
-                        } else {
-                            showChatList()
-                        }
-                    } else {
-                        showOnBoarding()
-                    }
-
-                    binding.progressbar2.isVisible = false
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
-
-    private fun showOnBoarding() = with(binding) {
-        rv.isVisible = false
-        linearOnBoardingChatList.isVisible = true
-
-        lottieChatLeft.playAnimation()
-        Handler(Looper.getMainLooper()).postDelayed({
-            lottieChatRight.playAnimation()
-        }, 100)
-    }
-
-    private fun showChatList() = with(binding) {
-        rv.isVisible = true
-        linearOnBoardingChatList.isVisible = false
-
-        lottieChatLeft.cancelAnimation()
-        lottieChatRight.cancelAnimation()
-    }
-
-    // ---------- Observer para scroll / progreso ----------
-
-    private fun setupAdapterObserver() {
-        adapterChatGroupsLista.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                setScrollbar()
-                binding.progressbar2.isVisible = false
-            }
-        })
-    }
-
-    private fun setScrollbar() {
-        if (adapterChatGroupsLista.itemCount > 0) {
-            binding.rv.scrollToPosition(adapterChatGroupsLista.itemCount - 1)
-        }
-    }
-
-    // ---------- SearchView ----------
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnlock = menu.findItem(R.id.action_unlock)
-        val actionFavorites = menu.findItem(R.id.action_favorites)
-        val actionExit = menu.findItem(R.id.action_exit)
-
-        actionExit.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        actionExit.isVisible = true
-        actionSearch.isVisible = true
-        actionUnlock.isVisible = true
-        actionFavorites.isVisible = true
-
-        val searchView = actionSearch.actionView as? SearchView
-        searchView?.setOnQueryTextListener(this)
-    }
-
-    override fun onQueryTextSubmit(query: String?): Boolean = false
-
-    override fun onQueryTextChange(newText: String?): Boolean {
-        adapterChatGroupsLista.filter.filter(newText)
-        return true
-    }
-
-    // ---------- Companion (lista compartida para otros usos, ej. menú) ----------
-
-    companion object {
-        // Mantengo esta lista como fuente compartida (se pasa por referencia al adapter)
-        val chatsGroupArrayList: ArrayList<ChatWith> = ArrayList()
-    }
-
-    // ---------- Ciclo de vida ----------
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

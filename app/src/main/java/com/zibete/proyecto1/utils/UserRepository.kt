@@ -1,12 +1,9 @@
 package com.zibete.proyecto1.utils
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.graphics.Typeface
 import android.location.Location
-import android.view.ContextThemeWrapper
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -17,10 +14,9 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.State
-import com.zibete.proyecto1.utils.FirebaseRefs.auth
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -31,6 +27,8 @@ object UserRepository {
     // setUserOnline → establece al usuario como conectado
     // (StateOnLine = poner en línea)
     // ------------------------------------------------------------
+    private val user get() = currentUser!!
+
     @JvmStatic
     fun setUserOnline(context: Context, id_user: String) {
         // 🔸 Crear el objeto Estado con los textos de recursos
@@ -82,19 +80,19 @@ object UserRepository {
                     val dateFormat = SimpleDateFormat("dd/MM/yyyy")
 
                     val estado = dataSnapshot.child("estado")
-                        .getValue<String?>(String::class.java) // estado → "conectado", "escribiendo", etc.
+                        .getValue(String::class.java) // estado → "conectado", "escribiendo", etc.
                     val fecha = dataSnapshot.child("fecha")
-                        .getValue<String?>(String::class.java) // fecha última vez
+                        .getValue(String::class.java) // fecha última vez
                     val hora = dataSnapshot.child("hora")
-                        .getValue<String?>(String::class.java) // hora última vez
+                        .getValue(String::class.java) // hora última vez
 
                     if (estado != null && estado == context.getString(R.string.conectado)) {
                         // ✅ Conectado (online)
-                        iconConnected.setVisibility(View.VISIBLE)
-                        iconDisconnected.setVisibility(View.GONE)
-                        tvStatus.setText(context.getString(R.string.enlinea)) // "en línea"
+                        iconConnected.visibility = View.VISIBLE
+                        iconDisconnected.visibility = View.GONE
+                        tvStatus.text = context.getString(R.string.enlinea) // "en línea"
                         tvStatus.setTypeface(null, Typeface.NORMAL)
-                        tvStatus.setTextColor(context.getResources().getColor(R.color.colorClaro))
+                        tvStatus.setTextColor(context.resources.getColor(R.color.colorClaro))
                     } else {
                         // ⚠️ Puede estar escribiendo / grabando / desconectado
 
@@ -112,15 +110,15 @@ object UserRepository {
                                     override fun onDataChange(dsChat: DataSnapshot) {
                                         if (dsChat.exists()) {
                                             val currentChat =
-                                                dsChat.getValue<String?>(String::class.java)
-                                            // usuario actual logueado
-                                            val myUid: String? = if (auth.currentUser != null)
-                                                auth.currentUser?.uid
-                                            else
-                                                null
+                                                dsChat.getValue(String::class.java)
+//                                            // usuario actual logueado
+//                                            val myUid: String? = if (auth.currentUser != null)
+//                                                auth.currentUser?.uid
+//                                            else
+//                                                null
 
                                             // compara: if (Actual == userLogged + type)
-                                            if (myUid != null && currentChat != null && currentChat == myUid + type) {
+                                            if (user != null && currentChat != null && currentChat == user.uid + type) {
                                                 // ✅ Mostrar “escribiendo” o “grabando”
 
                                                 iconConnected.visibility = View.VISIBLE
@@ -150,50 +148,44 @@ object UserRepository {
                                 })
                         } else {
                             // ⏱ Última vez conectado
-                            iconConnected.setVisibility(View.GONE)
-                            iconDisconnected.setVisibility(View.VISIBLE)
+                            iconConnected.visibility = View.GONE
+                            iconDisconnected.visibility = View.VISIBLE
                             tvStatus.setTypeface(null, Typeface.NORMAL)
                             tvStatus.setTextColor(
-                                context.getResources().getColor(R.color.colorClaro)
+                                context.resources.getColor(R.color.colorClaro)
                             )
 
                             if (fecha != null && fecha == dateFormat.format(c.getTime())) {
                                 // hoy
-                                tvStatus.setText(
-                                    context.getString(R.string.ultVez) + " " +
-                                            context.getString(R.string.today) + " " +
-                                            context.getString(R.string.a_las) + " " +
-                                            hora
-                                )
+                                tvStatus.text = context.getString(R.string.ultVez) + " " +
+                                        context.getString(R.string.today) + " " +
+                                        context.getString(R.string.a_las) + " " +
+                                        hora
                             } else {
                                 // quizá ayer
                                 val calendar = Calendar.getInstance()
                                 calendar.add(Calendar.DATE, -1)
 
                                 if (fecha != null && fecha == dateFormat.format(calendar.getTime())) {
-                                    tvStatus.setText(
-                                        context.getString(R.string.ultVez) + " " +
-                                                context.getString(R.string.yesterday) + " " +
-                                                context.getString(R.string.a_las) + " " +
-                                                hora
-                                    )
+                                    tvStatus.text = context.getString(R.string.ultVez) + " " +
+                                            context.getString(R.string.yesterday) + " " +
+                                            context.getString(R.string.a_las) + " " +
+                                            hora
                                 } else {
                                     // fecha cualquiera
-                                    tvStatus.setText(
-                                        context.getString(R.string.ultVez) + " " +
-                                                fecha + " " +
-                                                context.getString(R.string.a_las) + " " +
-                                                hora
-                                    )
+                                    tvStatus.text = context.getString(R.string.ultVez) + " " +
+                                            fecha + " " +
+                                            context.getString(R.string.a_las) + " " +
+                                            hora
                                 }
                             }
                         }
                     }
                 } else {
                     // no hay nodo "Estado" → mostrar desconectado
-                    iconConnected.setVisibility(View.GONE)
-                    iconDisconnected.setVisibility(View.VISIBLE)
-                    tvStatus.setText(context.getString(R.string.desconectado)) // "disconnected" → desconectado
+                    iconConnected.visibility = View.GONE
+                    iconDisconnected.visibility = View.VISIBLE
+                    tvStatus.text = context.getString(R.string.desconectado) // "disconnected" → desconectado
                 }
             }
 
@@ -203,12 +195,12 @@ object UserRepository {
         })
     }
 
-    fun setNoLeido(id_user: String, type: String) {
-        refDatos.child(user!!.uid).child(type).child(id_user).child("noVisto")
+    fun setNoLeido(idUser: String, type: String) {
+        refDatos.child(user.uid).child(type).child(idUser).child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataVistos: DataSnapshot) {
                     if (dataVistos.exists()) {
-                        val noVistos = dataVistos.getValue<Int?>(Int::class.java)
+                        val noVistos = dataVistos.getValue(Int::class.java)
 
                         refDatos.child(user.uid).child("ChatList").child("msgNoLeidos")
                             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -217,11 +209,11 @@ object UserRepository {
                                         val noLeidos = dataLeidos.getValue<Int?>(Int::class.java)
                                         val count = noLeidos!! - noVistos!!
                                         if ((noVistos > 0)) {
-                                            dataVistos.getRef().setValue(0)
-                                            dataLeidos.getRef().setValue(count)
+                                            dataVistos.ref.setValue(0)
+                                            dataLeidos.ref.setValue(count)
                                         } else {
-                                            dataVistos.getRef().setValue(1)
-                                            dataLeidos.getRef().setValue(noLeidos + 1)
+                                            dataVistos.ref.setValue(1)
+                                            dataLeidos.ref.setValue(noLeidos + 1)
                                         }
                                     }
                                 }
@@ -238,15 +230,15 @@ object UserRepository {
     }
 
     @JvmStatic
-    fun Silent(name_user: String?, id_user: String?, type: String?) {
-        refDatos.child(user!!.uid).child(type!!).child(id_user!!)
+    fun silent(nameUser: String?, idUser: String?, type: String?) {
+        refDatos.child(user.uid).child(type!!).child(idUser!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
                         val state =
-                            dataSnapshot.child("estado").getValue<String?>(String::class.java)
+                            dataSnapshot.child("estado").getValue(String::class.java)
                         val photo =
-                            dataSnapshot.child("wUserPhoto").getValue<String?>(String::class.java)
+                            dataSnapshot.child("wUserPhoto").getValue(String::class.java)
 
                         if (photo == Constants.EMPTY) {
                             dataSnapshot.ref.removeValue()
@@ -258,16 +250,15 @@ object UserRepository {
                             }
                         }
                     } else {
-                        newChatWith(dataSnapshot, id_user, name_user!!, "silent")
+                        newChatWith(dataSnapshot, idUser, nameUser!!, "silent")
                     }
                 }
-
                 override fun onCancelled(error: DatabaseError) {
                 }
             })
     }
 
-    fun newChatWith(dataSnapshot: DataSnapshot, id_user: String, name_user: String, state: String) {
+    fun newChatWith(dataSnapshot: DataSnapshot, idUser: String, nameUser: String, state: String) {
         val c = Calendar.getInstance()
         val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
         val newChat = ChatWith(
@@ -275,15 +266,15 @@ object UserRepository {
             dateFormat3.format(c.getTime()),
             null,
             "",
-            id_user,
-            name_user,
+            idUser,
+            nameUser,
             Constants.EMPTY,
             state,
             0,
             1
         )
 
-        dataSnapshot.getRef().setValue(newChat)
+        dataSnapshot.ref.setValue(newChat)
     }
 
     @JvmStatic
@@ -301,7 +292,7 @@ object UserRepository {
             title = "Bloquear",
             message = "¿Desea bloquear a $nameUser?",
             onConfirm = {
-                refDatos.child(user!!.uid).child(type).child(idUser)
+                refDatos.child(user.uid).child(type).child(idUser)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             if (dataSnapshot.exists()) {
@@ -342,7 +333,7 @@ object UserRepository {
             title = "Desbloquear",
             message = "¿Desea desbloquear a $nameUser?",
             onConfirm = {
-                refDatos.child(user!!.uid).child(type).child(idUser)
+                refDatos.child(user.uid).child(type).child(idUser)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val photo = dataSnapshot.child("wUserPhoto").getValue(String::class.java)
@@ -366,14 +357,12 @@ object UserRepository {
         )
     }
 
-
-
     fun bindBlockStatus(
         user_id: String,
         profile_bloc: ImageView
     ) { // bindBlockStatus = vincular estado de bloqueo
 
-        refDatos.child(user!!.uid).child(Constants.CHATWITH).child(user_id).child("estado")
+        refDatos.child(user.uid).child(Constants.CHATWITH).child(user_id).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.getValue<String?>(String::class.java) == "bloq") {
@@ -399,7 +388,7 @@ object UserRepository {
         latitude = mLastLocation.latitude
         longitude = mLastLocation.longitude
 
-        refCuentas.child(user!!.uid).addListenerForSingleValueEvent(object : ValueEventListener {
+        refCuentas.child(user.uid).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
                     FirebaseRefs.refCuentas.child(user.uid).child("latitud").setValue(latitude)

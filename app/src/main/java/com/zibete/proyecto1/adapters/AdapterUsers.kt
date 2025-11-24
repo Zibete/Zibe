@@ -17,20 +17,19 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
+import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.DateUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.GlassEffect
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
@@ -43,6 +42,8 @@ class AdapterUsers(
     private val usersListAll: MutableList<Users>,
     private val context: Context
 ) : RecyclerView.Adapter<ViewHolderAdapter?>(), Filterable {
+
+    private val user get() = currentUser!!
 
     // --------------------- Filtro --------------------- //
     override fun getFilter(): Filter {
@@ -57,7 +58,7 @@ class AdapterUsers(
                 usersListAll.toList()
             } else {
                 usersListAll
-                    .filter { it.name?.lowercase()?.contains(search) == true }
+                    .filter { it.name.lowercase().contains(search) }
             }
 
             return FilterResults().apply { values = filtered }
@@ -209,7 +210,7 @@ class AdapterUsers(
         )
 
         // Favoritos
-        FirebaseRefs.refDatos.child(user!!.uid).child("FavoriteList").child(users.id)
+        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList").child(users.id)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {
                     h.favorite_on.isVisible = snap.exists()
@@ -219,7 +220,7 @@ class AdapterUsers(
             })
 
         // Bloqueado
-        FirebaseRefs.refDatos.child(user!!.uid).child(Constants.CHATWITH).child(users.id)
+        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(users.id)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snap: DataSnapshot) {

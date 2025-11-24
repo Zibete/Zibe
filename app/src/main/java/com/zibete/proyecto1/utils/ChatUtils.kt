@@ -15,9 +15,12 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 object ChatUtils {
+
+    private val user get() = currentUser!!
+
 
     // ---------- OCULTAR CHAT ----------
     fun unhiddenChat(
@@ -30,7 +33,7 @@ object ChatUtils {
         AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
             .setTitle("Ocultar chat con $nameUser")
             .setPositiveButton("Aceptar") { _, _ ->
-                refDatos.child(user!!.uid).child(type).child(idUser)
+                refDatos.child(user.uid).child(type).child(idUser)
                     .child("estado").setValue("delete")
 
                 val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
@@ -96,7 +99,7 @@ object ChatUtils {
 
         for (snap in dataSnapshot.children) {
             val chat = snap.getValue(Chats::class.java) ?: continue
-            val isMine = chat.sender == user!!.uid
+            val isMine = chat.sender == user.uid
 
             if (isMine && chat.type in listOf(Constants.MSG, Constants.PHOTO, Constants.AUDIO, Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT))
                 messages.add(chat)
@@ -123,7 +126,7 @@ object ChatUtils {
 
         builder.setPositiveButton("Aceptar") { _, _ ->
             if (itemSelected[0] == 0) {
-                refDatos.child(user!!.uid).child(type).child(idUser)
+                refDatos.child(user.uid).child(type).child(idUser)
                     .child("estado").setValue("delete")
                 showSnack(context, view, "Se ha ocultado el chat")
             } else {
@@ -131,7 +134,7 @@ object ChatUtils {
                     dataSnapshot, messages,
                     refYourReceiverData, refMyReceiverData
                 )
-                refDatos.child(user!!.uid).child(type).child(idUser).removeValue()
+                refDatos.child(user.uid).child(type).child(idUser).removeValue()
                 Toast.makeText(
                     context,
                     if (count == 1) "$count mensaje eliminado" else "$count mensajes eliminados",
@@ -159,7 +162,7 @@ object ChatUtils {
                             val type = snap.child("type").getValue(Int::class.java)
                             val sender = snap.child("envia").getValue(String::class.java)
 
-                            val isMine = sender == user!!.uid
+                            val isMine = sender == user.uid
 
                             when {
                                 isMine && type == Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
@@ -188,7 +191,7 @@ object ChatUtils {
 
     private fun deleteRemoteFile(ref: StorageReference, chat: Chats) {
         val msg = chat.message
-        val start = msg.indexOf(user!!.uid) + user.uid.length + 3
+        val start = msg.indexOf(user.uid) + user.uid.length + 3
         val ext = if (msg.contains(".jpg")) ".jpg" else ".mp3"
         val end = msg.indexOf(ext) + ext.length
         if (start in 0..end && end <= msg.length) {

@@ -40,7 +40,7 @@ import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
-import com.zibete.proyecto1.utils.UserRepository.Silent
+import com.zibete.proyecto1.utils.UserRepository.silent
 import com.zibete.proyecto1.utils.UserRepository.setBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUnBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
@@ -547,13 +547,13 @@ class PerfilActivity : AppCompatActivity() {
             }
 
             R.id.action_silent -> {
-                Silent(nombre, idUser, Constants.CHATWITH)
+                silent(nombre, idUser, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
                 true
             }
 
             R.id.action_notif -> {
-                Silent(nombre, idUser, Constants.CHATWITH)
+                silent(nombre, idUser, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
                 true
             }

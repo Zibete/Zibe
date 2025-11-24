@@ -67,7 +67,9 @@ fun AuthScreen(
     onFacebookClick: () -> Unit,
     onDoNotDelete: () -> Unit,
     authEvents: SharedFlow<AuthUiEvent>,
-    isLoading: Boolean
+    isLoading: Boolean,
+    onNavigateToSplash: () -> Unit,
+    onClearDeletePrefs: () -> Unit
 ) {
     // Inputs
     var email by rememberSaveable { mutableStateOf("") }
@@ -93,13 +95,8 @@ fun AuthScreen(
                         )
                     }
                 }
-                AuthUiEvent.ClearDeletePrefs -> {
-                    // este no muestra UI → solo lo ignorás
-                }
-                AuthUiEvent.NavigateToSplash -> {
-                    // si la UI de Auth no navega, acá no hacés nada
-                    // si querés navegar desde Compose se puede emitir callback
-                }
+                AuthUiEvent.ClearDeletePrefs -> onClearDeletePrefs()
+                AuthUiEvent.NavigateToSplash -> onNavigateToSplash()
             }
         }
     }
@@ -348,7 +345,9 @@ fun AuthScreenPreview() {
             onFacebookClick = {},
             onDoNotDelete = {},
             authEvents = MutableSharedFlow(),
-            isLoading = false
+            isLoading = false,
+            onNavigateToSplash = {},
+            onClearDeletePrefs = {},
         )
     }
 }
@@ -366,7 +365,9 @@ fun AuthScreenDeleteUserPreview() {
             onFacebookClick = {},
             onDoNotDelete = {},
             authEvents = MutableSharedFlow(),
-            isLoading = false
+            isLoading = false,
+            onNavigateToSplash = {},
+            onClearDeletePrefs = {},
         )
     }
 }

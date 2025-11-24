@@ -72,13 +72,14 @@ import com.zibete.proyecto1.utils.Constants.CHATWITH
 import com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.utils.Constants.EMPTY
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import com.zibete.proyecto1.utils.UserRepository.updateLocationUI
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import androidx.navigation.findNavController
 
 class MainActivity : AppCompatActivity() {
 
@@ -120,16 +121,21 @@ class MainActivity : AppCompatActivity() {
     private var listenerGroupBadge: ValueEventListener? = null
     private var listenerMsgUnreadBadge: ValueEventListener? = null
 
+    private val user get() = currentUser!!
+
+
     @SuppressLint("CutPasteId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (user == null) {
-            logout(null)
+            // Usuario sin sesión: mandalo al splash/login y cerrá esta Activity
+            startActivity(Intent(this, SplashActivity::class.java))
+            finish()
             return
-        } else {
-            CHANNEL_ID = user!!.uid
         }
+
+//        CHANNEL_ID = user.uid
 
         setContentView(R.layout.activity_main)
 
@@ -749,30 +755,30 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        user?.uid?.let { setUserOnline(applicationContext, it) }
+        setUserOnline(applicationContext, user.uid)
         ensureLocationSettingsAndStart()
     }
 
     override fun onResume() {
         super.onResume()
-        user?.uid?.let { setUserOnline(applicationContext, it) }
+        setUserOnline(applicationContext, user.uid)
         startLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
-        user?.uid?.let { setUserOffline(applicationContext, it) }
+        setUserOffline(applicationContext, user.uid)
         stopLocationUpdates()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         listenerToken?.let {
-            FirebaseRefs.refCuentas.child(user!!.uid)
+            FirebaseRefs.refCuentas.child(user.uid)
                 .child("installId")
                 .removeEventListener(it)
         }
-        user?.uid?.let { setUserOffline(applicationContext, it) }
+        user.uid?.let { setUserOffline(applicationContext, it) }
         stopLocationUpdates()
     }
 
@@ -789,14 +795,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun logout() {
-        user?.uid?.let { setUserOffline(applicationContext, it) }
+        setUserOffline(applicationContext, user.uid)
 
         if (UsuariosFragment.inGroup) {
             exitGroup()
         }
 
         listenerToken?.let {
-            FirebaseRefs.refCuentas.child(user!!.uid)
+            FirebaseRefs.refCuentas.child(user.uid)
                 .child("installId")
                 .removeEventListener(it)
         }
@@ -865,7 +871,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        val navController = Navigation.findNavController(this, R.id.nav_host_fragment)
+        val navController = this.findNavController(R.id.nav_host_fragment)
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp()
     }
@@ -884,7 +890,7 @@ class MainActivity : AppCompatActivity() {
                     .setMessage("Se perderán los cambios, ¿Desea continuar?")
                     .setCancelable(false)
                     .setPositiveButton("Si") { _, _ ->
-                        FirebaseRefs.refCuentas.child(user!!.uid)
+                        FirebaseRefs.refCuentas.child(user.uid)
                             .child("birthDay")
                             .addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(snapshot: DataSnapshot) {

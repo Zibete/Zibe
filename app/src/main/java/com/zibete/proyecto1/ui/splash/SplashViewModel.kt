@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.core.content.ContextCompat
@@ -16,6 +18,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.auth
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -28,146 +31,167 @@ import kotlin.coroutines.resume
 
 class SplashViewModel : ViewModel() {
 
-    private val _events = MutableSharedFlow<SplashUiEvent>()
+    // replay = 1 para no perder el último evento
+    private val _events = MutableSharedFlow<SplashUiEvent>(replay = 1)
     val events = _events.asSharedFlow()
 
     private var appContext: Context? = null
     private var userToken: String? = null
 
-    fun start(context: Context) {
-        // Evitar relanzar lógica si ya se inició
-        if (appContext != null) return
+    private lateinit var prefs: SharedPreferences
 
+    fun initPrefs(p: SharedPreferences) {
+        prefs = p
+    }
+
+
+    fun start(context: Context, isRetry: Boolean = false) {
+        // guardamos SIEMPRE applicationContext para evitar leaks
         appContext = context.applicationContext
 
         viewModelScope.launch {
-            // Obtener token FCM (no bloqueante)
-            FirebaseMessaging.getInstance().token
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        userToken = task.result
-                    }
-                }
 
-            // Pequeño delay visual (podrías bajarlo o quitarlo si querés)
+            if (isRetry) {
+                delay(150L)   // parpadeo suave en reintentos
+            }
+            // 1) Delay visual opcional
             delay(1000L)
 
-            val ctx = appContext ?: return@launch
-            val currentUser = auth.currentUser
+            // 2) OnBoarding
+            val onBoarding = prefs.getBoolean("onBoarding", false)
 
-            if (!hasInternetConnection(ctx)) {
-                _events.emit(SplashUiEvent.ShowNoInternet)
+            if (!onBoarding) {
+                prefs.edit { putBoolean("onBoarding", true) }
+                _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
 
-            if (currentUser == null) {
+            val ctx = appContext ?: return@launch
+
+            // 3) Chequeo de internet
+            if (!hasInternetConnection(ctx)) {
+                _events.emit(SplashUiEvent.ShowNoInternetDialog)
+                return@launch
+            }
+
+            // 4) Obtener token FCM (asíncrono, sin bloquear)
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { userToken = it }
+
+
+
+            // 5) Usuario actual desde FirebaseRefs (getter dinámico)
+            val user = currentUser
+
+            // Sin usuario → navegar a Auth
+            if (user == null) {
                 auth.signOut()
                 LoginManager.getInstance().logOut()
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
 
+            // 6) Permisos de ubicación
             if (!hasLocationPermission(ctx)) {
                 _events.emit(SplashUiEvent.RequestLocationPermission)
                 return@launch
             }
 
-            queryTokenAndRoute(currentUser, ctx)
+            // 7) Token + ruta
+            queryTokenAndRoute(user, ctx)
         }
     }
 
-    // ===================== TOKEN / SESIÓN =====================
+    // ============================================================
+    // TOKEN FLOW
+    // ============================================================
 
     private fun queryTokenAndRoute(user: FirebaseUser, context: Context) {
         viewModelScope.launch {
             val token = userToken
 
+            // Token vacío → seguir flujo normal
             if (token.isNullOrEmpty()) {
                 updateUserFlow(user, context)
                 return@launch
             }
 
+            // Buscar cuentas con mismo token
             val snapshot = suspendFirebaseQuery {
                 FirebaseRefs.refCuentas.orderByChild("token").equalTo(token)
             }
 
             if (!snapshot.exists()) {
-                // Nadie tiene este token → verificar si debo setearlo en mi cuenta
-                assignTokenIfNeeded(user, token)
+                assignTokenToUser(user, token)
                 updateUserFlow(user, context)
                 return@launch
             }
 
-            val count = snapshot.childrenCount
+            val accounts = snapshot.children.toList()
+            val count = accounts.size
 
-            if (count == 1L) {
-                val child = snapshot.children.first()
-                if (child.key == user.uid) {
-                    // Es mi propia cuenta
+            // Caso 1: solo una cuenta lo tiene
+            if (count == 1) {
+                val single = accounts.first()
+                if (single.key == user.uid) {
                     updateUserFlow(user, context)
                 } else {
-                    val mail = child.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                    _events.emit(SplashUiEvent.ShowTokenDialog(mail = mail, flag = 1))
+                    val mail = single.child("mail").getValue(String::class.java) ?: "otra cuenta"
+                    _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag = 1))
                 }
+                return@launch
+            }
+
+            // Caso 2: varias cuentas
+            val other = accounts.firstOrNull { it.key != user.uid }
+            if (other != null) {
+                val mail = other.child("mail").getValue(String::class.java) ?: "otra cuenta"
+                _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag = 2))
             } else {
-                // Más de uno con el mismo token
-                val other = snapshot.children.firstOrNull { it.key != user.uid }
-                if (other != null) {
-                    val mail = other.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                    _events.emit(SplashUiEvent.ShowTokenDialog(mail = mail, flag = 2))
-                } else {
-                    // Caso raro: todos son mi uid
-                    updateUserFlow(user, context)
-                }
+                // Caso extremo: todas son mi UID
+                updateUserFlow(user, context)
             }
         }
     }
 
     suspend fun onTokenDialogConfirmed(flag: Int) {
-        val user = auth.currentUser ?: return
+        val currentUser = auth.currentUser ?: return
         val token = userToken ?: return
         val ctx = appContext ?: return
 
-        // Asigno token a mi cuenta
-        FirebaseRefs.refCuentas.child(user.uid).child("token").setValue(token)
+        assignTokenToUser(currentUser, token)
 
         if (flag == 1 || flag == 2) {
-            // Limpio token de otras cuentas que tenían este token
+            // limpiar token de otras cuentas
             val snapshot = suspendFirebaseQuery {
                 FirebaseRefs.refCuentas.orderByChild("token").equalTo(token)
             }
-            snapshot.children.forEach { child ->
-                if (child.key != user.uid) {
-                    child.ref.child("token").setValue("")
+            snapshot.children.forEach {
+                if (it.key != currentUser.uid) {
+                    it.ref.child("token").setValue("")
                 }
             }
         }
 
-        updateUserFlow(user, ctx)
+        updateUserFlow(currentUser, ctx)
     }
 
     suspend fun onTokenDialogCancelled(flag: Int) {
-        val user = auth.currentUser ?: return
         val ctx = appContext ?: return
 
-        if (flag == 2) {
-            // Si había varios con el mismo token, limpio mi token
-            FirebaseRefs.refCuentas.child(user.uid).child("token").setValue("")
-        }
-
-        // Volver al flujo como si no hubiera usuario válido
         auth.signOut()
         LoginManager.getInstance().logOut()
+
         _events.emit(SplashUiEvent.NavigateAuth)
     }
 
-    private suspend fun assignTokenIfNeeded(user: FirebaseUser, token: String) {
-        suspendFirebaseQuery {
-            FirebaseRefs.refCuentas.child(user.uid).child("token")
-        }.ref.setValue(token)
+    private fun assignTokenToUser(user: FirebaseUser, token: String) {
+        FirebaseRefs.refCuentas.child(user.uid).child("token").setValue(token)
     }
 
-    // ===================== USER FLOW =====================
+    // ============================================================
+    // USER FLOW
+    // ============================================================
 
     private suspend fun updateUserFlow(user: FirebaseUser, context: Context) {
         val snapshot = suspendFirebaseQuery {
@@ -177,6 +201,7 @@ class SplashViewModel : ViewModel() {
         val prefs = context.getSharedPreferences("flag_Splash", Context.MODE_PRIVATE)
         val firstTime = !prefs.getBoolean("flag_Splash", false)
 
+        // Usuario nuevo
         if (!snapshot.exists()) {
             createUserNode(user)
             prefs.edit { putBoolean("flag_Splash", true) }
@@ -184,13 +209,15 @@ class SplashViewModel : ViewModel() {
             return
         }
 
-        val birthDay = snapshot.child("birthDay").getValue(String::class.java) ?: ""
-
+        // Primer inicio (post registro)
         if (firstTime) {
             prefs.edit { putBoolean("flag_Splash", true) }
             _events.emit(SplashUiEvent.NavigateEditProfile)
             return
         }
+
+        // Usuario ya existente → verificar perfil
+        val birthDay = snapshot.child("birthDay").getValue(String::class.java) ?: ""
 
         if (birthDay.isEmpty()) {
             _events.emit(SplashUiEvent.NavigateEditProfile)
@@ -222,13 +249,14 @@ class SplashViewModel : ViewModel() {
         FirebaseRefs.refCuentas.child(user.uid).setValue(newUser)
     }
 
-    // ===================== HELPERS =====================
+    // ============================================================
+    // HELPERS
+    // ============================================================
 
     private fun hasInternetConnection(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return false
         val caps = cm.getNetworkCapabilities(network) ?: return false
-
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 

@@ -23,7 +23,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
-import com.zibete.proyecto1.adapters.ChatListGroupsFragment
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.utils.Constants

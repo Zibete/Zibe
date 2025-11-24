@@ -52,7 +52,7 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
@@ -87,8 +87,10 @@ class ChatGroupFragment : Fragment() {
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageReference: StorageReference = storage.reference
+    private val user get() = currentUser!!
+
     private val refSendImages: StorageReference by lazy {
-        storageReference.child("Chats/${user?.uid}/")
+        storageReference.child("Chats/${user.uid}/")
     }
 
     // Launcher CropActivity
@@ -415,7 +417,7 @@ class ChatGroupFragment : Fragment() {
             stringMsg!!,
             dateFormat.format(c.time),
             UsuariosFragment.userName,
-            user!!.uid,
+            user.uid,
             msgType,
             UsuariosFragment.userType
         )
@@ -469,7 +471,7 @@ class ChatGroupFragment : Fragment() {
                 put("novistos", "")
                 put("user", UsuariosFragment.userName)
                 put("msg", msg)
-                put("id_user", user!!.uid)
+                put("id_user", user.uid)
                 put("type", UsuariosFragment.groupName)
             }
 
@@ -507,7 +509,6 @@ class ChatGroupFragment : Fragment() {
             b.rvMsg.scrollToPosition(count - 1)
         }
     }
-
 
     // ================== MENU ==================
 

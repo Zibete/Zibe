@@ -28,7 +28,7 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.utils.FirebaseRefs.refChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -41,7 +41,8 @@ class AdapterChatLista(
     Filterable,
     OnCreateContextMenuListener {
 
-    private val currentUser: FirebaseUser? = user
+    private val user get() = currentUser!!
+
     private val fullChatList: MutableList<ChatWith> = mutableListOf()
 
     private var menu1: String? = null
@@ -111,7 +112,7 @@ class AdapterChatLista(
     // ---------- Lógica principal de bind ----------
 
     private fun bindFull(holder: ChatListViewHolder, chat: ChatWith) {
-        val u = currentUser ?: return
+
         val binding = holder.binding
 
         // Card según estado / visibilidad lógica
@@ -163,7 +164,7 @@ class AdapterChatLista(
         // Checks (double check, leído, etc.)
         refDatos.child(chat.userId)
             .child(Constants.CHATWITH)
-            .child(u.uid)
+            .child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -176,7 +177,7 @@ class AdapterChatLista(
                     val sender = snapshot.child("wEnvia").getValue(String::class.java)
                     val visto = snapshot.child("wVisto").getValue(Int::class.java)
 
-                    if (sender == u.uid && visto != null) {
+                    if (sender == user.uid && visto != null) {
                         binding.relativeLayout.isVisible = true
 
                         when (visto) {
@@ -212,7 +213,7 @@ class AdapterChatLista(
             })
 
         // No vistos
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITH)
             .child(chat.userId)
             .child("noVisto")
@@ -231,7 +232,7 @@ class AdapterChatLista(
             })
 
         // Último mensaje + hora
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITH)
             .child(chat.userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -255,7 +256,7 @@ class AdapterChatLista(
                         setMyDoubleCheck(chat)
                     }
 
-                    refDatos.child(u.uid)
+                    refDatos.child(user.uid)
                         .child(Constants.CHATWITH)
                         .child(chat.userId)
                         .child("wVisto")
@@ -344,9 +345,8 @@ class AdapterChatLista(
     // ---------- Double check ----------
 
     private fun setMyDoubleCheck(chat: ChatWith) {
-        val u = currentUser ?: return
 
-        refDatos.child(u.uid)
+        refDatos.child(user.uid)
             .child(Constants.CHATWITH)
             .child(chat.userId)
             .child("noVisto")
@@ -361,7 +361,7 @@ class AdapterChatLista(
                         }
                     }
 
-                    refChat.child("${u.uid} <---> ${chat.userId}")
+                    refChat.child("${user.uid} <---> ${chat.userId}")
                         .child("Mensajes")
                         .limitToLast(noVistos)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -369,7 +369,7 @@ class AdapterChatLista(
                                 if (ds.exists()) {
                                     markSeen(ds)
                                 } else {
-                                    refChat.child("${chat.userId} <---> ${u.uid}")
+                                    refChat.child("${chat.userId} <---> ${user.uid}")
                                         .child("Mensajes")
                                         .limitToLast(noVistos)
                                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -403,7 +403,7 @@ class AdapterChatLista(
                 }.toMutableList()
             }
 
-            Collections.sort(filtered)
+            filtered.sort()
             return FilterResults().apply { values = filtered }
         }
 

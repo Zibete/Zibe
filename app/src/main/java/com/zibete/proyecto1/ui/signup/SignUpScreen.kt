@@ -58,28 +58,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewSignUpScreen() {
-    ZibeTheme {
-        val fakeFlow = MutableSharedFlow<SignUpUiEvent>()
-
-        SignUpScreen(
-            onBack = {},
-            onRegister = { _, _, _, _, _ -> },
-            signUpEvents = fakeFlow,
-            isLoading = false
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onBack: () -> Unit,
     onRegister: (String, String, String, String, String) -> Unit,
     signUpEvents: Flow<SignUpUiEvent>,
-    isLoading: Boolean
+    isLoading: Boolean,
+    onNavigateToPermission: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -295,5 +281,21 @@ fun SignUpScreen(
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewSignUpScreen() {
+    ZibeTheme {
+        val fakeFlow = MutableSharedFlow<SignUpUiEvent>()
+
+        SignUpScreen(
+            onBack = {},
+            onRegister = { _, _, _, _, _ -> },
+            signUpEvents = fakeFlow,
+            isLoading = false,
+            onNavigateToPermission = {}
+        )
     }
 }

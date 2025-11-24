@@ -75,7 +75,7 @@ import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.Constants
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository
 import de.hdodenhof.circleimageview.CircleImageView
 import org.json.JSONObject
@@ -171,6 +171,8 @@ class ChatActivity : AppCompatActivity() {
 
     // callback pendiente para ejecutar luego de otorgar permisos
     private var onPermissionsGranted: (() -> Unit)? = null
+
+    private val user get() = currentUser!!
 
     // ==================================== onCreate ====================================
     @SuppressLint("ClickableViewAccessibility")
@@ -395,7 +397,7 @@ class ChatActivity : AppCompatActivity() {
     // ---------------- Ciclo de vida ----------------
     override fun onPause() {
         super.onPause()
-        user?.let {
+        user.let {
             UserRepository.setUserOffline(applicationContext, it.uid)
             refActual.setValue("") // Limpia referencia de chat activo
         }
@@ -403,7 +405,7 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        user?.let {
+        user.let {
             UserRepository.setUserOnline(applicationContext, it.uid)
             // Alineado con la comparación suActual != user.uid + refChatWith
             refActual.setValue(it.uid + (refChatWith ?: ""))
@@ -492,11 +494,11 @@ class ChatActivity : AppCompatActivity() {
                 return true
             }
             R.id.action_silent -> {
-                UserRepository.Silent(nameUserFinal, idUserFinal, refChatWith)
+                UserRepository.silent(nameUserFinal, idUserFinal, refChatWith)
                 Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_notif -> {
-                UserRepository.Silent(nameUserFinal, idUserFinal, refChatWith)
+                UserRepository.silent(nameUserFinal, idUserFinal, refChatWith)
                 Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_bloq -> {
@@ -699,7 +701,7 @@ class ChatActivity : AppCompatActivity() {
         timer.base = recordStartElapsed
         timer.start()
 
-        FirebaseRefs.refDatos.child(user!!.uid).child("Estado").child("estado")
+        FirebaseRefs.refDatos.child(user.uid).child("Estado").child("estado")
             .setValue(getString(R.string.grabando))
         FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
     }
@@ -798,7 +800,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         normalizeUiCancelRecordAudio()
-        UserRepository.setUserOnline(applicationContext, user!!.uid)
+        UserRepository.setUserOnline(applicationContext, user.uid)
 
         // Borrado del archivo (si existe)
         runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
@@ -897,7 +899,7 @@ class ChatActivity : AppCompatActivity() {
             return
         }
 
-        val visto = if (suActual != user!!.uid + refChatWith || suActual == null) 1 else 3
+        val visto = if (suActual != user.uid + refChatWith || suActual == null) 1 else 3
         val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
         val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
 
@@ -1110,7 +1112,7 @@ class ChatActivity : AppCompatActivity() {
         refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
         refMyReceiverData = Constants.storageReference.child("${refChatWith}/${me.uid}/")
 
-        refActual = FirebaseRefs.refDatos.child(user!!.uid).child("ChatList").child("Actual")
+        refActual = FirebaseRefs.refDatos.child(user.uid).child("ChatList").child("Actual")
 
         // Ramas de mensajes
         startedByMe  = FirebaseRefs.refChats.child(refChat!!).child("${me.uid} <---> $idUserFinal").child("Mensajes")
@@ -1291,7 +1293,7 @@ class ChatActivity : AppCompatActivity() {
             val type = snap.child("type").getValue(Int::class.java)
             val sender = snap.child("envia").getValue(String::class.java)
 
-            if (sender == user!!.uid) {
+            if (sender == user.uid) {
                 when (type) {
                     Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
                     Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
@@ -1316,14 +1318,14 @@ class ChatActivity : AppCompatActivity() {
                     Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
                     Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
                     Constants.PHOTO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(user!!.uid) + user!!.uid.length + 3
+                        val start = chat.message.indexOf(user.uid) + user.uid.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
                     Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
                     Constants.AUDIO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(user!!.uid) + user!!.uid.length + 3
+                        val start = chat.message.indexOf(user.uid) + user.uid.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
@@ -1351,7 +1353,7 @@ class ChatActivity : AppCompatActivity() {
                 for (snap in data.children) {
                     val chat = snap.getValue(Chats::class.java) ?: continue
                     val key = snap.key ?: continue
-                    if (chat.sender == user!!.uid) {
+                    if (chat.sender == user.uid) {
                         when (chat.type) {
                             Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
                         }
@@ -1363,7 +1365,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 val count = messages - (senderDelete.size + receiverDelete.size + countList)
                 if (count == 0L) {
-                    FirebaseRefs.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
+                    FirebaseRefs.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
                     onBackPressedDispatcher.onBackPressed()
                 }
             }

@@ -48,13 +48,14 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import androidx.core.content.edit
+import androidx.core.view.isGone
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -95,6 +96,9 @@ class SettingsActivity : AppCompatActivity() {
     private var password: String? = null
     private lateinit var progress: ProgressDialog
     private var provider: String? = null
+
+    private val user get() = currentUser!!
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -216,7 +220,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        val email = user?.email.orEmpty()
+        val email = user.email.orEmpty()
         myEmail.text = if (provider == null) {
             email
         } else {
@@ -300,7 +304,7 @@ class SettingsActivity : AppCompatActivity() {
 
         btnChangeEmail.setOnClickListener {
             if (provider == null) {
-                if (linearChangeEmail.visibility == View.GONE) {
+                if (linearChangeEmail.isGone) {
                     linearChangeEmail.visibility = View.VISIBLE
                     arrowDownChangeEmail.visibility = View.GONE
                     arrowUpChangeEmail.visibility = View.VISIBLE
@@ -496,7 +500,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         MainActivity.listenerMsgUnreadBadge?.let {
-            val query: Query = refDatos.child(user!!.uid)
+            val query: Query = refDatos.child(user.uid)
                 .child(CHATWITHUNKNOWN)
                 .orderByChild("noVisto")
                 .startAt(1.0)
@@ -514,15 +518,15 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // Eliminar chats unknown vinculados
-        refDatos.child(user!!.uid).child(CHATWITHUNKNOWN)
+        refDatos.child(user.uid).child(CHATWITHUNKNOWN)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
-                        refChatUnknown.child("${user!!.uid} <---> $key").removeValue()
-                        refChatUnknown.child("$key <---> ${user!!.uid}").removeValue()
+                        refChatUnknown.child("${user.uid} <---> $key").removeValue()
+                        refChatUnknown.child("$key <---> ${user.uid}").removeValue()
                         refDatos.child(key).child(CHATWITHUNKNOWN)
-                            .child(user!!.uid)
+                            .child(user.uid)
                             .removeValue()
                     }
                 }
@@ -530,7 +534,7 @@ class SettingsActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        refDatos.child(user!!.uid).child(CHATWITHUNKNOWN).removeValue()
+        refDatos.child(user.uid).child(CHATWITHUNKNOWN).removeValue()
 
         @SuppressLint("SimpleDateFormat")
         val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
@@ -539,14 +543,14 @@ class SettingsActivity : AppCompatActivity() {
             "abandonó la sala",
             dateFormat3.format(Calendar.getInstance().time),
             UsuariosFragment.userName,
-            user!!.uid,
+            user.uid,
             0,
             UsuariosFragment.userType
         )
         refGroupChat.child(UsuariosFragment.groupName).push().setValue(chatmsg)
 
         refGroupUsers.child(UsuariosFragment.groupName)
-            .child(user!!.uid)
+            .child(user.uid)
             .removeValue()
 
         // Reset estado local
@@ -580,7 +584,7 @@ class SettingsActivity : AppCompatActivity() {
 
     fun logOut(deleteUser: String?) {
         if (deleteUser == null) {
-            setUserOffline(applicationContext, user!!.uid)
+            setUserOffline(applicationContext, user.uid)
         }
 
         if (UsuariosFragment.inGroup) {
@@ -588,7 +592,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         MainActivity.listenerToken?.let {
-            FirebaseRefs.refCuentas.child(user!!.uid)
+            FirebaseRefs.refCuentas.child(user.uid)
                 .child("installId")
                 .removeEventListener(it)
         }
@@ -619,7 +623,7 @@ class SettingsActivity : AppCompatActivity() {
 
         when (provider) {
             null if password != null -> {
-                credential = EmailAuthProvider.getCredential(user!!.email!!, password)
+                credential = EmailAuthProvider.getCredential(user.email!!, password)
                 reAuthenticate(newEmail, newPassword, deleteUser, credential)
             }
             "Facebook" -> {
@@ -645,7 +649,7 @@ class SettingsActivity : AppCompatActivity() {
         deleteUser: String?,
         credential: AuthCredential
     ) {
-        user!!.reauthenticate(credential)
+        user.reauthenticate(credential)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     progress.dismiss()
@@ -688,19 +692,19 @@ class SettingsActivity : AppCompatActivity() {
             .putBoolean("deleteFirebaseAccount", true)
             .apply()
 
-        refDatos.child(user!!.uid).removeValue()
-        refCuentas.child(user!!.uid).removeValue()
+        refDatos.child(user.uid).removeValue()
+        refCuentas.child(user.uid).removeValue()
 
         FirebaseStorage.getInstance().reference
-            .child("Users/imgPerfil/${user!!.uid}.jpg")
+            .child("Users/imgPerfil/${user.uid}.jpg")
             .delete()
 
         logOut(deleteUser)
-        user!!.delete()
+        user.delete()
     }
 
     private fun updatePassword(newPassword: String) {
-        user!!.updatePassword(newPassword)
+        user.updatePassword(newPassword)
             .addOnCompleteListener { task ->
                 progress.dismiss()
                 if (task.isSuccessful) {

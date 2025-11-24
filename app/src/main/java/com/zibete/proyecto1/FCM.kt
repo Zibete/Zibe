@@ -20,7 +20,7 @@ import com.zibete.proyecto1.utils.Constants.CHATWITH
 import com.zibete.proyecto1.utils.Constants.UNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 class FCM : FirebaseMessagingService() {
 
@@ -28,9 +28,11 @@ class FCM : FirebaseMessagingService() {
         super.onDeletedMessages()
     }
 
+    private val user get() = currentUser!!
+
+
     @SuppressLint("WrongThread") // por el acceso a MainActivity.toolbar
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        val currentUser = user ?: return
 
         val data = remoteMessage.data
         val novistos = data["novistos"]
@@ -45,7 +47,7 @@ class FCM : FirebaseMessagingService() {
             if (UsuariosFragment.individualNotifications) {
                 if (data.isNotEmpty()) {
                     val newQuery: Query =
-                        refDatos.child(currentUser.uid).child(type)
+                        refDatos.child(user.uid).child(type)
                             .orderByChild("noVisto")
                             .startAt(1.0)
 
@@ -85,7 +87,7 @@ class FCM : FirebaseMessagingService() {
                     })
                 }
             } else {
-                DoubleCheck(idUser, type, ref)
+                doubleCheck(idUser, type, ref)
             }
         } else {
             if (UsuariosFragment.groupNotifications) {
@@ -133,22 +135,21 @@ class FCM : FirebaseMessagingService() {
         notificationManager.notify(NOTIFICATION_ID, builder.build())
 
         if (type != UsuariosFragment.groupName) {
-            DoubleCheck(idUser, type, ref)
+            doubleCheck(idUser, type, ref)
         }
     }
 
-    fun DoubleCheck(idUser: String, type: String, ref: String) {
-        val currentUser = user ?: return
+    fun doubleCheck(idUser: String, type: String, ref: String) {
 
-        refDatos.child(currentUser.uid).child(type).child(idUser).child("wVisto").setValue(2)
+        refDatos.child(user.uid).child(type).child(idUser).child("wVisto").setValue(2)
 
-        refDatos.child(currentUser.uid).child(type).child(idUser).child("noVisto")
+        refDatos.child(user.uid).child(type).child(idUser).child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     val noVistos = dataSnapshot.getValue(Int::class.java) ?: 0
 
                     if (noVistos > 0) {
-                        refChats.child(ref).child("${currentUser.uid} <---> $idUser")
+                        refChats.child(ref).child("${user.uid} <---> $idUser")
                             .child("Mensajes").limitToLast(noVistos)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -159,7 +160,7 @@ class FCM : FirebaseMessagingService() {
                                 }
                             })
 
-                        refChats.child(ref).child("$idUser <---> ${currentUser.uid}")
+                        refChats.child(ref).child("$idUser <---> ${user.uid}")
                             .child("Mensajes").limitToLast(noVistos)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -178,13 +179,12 @@ class FCM : FirebaseMessagingService() {
     }
 
     fun setDoubleCheck(dataSnapshot: DataSnapshot) {
-        val currentUser = user ?: return
 
         if (dataSnapshot.exists()) {
             for (snapshot in dataSnapshot.children) {
                 if (snapshot.hasChild("envia")) {
                     val envia = snapshot.child("envia").getValue(String::class.java)
-                    if (envia != currentUser.uid && snapshot.hasChild("visto")) {
+                    if (envia != user.uid && snapshot.hasChild("visto")) {
                         snapshot.ref.child("visto").setValue(2)
                     }
                 }

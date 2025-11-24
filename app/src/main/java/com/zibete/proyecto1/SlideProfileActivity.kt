@@ -106,11 +106,11 @@ class SlideProfileActivity : AppCompatActivity() {
         when (item.itemId) {
             android.R.id.home -> onBackPressedDispatcher.onBackPressed()
             R.id.action_silent -> {
-                UserRepository.Silent(u.name, u.id, Constants.CHATWITH)
+                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_notif -> {
-                UserRepository.Silent(u.name, u.id, Constants.CHATWITH)
+                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
                 Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)

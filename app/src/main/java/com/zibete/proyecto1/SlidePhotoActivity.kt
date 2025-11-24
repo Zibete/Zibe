@@ -6,11 +6,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
 import com.zibete.proyecto1.utils.UserRepository
-import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 class SlidePhotoActivity : AppCompatActivity() {
 
     private lateinit var binding: SlideActivityBinding
+    private val user get() = currentUser!!
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

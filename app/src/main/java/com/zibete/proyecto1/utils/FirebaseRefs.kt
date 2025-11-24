@@ -11,8 +11,9 @@ object FirebaseRefs {
     // === Auth ===
     @JvmField
     val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    @JvmField
-    val user: FirebaseUser? = auth.currentUser
+
+    val currentUser: FirebaseUser?
+        get() = auth.currentUser
     // === Database ===
     private val db: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
 
