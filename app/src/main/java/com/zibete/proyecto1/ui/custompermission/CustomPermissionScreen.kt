@@ -8,7 +8,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -23,8 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,7 +38,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
+import com.zibete.proyecto1.ui.constants.BUTTON_START
+import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_MESSAGE
+import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_TITLE
+import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.constants.DIALOG_OK
+import com.zibete.proyecto1.ui.constants.PERMISSION_LEGAL_DISCLAIMER
+import com.zibete.proyecto1.ui.constants.PERMISSION_LOCATION_MESSAGE
+import com.zibete.proyecto1.ui.constants.LOGO_CONTENT_DESC
+import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_MESSAGE
+import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_TITLE
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 // Helper para obtener la Activity desde el Context
@@ -49,6 +68,7 @@ fun CustomPermissionScreen(
 ) {
     val context = LocalContext.current
     val activity = context.findActivity()
+    val zibeColors = LocalZibeExtendedColors.current
 
     var showRationaleDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -67,14 +87,15 @@ fun CustomPermissionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.backSplash))
-            .padding(horizontal = 20.dp, vertical = 50.dp),
+            .background(zibeColors.gradientZibe) // fondo más “serio” pero ZIBE
+            .padding(horizontal = 20.dp, vertical = 40.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            color = zibeColors.cardBackground,
+            shape = MaterialTheme.shapes.large,
             tonalElevation = 0.dp
         ) {
             Column(
@@ -87,36 +108,39 @@ fun CustomPermissionScreen(
                         .fillMaxWidth()
                         .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.Start
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_logo),
-                        contentDescription = "Logo Zibe",
+                        painter = painterResource(id = R.mipmap.logo_zibe_icon),
+                        contentDescription = LOGO_CONTENT_DESC,
                         modifier = Modifier
-                            .height(50.dp)
-                            .wrapContentWidth()
+                            .height(90.dp),
+                        contentScale = ContentScale.Fit
                     )
 
-                    Spacer(modifier = Modifier.height(15.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Para una mejor experiencia, ZIBE almacenará tu información de localización, por lo que necesitaremos acceder a tu ubicación cuando la App esté en uso. De esta manera podremos proporcionarte personas que estén cerca de ti para que puedas interactuar con ellas.",
-                        color = colorResource(id = R.color.colorClaro2),
-                        fontSize = 16.sp
+                        text = PERMISSION_LOCATION_MESSAGE,
+                        color = zibeColors.mutedText,
+                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyMedium
                     )
 
-                    Spacer(modifier = Modifier.height(15.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Al pulsar “Comenzar” aceptas las Condiciones de Servicio y la Política de Privacidad.",
-                        color = colorResource(id = R.color.colorClaro2),
-                        fontSize = 16.sp
+                        text = PERMISSION_LEGAL_DISCLAIMER,
+                        color = zibeColors.mutedText,
+                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
+                ZibeButton(
+                    text = BUTTON_START,
                     onClick = {
                         if (activity != null) {
                             val shouldShowRationale =
@@ -134,18 +158,10 @@ fun CustomPermissionScreen(
                             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colorResource(id = R.color.colorE)
-                    )
-                ) {
-                    Text(
-                        text = "Comenzar",
-                        fontSize = 16.sp
-                    )
-                }
+                    modifier = Modifier.fillMaxWidth(),
+                    isLoading = false
+                )
+
             }
         }
     }
@@ -153,14 +169,16 @@ fun CustomPermissionScreen(
     // Diálogo de rationale
     if (showRationaleDialog) {
         ZibeDialog(
-            title = "Permiso de ubicación",
+            title = PERMISSION_RATIONALE_TITLE,
             textContent = {
                 Text(
-                    text = "Zibe necesita acceso a tu ubicación para poder funcionar correctamente y mostrarte personas cercanas.",
-                    textAlign = TextAlign.Start
+                    text = PERMISSION_RATIONALE_MESSAGE,
+                    textAlign = TextAlign.Start,
+                    color = LocalZibeExtendedColors.current.mutedText,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmText = "Aceptar",
+            confirmText = DIALOG_ACCEPT,
             onConfirm = {
                 showRationaleDialog = false
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -174,19 +192,21 @@ fun CustomPermissionScreen(
     // Diálogo cuando niegan el permiso
     if (showLogoutDialog) {
         ZibeDialog(
-            title = "Permiso denegado",
+            title = PERMISSION_DENIED_TITLE,
             textContent = {
                 Text(
-                    text = "Se cerrará tu sesión porque Zibe necesita acceso a tu ubicación para funcionar.",
-                    textAlign = TextAlign.Start
+                    text = PERMISSION_DENIED_MESSAGE,
+                    textAlign = TextAlign.Start,
+                    color = LocalZibeExtendedColors.current.mutedText,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmText = "OK",
+            confirmText = DIALOG_OK,
             onConfirm = {
                 showLogoutDialog = false
                 onForceLogout()
             },
-            dismissText = "Cancelar",
+            dismissText = DIALOG_CANCEL,
             onDismiss = {
                 showLogoutDialog = false
             }

@@ -35,7 +35,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder

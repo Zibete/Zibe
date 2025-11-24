@@ -72,7 +72,7 @@ import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser

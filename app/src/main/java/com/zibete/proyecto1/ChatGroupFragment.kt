@@ -46,7 +46,7 @@ import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.UsuariosFragment
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos

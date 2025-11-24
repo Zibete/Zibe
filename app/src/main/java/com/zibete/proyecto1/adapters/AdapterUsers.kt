@@ -26,7 +26,7 @@ import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.UsuariosFragment
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.DateUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser

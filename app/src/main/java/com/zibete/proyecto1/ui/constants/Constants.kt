@@ -1,13 +1,16 @@
-package com.zibete.proyecto1.utils
+package com.zibete.proyecto1.ui.constants
 
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 
 object Constants {
 
-    const val REQUEST_LOCATION = 0
+    object PrefKeys {
+        const val ONBOARDING_DONE = "onBoarding"
+        const val FIRST_LOGIN_DONE = "flag_Splash"
+    }
 
+    const val REQUEST_LOCATION = 0
     const val FRAGMENT_ID_CHATLIST = 1
     const val FRAGMENT_ID_CHATGROUPLIST = 2
 

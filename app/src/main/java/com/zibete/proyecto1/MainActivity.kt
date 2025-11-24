@@ -67,10 +67,10 @@ import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.FavoritesFragment
 import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.UsuariosFragment
-import com.zibete.proyecto1.utils.Constants
-import com.zibete.proyecto1.utils.Constants.CHATWITH
-import com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN
-import com.zibete.proyecto1.utils.Constants.EMPTY
+import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline

@@ -24,7 +24,7 @@ import com.bumptech.glide.request.target.Target
 import com.github.clans.fab.FloatingActionButton
 import com.github.clans.fab.FloatingActionMenu
 import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.model.Users

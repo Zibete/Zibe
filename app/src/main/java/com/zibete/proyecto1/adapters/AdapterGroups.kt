@@ -33,7 +33,7 @@ import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.UsuariosFragment
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.GlassEffect
 import eightbitlab.com.blurview.BlurView

@@ -77,9 +77,9 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.Objects
 import androidx.core.content.edit
-import com.zibete.proyecto1.utils.Constants.CAMERA_SELECTED
-import com.zibete.proyecto1.utils.Constants.PERMISSIONS_EDIT_PROFILE
-import com.zibete.proyecto1.utils.Constants.PHOTO_SELECTED
+import com.zibete.proyecto1.ui.constants.Constants.CAMERA_SELECTED
+import com.zibete.proyecto1.ui.constants.Constants.PERMISSIONS_EDIT_PROFILE
+import com.zibete.proyecto1.ui.constants.Constants.PHOTO_SELECTED
 
 class EditProfileFragment : Fragment() {
 

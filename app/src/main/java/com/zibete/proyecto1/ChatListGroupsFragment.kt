@@ -21,7 +21,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterChatGroupsLista
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import java.text.ParseException

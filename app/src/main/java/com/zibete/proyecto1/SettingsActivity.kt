@@ -41,7 +41,7 @@ import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.UsuariosFragment
-import com.zibete.proyecto1.utils.Constants.CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
@@ -667,9 +667,9 @@ class SettingsActivity : AppCompatActivity() {
                             .setMessage("Se necesita un inicio de sesión reciente para eliminar la cuenta")
                             .setCancelable(false)
                             .setPositiveButton("Ok") { _, _ ->
-                                val authPreferences =
-                                    getSharedPreferences("AuthPreferences", MODE_PRIVATE)
-                                authPreferences.edit {
+                                val zibeAppPrefs =
+                                    getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
+                                zibeAppPrefs.edit {
                                     putBoolean("deleteUser", true)
                                 }
                                 logOut(null)
@@ -687,10 +687,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun deleteFirebaseUser(@Suppress("UNUSED_PARAMETER") deleteUser: String?) {
-        val authPreferences = getSharedPreferences("AuthPreferences", MODE_PRIVATE)
-        authPreferences.edit()
-            .putBoolean("deleteFirebaseAccount", true)
-            .apply()
+        val zibeAppPrefs = getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
+        zibeAppPrefs.edit {
+            putBoolean("deleteFirebaseAccount", true)
+        }
 
         refDatos.child(user.uid).removeValue()
         refCuentas.child(user.uid).removeValue()

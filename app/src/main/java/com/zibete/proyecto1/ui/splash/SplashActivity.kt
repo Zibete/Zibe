@@ -78,25 +78,21 @@ class SplashActivity : ComponentActivity() {
     private lateinit var loginManager: LoginManager
     private lateinit var facebookLauncher: ActivityResultLauncher<Collection<String>>
     private var googleSignInClient: GoogleSignInClient? = null
-
-    // Google Launcher
     private val googleSignInLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             handleGoogleResult(result, authVM)
         }
+    // ===============================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Inyectar prefs al SplashViewModel
-        splashVM.initPrefs(prefs)
-
-        // Iniciar Splash
-        splashVM.start(this)
-
         // Configurar Google/Facebook
         setupGoogleSignIn()
         setupFacebookSignIn(authVM)
+
+        // Inicializar prefs en el VM
+        splashVM.initPrefs(prefs)
 
         setContent {
             ZibeTheme {
@@ -116,6 +112,10 @@ class SplashActivity : ComponentActivity() {
                         // ======================================
                         composable("splash") {
                             SplashScreen()
+                            // Cada vez que navegás a "splash", corre el flujo del ViewModel
+                            LaunchedEffect(Unit) {
+                                splashVM.start(this@SplashActivity)
+                            }
                         }
 
                         // ======================================
@@ -400,7 +400,7 @@ class SplashActivity : ComponentActivity() {
                 vm.showMessage("Error de Google: ${e.statusCode}", ZibeSnackType.ERROR)
             }
         } else {
-            vm.showMessage("Inicio cancelado", ZibeSnackType.INFO)
+            vm.showMessage("Inicio con Google cancelado", ZibeSnackType.INFO)
         }
     }
 

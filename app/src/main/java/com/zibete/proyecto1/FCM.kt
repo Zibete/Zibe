@@ -15,9 +15,9 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.Constants.CHAT
-import com.zibete.proyecto1.utils.Constants.CHATWITH
-import com.zibete.proyecto1.utils.Constants.UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.CHAT
+import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.UNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser

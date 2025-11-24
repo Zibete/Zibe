@@ -13,6 +13,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
@@ -165,12 +166,18 @@ object ChatUtils {
                             val isMine = sender == user.uid
 
                             when {
-                                isMine && type == Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
-                                !isMine && type == Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_RECEIVER_DLT)
-                                isMine && type == Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_SENDER_DLT)
-                                !isMine && type == Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
-                                isMine && type == Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_SENDER_DLT)
-                                !isMine && type == Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
+                                isMine && type == Constants.MSG -> snap.child("type").ref.setValue(
+                                    Constants.MSG_SENDER_DLT)
+                                !isMine && type == Constants.MSG -> snap.child("type").ref.setValue(
+                                    Constants.MSG_RECEIVER_DLT)
+                                isMine && type == Constants.PHOTO -> snap.child("type").ref.setValue(
+                                    Constants.PHOTO_SENDER_DLT)
+                                !isMine && type == Constants.PHOTO -> snap.child("type").ref.setValue(
+                                    Constants.PHOTO_RECEIVER_DLT)
+                                isMine && type == Constants.AUDIO -> snap.child("type").ref.setValue(
+                                    Constants.AUDIO_SENDER_DLT)
+                                !isMine && type == Constants.AUDIO -> snap.child("type").ref.setValue(
+                                    Constants.AUDIO_RECEIVER_DLT)
                             }
 
                             // eliminar archivos multimedia remotos

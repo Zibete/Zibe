@@ -16,7 +16,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.SliderProfileAdapter
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.utils.ChatUtils
-import com.zibete.proyecto1.utils.Constants
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserRepository
 

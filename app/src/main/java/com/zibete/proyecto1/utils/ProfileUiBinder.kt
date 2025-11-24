@@ -14,6 +14,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import java.math.BigDecimal

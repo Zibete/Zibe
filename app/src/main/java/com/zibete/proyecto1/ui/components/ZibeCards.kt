@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import kotlinx.coroutines.delay
@@ -78,4 +79,20 @@ fun ZibeAnimatedQuotesCard(
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ZibeAnimatedQuotesCardPreview() {
+    val sampleQuotes = listOf(
+        "La vida es 10% lo que me ocurre y 90% cómo reacciono a ello.",
+        "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito.",
+        "No cuentes los días, haz que los días cuenten.",
+        "La única forma de hacer un gran trabajo es amar lo que haces."
+    )
+
+    ZibeAnimatedQuotesCard(
+        strings = sampleQuotes,
+        modifier = Modifier.padding(16.dp)
+    )
 }

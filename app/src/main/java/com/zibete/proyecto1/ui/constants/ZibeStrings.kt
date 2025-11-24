@@ -41,3 +41,37 @@ const val ERR_PASSWORD_REQUIRED = "Por favor, ingresá una contraseña"
 const val SIGNUP_ERR_NAME_REQUIRED = "Por favor, ingresá tu nombre"
 const val SIGNUP_ERR_BIRTHDAY_REQUIRED = "Por favor, ingresá tu fecha de nacimiento"
 const val ERR_UNDER_AGE = "Lo sentimos, debés ser mayor de 18 años para utilizar la App"
+
+// Permisos y legal
+const val PERMISSION_LOCATION_MESSAGE =
+    "Para ofrecerte una mejor experiencia, ZIBE utiliza tu ubicación mientras la app está en uso. Esto nos permite mostrarte personas cercanas y mejorar tus coincidencias."
+
+const val PERMISSION_LEGAL_DISCLAIMER =
+    "Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad."
+
+
+
+const val BUTTON_START =
+    "Comenzar"
+
+const val PERMISSION_RATIONALE_TITLE =
+    "Permiso de ubicación"
+
+const val PERMISSION_RATIONALE_MESSAGE =
+    "ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas."
+
+const val PERMISSION_DENIED_TITLE =
+    "Permiso denegado"
+
+const val PERMISSION_DENIED_MESSAGE =
+    "Zibe necesita acceso a tu ubicación para funcionar correctamente.\n \n" +
+            "Podés activar el permiso desde: Ajustes > Aplicaciones > Zibe > Permisos > Ubicación."
+
+const val DIALOG_ACCEPT ="Aceptar"
+const val DIALOG_CANCEL ="Cancelar"
+const val DIALOG_OK = "OK"
+
+
+// Content description
+const val LOGO_CONTENT_DESC = "Logo de ZIBE"
+
