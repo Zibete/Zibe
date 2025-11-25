@@ -50,6 +50,7 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -294,7 +295,7 @@ fun AuthScreen(
                             showResetDialog = false
                         }
                     },
-                    dismissText = "Cancelar",
+                    dismissText = DIALOG_CANCEL,
                     onDismiss = { if (!isLoading) showResetDialog = false },
                     enabled = !isLoading
                 )

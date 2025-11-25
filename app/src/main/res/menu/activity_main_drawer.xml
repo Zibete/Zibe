@@ -9,7 +9,7 @@
         android:title="@string/inicio"
         android:titleCondensed="@string/inicio"
         android:contentDescription="@string/inicio"
-        android:onClick="Index" />
+        android:onClick="index" />
 
     <item
         android:id="@+id/editPerfil"
@@ -17,7 +17,7 @@
         android:title="@string/menu_edit"
         android:titleCondensed="@string/menu_edit"
         android:contentDescription="@string/menu_edit"
-        android:onClick="EditProfile" />
+        android:onClick="editProfile" />
 
     <item
         android:id="@+id/delete_account"
@@ -25,7 +25,7 @@
         android:title="@string/ajustes"
         android:titleCondensed="@string/ajustes"
         android:contentDescription="@string/ajustes"
-        android:onClick="Ajustes" />
+        android:onClick="settings" />
 
     <item
         android:id="@+id/logout"

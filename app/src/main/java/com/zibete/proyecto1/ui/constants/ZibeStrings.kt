@@ -49,6 +49,9 @@ const val PERMISSION_LOCATION_MESSAGE =
 const val PERMISSION_LEGAL_DISCLAIMER =
     "Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad."
 
+// Diálogo de token existente
+const val TOKEN_DIALOG_MESSAGE = "Este dispositivo ya tiene una cuenta vinculada.\nContinuar desvinculará la cuenta asociada a %1\$s."
+const val TOKEN_DIALOG_TITLE = "Antes de continuar"
 
 
 const val BUTTON_START =
@@ -70,6 +73,7 @@ const val PERMISSION_DENIED_MESSAGE =
 const val DIALOG_ACCEPT ="Aceptar"
 const val DIALOG_CANCEL ="Cancelar"
 const val DIALOG_OK = "OK"
+const val DIALOG_CONTINUE = "Continuar"
 
 
 // Content description

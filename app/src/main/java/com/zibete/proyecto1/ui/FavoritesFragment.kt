@@ -10,9 +10,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -20,7 +17,7 @@ import com.zibete.proyecto1.FixedSwipeRefreshLayout
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.utils.FirebaseRefs
-import java.util.Collections
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 class FavoritesFragment : Fragment() {
 
@@ -30,8 +27,7 @@ class FavoritesFragment : Fragment() {
     private lateinit var adapter: AdapterFavoriteUsers
     private lateinit var layoutManager: GridLayoutManager
 
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
-
+    private val user get() = currentUser!!
     private val favoritesList = mutableListOf<String>()
     private val favoritesTemp = mutableListOf<String>() // para refresh
 
@@ -42,8 +38,6 @@ class FavoritesFragment : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.fragment_favorites, container, false)
         setHasOptionsMenu(true)
-
-        if (user == null) return view
 
         progressBar = view.findViewById(R.id.progressbar)
         recyclerView = view.findViewById(R.id.rv_favorites)
@@ -74,7 +68,7 @@ class FavoritesFragment : Fragment() {
             favoritesTemp.clear()
         }
 
-        FirebaseRefs.refDatos.child(user!!.uid).child("FavoriteList")
+        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {

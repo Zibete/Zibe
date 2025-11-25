@@ -73,6 +73,7 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
@@ -1089,7 +1090,7 @@ class ChatActivity : AppCompatActivity() {
                         AlertDialog.Builder(this@ChatActivity, R.style.AlertDialogApp)
                             .setMessage("Lo sentimos, $nameUserFinal ya no está disponible")
                             .setCancelable(false)
-                            .setPositiveButton("Aceptar") { _, _ -> finish() }
+                            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> finish() }
                             .show()
                     }
                 }

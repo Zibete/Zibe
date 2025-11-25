@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 
 /**
  * Utilidades centralizadas para mensajes al usuario:
@@ -101,8 +103,8 @@ object UserMessageUtils {
         context: Context,
         title: String,
         message: String,
-        positiveText: String = "Aceptar",
-        negativeText: String = "Cancelar",
+        positiveText: String = DIALOG_ACCEPT,
+        negativeText: String = DIALOG_CANCEL,
         onConfirm: () -> Unit,
         onCancel: (() -> Unit)? = null
     ) {

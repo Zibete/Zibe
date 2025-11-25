@@ -34,6 +34,7 @@ import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.ProfileUiBinder
@@ -213,7 +214,7 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
                     PorterDuff.Mode.SRC_IN
                 )
             }
-            .setNegativeButton("Cancelar") { _, _ -> }
+            .setNegativeButton(DIALOG_CANCEL) { _, _ -> }
             .setNeutralButton("Quitar filtro") { _, _ ->
                 deletePreferences()
                 loadUsers(checkPref, desdePref, hastaPref, "filter")

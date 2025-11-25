@@ -14,6 +14,8 @@ import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
@@ -33,7 +35,7 @@ object ChatUtils {
     ) {
         AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
             .setTitle("Ocultar chat con $nameUser")
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setPositiveButton(DIALOG_ACCEPT) { _, _ ->
                 refDatos.child(user.uid).child(type).child(idUser)
                     .child("estado").setValue("delete")
 
@@ -44,7 +46,7 @@ object ChatUtils {
                 ).textAlignment = View.TEXT_ALIGNMENT_CENTER
                 snack.show()
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(DIALOG_CANCEL, null)
             .setCancelable(false)
             .show()
     }
@@ -125,7 +127,7 @@ object ChatUtils {
 
         builder.setSingleChoiceItems(titles, 0) { _, idx -> itemSelected[0] = idx }
 
-        builder.setPositiveButton("Aceptar") { _, _ ->
+        builder.setPositiveButton(DIALOG_ACCEPT) { _, _ ->
             if (itemSelected[0] == 0) {
                 refDatos.child(user.uid).child(type).child(idUser)
                     .child("estado").setValue("delete")
@@ -144,7 +146,7 @@ object ChatUtils {
             }
         }
 
-        builder.setNegativeButton("Cancelar", null)
+        builder.setNegativeButton(DIALOG_CANCEL, null)
         builder.setCancelable(false)
         builder.show()
     }

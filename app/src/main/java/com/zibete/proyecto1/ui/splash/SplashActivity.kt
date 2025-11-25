@@ -41,6 +41,10 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.constants.DIALOG_CONTINUE
+import com.zibete.proyecto1.ui.constants.TOKEN_DIALOG_MESSAGE
+import com.zibete.proyecto1.ui.constants.TOKEN_DIALOG_TITLE
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
 import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
 import com.zibete.proyecto1.ui.signup.SignUpScreen
@@ -284,21 +288,20 @@ class SplashActivity : ComponentActivity() {
                     val dialogState = tokenDialogState
                     if (dialogState != null) {
                         ZibeDialog(
-                            title = "Un momento…",
+                            title = TOKEN_DIALOG_TITLE,
                             textContent = {
                                 Text(
-                                    "Este dispositivo ya tiene una cuenta vinculada.\n" +
-                                            "Continuar desvinculará la cuenta asociada a ${dialogState.mail}."
+                                    text = TOKEN_DIALOG_MESSAGE.format(dialogState.mail)
                                 )
                             },
-                            confirmText = "Continuar",
+                            confirmText = DIALOG_CONTINUE,
                             onConfirm = {
                                 lifecycleScope.launch {
                                     splashVM.onTokenDialogConfirmed(dialogState.flag)
                                     tokenDialogState = null
                                 }
                             },
-                            dismissText = "Cancelar",
+                            dismissText = DIALOG_CANCEL,
                             onDismiss = {
                                 lifecycleScope.launch {
                                     splashVM.onTokenDialogCancelled(dialogState.flag)

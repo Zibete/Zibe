@@ -56,6 +56,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import androidx.core.content.edit
 import androidx.core.view.isGone
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -406,7 +407,7 @@ class SettingsActivity : AppCompatActivity() {
                                             edtPassword.text.toString()
                                         )
                                     }
-                                    .setNegativeButton("Cancelar", null)
+                                    .setNegativeButton(DIALOG_CANCEL, null)
 
                                 val dialog = builder.create()
 
