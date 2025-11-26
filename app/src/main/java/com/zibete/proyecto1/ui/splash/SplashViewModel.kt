@@ -128,7 +128,7 @@ class SplashViewModel : ViewModel() {
                     updateUserFlow(user)
                 } else {
                     val mail = single.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                    _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag = 1))
+                    onExternalSessionConflict(mail, flag = 1)
                 }
                 return@launch
             }
@@ -137,11 +137,11 @@ class SplashViewModel : ViewModel() {
             val other = accounts.firstOrNull { it.key != user.uid }
             if (other != null) {
                 val mail = other.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag = 2))
+                onExternalSessionConflict(mail, flag = 2)
             } else {
-                // Caso extremo: todas son mi UID
                 updateUserFlow(user)
             }
+
         }
     }
 
@@ -266,4 +266,11 @@ class SplashViewModel : ViewModel() {
             }
         })
     }
+
+    fun onExternalSessionConflict(mail: String, flag: Int) {
+        viewModelScope.launch {
+            _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag))
+        }
+    }
+
 }

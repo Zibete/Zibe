@@ -91,6 +91,13 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val mailExtra = intent.getStringExtra("EXTRA_CONFLICT_MAIL")
+        val flagExtra = intent.getIntExtra("EXTRA_CONFLICT_FLAG", -1)
+
+        if (mailExtra != null && flagExtra != -1) {
+            splashVM.onExternalSessionConflict(mailExtra, flagExtra)
+        }
+        
         // Configurar Google/Facebook
         setupGoogleSignIn()
         setupFacebookSignIn(authVM)

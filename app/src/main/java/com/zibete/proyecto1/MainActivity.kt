@@ -69,6 +69,10 @@ import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_KEEP_HERE
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_LOGOUT
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_MESSAGE
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
@@ -113,6 +117,8 @@ class MainActivity : AppCompatActivity() {
 
     // ========= Notificación / flags =========
     private var flagIntent: Int = 0
+
+    private var sessionConflictHandled = false
 
     private val user get() = currentUser!!
 
@@ -604,44 +610,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun attachInstallIdListener(installIdRef: DatabaseReference) {
+
         listenerToken = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val remoteInstallId = dataSnapshot.getValue(String::class.java)
 
                 if (myInstallId == null) return
 
+                // Primera ejecución: inicialización
                 if (!tokenListenerInitialized) {
                     tokenListenerInitialized = true
-                    if (remoteInstallId == null || myInstallId != remoteInstallId) {
+                    if (remoteInstallId == null || remoteInstallId != myInstallId) {
                         dataSnapshot.ref.setValue(myInstallId)
                     }
                     return
                 }
 
-                if (remoteInstallId != null && myInstallId != remoteInstallId) {
-                    AlertDialog.Builder(
-                        ContextThemeWrapper(
-                            this@MainActivity,
-                            R.style.AlertDialogApp
-                        )
-                    )
-                        .setTitle("Atención")
-                        .setMessage("Se registró un inicio de sesión en otro dispositivo. ¿Qué desea hacer?")
-                        .setPositiveButton("Continuar en este dispositivo") { _, _ ->
+                // Conflicto real
+                if (remoteInstallId != null && remoteInstallId != myInstallId) {
+
+                    // Evitar múltiples diálogos
+                    if (sessionConflictHandled) return
+                    sessionConflictHandled = true
+
+                    showSessionConflictDialog(
+                        onKeepHere = {
                             dataSnapshot.ref.setValue(myInstallId)
-                        }
-                        .setNegativeButton("Cerrar sesión") { _, _ ->
+                            sessionConflictHandled = false
+                        },
+                        onLogout = {
+                            listenerToken?.let { installIdRef.removeEventListener(it) }
                             logout(null)
                         }
-                        .setCancelable(false)
-                        .show()
+                    )
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {}
         }
+
         installIdRef.addValueEventListener(listenerToken as ValueEventListener)
     }
+
+    private fun showSessionConflictDialog(
+        onKeepHere: () -> Unit,
+        onLogout: () -> Unit
+    ) {
+        AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
+            .setTitle(SESSION_CONFLICT_TITLE)
+            .setMessage(SESSION_CONFLICT_MESSAGE)
+            .setPositiveButton(SESSION_CONFLICT_KEEP_HERE) { _, _ -> onKeepHere() }
+            .setNegativeButton(SESSION_CONFLICT_LOGOUT) { _, _ -> onLogout() }
+            .setCancelable(false)
+            .show()
+
+    }
+
 
     // ========= Navegación / UI =========
 

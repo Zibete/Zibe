@@ -49,10 +49,24 @@ const val PERMISSION_LOCATION_MESSAGE =
 const val PERMISSION_LEGAL_DISCLAIMER =
     "Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad."
 
-// Diálogo de token existente
-const val TOKEN_DIALOG_MESSAGE = "Este dispositivo ya tiene una cuenta vinculada.\nContinuar desvinculará la cuenta asociada a %1\$s."
-const val TOKEN_DIALOG_TITLE = "Antes de continuar"
+// =========================
+//    SESIÓN – TOKEN (SPLASH)
+// =========================
+const val TOKEN_DIALOG_TITLE = "Un momento…"
+const val TOKEN_DIALOG_MESSAGE =
+    "Este dispositivo ya tiene una cuenta vinculada.\n" +
+            "Continuar desvinculará la cuenta asociada a %1\$s."
 
+// =========================
+//    SESIÓN – OTRO DISPOSITIVO (MAIN)
+// =========================
+const val SESSION_CONFLICT_TITLE = "Atención"
+const val SESSION_CONFLICT_MESSAGE =
+    "Se registró un inicio de sesión en otro dispositivo.\n" +
+            "¿Qué deseas hacer?"
+
+const val SESSION_CONFLICT_KEEP_HERE = "Continuar en este dispositivo"
+const val SESSION_CONFLICT_LOGOUT = "Cerrar sesión"
 
 const val BUTTON_START =
     "Comenzar"
