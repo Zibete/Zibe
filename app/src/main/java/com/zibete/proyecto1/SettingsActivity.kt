@@ -105,12 +105,6 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
-        if (user == null) {
-            finish()
-            startActivity(Intent(this, SplashActivity::class.java))
-            return
-        }
-
         bindViews()
         setupToolbar()
         setupNotificationSwitches()
@@ -572,7 +566,8 @@ class SettingsActivity : AppCompatActivity() {
             apply()
         }
 
-        MainActivity.layoutSettings?.visibility = View.GONE
+        //todas las referencias a layoutSettings dentro de SettingsActivity las borraría o las apuntaría a vistas propias de Settings, nunca a MainActivity.
+        //        MainActivity.layoutSettings?.visibility = View.GONE
         invalidateOptionsMenu()
 
         val newFragment = GruposFragment()

@@ -104,6 +104,7 @@
     <string name="espere">Espere...</string>
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finalizar_registro">Finalizar registro</string>
+    <string name="default_web_client_id">572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com</string>
 
     <string-array name="edad">
         <item>18</item>

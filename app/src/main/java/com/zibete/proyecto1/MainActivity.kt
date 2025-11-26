@@ -58,6 +58,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
+import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
@@ -82,8 +83,26 @@ import com.zibete.proyecto1.utils.UserRepository.updateLocationUI
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import androidx.activity.viewModels
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import com.zibete.proyecto1.ui.main.MainUiViewModel
+import kotlinx.coroutines.launch
+
 
 class MainActivity : AppCompatActivity() {
+
+    private val mainUiViewModel: MainUiViewModel by viewModels()
+
+    // Representación lógica de la pantalla actual (no depender de UI)
+    private enum class CurrentScreen {
+        CHAT, USERS, GROUPS, EDIT_PROFILE, FAVORITES, OTHER
+    }
+
+    private var currentScreen: CurrentScreen = CurrentScreen.OTHER
+
+    // ========= ViewBinding =========
+    private lateinit var binding: ActivityMainBinding
 
     // ========= AppBar / Nav =========
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -93,15 +112,19 @@ class MainActivity : AppCompatActivity() {
     // ========= Drawer =========
     private var drawer: DrawerLayout? = null
     private var navigationView: NavigationView? = null
-
     private var headerView: View? = null
+
+    // ========= Toolbar / Layout / UI =========
+    private var toolbar: MaterialToolbar? = null
+    private var layoutSettings: View? = null
+    private var filter: ImageView? = null
+    private var refresh: ImageView? = null
+    private var mBottomNavigation: BottomNavigationView? = null
+    private var viewGroup: ViewGroup? = null
+    private var searchView: SearchView? = null
 
     // ========= Badges =========
     private var badgeDrawableChat: BadgeDrawable? = null
-
-    // ========= Layout / UI =========
-    private var viewGroup: ViewGroup? = null
-    private var searchView: SearchView? = null
 
     // ========= Ubicación =========
     private var lastLocation: Location? = null
@@ -117,7 +140,6 @@ class MainActivity : AppCompatActivity() {
 
     // ========= Notificación / flags =========
     private var flagIntent: Int = 0
-
     private var sessionConflictHandled = false
 
     private val user get() = currentUser!!
@@ -128,24 +150,41 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
+        // ViewBinding
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        val appBarBinding = binding.appBarMain
 
         // Transiciones suaves en toolbar
-        viewGroup = findViewById(R.id.toolbar)
+        viewGroup = appBarBinding.toolbar
         viewGroup?.layoutTransition = LayoutTransition().apply {
             enableTransitionType(LayoutTransition.CHANGING)
         }
 
-        // Toolbar
-        toolbar = findViewById(R.id.toolbar)
-        layoutSettings = findViewById(R.id.layoutSettings)
-        filter = findViewById(R.id.filter)
-        refresh = findViewById(R.id.refresh)
+        // Toolbar / layout / botones top
+        toolbar = appBarBinding.toolbar
+        layoutSettings = appBarBinding.layoutSettings
+
+        lifecycleScope.launch {
+            mainUiViewModel.toolbarVisible.collect { visible ->
+                toolbar?.isVisible = visible
+            }
+        }
+
+        lifecycleScope.launch {
+            mainUiViewModel.layoutSettingsVisible.collect { visible ->
+                layoutSettings?.isVisible = visible
+            }
+        }
+
+        filter = appBarBinding.filter
+        refresh = appBarBinding.refresh
         setSupportActionBar(toolbar)
 
         // Drawer
-        drawer = findViewById(R.id.drawer_layout)
-        navigationView = findViewById(R.id.nav_view)
+        drawer = binding.drawerLayout
+        navigationView = binding.navView
 
         // NavController
         navHostFragment =
@@ -157,16 +196,15 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_chat,
                 R.id.nav_usuarios,
                 R.id.nav_grupos,
-                R.id.nav_favoritos // si querés que también sea top-level
+                R.id.nav_favoritos
             ),
-            drawer   // <--- importante: acá le pasamos el DrawerLayout
+            drawer
         )
 
         navController?.let { nav ->
             NavigationUI.setupActionBarWithNavController(this, nav, appBarConfiguration)
             navigationView?.let { nv -> NavigationUI.setupWithNavController(nv, nav) }
         }
-
 
         // Header navigation
         headerView = navigationView?.getHeaderView(0)
@@ -192,9 +230,11 @@ class MainActivity : AppCompatActivity() {
 
         editPerfil?.setOnClickListener { editProfile(null) }
 
-        // BottomNavigation
-        mBottomNavigation = findViewById(R.id.nav_view3)
-        mBottomNavigation?.findViewById<View>(R.id.navBottomChat)?.performClick()
+        // BottomNavigation (está en content_main dentro de app_bar_main)
+        mBottomNavigation = appBarBinding.contentMain.navView3
+        // Pantalla inicial: chat
+        mBottomNavigation?.selectedItemId = R.id.navBottomChat
+        navChatList() // setea currentScreen = CHAT
 
         // Badges Chat
         badgeDrawableChat = mBottomNavigation?.getOrCreateBadge(R.id.navBottomChat)?.apply {
@@ -297,7 +337,8 @@ class MainActivity : AppCompatActivity() {
         listenerGroupBadge = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
-                if (toolbar?.title == UsuariosFragment.groupName) return
+                // Si estoy dentro del grupo, no actualizo badge
+                if (UsuariosFragment.inGroup) return
 
                 val totalMsg = snapshot.childrenCount
 
@@ -315,7 +356,7 @@ class MainActivity : AppCompatActivity() {
 
                             query.addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(ds: DataSnapshot) {
-                                    var leidos = dataSnapshot1.getValue(Int::class.java) ?: 0
+                                    val leidos = dataSnapshot1.getValue(Int::class.java) ?: 0
                                     var countMsgUnread = 0
 
                                     if (ds.exists()) {
@@ -350,7 +391,8 @@ class MainActivity : AppCompatActivity() {
         // Listener mensajes no leídos grupos
         listenerMsgUnreadBadge = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (toolbar?.title == UsuariosFragment.groupName) return
+                // Si estoy dentro del grupo, no hace falta badge
+                if (UsuariosFragment.inGroup) return
                 if (!snapshot.exists()) return
 
                 var countMsgUnread = 0
@@ -413,11 +455,12 @@ class MainActivity : AppCompatActivity() {
         mBottomNavigation?.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navBottomUsers -> {
-                    if (toolbar?.title != getString(R.string.menu_usuarios)) {
+                    if (currentScreen != CurrentScreen.USERS) {
                         layoutSettings?.visibility = View.VISIBLE
                         invalidateOptionsMenu()
                         navController?.navigate(R.id.nav_usuarios)
                         toolbar?.setTitle(R.string.menu_usuarios)
+                        currentScreen = CurrentScreen.USERS
                     }
                     true
                 }
@@ -428,20 +471,24 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.navBottomFavorites -> {
-                    layoutSettings?.visibility = View.GONE
-                    toolbar?.setTitle(R.string.favoritos)
-                    invalidateOptionsMenu()
-                    navController?.navigate(R.id.nav_favoritos)
+                    if (currentScreen != CurrentScreen.FAVORITES) {
+                        layoutSettings?.visibility = View.GONE
+                        toolbar?.setTitle(R.string.favoritos)
+                        invalidateOptionsMenu()
+                        navController?.navigate(R.id.nav_favoritos)
+                        currentScreen = CurrentScreen.FAVORITES
+                    }
                     true
                 }
 
                 R.id.navBottomGrupos -> {
                     if (!UsuariosFragment.inGroup) {
-                        if (toolbar?.title != getString(R.string.menu_grupos)) {
+                        if (currentScreen != CurrentScreen.GROUPS) {
                             layoutSettings?.visibility = View.GONE
                             invalidateOptionsMenu()
                             navController?.navigate(R.id.nav_grupos)
                             toolbar?.setTitle(R.string.menu_grupos)
+                            currentScreen = CurrentScreen.GROUPS
                         }
                     } else {
                         toolbar?.visibility = View.VISIBLE
@@ -460,6 +507,7 @@ class MainActivity : AppCompatActivity() {
                             .commit()
 
                         toolbar?.title = UsuariosFragment.groupName
+                        currentScreen = CurrentScreen.GROUPS
                     }
                     true
                 }
@@ -499,8 +547,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ensureLocationSettingsAndStart() {
-        // Importante: NO pedimos permiso acá.
-        // Si no hay permiso, delegamos en Splash (dueña del flujo de permisos).
         if (!isLocationPermissionGranted) {
             Log.d("MainActivity", "Sin permiso de ubicación, redirigiendo a Splash")
             startActivity(Intent(this, SplashActivity::class.java))
@@ -617,7 +663,6 @@ class MainActivity : AppCompatActivity() {
 
                 if (myInstallId == null) return
 
-                // Primera ejecución: inicialización
                 if (!tokenListenerInitialized) {
                     tokenListenerInitialized = true
                     if (remoteInstallId == null || remoteInstallId != myInstallId) {
@@ -626,10 +671,7 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
 
-                // Conflicto real
                 if (remoteInstallId != null && remoteInstallId != myInstallId) {
-
-                    // Evitar múltiples diálogos
                     if (sessionConflictHandled) return
                     sessionConflictHandled = true
 
@@ -663,9 +705,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton(SESSION_CONFLICT_LOGOUT) { _, _ -> onLogout() }
             .setCancelable(false)
             .show()
-
     }
-
 
     // ========= Navegación / UI =========
 
@@ -679,38 +719,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun navChatList() {
-        if (toolbar?.title != getString(R.string.menu_chat)) {
+        if (currentScreen != CurrentScreen.CHAT) {
             toolbar?.visibility = View.VISIBLE
             layoutSettings?.visibility = View.GONE
             invalidateOptionsMenu()
-            // Navegación usando NavController
+
             navController?.navigate(R.id.nav_chat)
             toolbar?.setTitle(R.string.menu_chat)
 
             mBottomNavigation?.visibility = View.VISIBLE
-            mBottomNavigation?.findViewById<View>(R.id.navBottomChat)?.performClick()
+            mBottomNavigation?.selectedItemId = R.id.navBottomChat
 
             drawer?.closeDrawer(GravityCompat.START)
+
+            currentScreen = CurrentScreen.CHAT
         }
     }
 
     fun editProfile(item: MenuItem?) {
-        if (toolbar?.title != getString(R.string.menu_edit)) {
+        if (currentScreen != CurrentScreen.EDIT_PROFILE) {
             mBottomNavigation?.visibility = View.GONE
             layoutSettings?.visibility = View.GONE
             toolbar?.setTitle(R.string.menu_edit)
             invalidateOptionsMenu()
 
-
             navController?.navigate(R.id.nav_editPerfil)
+            currentScreen = CurrentScreen.EDIT_PROFILE
         }
         drawer?.closeDrawer(GravityCompat.START)
     }
 
     fun index(item: MenuItem?) {
-        if (toolbar?.title == getString(R.string.menu_edit) ||
-            toolbar?.title == getString(R.string.ajustes) ||
-            toolbar?.title == getString(R.string.favoritos)
+        if (currentScreen == CurrentScreen.EDIT_PROFILE ||
+            currentScreen == CurrentScreen.FAVORITES ||
+            currentScreen == CurrentScreen.OTHER
         ) {
             onBackPressedLegacy()
         } else {
@@ -732,7 +774,6 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
@@ -751,7 +792,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.action_favorites -> {
-                mBottomNavigation?.findViewById<View>(R.id.navBottomFavorites)?.performClick()
+                mBottomNavigation?.selectedItemId = R.id.navBottomFavorites
                 true
             }
 
@@ -771,7 +812,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onSupportNavigateUp(): Boolean {
         val navController = this.findNavController(R.id.nav_host_fragment)
         return NavigationUI.navigateUp(navController, appBarConfiguration)
@@ -784,11 +824,10 @@ class MainActivity : AppCompatActivity() {
         val btSave = findViewById<ImageButton?>(R.id.bt_save)
         val edtFecha = findViewById<EditText?>(R.id.edtFecha)
 
-        // 1) Estás en Editar Perfil
-        if (toolbar?.title == getString(R.string.menu_edit)) {
+        // Editar perfil
+        if (currentScreen == CurrentScreen.EDIT_PROFILE) {
 
             if (btSave?.isEnabled == true) {
-                // Hay cambios sin guardar
                 AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
                     .setTitle("Salir")
                     .setMessage("Se perderán los cambios, ¿Desea continuar?")
@@ -823,7 +862,6 @@ class MainActivity : AppCompatActivity() {
                     .setNegativeButton("No", null)
                     .show()
             } else {
-                // No hay cambios pendientes, validás fecha local
                 val fecha = edtFecha?.text?.toString()?.trim().orEmpty()
                 if (fecha.isEmpty()) {
                     val snack = Snackbar.make(
@@ -846,33 +884,25 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // 2) No estás en Editar Perfil
-
-        // Si el drawer está abierto, lo cerrás
+        // Drawer abierto
         if (drawer?.isDrawerOpen(GravityCompat.START) == true) {
             drawer?.closeDrawer(GravityCompat.START)
             return
         }
 
-        val title = toolbar?.title
-
-        // Estás en pantallas "raíz" (chat / usuarios)
-        if (title == getString(R.string.menu_chat) ||
-            title == getString(R.string.menu_usuarios)
+        // Pantallas raíz
+        if (currentScreen == CurrentScreen.CHAT ||
+            currentScreen == CurrentScreen.USERS
         ) {
-            // Si la lupa está abierta, la colapsás
             if (searchView?.isIconified == false) {
                 searchView?.onActionViewCollapsed()
             } else {
-                // Comportamiento de back "final": cerrar MainActivity
                 finish()
             }
         } else {
-            // En cualquier otra pantalla, volvés a la lista de chats
             navChatList()
         }
     }
-
 
     // ========= Acciones de chat =========
 
@@ -911,7 +941,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun unlockUser() {
-        val type = if (toolbar?.title == UsuariosFragment.groupName) {
+        val type = if (UsuariosFragment.inGroup) {
             CHATWITHUNKNOWN
         } else {
             CHATWITH
@@ -979,7 +1009,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun unhideChats() {
-        val type = if (toolbar?.title == UsuariosFragment.groupName) {
+        val type = if (UsuariosFragment.inGroup) {
             CHATWITHUNKNOWN
         } else {
             CHATWITH
@@ -1072,7 +1102,6 @@ class MainActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        // Eliminar chats unknown vinculados
         FirebaseRefs.refDatos.child(user.uid).child(CHATWITHUNKNOWN)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -1114,7 +1143,6 @@ class MainActivity : AppCompatActivity() {
             .child(user.uid)
             .removeValue()
 
-        // Reset estado grupo
         UsuariosFragment.inGroup = false
         UsuariosFragment.userName = ""
         UsuariosFragment.groupName = ""
@@ -1141,6 +1169,7 @@ class MainActivity : AppCompatActivity() {
             .commit()
 
         toolbar?.setTitle(R.string.menu_grupos)
+        currentScreen = CurrentScreen.GROUPS
     }
 
     private fun showSnack(message: String) {
@@ -1156,6 +1185,22 @@ class MainActivity : AppCompatActivity() {
         snack.show()
     }
 
+    fun configureUsersToolbar(
+        filterActive: Boolean,
+        onRefresh: () -> Unit,
+        onFilterClick: () -> Unit
+    ) {
+        refresh?.setOnClickListener { onRefresh() }
+        filter?.setOnClickListener { onFilterClick() }
+
+        val colorRes = if (filterActive) R.color.accent else R.color.blanco
+        filter?.setColorFilter(
+            getColorCompat(colorRes),
+            android.graphics.PorterDuff.Mode.SRC_IN
+        )
+    }
+
+
     companion object {
         @JvmStatic
         var listenerToken: ValueEventListener? = null
@@ -1170,20 +1215,6 @@ class MainActivity : AppCompatActivity() {
 
         var badgeDrawableGroup: BadgeDrawable? = null
 
-        @JvmField
-        var toolbar: MaterialToolbar? = null
-
-        var search: ImageView? = null
-
-        @JvmField
-        var filter: ImageView? = null
-
-        @JvmField
-        var refresh: ImageView? = null
-
-        @JvmField
-        var layoutSettings: View? = null
-        var mBottomNavigation: BottomNavigationView? = null
         const val UPDATE_INTERVAL: Long = 1000
         val UPDATE_FASTEST_INTERVAL: Long = UPDATE_INTERVAL / 2
         private var CHANNEL_ID: String? = null

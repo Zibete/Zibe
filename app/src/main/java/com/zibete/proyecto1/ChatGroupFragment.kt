@@ -118,9 +118,8 @@ class ChatGroupFragment : Fragment() {
         refGroupChat.child(UsuariosFragment.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (MainActivity.toolbar?.title == UsuariosFragment.groupName &&
-                        UsuariosFragment.groupName.isNotEmpty() &&
-                        user != null
+                    if (this@ChatGroupFragment.isResumed &&
+                        UsuariosFragment.groupName.isNotEmpty()
                     ) {
                         val count = snapshot.childrenCount.toInt()
                         refDatos.child(user.uid)
@@ -132,6 +131,7 @@ class ChatGroupFragment : Fragment() {
 
                 override fun onCancelled(error: DatabaseError) {}
             })
+
 
         progress = ProgressDialog(requireContext(), R.style.AlertDialogApp)
 

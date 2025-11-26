@@ -264,16 +264,16 @@ class AdapterGroups(
             query.addValueEventListener(listener)
         }
 
-        MainActivity.toolbar?.isVisible = true
-        MainActivity.layoutSettings?.isVisible = false
+//        MainActivity.toolbar?.isVisible = true
+//        MainActivity.layoutSettings?.isVisible = false
         (context as MainActivity).invalidateOptionsMenu()
 
         val newFragment = PageAdapterGroup()
         val activity = v.context as AppCompatActivity
         val transaction = activity.supportFragmentManager.beginTransaction()
         transaction.replace(R.id.nav_host_fragment, newFragment)
-        MainActivity.toolbar?.title = groupName
-        (context as MainActivity).invalidateOptionsMenu()
+//        MainActivity.toolbar?.title = groupName
+        context.invalidateOptionsMenu()
         transaction.commit()
 
         val userGroup = UserGroup(user.uid, userName, type)

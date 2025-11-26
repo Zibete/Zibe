@@ -1,11 +1,8 @@
 package com.zibete.proyecto1.ui
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Color
-import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -21,40 +18,48 @@ import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.tu_paquete.data.local.UserPreferencesRepository
 import com.zibete.proyecto1.FixedSwipeRefreshLayout
 import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.main.MainUiViewModel
 import com.zibete.proyecto1.utils.DateUtils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
 import java.util.Collections
 
-// ===== UsuariosFragment (sin cambios funcionales, sólo limpieza leve) =====
 class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
 
+    // Shared UI state with MainActivity
+    private val mainUiViewModel: MainUiViewModel by activityViewModels()
+
+    // Instancia del Repositorio (Lazy para que se cree solo cuando se use)
+    private val repo by lazy { UserPreferencesRepository.getInstance(requireContext()) }
+
+    // UI Elements
     private var root: View? = null
     private var progressbar: ProgressBar? = null
     private var goChat: ImageButton? = null
-    private var mLayoutManager: LinearLayoutManager? = null
+    private var rv: RecyclerView? = null
     private var swipeRefresh: FixedSwipeRefreshLayout? = null
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
+    // Data & Adapters
+    private var adapterUsers: AdapterUsers? = null
     private val usersArrayList = mutableListOf<Users>()
-
     private val originalUsersList = mutableListOf<Users>()
-    private val usersArrayList2 = mutableListOf<Users>()
+    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,15 +69,32 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
         root = inflater.inflate(R.layout.fragment_usuarios, container, false)
         setHasOptionsMenu(true)
 
+        initViews()
+        setupRecyclerView()
+        setupSwipeRefresh()
+
+        // Configuración inicial del Toolbar
+        updateToolbarState()
+
+        // Carga inicial
+        loadUsers(isRefresh = false)
+
+        return root!!
+    }
+
+    private fun initViews() {
         progressbar = root!!.findViewById(R.id.progressbar)
         goChat = root!!.findViewById(R.id.goChat)
+    }
 
-        mLayoutManager = LinearLayoutManager(context).apply {
+    private fun setupRecyclerView() {
+        rv = root!!.findViewById(R.id.rv)
+        val mLayoutManager = LinearLayoutManager(context).apply {
             reverseLayout = true
             stackFromEnd = true
         }
 
-        rv = root!!.findViewById<RecyclerView>(R.id.rv).apply {
+        rv?.apply {
             layoutManager = mLayoutManager
             setHasFixedSize(true)
             setItemViewCacheSize(20)
@@ -80,47 +102,27 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
             drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
         }
 
-        // Filtro inicial
-        if (!filterPrefs) {
-            editor.putBoolean("checkPref", false)
-            editor.putBoolean("edadPref", false)
-            editor.putInt("desdePref", 0)
-            editor.putInt("hastaPref", 0)
-            editor.apply()
-            MainActivity.filter?.setColorFilter(
-                resources.getColor(R.color.blanco),
-                PorterDuff.Mode.SRC_IN
-            )
-        } else {
-            MainActivity.filter?.setColorFilter(
-                resources.getColor(R.color.accent),
-                PorterDuff.Mode.SRC_IN
-            )
-        }
-
+        // Inicializamos el adapter (ahora es variable de instancia, no estático)
         adapterUsers = AdapterUsers(usersArrayList, originalUsersList, requireContext())
-        rv!!.adapter = adapterUsers
+        rv?.adapter = adapterUsers
+    }
 
+    private fun setupSwipeRefresh() {
         swipeRefresh = root!!.findViewById<FixedSwipeRefreshLayout>(R.id.swipe_refresh).apply {
             setRecyclerView(rv)
             setOnRefreshListener {
-                loadUsers(checkPref, desdePref, hastaPref, "refresh")
-                isRefreshing = false
+                loadUsers(isRefresh = true)
+                isRefreshing = false // Detenemos la animación visual
             }
         }
+    }
 
-        // Botón refresh
-        MainActivity.refresh?.setOnClickListener {
-            loadUsers(checkPref, desdePref, hastaPref, "refresh")
-        }
-
-        // Botón filtro (se mantiene lógica original)
-        MainActivity.filter?.setOnClickListener {
-            showFilterDialog()
-        }
-
-        loadUsers(checkPref, desdePref, hastaPref, "load")
-        return root!!
+    private fun updateToolbarState() {
+        (activity as? MainActivity)?.configureUsersToolbar(
+            filterActive = repo.filterPrefs, // Leemos directo del repo
+            onRefresh = { loadUsers(isRefresh = true) },
+            onFilterClick = { showFilterDialog() }
+        )
     }
 
     private fun showFilterDialog() {
@@ -133,146 +135,71 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
         val spinnerAge2 = viewFilter.findViewById<Spinner>(R.id.spinner_age2)
 
         val edades = (18..99).toList().toTypedArray()
-
         val adapter = ArrayAdapter(ctx, R.layout.tv_spinner_selected, edades).apply {
             setDropDownViewResource(R.layout.tv_spinner_lista)
         }
         spinnerAge.adapter = adapter
         spinnerAge2.adapter = adapter
 
-        if (filterPrefs) {
-            spinnerAge.setSelection(desdePref - 18)
-            spinnerAge2.setSelection(hastaPref - 18)
-            switchOnline.isChecked = checkPref
-            switchEdad.isChecked = edadPref
+        // --- Cargar estado actual desde el Repo ---
+        if (repo.filterPrefs) {
+            val savedDesde = if (repo.desdePref < 18) 18 else repo.desdePref
+            val savedHasta = if (repo.hastaPref < 18) 18 else repo.hastaPref
+
+            spinnerAge.setSelection(savedDesde - 18)
+            spinnerAge2.setSelection(savedHasta - 18)
+            switchOnline.isChecked = repo.checkPref
+            switchEdad.isChecked = repo.edadPref
         }
 
         spinnerAge.isEnabled = switchEdad.isChecked
         spinnerAge2.isEnabled = switchEdad.isChecked
 
-        spinnerAge.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (spinnerAge2.selectedItemPosition < position) {
-                    spinnerAge2.setSelection(position)
-                }
-            }
+        // --- Logic de Spinners ---
+        setupSpinnerListeners(spinnerAge, spinnerAge2)
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
-
-        spinnerAge2.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (spinnerAge.selectedItemPosition > position) {
-                    spinnerAge.setSelection(position)
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
-
-        val builder = AlertDialog.Builder(
-            ContextThemeWrapper(ctx, R.style.AlertDialogApp)
-        )
+        val builder = AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
             .setView(viewFilter)
             .setPositiveButton("Filtrar") { _, _ ->
-                filterPrefs = true
-                editor.putBoolean("filterPrefs", true)
+                // Guardar en Repo
+                repo.filterPrefs = true
+                repo.checkPref = switchOnline.isChecked
+                repo.edadPref = switchEdad.isChecked
 
-                checkPref = switchOnline.isChecked
-                editor.putBoolean("checkPref", checkPref)
-
-                edadPref = switchEdad.isChecked
-                editor.putBoolean("edadPref", edadPref)
-
-                if (edadPref) {
-                    desdePref = edades[spinnerAge.selectedItemPosition]
-                    hastaPref = edades[spinnerAge2.selectedItemPosition]
-                    editor.putInt("desdePref", desdePref)
-                    editor.putInt("hastaPref", hastaPref)
+                if (switchEdad.isChecked) {
+                    repo.desdePref = edades[spinnerAge.selectedItemPosition]
+                    repo.hastaPref = edades[spinnerAge2.selectedItemPosition]
                 } else {
-                    desdePref = 0
-                    hastaPref = 0
-                    editor.putInt("desdePref", 0)
-                    editor.putInt("hastaPref", 0)
+                    repo.desdePref = 0
+                    repo.hastaPref = 0
                 }
 
-                editor.apply()
-
-                loadUsers(checkPref, desdePref, hastaPref, "filter")
-                MainActivity.filter?.setColorFilter(
-                    ctx.resources.getColor(R.color.accent),
-                    PorterDuff.Mode.SRC_IN
-                )
+                loadUsers(isRefresh = false)
+                updateToolbarState()
             }
             .setNegativeButton(DIALOG_CANCEL) { _, _ -> }
             .setNeutralButton("Quitar filtro") { _, _ ->
-                deletePreferences()
-                loadUsers(checkPref, desdePref, hastaPref, "filter")
+                repo.clearAllData() // Limpia filtros y sesión (revisar si solo quieres limpiar filtros)
+                // Si solo quieres limpiar filtros, crea un método específico en el Repo.
+
+                loadUsers(isRefresh = false)
+                updateToolbarState()
             }
             .setCancelable(true)
 
         val dialog = builder.create()
-
-        switchOnline.setOnCheckedChangeListener { _, isChecked ->
-            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            if (isChecked || switchEdad.isChecked) {
-                positive?.isEnabled = true
-                positive?.setTextColor(ctx.resources.getColor(R.color.blanco))
-            } else {
-                positive?.isEnabled = false
-                positive?.setTextColor(Color.GRAY)
-            }
-        }
-
-        switchEdad.setOnCheckedChangeListener { _, isChecked ->
-            spinnerAge.isEnabled = isChecked
-            spinnerAge2.isEnabled = isChecked
-            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            if (isChecked || switchOnline.isChecked) {
-                positive?.isEnabled = true
-                positive?.setTextColor(ctx.resources.getColor(R.color.blanco))
-            } else {
-                positive?.isEnabled = false
-                positive?.setTextColor(Color.GRAY)
-            }
-        }
-
-        dialog.setOnShowListener {
-            if (!filterPrefs) {
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
-                    isEnabled = false
-                    setTextColor(Color.GRAY)
-                }
-            }
-
-            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            if (!switchOnline.isChecked && !switchEdad.isChecked) {
-                positive?.isEnabled = false
-                positive?.setTextColor(Color.GRAY)
-            } else {
-                positive?.isEnabled = true
-                positive?.setTextColor(ctx.resources.getColor(R.color.blanco))
-            }
-        }
-
+        setupDialogButtonListeners(dialog, ctx, switchOnline, switchEdad)
         dialog.show()
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            ?.setTextColor(ctx.resources.getColor(R.color.blanco))
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-            ?.setTextColor(ctx.resources.getColor(R.color.blanco))
+
+        // Colores de botones
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(ctx.getColor(R.color.blanco))
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(ctx.getColor(R.color.blanco))
     }
 
-    fun loadUsers(check: Boolean, desde: Int, hasta: Int, flag: String) {
+    /**
+     * Carga usuarios usando los filtros actuales del Repositorio.
+     */
+    fun loadUsers(isRefresh: Boolean) {
         progressbar?.visibility = View.VISIBLE
 
         refCuentas.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -283,77 +210,67 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
                     return
                 }
 
-                if (flag == "load") {
-                    usersArrayList.clear()
-                } else {
-                    usersArrayList2.clear()
-                }
-                originalUsersList.clear()
-
+                // Lista temporal para procesar
+                val tempList = mutableListOf<Users>()
                 val currentUid = user?.uid
 
-                if (edadPref) {
-                    for (child in snapshot.children) {
-                        val key = child.key ?: continue
-                        if (key == currentUid) continue
+                // Leemos configuración del repo una sola vez
+                val applyAgeFilter = repo.edadPref
+                val applyOnlineFilter = repo.checkPref
+                val minAge = repo.desdePref
+                val maxAge = repo.hastaPref
 
-                        val u = child.getValue(Users::class.java) ?: continue
-                        val edad = calcAge(u.birthDay)
-                        u.age = edad
+                for (child in snapshot.children) {
+                    val key = child.key ?: continue
+                    if (key == currentUid) continue
 
-                        val distanceMeters = ProfileUiBinder.getDistanceMeters(
-                            UserRepository.latitude,
-                            UserRepository.longitude,
-                            u.latitude,
-                            u.longitude
-                        )
-                        u.distance = distanceMeters
+                    val u = child.getValue(Users::class.java) ?: continue
 
-                        if (edad in desde..hasta) {
-                            if (check && !u.state) continue
-                            if (flag == "load") {
-                                adapterUsers?.addUser(u)
-                            } else {
-                                usersArrayList2.add(u)
-                            }
+                    // Calcular datos derivados
+                    u.age = calcAge(u.birthDay)
+                    u.distance = ProfileUiBinder.getDistanceMeters(
+                        UserRepository.latitude,
+                        UserRepository.longitude,
+                        u.latitude,
+                        u.longitude
+                    )
+
+                    // Lógica de Filtrado
+                    var isValid = true
+
+                    if (applyOnlineFilter && !u.state) {
+                        isValid = false
+                    }
+
+                    if (isValid && applyAgeFilter) {
+                        if (u.age !in minAge..maxAge) {
+                            isValid = false
                         }
                     }
-                } else {
-                    for (child in snapshot.children) {
-                        val key = child.key ?: continue
-                        if (key == currentUid) continue
 
-                        val u = child.getValue(Users::class.java) ?: continue
-
-                        val distanceMeters = ProfileUiBinder.getDistanceMeters(
-                            UserRepository.latitude,
-                            UserRepository.longitude,
-                            u.latitude,
-                            u.longitude
-                        )
-                        u.distance = distanceMeters
-
-                        if (check && !u.state) continue
-
-                        if (flag == "load") {
-                            adapterUsers?.addUser(u)
-                        } else {
-                            usersArrayList2.add(u)
-                        }
+                    if (isValid) {
+                        tempList.add(u)
                     }
                 }
 
-                Collections.sort(usersArrayList2)
-                Collections.sort(usersArrayList)
-                Collections.sort(originalUsersList)
+                // Ordenar
+                Collections.sort(tempList)
 
-                if (flag == "load") {
+                // Actualizar listas principales
+                usersArrayList.clear()
+                usersArrayList.addAll(tempList)
+
+                originalUsersList.clear()
+                originalUsersList.addAll(tempList) // Mantenemos copia si necesitas filtrado local por texto
+
+                // Notificar al adapter
+                if (isRefresh) {
+                    adapterUsers?.updateDataUsers(usersArrayList)
+                } else {
                     adapterUsers?.notifyDataSetChanged()
-                } else {
-                    adapterUsers?.updateDataUsers(usersArrayList2)
                 }
 
-                setScrollbar()
+                scrollToBottom()
                 progressbar?.visibility = View.GONE
             }
 
@@ -363,18 +280,77 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
         })
     }
 
+    private fun scrollToBottom() {
+        val count = adapterUsers?.itemCount ?: 0
+        if (count > 0) {
+            rv?.scrollToPosition(count - 1)
+        }
+    }
+
+    // --- Helpers para el Dialog ---
+
+    private fun setupSpinnerListeners(spinner1: Spinner, spinner2: Spinner) {
+        spinner1.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                if (spinner2.selectedItemPosition < pos) spinner2.setSelection(pos)
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+
+        spinner2.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                if (spinner1.selectedItemPosition > pos) spinner1.setSelection(pos)
+            }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupDialogButtonListeners(dialog: AlertDialog, ctx: Context, swOnline: SwitchCompat, swAge: SwitchCompat) {
+        dialog.setOnShowListener {
+            val neutralBtn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+            if (!repo.filterPrefs) {
+                neutralBtn?.isEnabled = false
+                neutralBtn?.setTextColor(Color.GRAY)
+            }
+
+            updatePositiveButtonState(dialog, ctx, swOnline.isChecked, swAge.isChecked)
+        }
+
+        val listener = { _: Any, isChecked: Boolean ->
+            swAge.isEnabled = true // Ensure consistency
+            // Logic specific to enabling spinners
+            dialog.findViewById<Spinner>(R.id.spinner_age)?.isEnabled = swAge.isChecked
+            dialog.findViewById<Spinner>(R.id.spinner_age2)?.isEnabled = swAge.isChecked
+
+            updatePositiveButtonState(dialog, ctx, swOnline.isChecked, swAge.isChecked)
+        }
+
+        swOnline.setOnCheckedChangeListener(listener)
+        swAge.setOnCheckedChangeListener(listener)
+    }
+
+    private fun updatePositiveButtonState(dialog: AlertDialog, ctx: Context, onlineChecked: Boolean, ageChecked: Boolean) {
+        val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        if (onlineChecked || ageChecked) {
+            positive?.isEnabled = true
+            positive?.setTextColor(ctx.getColor(R.color.blanco))
+        } else {
+            positive?.isEnabled = false
+            positive?.setTextColor(Color.GRAY)
+        }
+    }
+
+    // --- Search Logic ---
+
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
+        menu.findItem(R.id.action_exit)?.isVisible = false
+        menu.findItem(R.id.action_unlock)?.isVisible = true
 
-        val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnlock = menu.findItem(R.id.action_unlock)
-        val actionExit = menu.findItem(R.id.action_exit)
+        val searchItem = menu.findItem(R.id.action_search)
+        searchItem?.isVisible = true
 
-        actionExit?.isVisible = false
-        actionSearch?.isVisible = true
-        actionUnlock?.isVisible = true
-
-        val searchView = actionSearch?.actionView as? SearchView
+        val searchView = searchItem?.actionView as? SearchView
         searchView?.setOnQueryTextListener(this)
     }
 
@@ -385,73 +361,9 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
         return false
     }
 
-    companion object {
-        var rv: RecyclerView? = null
-        var adapterUsers: AdapterUsers? = null
-
-        @SuppressLint("RestrictedApi")
-        private val preferences: SharedPreferences =
-            AuthUI.getApplicationContext()
-                .getSharedPreferences("FilterUsers", Context.MODE_PRIVATE)
-        var editor: SharedPreferences.Editor = preferences.edit()
-
-        var filterPrefs: Boolean = preferences.getBoolean("filterPrefs", false)
-        var checkPref: Boolean = preferences.getBoolean("checkPref", false)
-        var edadPref: Boolean = preferences.getBoolean("edadPref", false)
-        var desdePref: Int = preferences.getInt("desdePref", 0)
-        var hastaPref: Int = preferences.getInt("hastaPref", 0)
-
-        var inGroup: Boolean = preferences.getBoolean("inGroup", false)
-        @JvmField
-        var groupName: String = preferences.getString("groupName", "") ?: ""
-        var userName: String = preferences.getString("userName", "") ?: ""
-        var userType: Int = preferences.getInt("userType", 2)
-        var readGroupMsg: Int = preferences.getInt("readGroupMsg", 0)
-        var userDate: String = preferences.getString("userDate", "") ?: ""
-        var countGroupBadge: Int = 0
-
-        @JvmField
-        var individualNotifications: Boolean =
-            preferences.getBoolean("individualNotifications", true)
-        @JvmField
-        var groupNotifications: Boolean =
-            preferences.getBoolean("groupNotifications", true)
-
-        @SuppressLint("RestrictedApi")
-        fun deletePreferences() {
-            filterPrefs = false
-            checkPref = false
-            edadPref = false
-            desdePref = 0
-            hastaPref = 0
-
-            inGroup = false
-            groupName = ""
-            userName = ""
-            userType = 2
-
-            editor.putBoolean("inGroup", false)
-            editor.putString("groupName", "")
-            editor.putString("userName", "")
-            editor.putInt("userType", 2)
-
-            editor.putBoolean("filterPrefs", false)
-            editor.putBoolean("checkPref", false)
-            editor.putBoolean("edadPref", false)
-            editor.putInt("desdePref", 0)
-            editor.putInt("hastaPref", 0)
-
-            editor.apply()
-
-            MainActivity.filter?.setColorFilter(
-                AuthUI.getApplicationContext().resources.getColor(R.color.blanco),
-                PorterDuff.Mode.SRC_IN
-            )
-        }
-
-        fun setScrollbar() {
-            rv?.scrollToPosition((adapterUsers?.itemCount ?: 1) - 1)
-        }
+    override fun onResume() {
+        super.onResume()
+        mainUiViewModel.showToolbar()
+        mainUiViewModel.hideLayoutSettings()
     }
 }
-

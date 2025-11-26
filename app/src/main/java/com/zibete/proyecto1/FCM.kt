@@ -90,21 +90,19 @@ class FCM : FirebaseMessagingService() {
                 doubleCheck(idUser, type, ref)
             }
         } else {
-            if (UsuariosFragment.groupNotifications) {
-                if (data.isNotEmpty()) {
-                    if (MainActivity.toolbar != null) {
-                        if (MainActivity.toolbar!!.title != UsuariosFragment.groupName) {
-                            val title = "Nuevo mensaje de $type"
-                            val text = "$userName: $msg"
-                            msgNotify(title, text, idUser, type, ref)
-                        }
-                    } else {
-                        val title = "Nuevo mensaje de $type"
-                        val text = "$userName: $msg"
-                        msgNotify(title, text, idUser, type, ref)
-                    }
+            if (UsuariosFragment.groupNotifications && data.isNotEmpty()) {
+                // Si el usuario está dentro del grupo activo y es el mismo grupo, no notificamos
+                val isInActiveGroup = UsuariosFragment.inGroup &&
+                        UsuariosFragment.groupName.isNotEmpty() &&
+                        UsuariosFragment.groupName == type
+
+                if (!isInActiveGroup) {
+                    val title = "Nuevo mensaje de $type"
+                    val text = "$userName: $msg"
+                    msgNotify(title, text, idUser, type, ref)
                 }
             }
+
         }
     }
 
