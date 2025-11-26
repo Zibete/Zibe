@@ -23,11 +23,11 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.Utils.repo
 
 class PageAdapterGroup : Fragment() {
 
@@ -39,7 +39,7 @@ class PageAdapterGroup : Fragment() {
     private lateinit var tabLayout: BadgedTabLayout
 
     private val fragments: List<Fragment> = listOf(
-        PersonsChatGroupFragment(),
+        GroupUsersFragment(),
         ChatGroupFragment(),
         ChatListGroupsFragment()
     )
@@ -175,8 +175,8 @@ class PageAdapterGroup : Fragment() {
             }
 
             // Escuchamos usuarios del grupo actual
-            if (UsuariosFragment.groupName.isNotEmpty()) {
-                refGroupUsers.child(UsuariosFragment.groupName)
+            if (repo.groupName.isNotEmpty()) {
+                refGroupUsers.child(repo.groupName)
                     .addValueEventListener(valueEventListenerTitle as ValueEventListener)
             }
         }
@@ -187,7 +187,7 @@ class PageAdapterGroup : Fragment() {
 
         override fun getPageTitle(position: Int): CharSequence? = when (position) {
             0 -> "(${membersCount}) ${requireContext().getString(R.string.menu_usuarios)}"
-            1 -> UsuariosFragment.groupName
+            1 -> repo.groupName
             2 -> requireContext().getString(R.string.menu_chat)
             else -> null
         }
@@ -196,7 +196,7 @@ class PageAdapterGroup : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         // Limpio listener del título para evitar fugas
-        val groupName = UsuariosFragment.groupName
+        val groupName = repo.groupName
         if (groupName.isNotEmpty() && valueEventListenerTitle != null) {
             refGroupUsers.child(groupName).removeEventListener(valueEventListenerTitle!!)
         }

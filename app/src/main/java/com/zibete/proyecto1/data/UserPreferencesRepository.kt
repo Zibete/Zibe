@@ -1,4 +1,4 @@
-package com.tu_paquete.data.local // 1. Ajusta esto a tu paquete real
+package com.zibete.proyecto1.data // 1. Ajusta esto a tu paquete real
 
 import android.content.Context
 import android.content.SharedPreferences

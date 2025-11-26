@@ -11,7 +11,7 @@ import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.*
-import com.zibete.proyecto1.utils.DateUtils
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.FirebaseRefs
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -132,7 +132,7 @@ class SignUpViewModel : ViewModel() {
     ) {
         val nowStr = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             .format(Calendar.getInstance().time)
-        val age = DateUtils.calcAge(birthday)
+        val age = Utils.calcAge(birthday)
 
         val data = hashMapOf<String, Any?>(
             "id" to user.uid,
@@ -164,7 +164,7 @@ class SignUpViewModel : ViewModel() {
     }
 
     private fun isAdult(birthStr: String): Boolean = try {
-        DateUtils.calcAge(birthStr) >= 18
+        Utils.calcAge(birthStr) >= 18
     } catch (_: Exception) {
         false
     }

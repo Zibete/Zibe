@@ -27,7 +27,7 @@ import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.DateUtils
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.GlassEffect
@@ -187,7 +187,7 @@ class AdapterUsers(
         }
 
         // Edad
-        val edad = DateUtils.calcAge(users.birthDay)
+        val edad = Utils.calcAge(users.birthDay)
         h.tv_edad.text = edad.toString()
 
 

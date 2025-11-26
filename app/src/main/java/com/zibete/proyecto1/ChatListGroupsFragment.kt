@@ -1,6 +1,7 @@
 package com.zibete.proyecto1
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -23,7 +25,10 @@ import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
+import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.Utils.repo
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Collections
@@ -46,12 +51,6 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     ): View {
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
-
-        if (user == null) {
-            setupInitialUi()
-            showOnBoarding()
-            return binding.root
-        }
 
         setupRecycler()
         setupInitialUi()
@@ -80,8 +79,13 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
             stackFromEnd = true
         }
 
-        // Usamos la lista compartida del companion como fuente inicial
-        adapterChatGroupsLista = AdapterChatGroupsLista(chatsGroupArrayList, requireContext())
+        adapterChatGroupsLista = AdapterChatGroupsLista(
+            chatList = chatsGroupArrayList,
+            context = requireContext(),
+            onChatClicked = { chat -> handleChatClick(chat) },
+            onChatSeen = { chat -> markChatAsSeen(chat) },
+            onMarkAsRead = { chat -> processDoubleCheckLogic(chat) }
+        )
 
         binding.rv.apply {
             layoutManager = this@ChatListGroupsFragment.layoutManager
@@ -227,6 +231,92 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         if (adapterChatGroupsLista.itemCount > 0) {
             binding.rv.scrollToPosition(adapterChatGroupsLista.itemCount - 1)
         }
+    }
+
+    // 1. Manejo de Click Principal (Valida si sigue en grupo y navega)
+    private fun handleChatClick(chat: ChatWith) {
+        // Usamos el repo para saber el grupo actual
+        val groupName = repo.groupName
+
+        refGroupUsers.child(groupName).child(chat.userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val intent = Intent(requireContext(), ChatActivity::class.java).apply {
+                            putExtra("unknownName", chat.userName)
+                            putExtra("idUserUnknown", chat.userId)
+                        }
+                        startActivity(intent)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "Lo sentimos, ${chat.userName} ya no está disponible",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        // Eliminamos el chat si el usuario ya no existe
+                        refDatos.child(user.uid)
+                            .child(Constants.CHATWITHUNKNOWN)
+                            .child(chat.userId)
+                            .removeValue()
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    // 2. Marcar chat como visto (wVisto = 2)
+    private fun markChatAsSeen(chat: ChatWith) {
+        refDatos.child(user.uid)
+            .child(Constants.CHATWITHUNKNOWN)
+            .child(chat.userId)
+            .child("wVisto")
+            .setValue(2)
+    }
+
+    // 3. Lógica compleja de Doble Check (setMyDoubleCheck)
+    private fun processDoubleCheckLogic(chat: ChatWith) {
+        refDatos.child(user.uid)
+            .child(Constants.CHATWITHUNKNOWN)
+            .child(chat.userId)
+            .child("noVisto")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val noVistos = snapshot.getValue(Int::class.java) ?: return
+                    if (noVistos <= 0) return
+
+                    fun markMessagesInNode(ds: DataSnapshot) {
+                        for (msg in ds.children) {
+                            msg.ref.child("visto").setValue(2)
+                        }
+                    }
+
+                    // Intenta ruta 1: YO <--> EL
+                    val path1 = "${user.uid} <---> ${chat.userId}"
+                    refChatUnknown.child(path1).child("Mensajes")
+                        .limitToLast(noVistos)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(ds: DataSnapshot) {
+                                if (ds.exists()) {
+                                    markMessagesInNode(ds)
+                                } else {
+                                    // Intenta ruta 2: EL <--> YO
+                                    val path2 = "${chat.userId} <---> ${user.uid}"
+                                    refChatUnknown.child(path2).child("Mensajes")
+                                        .limitToLast(noVistos)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(ds2: DataSnapshot) {
+                                                if (ds2.exists()) markMessagesInNode(ds2)
+                                            }
+                                            override fun onCancelled(error: DatabaseError) {}
+                                        })
+                                }
+                            }
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
 
     // ---------- SearchView ----------

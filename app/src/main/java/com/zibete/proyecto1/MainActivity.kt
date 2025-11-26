@@ -86,6 +86,7 @@ import java.util.Calendar
 import androidx.activity.viewModels
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.main.MainUiViewModel
 import kotlinx.coroutines.launch
 
@@ -143,6 +144,8 @@ class MainActivity : AppCompatActivity() {
     private var sessionConflictHandled = false
 
     private val user get() = currentUser!!
+
+    val repo = UserPreferencesRepository.getInstance(this)
 
     // ========= Ciclo de vida =========
 
@@ -338,7 +341,7 @@ class MainActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) return
                 // Si estoy dentro del grupo, no actualizo badge
-                if (UsuariosFragment.inGroup) return
+                if (repo.inGroup) return
 
                 val totalMsg = snapshot.childrenCount
 
@@ -367,7 +370,7 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
 
-                                    if (UsuariosFragment.inGroup) {
+                                    if (repo.inGroup) {
                                         val total =
                                             (totalMsg - leidos + countMsgUnread).toInt()
                                         badgeDrawableGroup?.number = total
@@ -392,7 +395,7 @@ class MainActivity : AppCompatActivity() {
         listenerMsgUnreadBadge = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 // Si estoy dentro del grupo, no hace falta badge
-                if (UsuariosFragment.inGroup) return
+                if (repo.inGroup) return
                 if (!snapshot.exists()) return
 
                 var countMsgUnread = 0
@@ -402,7 +405,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 val finalCount = countMsgUnread
 
-                FirebaseRefs.refGroupChat.child(UsuariosFragment.groupName)
+                FirebaseRefs.refGroupChat.child(repo.groupName)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(ds: DataSnapshot) {
                             if (!ds.exists()) return
@@ -415,7 +418,7 @@ class MainActivity : AppCompatActivity() {
                                 .addListenerForSingleValueEvent(object : ValueEventListener {
                                     override fun onDataChange(d1: DataSnapshot) {
                                         val leidos = d1.getValue(Int::class.java) ?: 0
-                                        if (UsuariosFragment.inGroup) {
+                                        if (repo.inGroup) {
                                             val total =
                                                 (totalMsg - leidos + finalCount).toInt()
                                             badgeDrawableGroup?.number = total
@@ -436,8 +439,8 @@ class MainActivity : AppCompatActivity() {
             override fun onCancelled(error: DatabaseError) {}
         }
 
-        if (UsuariosFragment.inGroup) {
-            FirebaseRefs.refGroupChat.child(UsuariosFragment.groupName)
+        if (repo.inGroup) {
+            FirebaseRefs.refGroupChat.child(repo.groupName)
                 .addValueEventListener(listenerGroupBadge as ValueEventListener)
 
             val query = FirebaseRefs.refDatos.child(user.uid)
@@ -482,7 +485,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.navBottomGrupos -> {
-                    if (!UsuariosFragment.inGroup) {
+                    if (!repo.inGroup) {
                         if (currentScreen != CurrentScreen.GROUPS) {
                             layoutSettings?.visibility = View.GONE
                             invalidateOptionsMenu()
@@ -497,8 +500,8 @@ class MainActivity : AppCompatActivity() {
 
                         val newFragment = PageAdapterGroup().apply {
                             arguments = Bundle().apply {
-                                putString("group_name", UsuariosFragment.groupName)
-                                putString("getUid", UsuariosFragment.userName)
+                                putString("group_name", repo.groupName)
+                                putString("getUid", repo.userName)
                             }
                         }
 
@@ -506,7 +509,7 @@ class MainActivity : AppCompatActivity() {
                             .replace(R.id.nav_host_fragment, newFragment)
                             .commit()
 
-                        toolbar?.title = UsuariosFragment.groupName
+                        toolbar?.title = repo.groupName
                         currentScreen = CurrentScreen.GROUPS
                     }
                     true
@@ -801,7 +804,7 @@ class MainActivity : AppCompatActivity() {
                     ContextThemeWrapper(this, R.style.AlertDialogApp)
                 )
                     .setTitle("Salir")
-                    .setMessage("¿Desea abandonar ${UsuariosFragment.groupName}?")
+                    .setMessage("¿Desea abandonar ${repo.groupName}?")
                     .setPositiveButton("Salir") { _, _ -> exitGroup() }
                     .setNegativeButton(DIALOG_CANCEL, null)
                     .show()
@@ -919,7 +922,7 @@ class MainActivity : AppCompatActivity() {
     fun logout() {
         setUserOffline(applicationContext, user.uid)
 
-        if (UsuariosFragment.inGroup) {
+        if (repo.inGroup) {
             exitGroup()
         }
 
@@ -929,7 +932,8 @@ class MainActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        UsuariosFragment.deletePreferences()
+        repo.clearAllData()
+
         EditProfileFragment.deleteProfilePreferences(this)
 
         FirebaseAuth.getInstance().signOut()
@@ -941,7 +945,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun unlockUser() {
-        val type = if (UsuariosFragment.inGroup) {
+        val type = if (repo.inGroup) {
             CHATWITHUNKNOWN
         } else {
             CHATWITH
@@ -1009,7 +1013,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun unhideChats() {
-        val type = if (UsuariosFragment.inGroup) {
+        val type = if (repo.inGroup) {
             CHATWITHUNKNOWN
         } else {
             CHATWITH
@@ -1077,10 +1081,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun exitGroup() {
-        UsuariosFragment.inGroup = false
+        repo.inGroup = false
 
         listenerGroupBadge?.let {
-            FirebaseRefs.refGroupChat.child(UsuariosFragment.groupName)
+            FirebaseRefs.refGroupChat.child(repo.groupName)
                 .removeEventListener(it)
         }
 
@@ -1093,12 +1097,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         PageAdapterGroup.valueEventListenerTitle?.let {
-            FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
+            FirebaseRefs.refGroupUsers.child(repo.groupName)
                 .removeEventListener(it)
         }
 
         ChatGroupFragment.listenerGroupChat?.let {
-            FirebaseRefs.refGroupChat.child(UsuariosFragment.groupName)
+            FirebaseRefs.refGroupChat.child(repo.groupName)
                 .removeEventListener(it)
         }
 
@@ -1129,36 +1133,34 @@ class MainActivity : AppCompatActivity() {
         val chatMsg = ChatsGroup(
             "abandonó la sala",
             dateFormat.format(Calendar.getInstance().time),
-            UsuariosFragment.userName,
+            repo.userName,
             user.uid,
             0,
-            UsuariosFragment.userType
+            repo.userType
         )
 
-        FirebaseRefs.refGroupChat.child(UsuariosFragment.groupName)
+        FirebaseRefs.refGroupChat.child(repo.groupName)
             .push()
             .setValue(chatMsg)
 
-        FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
+        FirebaseRefs.refGroupUsers.child(repo.groupName)
             .child(user.uid)
             .removeValue()
 
-        UsuariosFragment.inGroup = false
-        UsuariosFragment.userName = ""
-        UsuariosFragment.groupName = ""
-        UsuariosFragment.userType = 2
-        UsuariosFragment.readGroupMsg = 0
-        UsuariosFragment.userDate = ""
+        repo.inGroup = false
+        repo.userName = ""
+        repo.groupName = ""
+        repo.userType = 2
+        repo.readGroupMsg = 0
+        repo.userDate = ""
 
-        UsuariosFragment.editor.apply {
-            putBoolean("inGroup", false)
-            putString("userName", "")
-            putString("groupName", "")
-            putInt("userType", 2)
-            putInt("readGroupMsg", 0)
-            putString("userDate", "")
-            apply()
-        }
+
+        repo.inGroup = false
+        repo.userName = ""
+        repo.groupName = ""
+        repo.userType = 2
+        repo.readGroupMsg = 0
+        repo.userDate = ""
 
         layoutSettings?.visibility = View.GONE
         invalidateOptionsMenu()

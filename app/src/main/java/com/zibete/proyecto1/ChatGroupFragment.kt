@@ -36,6 +36,8 @@ import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.canhub.cropper.CropImageContractOptions
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -43,16 +45,18 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.adapters.AdapterChatGroup
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.utils.CropHelper
+import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
@@ -96,6 +100,8 @@ class ChatGroupFragment : Fragment() {
     // Launcher CropActivity
     private lateinit var cropImageLauncher: ActivityResultLauncher<CropImageContractOptions>
 
+    val repo = UserPreferencesRepository.getInstance(requireContext())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -115,11 +121,11 @@ class ChatGroupFragment : Fragment() {
         MainActivity.badgeDrawableGroup?.isVisible = false
 
         // Marcar mensajes leídos del grupo activo
-        refGroupChat.child(UsuariosFragment.groupName)
+        refGroupChat.child(repo.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (this@ChatGroupFragment.isResumed &&
-                        UsuariosFragment.groupName.isNotEmpty()
+                        repo.groupName.isNotEmpty()
                     ) {
                         val count = snapshot.childrenCount.toInt()
                         refDatos.child(user.uid)
@@ -157,7 +163,17 @@ class ChatGroupFragment : Fragment() {
         }
 
         rvMsg.layoutManager = mLayoutManager
-        adapter = AdapterChatGroup(chatsArrayList, Constants.MAXCHATSIZE, requireContext())
+//        adapter = AdapterChatGroup(chatsArrayList, Constants.MAXCHATSIZE, requireContext())
+
+        adapter = AdapterChatGroup(
+            context = requireContext(),
+            maxSize = MAXCHATSIZE,
+            initialList = chatsArrayList, // Tu array actual
+            onImageClicked = { url -> navigateToPhoto(url) },
+            onUserSingleTap = { chat, view -> handleUserSingleTap(chat, view) },
+            onUserDoubleTap = { chat, view -> handleUserDoubleTap(chat, view) }
+        )
+
         rvMsg.adapter = adapter
 
         rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -250,7 +266,7 @@ class ChatGroupFragment : Fragment() {
     }
 
     private fun initOnBoardingObserver() = with(binding) {
-        refGroupChat.child(UsuariosFragment.groupName)
+        refGroupChat.child(repo.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     progressbar2.isVisible = false
@@ -274,7 +290,7 @@ class ChatGroupFragment : Fragment() {
                 dataSnapshot: DataSnapshot,
                 previousChildName: String?
             ) {
-                if (!dataSnapshot.exists() || !UsuariosFragment.inGroup) return
+                if (!dataSnapshot.exists() || !repo.inGroup) return
 
                 val chat = dataSnapshot.getValue(ChatsGroup::class.java) ?: return
                 val fmt = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
@@ -286,7 +302,7 @@ class ChatGroupFragment : Fragment() {
                 }
 
                 val dateUser = try {
-                    fmt.parse(UsuariosFragment.userDate)
+                    fmt.parse(repo.userDate)
                 } catch (e: ParseException) {
                     null
                 }
@@ -302,7 +318,7 @@ class ChatGroupFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {}
         }
 
-        refGroupChat.child(UsuariosFragment.groupName)
+        refGroupChat.child(repo.groupName)
             .addChildEventListener(listenerGroupChat as ChildEventListener)
     }
 
@@ -416,14 +432,14 @@ class ChatGroupFragment : Fragment() {
         val chatMsg = ChatsGroup(
             stringMsg!!,
             dateFormat.format(c.time),
-            UsuariosFragment.userName,
+            repo.userName,
             user.uid,
             msgType,
-            UsuariosFragment.userType
+            repo.userType
         )
 
         // Enviar a Firebase
-        refGroupChat.child(UsuariosFragment.groupName)
+        refGroupChat.child(repo.groupName)
             .push()
             .setValue(chatMsg)
             .addOnCompleteListener {
@@ -436,7 +452,7 @@ class ChatGroupFragment : Fragment() {
             }
 
         // Notificaciones a los demás miembros del grupo
-        refGroupUsers.child(UsuariosFragment.groupName)
+        refGroupUsers.child(repo.groupName)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
@@ -469,10 +485,10 @@ class ChatGroupFragment : Fragment() {
         try {
             val data = JSONObject().apply {
                 put("novistos", "")
-                put("user", UsuariosFragment.userName)
+                put("user", repo.userName)
                 put("msg", msg)
                 put("id_user", user.uid)
-                put("type", UsuariosFragment.groupName)
+                put("type", repo.groupName)
             }
 
             val json = JSONObject().apply {
@@ -561,7 +577,7 @@ class ChatGroupFragment : Fragment() {
         requestPermissionsLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { result ->
-            val allGranted = result.values.all { it == true }
+            val allGranted = result.values.all { it }
             if (allGranted) {
                 onPermissionsGranted?.invoke()
             }
@@ -603,6 +619,107 @@ class ChatGroupFragment : Fragment() {
         }
 
         takePictureLauncher.launch(imageUriCamera!!)
+    }
+
+    // 1. Manejo de Foto
+    private fun navigateToPhoto(url: String) {
+        // Necesitas acceso a la lista completa de fotos si quieres swipe.
+        // Si la tienes a mano en el fragment, úsala. Si no, pasa solo esta.
+        val photoList = arrayListOf(url) // O filtra tu lista actual de chats buscando fotos
+        val intent = Intent(context, SlidePhotoActivity::class.java)
+            .putExtra("photoList", photoList)
+            .putExtra("position", 0)
+            .putExtra("rotation", 0)
+        startActivity(intent)
+    }
+
+    // 2. Manejo de Single Tap (Ir a Perfil)
+    private fun handleUserSingleTap(chat: ChatsGroup, view: View) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (chat.typeUser == 0) {
+            showSnack(view, getString(R.string.perfil_incognito))
+        } else if (chat.id != currentUserId) {
+            val intent = Intent(context, PerfilActivity::class.java)
+                .putExtra("id_user", chat.id)
+                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+        }
+    }
+
+    // 3. Manejo de Double Tap (Lógica compleja de usuario disponible)
+    private fun handleUserDoubleTap(chat: ChatsGroup, view: View) {
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (chat.id == currentUserId) return
+
+        // Usamos el Repo (si ya migraste repo.groupName) o la variable global que tengas
+        val groupName = repo.groupName // O UsuariosFragment.groupName si aún no migras todo
+
+        refGroupUsers.child(groupName)
+            .child(chat.id)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    if (!dataSnapshot.exists()) {
+                        handleUserUnavailable(chat, view, wasRemovedFromGroup = true)
+                        return
+                    }
+
+                    val thisname = dataSnapshot.child("user_name").getValue(String::class.java)
+                    val type = dataSnapshot.child("type").getValue(Int::class.java) ?: 0
+
+                    val allowed = if (type == 0) {
+                        // Usuario incógnito, validamos por nombre
+                        thisname == chat.name
+                    } else {
+                        // Usuario registrado
+                        chat.typeUser == 1
+                    }
+
+                    if (allowed) {
+                        val intent = Intent(context, ChatActivity::class.java)
+                            .putExtra("unknownName", chat.name)
+                            .putExtra("idUserUnknown", chat.id)
+                            .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        startActivity(intent)
+                    } else {
+                        handleUserUnavailable(chat, view, wasRemovedFromGroup = false)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    // 4. Manejo de Usuario No Disponible (Helper)
+    private fun handleUserUnavailable(chat: ChatsGroup, view: View, wasRemovedFromGroup: Boolean) {
+        val text = if (chat.typeUser == 0) {
+            getString(R.string.user_not_available_fmt, chat.name)
+        } else {
+            if (wasRemovedFromGroup)
+                getString(R.string.user_not_in_chat_anymore_fmt, chat.name)
+            else
+                getString(R.string.user_not_available_fmt, chat.name)
+        }
+
+        showSnack(view, text)
+
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        currentUserId?.let { uid ->
+            FirebaseRefs.refDatos.child(uid)
+                .child(Constants.CHATWITHUNKNOWN)
+                .child(chat.id)
+                .removeValue()
+        }
+    }
+
+    // 5. Mostrar Snackbar (Helper visual)
+    private fun showSnack(view: View, message: String) {
+        val snack = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
+        val bg = ContextCompat.getColor(requireContext(), R.color.colorC)
+        snack.setBackgroundTint(bg)
+        val tv = snack.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+        snack.show()
     }
 
 //    private fun startCamera() {

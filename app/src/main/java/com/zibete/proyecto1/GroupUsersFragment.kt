@@ -1,5 +1,6 @@
 package com.zibete.proyecto1
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -8,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,15 +19,16 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterGroupUsers
 import com.zibete.proyecto1.model.UserGroup
-import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.Utils.repo
 
-class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
-    var rv_group_users: RecyclerView? = null
+class GroupUsersFragment : Fragment(), SearchView.OnQueryTextListener {
+    var rvGroupUsers: RecyclerView? = null
     var progressbar: ProgressBar? = null
-    var img_cancel_dialog: ImageView? = null
-    val groupUsersList: ArrayList<UserGroup?> = ArrayList<UserGroup?>()
-    val groupOriginalUsersList: ArrayList<UserGroup?> = ArrayList<UserGroup?>()
+    var imgCancelDialog: ImageView? = null
+    val groupUsersList: ArrayList<UserGroup?> = ArrayList()
+    val groupOriginalUsersList: ArrayList<UserGroup?> = ArrayList()
 
     override fun onQueryTextSubmit(query: String?): Boolean {
         return false
@@ -36,7 +39,6 @@ class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
         return false
     }
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?, savedInstanceState: Bundle?
@@ -45,10 +47,10 @@ class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
 
         setHasOptionsMenu(true)
 
-        rv_group_users = view.findViewById(R.id.rv_group_users)
+        rvGroupUsers = view.findViewById(R.id.rv_group_users)
 
         progressbar = view.findViewById(R.id.progressbar)
-        img_cancel_dialog = view.findViewById(R.id.img_cancel_dialog)
+        imgCancelDialog = view.findViewById(R.id.img_cancel_dialog)
 
         progressbar!!.visibility = View.VISIBLE
 
@@ -57,27 +59,30 @@ class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
         mLayoutManager.setReverseLayout(true)
         mLayoutManager.setStackFromEnd(true)
 
-        rv_group_users!!.setLayoutManager(mLayoutManager)
-
+        rvGroupUsers!!.setLayoutManager(mLayoutManager)
 
         adapter = AdapterGroupUsers(
-            groupUsersList as MutableList<UserGroup>,
-            groupOriginalUsersList as MutableList<UserGroup>, requireContext())
+            groupUsersList = groupUsersList as MutableList<UserGroup>,
+            groupOriginalUsersList = groupOriginalUsersList as MutableList<UserGroup>,
+            context = requireContext(),
+            onUserSingleTap = { userGroup -> handleUserSingleTap(userGroup) },
+            onUserDoubleTap = { userGroup -> handleUserDoubleTap(userGroup) }
+        )
+        rvGroupUsers!!.adapter = adapter
 
-        rv_group_users!!.setAdapter(adapter)
-
+        fetchGroupCreatorId()
 
         //groupUsersList.clear();
 
 //CREAR LISTA
-        refGroupUsers.child(UsuariosFragment.groupName)
+        refGroupUsers.child(repo.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
                         groupUsersList.clear()
                         groupOriginalUsersList.clear()
-                        progressbar!!.setVisibility(View.GONE)
-                        rv_group_users!!.setVisibility(View.VISIBLE)
+                        progressbar!!.visibility = View.GONE
+                        rvGroupUsers!!.visibility = View.VISIBLE
 
                         for (snapshot in dataSnapshot.getChildren()) {
                             val groupUser = snapshot.getValue<UserGroup?>(UserGroup::class.java)
@@ -90,50 +95,46 @@ class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
             })
 
-
-        /*
-        ref_group_users.child(groupName).addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-
-
-                if (dataSnapshot.exists()) {
-
-
-                    progressbar.setVisibility(View.GONE);
-                    rv_group_users.setVisibility(View.VISIBLE);
-                    UserGroup groupUser = dataSnapshot.getValue(UserGroup.class);
-                    adapter.addUser(groupUser);
-
-
-                }
-
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-
-            }
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                if (dataSnapshot.exists()) {
-
-                    UserGroup groupUser = dataSnapshot.getValue(UserGroup.class);
-                    adapter.removeUser(groupUser);
-                }
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        });
-
-         */
         return view
+    }
+
+    // 1. Obtener ID del creador (Reemplaza la llamada repetitiva en onBind)
+    private fun fetchGroupCreatorId() {
+        // Usamos repo.groupName (tu nueva arquitectura)
+        val groupName = repo.groupName
+
+        refGroupData.child(groupName).child("id_creator")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val creatorId = snapshot.getValue(String::class.java) ?: ""
+                    // Actualizamos el adapter
+                    adapter?.setCreatorId(creatorId)
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    // 2. Single Tap Logic (Perfil o Toast)
+    private fun handleUserSingleTap(groupUser: UserGroup) {
+        if (groupUser.type == 1) {
+            val intent = Intent(requireContext(), PerfilActivity::class.java).apply {
+                putExtra("id_user", groupUser.userId)
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            startActivity(intent)
+        } else {
+            Toast.makeText(requireContext(), "Usuario incógnito", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 3. Double Tap Logic (Ir al Chat Privado)
+    private fun handleUserDoubleTap(groupUser: UserGroup) {
+        val intent = Intent(requireContext(), ChatActivity::class.java).apply {
+            putExtra("unknownName", groupUser.userName)
+            putExtra("idUserUnknown", groupUser.userId)
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        }
+        startActivity(intent)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -150,7 +151,7 @@ class PersonsChatGroupFragment : Fragment(), SearchView.OnQueryTextListener {
         action_desbloqUsers.isVisible = true
         action_favoritos.isVisible = true
 
-        val searchView = action_search.getActionView() as SearchView?
+        val searchView = action_search.actionView as SearchView?
 
         searchView!!.setOnQueryTextListener(this)
     }

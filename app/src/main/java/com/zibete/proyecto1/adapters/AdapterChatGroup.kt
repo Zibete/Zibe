@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.view.ContextMenu
 import android.view.GestureDetector
@@ -12,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -24,60 +22,48 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.ChatActivity
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.PerfilActivity
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.databinding.RowGroupMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowGroupMsgRightBinding
 import com.zibete.proyecto1.databinding.RowNotifBinding
 import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 
 class AdapterChatGroup(
-    msgList: ArrayList<ChatsGroup>,
+    private val context: Context,
     private val maxSize: Int,
-    private val context: Context
+    initialList: List<ChatsGroup> = emptyList(),
+    // --- ACCIONES (CALLBACKS) ---
+    private val onImageClicked: (url: String) -> Unit,
+    private val onUserSingleTap: (chat: ChatsGroup, view: View) -> Unit,
+    private val onUserDoubleTap: (chat: ChatsGroup, view: View) -> Unit
 ) : ListAdapter<ChatsGroup, RecyclerView.ViewHolder>(DIFF),
     View.OnCreateContextMenuListener {
 
-    private val mutable = msgList.toMutableList()
-    private val photoList = arrayListOf<String?>()
+    private val mutableList = initialList.toMutableList()
+    private val userId: String? = FirebaseAuth.getInstance().currentUser?.uid
     private var positionForContext = 0
 
-    private val userId: String? = FirebaseAuth.getInstance().currentUser?.uid
-
     init {
-        msgList.forEach { if (it.typeMsg.isPhoto()) photoList.add(it.message) }
-        submitList(mutable.toList())
-        setHasStableIds(false)
+        submitList(mutableList.toList())
     }
 
-    // ==== Public API (compat con tu código original) ====
+    // ==== Public API ====
 
-    fun addChat(chats: ChatsGroup) {
-        if (mutable.size > maxSize) {
-            mutable.removeAt(0)
+    fun addChat(chat: ChatsGroup) {
+        if (mutableList.size > maxSize) {
+            mutableList.removeAt(0)
         }
-        mutable.add(chats)
-
-        if (chats.typeMsg.isPhoto()) {
-            if (photoList.size > maxSize) photoList.removeAt(0)
-            photoList.add(chats.message)
-        }
-        submitList(mutable.toList())
+        mutableList.add(chat)
+        submitList(mutableList.toList())
     }
 
-    fun setPosition(position: Int) {
-        positionForContext = position
-    }
+    fun getPositionForContext(): Int = positionForContext
 
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
@@ -89,10 +75,10 @@ class AdapterChatGroup(
     }
 
     override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
-        //
+        // La lógica del menú se maneja en el Fragment/Activity usando getPositionForContext()
     }
 
-    // ==== Adapter ====
+    // ==== ViewHolders Creation ====
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inf = LayoutInflater.from(parent.context)
@@ -110,133 +96,61 @@ class AdapterChatGroup(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val chats = getItem(position)
+        val chat = getItem(position)
+
+        // Guardar posición para ContextMenu al hacer long click
+        holder.itemView.setOnLongClickListener {
+            positionForContext = holder.bindingAdapterPosition
+            false // Retorna false para permitir que se abra el menú contextual
+        }
+
         when (holder) {
-            is MidVH   -> holder.bind(chats)  // notificaciones (typeMsg == 0)
+            is MidVH -> holder.bind(chat)
             is RightVH -> {
-                holder.bind(chats)
-                attachGestures(holder, chats)
+                holder.bind(chat)
+                attachGestures(holder, chat)
             }
-            is LeftVH  -> {
-                holder.bind(chats)
-                attachGestures(holder, chats)
+            is LeftVH -> {
+                holder.bind(chat)
+                attachGestures(holder, chat)
             }
         }
     }
 
-    // ==== Gestos (single y double tap) ====
-    private fun attachGestures(holder: BaseMsgVH, chats: ChatsGroup) {
-        if (chats.typeMsg == 0) return
+    // ==== Gestures Logic ====
+
+    private fun attachGestures(holder: BaseMsgVH, chat: ChatsGroup) {
+        if (chat.typeMsg == 0) return
 
         val gd = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (chats.id == userId) return true
-
-                FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
-                    .child(chats.id)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            if (!dataSnapshot.exists()) {
-                                noDisponible(holder, chats, wasRemovedFromGroup = true)
-                                return
-                            }
-
-                            val thisname = dataSnapshot.child("user_name").getValue(String::class.java)
-                            val type = dataSnapshot.child("type").getValue(Int::class.java) ?: 0
-
-                            val allowed = if (type == 0) {
-                                // Usuario desconocido (incógnito), debe coincidir el nombre actual
-                                thisname == chats.name
-                            } else {
-                                // Usuario normal, depende del typeUser del mensaje
-                                chats.typeUser == 1
-                            }
-
-                            if (allowed) {
-                                val intent = Intent(context, ChatActivity::class.java)
-                                    .putExtra("unknownName", chats.name)
-                                    .putExtra("idUserUnknown", chats.id)
-                                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                                context.startActivity(intent)
-                            } else {
-                                noDisponible(holder, chats, wasRemovedFromGroup = false)
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
+                if (chat.id == userId) return true
+                // Delegamos la lógica compleja al Fragment
+                onUserDoubleTap(chat, holder.itemView)
                 return true
             }
 
             override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-                if (chats.typeUser == 0) {
-                    showSnack(holder, context.getString(R.string.perfil_incognito))
-                } else if (chats.id != userId) {
-                    val intent = Intent(context, PerfilActivity::class.java)
-                        .putExtra("id_user", chats.id)
-                        .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                    context.startActivity(intent)
-                }
+                // Delegamos la navegación al Fragment
+                onUserSingleTap(chat, holder.itemView)
                 return false
             }
         })
 
         holder.binding.linearCardMsg.setOnTouchListener { _, event ->
-            val handled = gd.onTouchEvent(event)
-            if (handled) {
-                val pos = holder.bindingAdapterPosition
-                if (pos != RecyclerView.NO_POSITION) setPosition(pos)
-            }
-            handled
-        }
-
-        holder.binding.linearCardMsg.setOnLongClickListener {
-            // placeholder (tu original tenía comentario)
-            val pos = holder.bindingAdapterPosition
-            if (pos != RecyclerView.NO_POSITION) setPosition(pos)
+            gd.onTouchEvent(event)
+            // No consumimos el evento completamente para permitir scroll y context menu
             false
         }
     }
 
-    private fun noDisponible(holder: BaseMsgVH, chats: ChatsGroup, wasRemovedFromGroup: Boolean) {
-        val text = if (chats.typeUser == 0) {
-            context.getString(R.string.user_not_available_fmt, chats.name)
-        } else {
-            if (wasRemovedFromGroup)
-                context.getString(R.string.user_not_in_chat_anymore_fmt, chats.name)
-            else
-                context.getString(R.string.user_not_available_fmt, chats.name)
-        }
-
-        showSnack(holder, text)
-
-        // Limpia del "chat con desconocido"
-        userId?.let { uid ->
-            FirebaseRefs.refDatos.child(uid)
-                .child(Constants.CHATWITHUNKNOWN)
-                .child(chats.id)
-                .removeValue()
-        }
-    }
-
-    private fun showSnack(holder: BaseMsgVH, message: String) {
-        val snack = Snackbar.make(holder.binding.linearMensajeMsg ?: holder.binding.linearCardMsg, message, Snackbar.LENGTH_SHORT)
-        val bg = ContextCompat.getColor(context, R.color.colorC)
-        snack.setBackgroundTint(bg)
-        val tv = snack.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
-        tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
-        snack.show()
-    }
-
-    // ==== ViewHolders ====
+    // ==== ViewHolders & Binding ====
 
     private class MidVH(private val b: RowNotifBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(model: ChatsGroup) {
-            // Mensaje de "notificación" en medio (typeMsg == 0)
             b.tvMsg.text = model.message
             b.nameUser.text = model.name
-            b.horaMsg.text = model.dateTime.substring(11, 16)
-            // Si tenés otros campos/estilos en row_notif, aplicalos acá
+            b.horaMsg.text = model.dateTime.safeSub(11, 16)
         }
     }
 
@@ -256,103 +170,67 @@ class AdapterChatGroup(
         val nameUser: TextView
     )
 
-    private inner class RightVH(private val b: RowGroupMsgRightBinding) : BaseMsgVH(b.root) {
-        override val binding = CommonMsgBinding(
-            linearCardMsg = b.linearCardMsg,
-            linearMensajeMsg = b.linearMensajeMsg,
-            linearMensajePic = b.linearMensajePic,
-            imgPic = b.imgPic,
-            loadingPhoto = b.loadingPhoto,
-            tvMsg = b.tvMsg,
-            horaMsg = b.horaMsg,
-            imgUser = b.imgUser,
-            nameUser = b.nameUser
-        )
-
-        fun bind(model: ChatsGroup) = bindCommon(binding, model, isMe = true)
+    private inner class RightVH(b: RowGroupMsgRightBinding) : BaseMsgVH(b.root) {
+        override val binding = CommonMsgBinding(b.linearCardMsg, b.linearMensajeMsg, b.linearMensajePic, b.imgPic, b.loadingPhoto, b.tvMsg, b.horaMsg, b.imgUser, b.nameUser)
+        fun bind(model: ChatsGroup) = bindCommon(binding, model)
     }
 
-    private inner class LeftVH(private val b: RowGroupMsgLeftBinding) : BaseMsgVH(b.root) {
-        override val binding = CommonMsgBinding(
-            linearCardMsg = b.linearCardMsg,
-            linearMensajeMsg = b.linearMensajeMsg,
-            linearMensajePic = b.linearMensajePic,
-            imgPic = b.imgPic,
-            loadingPhoto = b.loadingPhoto,
-            tvMsg = b.tvMsg,
-            horaMsg = b.horaMsg,
-            imgUser = b.imgUser,
-            nameUser = b.nameUser
-        )
-
-        fun bind(model: ChatsGroup) = bindCommon(binding, model, isMe = false)
+    private inner class LeftVH(b: RowGroupMsgLeftBinding) : BaseMsgVH(b.root) {
+        override val binding = CommonMsgBinding(b.linearCardMsg, b.linearMensajeMsg, b.linearMensajePic, b.imgPic, b.loadingPhoto, b.tvMsg, b.horaMsg, b.imgUser, b.nameUser)
+        fun bind(model: ChatsGroup) = bindCommon(binding, model)
     }
 
-    // ==== Bind común para Left/Right ====
+    private fun bindCommon(b: CommonMsgBinding, chat: ChatsGroup) {
+        b.horaMsg.text = chat.dateTime.safeSub(11, 16)
 
-    private fun bindCommon(b: CommonMsgBinding, chats: ChatsGroup, isMe: Boolean) {
-        b.horaMsg.text = chats.dateTime.safeSub(11, 16)
-
+        // --- FOTO O TEXTO ---
         when {
-            chats.typeMsg.isPhoto() -> {
+            chat.typeMsg.isPhoto() -> {
                 b.linearMensajePic?.visibility = View.VISIBLE
                 b.linearMensajeMsg?.visibility = View.GONE
-
                 b.loadingPhoto?.visibility = View.VISIBLE
+
                 Glide.with(context)
-                    .load(chats.message)
+                    .load(chat.message)
                     .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
                     .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(
-                            e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean
-                        ): Boolean {
+                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
                             b.loadingPhoto?.visibility = View.GONE
                             return false
                         }
-                        override fun onResourceReady(
-                            resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean
-                        ): Boolean {
+                        override fun onResourceReady(r: Drawable?, m: Any?, t: Target<Drawable>?, ds: DataSource?, isFirst: Boolean): Boolean {
                             b.loadingPhoto?.visibility = View.GONE
                             return false
                         }
                     })
-                    .into(b.imgPic!!)
+                    .into(b.imgPic)
 
-                b.imgPic.setOnClickListener { v ->
-                    val i = Intent(context, SlidePhotoActivity::class.java)
-                        .putExtra("photoList", photoList)
-                        .putExtra("position", photoList.indexOf(chats.message))
-                        .putExtra("rotation", 0)
-                    v.context.startActivity(i)
+                b.imgPic.setOnClickListener {
+                    onImageClicked(chat.message)
                 }
             }
-
-            chats.typeMsg.isText() -> {
+            chat.typeMsg.isText() -> {
                 b.linearMensajePic?.visibility = View.GONE
                 b.linearMensajeMsg?.visibility = View.VISIBLE
-                b.tvMsg.text = chats.message ?: ""
-            }
-
-            chats.typeMsg == 0 -> {
-                // Notificación (ya la maneja MidVH, pero por si acaso)
-                b.tvMsg.text = chats.message ?: ""
+                b.tvMsg.text = chat.message
             }
         }
 
-        // Nombre y foto de usuario
-        if (chats.typeUser == 0) {
-            b.nameUser.text = if (chats.typeMsg == 0) chats.name else "${chats.name}:"
+        // --- INFO DE USUARIO ---
+        // TODO: En el futuro, mover esta carga de datos (FirebaseRefs) a un ViewModel y pasar solo datos listos.
+        if (chat.typeUser == 0) {
+            b.nameUser.text = if (chat.typeMsg == 0) chat.name else "${chat.name}:"
             Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
         } else {
-            FirebaseRefs.refCuentas.child(chats.id).addListenerForSingleValueEvent(object : ValueEventListener {
+            FirebaseRefs.refCuentas.child(chat.id).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val name = ds.child("nombre").getValue(String::class.java)
                         val foto = ds.child("foto").getValue(String::class.java)
-                        b.nameUser.text = if (chats.typeMsg == 0) name ?: chats.name else "${name ?: chats.name}:"
+                        b.nameUser.text = if (chat.typeMsg == 0) name ?: chat.name else "${name ?: chat.name}:"
                         Glide.with(context).load(foto).into(b.imgUser)
                     } else {
-                        b.nameUser.text = "${chats.name}:"
+                        b.nameUser.text = "${chat.name}:"
                         Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
                     }
                 }
@@ -361,43 +239,31 @@ class AdapterChatGroup(
         }
     }
 
-    // ==== Utils ====
+    // ==== Extensions Helpers ====
 
-    private fun Int?.isPhoto(): Boolean = when (this) {
-        Constants.PHOTO, Constants.PHOTO_RECEIVER_DLT, Constants.PHOTO_SENDER_DLT -> true
-        else -> false
-    }
+    private fun Int?.isPhoto(): Boolean =
+        this == Constants.PHOTO || this == Constants.PHOTO_RECEIVER_DLT || this == Constants.PHOTO_SENDER_DLT
 
-    private fun Int?.isText(): Boolean = when (this) {
-        Constants.MSG, Constants.MSG_RECEIVER_DLT, Constants.MSG_SENDER_DLT -> true
-        else -> false
-    }
-
-    private fun String?.safeSub(start: Int, end: Int): String {
-        val s = this ?: return ""
-        if (start < 0 || end <= start || start >= s.length) return ""
-        val e = end.coerceAtMost(s.length)
-        return try { s.substring(start, e) } catch (_: Exception) { "" }
-    }
-
-    // ==== Diff ====
+    private fun Int?.isText(): Boolean =
+        this == Constants.MSG || this == Constants.MSG_RECEIVER_DLT || this == Constants.MSG_SENDER_DLT
 
     companion object {
         const val MSG_TYPE_LEFT  = 0
         const val MSG_TYPE_RIGHT = 1
         const val MSG_TYPE_MID   = 2
 
+        private fun String?.safeSub(start: Int, end: Int): String {
+            val s = this ?: return ""
+            if (start < 0 || end <= start || start >= s.length) return ""
+            return try { s.substring(start, end.coerceAtMost(s.length)) } catch (_: Exception) { "" }
+        }
+
         val DIFF = object : DiffUtil.ItemCallback<ChatsGroup>() {
             override fun areItemsTheSame(oldItem: ChatsGroup, newItem: ChatsGroup): Boolean {
-                // Ajustá si tenés ID único; acá usamos combinación estable
-                return oldItem.dateTime == newItem.dateTime &&
-                        oldItem.id == newItem.id &&
-                        oldItem.typeMsg == newItem.typeMsg &&
-                        oldItem.message == newItem.message
+                // Usamos ID y tiempo como clave única compuesta
+                return oldItem.id == newItem.id && oldItem.dateTime == newItem.dateTime
             }
-
-            override fun areContentsTheSame(oldItem: ChatsGroup, newItem: ChatsGroup): Boolean =
-                oldItem == newItem
+            override fun areContentsTheSame(oldItem: ChatsGroup, newItem: ChatsGroup): Boolean = oldItem == newItem
         }
     }
 }

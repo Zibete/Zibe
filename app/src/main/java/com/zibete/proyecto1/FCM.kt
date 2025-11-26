@@ -13,6 +13,7 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.constants.Constants.CHAT
@@ -30,6 +31,7 @@ class FCM : FirebaseMessagingService() {
 
     private val user get() = currentUser!!
 
+    val repo = UserPreferencesRepository.getInstance(this)
 
     @SuppressLint("WrongThread") // por el acceso a MainActivity.toolbar
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -43,8 +45,8 @@ class FCM : FirebaseMessagingService() {
 
         val ref: String = if (type == CHATWITH) CHAT else UNKNOWN
 
-        if (type != UsuariosFragment.groupName) {
-            if (UsuariosFragment.individualNotifications) {
+        if (type != repo.groupName) {
+            if (repo.individualNotifications) {
                 if (data.isNotEmpty()) {
                     val newQuery: Query =
                         refDatos.child(user.uid).child(type)
@@ -90,11 +92,11 @@ class FCM : FirebaseMessagingService() {
                 doubleCheck(idUser, type, ref)
             }
         } else {
-            if (UsuariosFragment.groupNotifications && data.isNotEmpty()) {
+            if (repo.groupNotifications && data.isNotEmpty()) {
                 // Si el usuario está dentro del grupo activo y es el mismo grupo, no notificamos
-                val isInActiveGroup = UsuariosFragment.inGroup &&
-                        UsuariosFragment.groupName.isNotEmpty() &&
-                        UsuariosFragment.groupName == type
+                val isInActiveGroup = repo.inGroup &&
+                        repo.groupName.isNotEmpty() &&
+                        repo.groupName == type
 
                 if (!isInActiveGroup) {
                     val title = "Nuevo mensaje de $type"
@@ -132,7 +134,7 @@ class FCM : FirebaseMessagingService() {
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
 
-        if (type != UsuariosFragment.groupName) {
+        if (type != repo.groupName) {
             doubleCheck(idUser, type, ref)
         }
     }

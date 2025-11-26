@@ -20,7 +20,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.PerfilActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.DateUtils.calcAge
+import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 

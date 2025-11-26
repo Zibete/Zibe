@@ -26,7 +26,6 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.tu_paquete.data.local.UserPreferencesRepository
 import com.zibete.proyecto1.FixedSwipeRefreshLayout
 import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.R
@@ -34,7 +33,8 @@ import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.main.MainUiViewModel
-import com.zibete.proyecto1.utils.DateUtils.calcAge
+import com.zibete.proyecto1.utils.Utils.calcAge
+import com.zibete.proyecto1.utils.Utils.repo
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
@@ -44,10 +44,6 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // Shared UI state with MainActivity
     private val mainUiViewModel: MainUiViewModel by activityViewModels()
-
-    // Instancia del Repositorio (Lazy para que se cree solo cuando se use)
-    private val repo by lazy { UserPreferencesRepository.getInstance(requireContext()) }
-
     // UI Elements
     private var root: View? = null
     private var progressbar: ProgressBar? = null
@@ -180,7 +176,7 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
             .setNegativeButton(DIALOG_CANCEL) { _, _ -> }
             .setNeutralButton("Quitar filtro") { _, _ ->
                 repo.clearAllData() // Limpia filtros y sesión (revisar si solo quieres limpiar filtros)
-                // Si solo quieres limpiar filtros, crea un método específico en el Repo.
+                // Si solo quieres limpiar filtros, crea un metod específico en el Repo.
 
                 loadUsers(isRefresh = false)
                 updateToolbarState()

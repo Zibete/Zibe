@@ -8,6 +8,7 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
@@ -67,6 +68,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.adapters.AdapterChat
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
@@ -174,6 +176,8 @@ class ChatActivity : AppCompatActivity() {
     private var onPermissionsGranted: (() -> Unit)? = null
 
     private val user get() = currentUser!!
+
+    val repo = UserPreferencesRepository.getInstance(this)
 
     // ==================================== onCreate ====================================
     @SuppressLint("ClickableViewAccessibility")
@@ -421,7 +425,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         if (refChatWith == Constants.CHATWITHUNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
-            FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
+            FirebaseRefs.refGroupUsers.child(repo.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
         }
@@ -1044,16 +1048,16 @@ class ChatActivity : AppCompatActivity() {
         } else {
             // Chat UNKNOWN
             findViewById<View>(R.id.cardview_title)?.visibility = View.VISIBLE
-            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${UsuariosFragment.groupName}"
+            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${repo.groupName}"
 
             idUserFinal = idUserUnknown
             nameUserFinal = unknownName
             refChat = Constants.UNKNOWN
             refChatWith = Constants.CHATWITHUNKNOWN
-            myName = UsuariosFragment.userName
+            myName = repo.userName
             nameUser.text = nameUserFinal
 
-            FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName).child(idUserUnknown!!).child("type")
+            FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUserUnknown!!).child("type")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         if (ds.exists()) {
@@ -1077,7 +1081,7 @@ class ChatActivity : AppCompatActivity() {
                     override fun onCancelled(error: DatabaseError) {}
                 })
 
-            myPhoto = if (UsuariosFragment.userType == 0) {
+            myPhoto = if (repo.userType == 0) {
                 getString(R.string.URL_PHOTO_DEF)
             } else {
                 me.photoUrl?.toString() ?: ""
@@ -1096,7 +1100,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 override fun onCancelled(error: DatabaseError) {}
             }
-            FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName).child(idUserFinal!!)
+            FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUserFinal!!)
                 .addValueEventListener(listenerChatUnknown!!)
         }
 

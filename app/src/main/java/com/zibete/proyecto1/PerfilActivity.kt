@@ -36,7 +36,7 @@ import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.DateUtils.calcAge
+import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
@@ -45,6 +45,7 @@ import com.zibete.proyecto1.utils.UserRepository.setBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUnBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
+import com.zibete.proyecto1.utils.Utils.repo
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -84,16 +85,11 @@ class PerfilActivity : AppCompatActivity() {
     private val receivedPhotos = ArrayList<String>()
     private lateinit var adapterPhotoReceived: AdapterPhotoReceived
 
+    private val user get() = FirebaseRefs.currentUser!!
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_perfil)
-
-        // Usuario logueado
-        currentUser = FirebaseAuth.getInstance().currentUser
-            ?: run {
-                finish()
-                return
-            }
 
         // id del perfil a mostrar
         idUser = intent.extras?.getString("id_user")
@@ -165,14 +161,14 @@ class PerfilActivity : AppCompatActivity() {
 
     private fun setupFabMenu() {
         // ¿Tiene nombre incógnito en el grupo?
-        FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName)
+        FirebaseRefs.refGroupUsers.child(repo.groupName)
             .child(idUser)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         unknownName = snapshot.child("user_name").getValue(String::class.java)
                         subMenuChatWithUnknown.labelText =
-                            "Chat privado de: ${UsuariosFragment.groupName}"
+                            "Chat privado de: ${repo.groupName}"
                     } else {
                         subMenuChatWithUnknown.visibility = View.GONE
                     }
@@ -201,7 +197,7 @@ class PerfilActivity : AppCompatActivity() {
 
     private fun setupFavoriteState() {
         // Estado inicial
-        FirebaseRefs.refDatos.child(currentUser.uid).child("FavoriteList").child(idUser)
+        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList").child(idUser)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val isFav = snapshot.exists()
@@ -214,7 +210,7 @@ class PerfilActivity : AppCompatActivity() {
 
         // Marcar favorito
         perfilFavoriteOff.setOnClickListener {
-            FirebaseRefs.refDatos.child(currentUser.uid)
+            FirebaseRefs.refDatos.child(user.uid)
                 .child("FavoriteList")
                 .child(idUser)
                 .setValue(idUser)
@@ -225,7 +221,7 @@ class PerfilActivity : AppCompatActivity() {
 
         // Quitar favorito
         perfilFavoriteOn.setOnClickListener {
-            FirebaseRefs.refDatos.child(currentUser.uid)
+            FirebaseRefs.refDatos.child(user.uid)
                 .child("FavoriteList")
                 .child(idUser)
                 .removeValue()
@@ -237,7 +233,7 @@ class PerfilActivity : AppCompatActivity() {
 
     private fun setupBlockState() {
         // Yo lo bloqueé
-        FirebaseRefs.refDatos.child(currentUser.uid)
+        FirebaseRefs.refDatos.child(user.uid)
             .child("ChatWith")
             .child(idUser)
             .child("estado")
@@ -253,7 +249,7 @@ class PerfilActivity : AppCompatActivity() {
         // Él me bloqueó
         FirebaseRefs.refDatos.child(idUser)
             .child("ChatWith")
-            .child(currentUser.uid)
+            .child(user.uid)
             .child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -386,7 +382,7 @@ class PerfilActivity : AppCompatActivity() {
 
     private fun listenIncomingPhotos() {
         // Mis chats con esta persona
-        FirebaseRefs.refChat.child("${currentUser.uid} <---> $idUser")
+        FirebaseRefs.refChat.child("${user.uid} <---> $idUser")
             .child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -400,7 +396,7 @@ class PerfilActivity : AppCompatActivity() {
             })
 
         // Sus chats conmigo
-        FirebaseRefs.refChat.child("$idUser <---> ${currentUser.uid}")
+        FirebaseRefs.refChat.child("$idUser <---> ${user.uid}")
             .child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -436,7 +432,7 @@ class PerfilActivity : AppCompatActivity() {
         val sender = snapshot.child("envia").getValue(String::class.java)
         val message = snapshot.child("mensaje").getValue(String::class.java)
 
-        if (sender != null && sender != currentUser.uid) {
+        if (sender != null && sender != user.uid) {
             if (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT) {
                 if (!message.isNullOrEmpty()) {
                     adapterPhotoReceived.addString(message)
@@ -452,12 +448,12 @@ class PerfilActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        setUserOffline(applicationContext, currentUser.uid)
+        setUserOffline(applicationContext, user.uid)
     }
 
     override fun onResume() {
         super.onResume()
-        setUserOnline(applicationContext, currentUser.uid)
+        setUserOnline(applicationContext, user.uid)
     }
 
     // endregion
@@ -481,7 +477,7 @@ class PerfilActivity : AppCompatActivity() {
         actionDelete.isVisible = true
 
         // Actualizar visibilidad según estado en ChatWith
-        FirebaseRefs.refDatos.child(currentUser.uid)
+        FirebaseRefs.refDatos.child(user.uid)
             .child("ChatWith")
             .child(idUser)
             .child("estado")

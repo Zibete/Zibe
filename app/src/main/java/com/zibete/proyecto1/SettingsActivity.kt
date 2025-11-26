@@ -57,6 +57,7 @@ import java.util.Calendar
 import androidx.core.content.edit
 import androidx.core.view.isGone
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.utils.Utils.repo
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -172,14 +173,13 @@ class SettingsActivity : AppCompatActivity() {
         val root = findViewById<View>(android.R.id.content)
 
         // Estado inicial desde prefs
-        switchGroupNotifications.isChecked = UsuariosFragment.groupNotifications
-        switchIndividualNotifications.isChecked = UsuariosFragment.individualNotifications
+        switchGroupNotifications.isChecked = repo.groupNotifications
+        switchIndividualNotifications.isChecked = repo.individualNotifications
 
         // Grupales
         switchGroupNotifications.setOnClickListener {
             val enabled = switchGroupNotifications.isChecked
-            UsuariosFragment.groupNotifications = enabled
-            UsuariosFragment.editor.putBoolean("groupNotifications", enabled).apply()
+            repo.groupNotifications = enabled
 
             UserMessageUtils.showInfo(
                 root,
@@ -193,8 +193,7 @@ class SettingsActivity : AppCompatActivity() {
         // Individuales
         switchIndividualNotifications.setOnClickListener {
             val enabled = switchIndividualNotifications.isChecked
-            UsuariosFragment.individualNotifications = enabled
-            UsuariosFragment.editor.putBoolean("individualNotifications", enabled).apply()
+            repo.individualNotifications = enabled
 
             UserMessageUtils.showInfo(
                 root,
@@ -486,11 +485,11 @@ class SettingsActivity : AppCompatActivity() {
     // region Group / Logout
 
     fun exitGroup() {
-        UsuariosFragment.inGroup = false
+        repo.inGroup = false
 
         // listeners globales definidos en MainActivity
         MainActivity.listenerGroupBadge?.let {
-            refGroupChat.child(UsuariosFragment.groupName)
+            refGroupChat.child(repo.groupName)
                 .removeEventListener(it)
         }
 
@@ -503,12 +502,12 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         PageAdapterGroup.valueEventListenerTitle?.let {
-            refGroupUsers.child(UsuariosFragment.groupName)
+            refGroupUsers.child(repo.groupName)
                 .removeEventListener(it)
         }
 
         ChatGroupFragment.listenerGroupChat?.let {
-            refGroupChat.child(UsuariosFragment.groupName)
+            refGroupChat.child(repo.groupName)
                 .removeEventListener(it)
         }
 
@@ -537,34 +536,31 @@ class SettingsActivity : AppCompatActivity() {
         val chatmsg = ChatsGroup(
             "abandonó la sala",
             dateFormat3.format(Calendar.getInstance().time),
-            UsuariosFragment.userName,
+            repo.userName,
             user.uid,
             0,
-            UsuariosFragment.userType
+            repo.userType
         )
-        refGroupChat.child(UsuariosFragment.groupName).push().setValue(chatmsg)
+        refGroupChat.child(repo.groupName).push().setValue(chatmsg)
 
-        refGroupUsers.child(UsuariosFragment.groupName)
+        refGroupUsers.child(repo.groupName)
             .child(user.uid)
             .removeValue()
 
         // Reset estado local
-        UsuariosFragment.inGroup = false
-        UsuariosFragment.userName = ""
-        UsuariosFragment.groupName = ""
-        UsuariosFragment.userType = 2
-        UsuariosFragment.readGroupMsg = 0
-        UsuariosFragment.userDate = ""
+        repo.inGroup = false
+        repo.userName = ""
+        repo.groupName = ""
+        repo.userType = 2
+        repo.readGroupMsg = 0
+        repo.userDate = ""
 
-        UsuariosFragment.editor.apply {
-            putBoolean("inGroup", false)
-            putString("userName", "")
-            putString("groupName", "")
-            putInt("userType", 2)
-            putInt("readGroupMsg", 0)
-            putString("userDate", "")
-            apply()
-        }
+        repo.inGroup = false
+        repo.userName = ""
+        repo.groupName = ""
+        repo.userType = 2
+        repo.readGroupMsg = 0
+        repo.userDate = ""
 
         //todas las referencias a layoutSettings dentro de SettingsActivity las borraría o las apuntaría a vistas propias de Settings, nunca a MainActivity.
         //        MainActivity.layoutSettings?.visibility = View.GONE
@@ -583,7 +579,7 @@ class SettingsActivity : AppCompatActivity() {
             setUserOffline(applicationContext, user.uid)
         }
 
-        if (UsuariosFragment.inGroup) {
+        if (repo.inGroup) {
             exitGroup()
         }
 
@@ -593,7 +589,7 @@ class SettingsActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        UsuariosFragment.deletePreferences()
+        repo.clearAllData()
         EditProfileFragment.deleteProfilePreferences(this)
 
         FirebaseAuth.getInstance().signOut()
