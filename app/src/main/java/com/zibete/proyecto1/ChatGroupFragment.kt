@@ -57,6 +57,7 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
+import com.zibete.proyecto1.utils.Utils.repo
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
@@ -99,8 +100,6 @@ class ChatGroupFragment : Fragment() {
 
     // Launcher CropActivity
     private lateinit var cropImageLauncher: ActivityResultLauncher<CropImageContractOptions>
-
-    val repo = UserPreferencesRepository.getInstance(requireContext())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -653,7 +652,7 @@ class ChatGroupFragment : Fragment() {
         if (chat.id == currentUserId) return
 
         // Usamos el Repo (si ya migraste repo.groupName) o la variable global que tengas
-        val groupName = repo.groupName // O UsuariosFragment.groupName si aún no migras todo
+        val groupName = repo.groupName // O UsersFragment.groupName si aún no migras todo
 
         refGroupUsers.child(groupName)
             .child(chat.id)

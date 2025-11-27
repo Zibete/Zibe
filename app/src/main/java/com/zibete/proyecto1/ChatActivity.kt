@@ -8,7 +8,6 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentValues
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
@@ -72,7 +71,6 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
@@ -80,6 +78,7 @@ import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.utils.Utils.repo
 import de.hdodenhof.circleimageview.CircleImageView
 import org.json.JSONObject
 import java.io.File
@@ -176,8 +175,6 @@ class ChatActivity : AppCompatActivity() {
     private var onPermissionsGranted: (() -> Unit)? = null
 
     private val user get() = currentUser!!
-
-    val repo = UserPreferencesRepository.getInstance(this)
 
     // ==================================== onCreate ====================================
     @SuppressLint("ClickableViewAccessibility")

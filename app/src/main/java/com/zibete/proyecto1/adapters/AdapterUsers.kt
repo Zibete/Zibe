@@ -2,8 +2,6 @@ package com.zibete.proyecto1.adapters
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,22 +15,18 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlideProfileActivity
-import com.zibete.proyecto1.adapters.AdapterUsers.ViewHolderAdapter
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.GlassEffect
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.utils.Utils
 import eightbitlab.com.blurview.BlurView
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -40,75 +34,58 @@ import java.math.RoundingMode
 class AdapterUsers(
     private val usersList: MutableList<Users>,
     private val usersListAll: MutableList<Users>,
-    private val context: Context
-) : RecyclerView.Adapter<ViewHolderAdapter?>(), Filterable {
+    private val context: Context,
+    // --- ACCIONES (Callbacks) ---
+    private val onChatClicked: (String) -> Unit,       // Pasamos el ID del usuario
+    private val onProfileClicked: (Users) -> Unit,     // Pasamos el objeto usuario completo
+    private val onListUpdated: () -> Unit              // Para notificar scroll o cambios
+) : RecyclerView.Adapter<AdapterUsers.ViewHolderAdapter>(), Filterable {
 
-    private val user get() = currentUser!!
+    private val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
 
     // --------------------- Filtro --------------------- //
-    override fun getFilter(): Filter {
-        return filterChats
-    }
+    override fun getFilter(): Filter = filterChats
 
     private val filterChats = object : Filter() {
         override fun performFiltering(constraint: CharSequence?): FilterResults {
             val search = constraint?.toString()?.lowercase()?.trim().orEmpty()
-
             val filtered = if (search.isEmpty()) {
                 usersListAll.toList()
             } else {
-                usersListAll
-                    .filter { it.name.lowercase().contains(search) }
+                usersListAll.filter { it.name.lowercase().contains(search) }
             }
-
             return FilterResults().apply { values = filtered }
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun publishResults(constraint: CharSequence?, results: FilterResults) {
             usersList.clear()
             usersList.addAll(results.values as MutableList<Users>)
             notifyDataSetChanged()
-            UsuariosFragment.setScrollbar()
+            onListUpdated() // Reemplaza a UsuariosFragment.setScrollbar()
         }
     }
 
     // --------------------- ViewHolder --------------------- //
     class ViewHolderAdapter(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var tv_usuario1: TextView
-        var tv_edad: TextView
-        var distance: TextView
-        var tv_desc: TextView
-        var tv_estado: TextView
-        var img_user: ImageView
-        var icon_conectado: ImageView
-        var icon_desconectado: ImageView
-        var goChat: ImageView
-        var favorite_on: ImageView
-        var bloq_me: ImageView
-        var bloq: ImageView
-        var linear_desc: LinearLayout
-        var cardView: CardView
-        var blurView: BlurView?
-        var glowBorder: View?
+        val tvUsuario1: TextView = itemView.findViewById(R.id.tv_usuario1)
+        val tvEdad: TextView = itemView.findViewById(R.id.tv_edad)
+        val distance: TextView = itemView.findViewById(R.id.distance)
+        val tvDesc: TextView = itemView.findViewById(R.id.tv_desc)
+        val tvEstado: TextView = itemView.findViewById(R.id.tv_estado)
+        val imgUser: ImageView = itemView.findViewById(R.id.image_user1)
+        val iconConectado: ImageView = itemView.findViewById(R.id.icon_conectado)
+        val iconDesconectado: ImageView = itemView.findViewById(R.id.icon_desconectado)
+        val goChat: ImageView = itemView.findViewById(R.id.goChat)
+        val favoriteOn: ImageView = itemView.findViewById(R.id.favorite_on)
+        val bloqMe: ImageView = itemView.findViewById(R.id.bloq_me)
+        val bloq: ImageView = itemView.findViewById(R.id.bloq)
+        val linearDesc: LinearLayout = itemView.findViewById(R.id.linear_desc)
+        val cardView: CardView = itemView.findViewById(R.id.cardviewUsers)
+        val blurView: BlurView? = itemView.findViewById(R.id.blur_view)
+        val glowBorder: View? = itemView.findViewById(R.id.glow_border)
 
         init {
-            tv_usuario1 = itemView.findViewById<TextView>(R.id.tv_usuario1)
-            tv_edad = itemView.findViewById<TextView>(R.id.tv_edad)
-            distance = itemView.findViewById<TextView>(R.id.distance)
-            tv_desc = itemView.findViewById<TextView>(R.id.tv_desc)
-            tv_estado = itemView.findViewById<TextView>(R.id.tv_estado)
-            img_user = itemView.findViewById<ImageView>(R.id.image_user1)
-            icon_conectado = itemView.findViewById<ImageView>(R.id.icon_conectado)
-            icon_desconectado = itemView.findViewById<ImageView>(R.id.icon_desconectado)
-            goChat = itemView.findViewById<ImageView>(R.id.goChat)
-            favorite_on = itemView.findViewById<ImageView>(R.id.favorite_on)
-            bloq_me = itemView.findViewById<ImageView>(R.id.bloq_me)
-            bloq = itemView.findViewById<ImageView>(R.id.bloq)
-            linear_desc = itemView.findViewById<LinearLayout>(R.id.linear_desc)
-            cardView = itemView.findViewById<CardView>(R.id.cardviewUsers)
-            blurView = itemView.findViewById<BlurView?>(R.id.blur_view)
-            glowBorder = itemView.findViewById<View?>(R.id.glow_border)
-
             GlassEffect.applyGlassEffect(blurView, itemView)
             GlassEffect.startGlowIfAny(glowBorder)
         }
@@ -116,54 +93,41 @@ class AdapterUsers(
 
     // --------------------- Create --------------------- //
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolderAdapter {
-        val v = LayoutInflater.from(parent.getContext())
-            .inflate(R.layout.row_usuarios, parent, false)
+        val v = LayoutInflater.from(parent.context).inflate(R.layout.row_usuarios, parent, false)
         return ViewHolderAdapter(v)
     }
 
-    // --------------------- Bind con payloads --------------------- //
-    override fun onBindViewHolder(
-        holder: ViewHolderAdapter,
-        position: Int,
-        payloads: MutableList<Any?>
-    ) {
+    // --------------------- Bind --------------------- //
+    override fun onBindViewHolder(holder: ViewHolderAdapter, position: Int, payloads: MutableList<Any?>) {
         val u = usersList[position]
 
         if (payloads.isEmpty()) {
             super.onBindViewHolder(holder, position, payloads)
             loadUserCard(holder, u)
         } else {
-            val o = payloads[0] as Bundle
-            if (o.containsKey("distance")) loadUserCard(holder, u)
+            val o = payloads.firstOrNull() as? android.os.Bundle
+            if (o?.containsKey("distance") == true) loadUserCard(holder, u)
         }
 
-        // Acciones
-        holder.goChat.setOnClickListener { v: View? ->
-            val intent = Intent(v!!.context, ChatActivity::class.java)
-            intent.putExtra("id_user", u.id)
-            v.context.startActivity(intent)
+        // Acciones delegadas al Fragmento
+        holder.goChat.setOnClickListener {
+            onChatClicked(u.id)
         }
 
-        holder.cardView.setOnClickListener { v: View? ->
-            val intent = Intent(context, SlideProfileActivity::class.java)
-            val extra = ArrayList<Users>(usersList)
-            extra.reverse()
-            intent.putExtra("userList", extra)
-            intent.putExtra("position", extra.indexOf(u))
-            intent.putExtra("rotation", 0)
-            v?.context?.startActivity(intent)
+        holder.cardView.setOnClickListener {
+            onProfileClicked(u)
         }
     }
 
-    override fun onBindViewHolder(holder: ViewHolderAdapter, position: Int) { /* manejado arriba */
-
+    override fun onBindViewHolder(holder: ViewHolderAdapter, position: Int) {
+        // Manejado en la versión con payloads
     }
 
     // --------------------- Datos por card --------------------- //
     @SuppressLint("SetTextI18n")
-    fun loadUserCard(h: ViewHolderAdapter, users: Users) {
-        Glide.with(context).load(users.profilePhoto).into(h.img_user)
-        h.tv_usuario1.text = users.name
+    private fun loadUserCard(h: ViewHolderAdapter, users: Users) {
+        Glide.with(context).load(users.profilePhoto).into(h.imgUser)
+        h.tvUsuario1.text = users.name
 
         // Distancia
         val dist = ProfileUiBinder.getDistanceMeters(
@@ -172,82 +136,67 @@ class AdapterUsers(
             users.latitude,
             users.longitude
         )
-        if (dist > 10000) {
-            h.distance.text = "A " + BigDecimal(dist / 1000).setScale(
-                0,
-                RoundingMode.HALF_UP
-            ) + " km"
-        } else if (dist > 1000) {
-            h.distance.text = "A " + BigDecimal(dist / 1000).setScale(
-                1,
-                RoundingMode.HALF_UP
-            ) + " km"
-        } else {
-            h.distance.text = "A " + BigDecimal(dist).setScale(0, RoundingMode.HALF_UP) + " m"
-        }
+        h.distance.text = formatDistance(dist)
 
         // Edad
-        val edad = Utils.calcAge(users.birthDay)
-        h.tv_edad.text = edad.toString()
-
+        h.tvEdad.text = Utils.calcAge(users.birthDay).toString()
 
         // Descripción
-        if (!users.description.isEmpty()) {
-            h.tv_desc.text = users.description
-            h.linear_desc.visibility = View.VISIBLE
+        if (users.description.isNotEmpty()) {
+            h.tvDesc.text = users.description
+            h.linearDesc.visibility = View.VISIBLE
         } else {
-            h.linear_desc.visibility = View.GONE
+            h.linearDesc.visibility = View.GONE
         }
 
-        // Estado on/off
-        UserRepository.stateUser(
-            context,
-            users.id,
-            h.icon_conectado,
-            h.icon_desconectado,
-            h.tv_estado,
-            Constants.CHATWITH
-        )
+        // Estado (Online/Offline)
+        UserRepository.stateUser(context, users.id, h.iconConectado, h.iconDesconectado, h.tvEstado, Constants.CHATWITH)
 
-        // Favoritos
-        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList").child(users.id)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snap: DataSnapshot) {
-                    h.favorite_on.isVisible = snap.exists()
-                }
+        // Listeners Visuales (Favorito, Bloqueado, Me Bloqueó)
+        currentUserUid?.let { uid ->
+            // Favorito
+            FirebaseRefs.refDatos.child(uid).child("FavoriteList").child(users.id)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snap: DataSnapshot) { h.favoriteOn.isVisible = snap.exists() }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+            // Bloqueado (Yo lo bloqueé)
+            FirebaseRefs.refDatos.child(uid).child(Constants.CHATWITH).child(users.id).child("estado")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snap: DataSnapshot) {
+                        h.bloq.isVisible = (snap.getValue(String::class.java) == "bloq")
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
 
-        // Bloqueado
-        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(users.id)
-            .child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snap: DataSnapshot) {
-                    h.bloq.isVisible = (snap.getValue(String::class.java) == "bloq")
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        // Me bloqueó
-        FirebaseRefs.refDatos.child(users.id).child(Constants.CHATWITH).child(user.uid)
-            .child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snap: DataSnapshot) {
-                    val blocked = snap.getValue(String::class.java) == "bloq"
-                    h.bloq_me.isVisible = blocked
-                    h.goChat.isVisible = !blocked
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
+            // Me bloqueó (Él me bloqueó)
+            FirebaseRefs.refDatos.child(users.id).child(Constants.CHATWITH).child(uid).child("estado")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snap: DataSnapshot) {
+                        val blocked = snap.getValue(String::class.java) == "bloq"
+                        h.bloqMe.isVisible = blocked
+                        h.goChat.isVisible = !blocked
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
     }
 
-    // --------------------- Utilidades de lista --------------------- //
+    // --------------------- Helpers --------------------- //
+
+    private fun formatDistance(dist: Double): String {
+        return when {
+            dist > 10000 -> "A ${BigDecimal(dist / 1000.0).setScale(0, RoundingMode.HALF_UP)} km"
+            dist > 1000 -> "A ${BigDecimal(dist / 1000.0).setScale(1, RoundingMode.HALF_UP)} km"
+            else -> "A ${BigDecimal(dist).setScale(0, RoundingMode.HALF_UP)} m"
+        }
+    }
+
     fun addUser(u: Users) {
         usersList.add(u)
         usersListAll.add(u)
-        notifyItemInserted(usersList.size) //-1? --> ListAdapter en el futuro
+        notifyItemInserted(usersList.size - 1)
     }
 
     override fun getItemCount() = usersList.size

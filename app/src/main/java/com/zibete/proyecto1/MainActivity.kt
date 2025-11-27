@@ -62,9 +62,7 @@ import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
-import com.zibete.proyecto1.ui.FavoritesFragment
 import com.zibete.proyecto1.ui.GruposFragment
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
@@ -88,6 +86,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.main.MainUiViewModel
+import com.zibete.proyecto1.utils.Utils.repo
 import kotlinx.coroutines.launch
 
 
@@ -144,8 +143,6 @@ class MainActivity : AppCompatActivity() {
     private var sessionConflictHandled = false
 
     private val user get() = currentUser!!
-
-    val repo = UserPreferencesRepository.getInstance(this)
 
     // ========= Ciclo de vida =========
 
@@ -459,11 +456,11 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.navBottomUsers -> {
                     if (currentScreen != CurrentScreen.USERS) {
+                        currentScreen = CurrentScreen.USERS
                         layoutSettings?.visibility = View.VISIBLE
                         invalidateOptionsMenu()
                         navController?.navigate(R.id.nav_usuarios)
                         toolbar?.setTitle(R.string.menu_usuarios)
-                        currentScreen = CurrentScreen.USERS
                     }
                     true
                 }
@@ -475,11 +472,11 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.navBottomFavorites -> {
                     if (currentScreen != CurrentScreen.FAVORITES) {
+                        currentScreen = CurrentScreen.FAVORITES
                         layoutSettings?.visibility = View.GONE
                         toolbar?.setTitle(R.string.favoritos)
                         invalidateOptionsMenu()
                         navController?.navigate(R.id.nav_favoritos)
-                        currentScreen = CurrentScreen.FAVORITES
                     }
                     true
                 }
@@ -487,13 +484,15 @@ class MainActivity : AppCompatActivity() {
                 R.id.navBottomGrupos -> {
                     if (!repo.inGroup) {
                         if (currentScreen != CurrentScreen.GROUPS) {
+                            currentScreen = CurrentScreen.GROUPS
                             layoutSettings?.visibility = View.GONE
                             invalidateOptionsMenu()
                             navController?.navigate(R.id.nav_grupos)
                             toolbar?.setTitle(R.string.menu_grupos)
-                            currentScreen = CurrentScreen.GROUPS
                         }
                     } else {
+                        currentScreen = CurrentScreen.GROUPS
+
                         toolbar?.visibility = View.VISIBLE
                         layoutSettings?.visibility = View.GONE
                         invalidateOptionsMenu()
@@ -510,7 +509,6 @@ class MainActivity : AppCompatActivity() {
                             .commit()
 
                         toolbar?.title = repo.groupName
-                        currentScreen = CurrentScreen.GROUPS
                     }
                     true
                 }
@@ -723,6 +721,9 @@ class MainActivity : AppCompatActivity() {
 
     fun navChatList() {
         if (currentScreen != CurrentScreen.CHAT) {
+
+            currentScreen = CurrentScreen.CHAT
+
             toolbar?.visibility = View.VISIBLE
             layoutSettings?.visibility = View.GONE
             invalidateOptionsMenu()
@@ -734,8 +735,6 @@ class MainActivity : AppCompatActivity() {
             mBottomNavigation?.selectedItemId = R.id.navBottomChat
 
             drawer?.closeDrawer(GravityCompat.START)
-
-            currentScreen = CurrentScreen.CHAT
         }
     }
 

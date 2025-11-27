@@ -14,7 +14,6 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.constants.Constants.CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
@@ -22,6 +21,7 @@ import com.zibete.proyecto1.ui.constants.Constants.UNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.utils.Utils.repo
 
 class FCM : FirebaseMessagingService() {
 
@@ -30,8 +30,6 @@ class FCM : FirebaseMessagingService() {
     }
 
     private val user get() = currentUser!!
-
-    val repo = UserPreferencesRepository.getInstance(this)
 
     @SuppressLint("WrongThread") // por el acceso a MainActivity.toolbar
     override fun onMessageReceived(remoteMessage: RemoteMessage) {

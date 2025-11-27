@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.github.clans.fab.FloatingActionButton
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -13,15 +14,16 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
-import com.zibete.proyecto1.ui.UsuariosFragment
+import com.zibete.proyecto1.ui.UsersFragment
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.utils.Utils.repo
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.*
 
-object ProfileUiBinder {
+object ProfileUiBinder : AppCompatActivity() {
 
     private val user get() = currentUser!!
 
@@ -91,7 +93,7 @@ object ProfileUiBinder {
         subMenuChatWith: FloatingActionButton
     ) {
         // Chat incógnito (si está en grupo)
-        FirebaseRefs.refGroupUsers.child(UsuariosFragment.groupName).child(idUser)
+        FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUser)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
@@ -99,7 +101,7 @@ object ProfileUiBinder {
                             snapshot.child("user_name").getValue(String::class.java)
 
                         subMenuChatWithUnknown.labelText =
-                            "Chat privado de: ${UsuariosFragment.groupName}"
+                            "Chat privado de: ${repo.groupName}"
 
                         subMenuChatWithUnknown.setOnClickListener {
                             val intent = Intent(context, ChatActivity::class.java).apply {

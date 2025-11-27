@@ -40,7 +40,6 @@ import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
-import com.zibete.proyecto1.ui.UsuariosFragment
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown

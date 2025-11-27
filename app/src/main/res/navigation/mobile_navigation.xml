@@ -15,7 +15,7 @@
 
     <fragment
         android:id="@+id/nav_usuarios"
-        android:name="com.zibete.proyecto1.ui.UsuariosFragment"
+        android:name="com.zibete.proyecto1.ui.UsersFragment"
         android:label="@string/menu_usuarios"
         tools:layout="@layout/fragment_usuarios"/>
 

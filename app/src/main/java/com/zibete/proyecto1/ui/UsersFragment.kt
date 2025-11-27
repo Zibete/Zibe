@@ -2,6 +2,7 @@ package com.zibete.proyecto1.ui
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.ContextThemeWrapper
@@ -26,9 +27,11 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.FixedSwipeRefreshLayout
 import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
@@ -40,7 +43,7 @@ import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
 import java.util.Collections
 
-class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
+class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // Shared UI state with MainActivity
     private val mainUiViewModel: MainUiViewModel by activityViewModels()
@@ -98,9 +101,19 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
             drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
         }
 
-        // Inicializamos el adapter (ahora es variable de instancia, no estático)
-        adapterUsers = AdapterUsers(usersArrayList, originalUsersList, requireContext())
+        adapterUsers = AdapterUsers(
+            usersList = usersArrayList,
+            usersListAll = originalUsersList,
+            context = requireContext(),
+            onChatClicked = { userId -> navigateToChat(userId) },
+            onProfileClicked = { user -> navigateToSlideProfile(user) },
+            onListUpdated = {
+                // Lógica de scrollbar que tenías estática, ahora local
+                rv?.scrollToPosition((adapterUsers?.itemCount ?: 1) - 1)
+            }
+        )
         rv?.adapter = adapterUsers
+
     }
 
     private fun setupSwipeRefresh() {
@@ -334,6 +347,28 @@ class UsuariosFragment : Fragment(), SearchView.OnQueryTextListener {
             positive?.isEnabled = false
             positive?.setTextColor(Color.GRAY)
         }
+    }
+
+    // 1. Navegación al Chat
+    private fun navigateToChat(userId: String) {
+        val intent = Intent(requireContext(), ChatActivity::class.java)
+        intent.putExtra("id_user", userId)
+        startActivity(intent)
+    }
+
+    // 2. Navegación al Perfil Deslizable
+    private fun navigateToSlideProfile(selectedUser: Users) {
+        val intent = Intent(requireContext(), SlideProfileActivity::class.java)
+
+        // Preparamos la lista para el slider (lógica original de revertir)
+        // Nota: Accedemos a la lista actual del adapter o tu lista local
+        val extra = ArrayList(usersArrayList)
+        extra.reverse()
+
+        intent.putExtra("userList", extra)
+        intent.putExtra("position", extra.indexOf(selectedUser))
+        intent.putExtra("rotation", 0)
+        startActivity(intent)
     }
 
     // --- Search Logic ---
