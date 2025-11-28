@@ -1,25 +1,22 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.facebook.login.LoginManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
+import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.PrefKeys.FIRST_LOGIN_DONE
-import com.zibete.proyecto1.ui.constants.Constants.PrefKeys.ONBOARDING_DONE
-import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.auth
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -28,19 +25,22 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import javax.inject.Inject
 import kotlin.coroutines.resume
 
-class SplashViewModel : ViewModel() {
+@HiltViewModel
+class SplashViewModel @Inject constructor(
+    private val userPreferencesRepository: UserPreferencesRepository, // ← Inyectado
+    private val firebaseAuth: FirebaseAuth,
+    private val firebaseRefsContainer: FirebaseRefsContainer
+) : ViewModel() {
+
+    val user = firebaseAuth.currentUser
 
     // replay = 1 para no perder el último evento (ej. sin internet antes de que Compose empiece a colectar)
     private val _events = MutableSharedFlow<SplashUiEvent>(replay = 1)
     val events = _events.asSharedFlow()
     private var userToken: String? = null
-    private lateinit var prefs: SharedPreferences
-
-    fun initPrefs(p: SharedPreferences) {
-        prefs = p
-    }
 
     fun start(context: Context, isRetry: Boolean = false) {
         viewModelScope.launch {
@@ -54,9 +54,9 @@ class SplashViewModel : ViewModel() {
             delay(1000L)
 
             // 2) OnBoarding solo la primera vez
-            val onBoardingDone = prefs.getBoolean(ONBOARDING_DONE, false)
+            val onBoardingDone = userPreferencesRepository.onboardingDone
             if (!onBoardingDone) {
-                prefs.edit { putBoolean(ONBOARDING_DONE, true) }
+                userPreferencesRepository.onboardingDone = true
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
@@ -71,12 +71,9 @@ class SplashViewModel : ViewModel() {
             FirebaseMessaging.getInstance().token
                 .addOnSuccessListener { userToken = it }
 
-            // 5) Usuario actual desde FirebaseRefs (getter dinámico)
-            val user = currentUser
-
             // Sin usuario → navegar a Auth
             if (user == null) {
-                auth.signOut()
+                firebaseAuth.signOut()
                 LoginManager.getInstance().logOut()
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
@@ -109,7 +106,7 @@ class SplashViewModel : ViewModel() {
 
             // Buscar cuentas con mismo token
             val snapshot = suspendFirebaseQuery {
-                FirebaseRefs.refCuentas.orderByChild("token").equalTo(token)
+                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
             }
 
             if (!snapshot.exists()) {
@@ -146,7 +143,7 @@ class SplashViewModel : ViewModel() {
     }
 
     suspend fun onTokenDialogConfirmed(flag: Int) {
-        val user = auth.currentUser ?: return
+        val user = firebaseAuth.currentUser ?: return
         val token = userToken ?: return
 
         assignTokenToUser(user, token)
@@ -154,7 +151,7 @@ class SplashViewModel : ViewModel() {
         if (flag == 1 || flag == 2) {
             // limpiar token de otras cuentas
             val snapshot = suspendFirebaseQuery {
-                FirebaseRefs.refCuentas.orderByChild("token").equalTo(token)
+                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
             }
             snapshot.children.forEach {
                 if (it.key != user.uid) {
@@ -167,13 +164,13 @@ class SplashViewModel : ViewModel() {
     }
 
     suspend fun onTokenDialogCancelled(flag: Int) {
-        auth.signOut()
+        firebaseAuth.signOut()
         LoginManager.getInstance().logOut()
         _events.emit(SplashUiEvent.NavigateAuth)
     }
 
     private fun assignTokenToUser(user: FirebaseUser, token: String) {
-        FirebaseRefs.refCuentas.child(user.uid).child("token").setValue(token)
+        firebaseRefsContainer.refCuentas.child(user.uid).child("token").setValue(token)
     }
 
     // ============================================================
@@ -182,22 +179,22 @@ class SplashViewModel : ViewModel() {
 
     private suspend fun updateUserFlow(user: FirebaseUser) {
         val snapshot = suspendFirebaseQuery {
-            FirebaseRefs.refCuentas.child(user.uid)
+            firebaseRefsContainer.refCuentas.child(user.uid)
         }
 
-        val firstTime = !prefs.getBoolean(FIRST_LOGIN_DONE, false)
+        val firstTime = !userPreferencesRepository.firstLoginDone
 
         // Usuario nuevo
         if (!snapshot.exists()) {
             createUserNode(user)
-            prefs.edit { putBoolean(FIRST_LOGIN_DONE, true) }
+            userPreferencesRepository.firstLoginDone = true
             _events.emit(SplashUiEvent.NavigateEditProfile)
             return
         }
 
         // Primer inicio (post registro)
         if (firstTime) {
-            prefs.edit { putBoolean(FIRST_LOGIN_DONE, true) }
+            userPreferencesRepository.firstLoginDone = true
             _events.emit(SplashUiEvent.NavigateEditProfile)
             return
         }
@@ -232,7 +229,7 @@ class SplashViewModel : ViewModel() {
             0.0
         )
 
-        FirebaseRefs.refCuentas.child(user.uid).setValue(newUser)
+        firebaseRefsContainer.refCuentas.child(user.uid).setValue(newUser)
     }
 
     // ============================================================

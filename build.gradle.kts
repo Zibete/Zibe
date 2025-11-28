@@ -1,19 +1,19 @@
 // Top-level build file
 plugins {
-    // 1. Android Gradle Plugin (La versión 8.13 NO existe, usamos la 8.3.1 estable)
+    // 1. Android Gradle Plugin
     id("com.android.application") version "8.13.1" apply false
     id("com.android.library") version "8.13.1" apply false
 
-    // 2. Kotlin (Usamos 2.0.0 estable)
+    // 2. Kotlin
     id("org.jetbrains.kotlin.android") version "2.0.0" apply false
 
     // 3. Google Services
     id("com.google.gms.google-services") version "4.4.1" apply false
 
-    // 4. Compose Compiler (Debe coincidir con Kotlin)
+    // 4. Compose Compiler
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
 
-    // 5. HILT (Usamos 2.48 porque es compatible con tu Android Studio actual)
+    // 5. HILT
     id("com.google.dagger.hilt.android") version "2.48" apply false
 }
 

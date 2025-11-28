@@ -7,15 +7,11 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.IntentSender.SendIntentException
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -53,35 +49,21 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
-import com.zibete.proyecto1.ui.constants.Constants.EMPTY
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_KEEP_HERE
-import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_LOGOUT
-import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_MESSAGE
-import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.ui.main.CurrentScreen
-import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainUiViewModel
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import com.zibete.proyecto1.utils.UserRepository.updateLocationUI
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import kotlinx.coroutines.launch
-import java.util.ArrayList
 import com.zibete.proyecto1.utils.FirebaseRefs.user
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -92,8 +74,9 @@ class MainActivity : AppCompatActivity() {
     // ViewModel y Repository
     private val viewModel: MainUiViewModel by viewModels()
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
      // ViewBinding
     private lateinit var binding: ActivityMainBinding
@@ -297,7 +280,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleGroupsNavigation() {
-        if (!repo.inGroup) {
+        if (!userPreferencesRepository.inGroup) {
             if (viewModel.currentScreen.value != CurrentScreen.GROUPS) {
                 viewModel.setScreen(CurrentScreen.GROUPS)
                 viewModel.showLayoutSettings(false)
@@ -322,7 +305,7 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.nav_host_fragment, newFragment)
                 .commit()
 
-            toolbar?.title = repo.groupName
+            toolbar?.title = userPreferencesRepository.groupName
         }
     }
 
@@ -390,7 +373,7 @@ class MainActivity : AppCompatActivity() {
 
     fun exitGroup() {
         // La lógica visual inmediata
-        val groupName = repo.groupName // Guardamos antes de limpiar
+        val groupName = userPreferencesRepository.groupName // Guardamos antes de limpiar
         viewModel.exitGroup() // VM limpia Firebase y Repo
 
         // Limpieza de UI local (Fragments)
@@ -526,7 +509,7 @@ class MainActivity : AppCompatActivity() {
             R.id.action_exit -> {
                 AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
                     .setTitle("Salir")
-                    .setMessage("¿Desea abandonar ${repo.groupName}?")
+                    .setMessage("¿Desea abandonar ${userPreferencesRepository.groupName}?")
                     .setPositiveButton("Salir") { _, _ -> exitGroup() }
                     .setNegativeButton(DIALOG_CANCEL, null)
                     .show()

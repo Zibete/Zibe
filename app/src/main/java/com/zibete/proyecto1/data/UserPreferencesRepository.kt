@@ -17,7 +17,9 @@ class UserPreferencesRepository @Inject constructor(
     @ApplicationContext context: Context
 ) {
     // Inicializamos con ApplicationContext para evitar Memory Leaks
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("FilterUsers", Context.MODE_PRIVATE)
+    private val userPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("userPrefs", Context.MODE_PRIVATE)
+    private val appPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
+    private val filterPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("filterPrefs", Context.MODE_PRIVATE)
 
     // Nota: El antiguo 'companion object' y 'getInstance' fueron eliminados
     // porque Hilt (@Singleton) maneja esa lógica automáticamente.
@@ -27,64 +29,80 @@ class UserPreferencesRepository @Inject constructor(
     // ==========================================
 
     var inGroup: Boolean
-        get() = prefs.getBoolean("inGroup", false)
-        set(value) = prefs.edit { putBoolean("inGroup", value) }
+        get() = userPrefs.getBoolean("inGroup", false)
+        set(value) = userPrefs.edit { putBoolean("inGroup", value) }
 
     var userName: String
-        get() = prefs.getString("userName", "") ?: ""
-        set(value) = prefs.edit { putString("userName", value) }
+        get() = userPrefs.getString("userName", "") ?: ""
+        set(value) = userPrefs.edit { putString("userName", value) }
 
     var groupName: String
-        get() = prefs.getString("groupName", "") ?: ""
-        set(value) = prefs.edit { putString("groupName", value) }
+        get() = userPrefs.getString("groupName", "") ?: ""
+        set(value) = userPrefs.edit { putString("groupName", value) }
 
     var userType: Int
-        get() = prefs.getInt("userType", 2)
-        set(value) = prefs.edit { putInt("userType", value) }
+        get() = userPrefs.getInt("userType", 2)
+        set(value) = userPrefs.edit { putInt("userType", value) }
 
     var userDate: String
-        get() = prefs.getString("userDate", "") ?: ""
-        set(value) = prefs.edit { putString("userDate", value) }
+        get() = userPrefs.getString("userDate", "") ?: ""
+        set(value) = userPrefs.edit { putString("userDate", value) }
 
     var readGroupMsg: Int
-        get() = prefs.getInt("readGroupMsg", 0)
-        set(value) = prefs.edit { putInt("readGroupMsg", value) }
+        get() = userPrefs.getInt("readGroupMsg", 0)
+        set(value) = userPrefs.edit { putInt("readGroupMsg", value) }
 
     // ==========================================
     // SECCIÓN 2: FILTROS
     // ==========================================
 
-    var filterPrefs: Boolean
-        get() = prefs.getBoolean("filterPrefs", false)
-        set(value) = prefs.edit { putBoolean("filterPrefs", value) }
+    var filterSwitch: Boolean
+        get() = filterPrefs.getBoolean("filterPrefs", false)
+        set(value) = filterPrefs.edit { putBoolean("filterPrefs", value) }
 
     var checkPref: Boolean
-        get() = prefs.getBoolean("checkPref", false)
-        set(value) = prefs.edit { putBoolean("checkPref", value) }
+        get() = filterPrefs.getBoolean("checkPref", false)
+        set(value) = filterPrefs.edit { putBoolean("checkPref", value) }
 
     var edadPref: Boolean
-        get() = prefs.getBoolean("edadPref", false)
-        set(value) = prefs.edit { putBoolean("edadPref", value) }
+        get() = filterPrefs.getBoolean("edadPref", false)
+        set(value) = filterPrefs.edit { putBoolean("edadPref", value) }
 
     var desdePref: Int
-        get() = prefs.getInt("desdePref", 0)
-        set(value) = prefs.edit { putInt("desdePref", value) }
+        get() = filterPrefs.getInt("desdePref", 0)
+        set(value) = filterPrefs.edit { putInt("desdePref", value) }
 
     var hastaPref: Int
-        get() = prefs.getInt("hastaPref", 0)
-        set(value) = prefs.edit { putInt("hastaPref", value) }
+        get() = filterPrefs.getInt("hastaPref", 0)
+        set(value) = filterPrefs.edit { putInt("hastaPref", value) }
 
     // ==========================================
-    // SECCIÓN 3: NOTIFICACIONES
+    // SECCIÓN 3: NOTIFICACIONES - ONBOARDING
     // ==========================================
 
     var individualNotifications: Boolean
-        get() = prefs.getBoolean("individualNotifications", true)
-        set(value) = prefs.edit { putBoolean("individualNotifications", value) }
+        get() = appPrefs.getBoolean("individualNotifications", true)
+        set(value) = appPrefs.edit { putBoolean("individualNotifications", value) }
 
     var groupNotifications: Boolean
-        get() = prefs.getBoolean("groupNotifications", true)
-        set(value) = prefs.edit { putBoolean("groupNotifications", value) }
+        get() = appPrefs.getBoolean("groupNotifications", true)
+        set(value) = appPrefs.edit { putBoolean("groupNotifications", value) }
+
+    var onboardingDone: Boolean
+        get() = appPrefs.getBoolean("onboardingDone", false)
+        set(value) = appPrefs.edit { putBoolean("onboardingDone", value) }
+
+    var firstLoginDone: Boolean
+        get() = appPrefs.getBoolean("firstLoginDone", false)
+        set(value) = appPrefs.edit { putBoolean("firstLoginDone", value) }
+
+    var deleteUser: Boolean
+        get() = appPrefs.getBoolean("deleteUser", false)
+        set(value) = appPrefs.edit { putBoolean("deleteUser", value) }
+
+    var deleteFirebaseAccount: Boolean
+        get() = appPrefs.getBoolean("deleteFirebaseAccount", false)
+        set(value) = appPrefs.edit { putBoolean("deleteFirebaseAccount", value) }
 
     // ==========================================
     // SECCIÓN 4: ACCIONES EN BLOQUE (Optimizado)
@@ -101,7 +119,7 @@ class UserPreferencesRepository @Inject constructor(
         readGroupMsg: Int,
         userDate: String
     ) {
-        prefs.edit {
+        userPrefs.edit {
             putBoolean("inGroup", inGroup)
             putString("userName", userName)
             putString("groupName", groupName)
@@ -115,7 +133,7 @@ class UserPreferencesRepository @Inject constructor(
      * Limpia la sesión y resetea filtros (llamado en Logout).
      */
     fun clearAllData() {
-        prefs.edit {
+        userPrefs.edit {
             // Reseteo Usuario
             putBoolean("inGroup", false)
             putString("groupName", "")
@@ -140,7 +158,7 @@ class UserPreferencesRepository @Inject constructor(
      */
     fun resetGroupState() {
         // Limpiamos todos los campos relacionados con el estado de grupo de forma atómica.
-        prefs.edit {
+        userPrefs.edit {
             putBoolean("inGroup", false)
             putString("userName", "")
             putString("groupName", "")

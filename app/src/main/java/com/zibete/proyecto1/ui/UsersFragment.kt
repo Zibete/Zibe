@@ -133,7 +133,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun updateToolbarState() {
         (activity as? MainActivity)?.configureUsersToolbar(
-            filterActive = repo.filterPrefs, // Leemos directo del repo
+            filterActive = repo.filterSwitch, // Leemos directo del repo
             onRefresh = { loadUsers(isRefresh = true) },
             onFilterClick = { showFilterDialog() }
         )
@@ -156,7 +156,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
         spinnerAge2.adapter = adapter
 
         // --- Cargar estado actual desde el Repo ---
-        if (repo.filterPrefs) {
+        if (repo.filterSwitch) {
             val savedDesde = if (repo.desdePref < 18) 18 else repo.desdePref
             val savedHasta = if (repo.hastaPref < 18) 18 else repo.hastaPref
 
@@ -176,7 +176,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
             .setView(viewFilter)
             .setPositiveButton("Filtrar") { _, _ ->
                 // Guardar en Repo
-                repo.filterPrefs = true
+                repo.filterSwitch = true
                 repo.checkPref = switchOnline.isChecked
                 repo.edadPref = switchEdad.isChecked
 
@@ -322,7 +322,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
     private fun setupDialogButtonListeners(dialog: AlertDialog, ctx: Context, swOnline: SwitchCompat, swAge: SwitchCompat) {
         dialog.setOnShowListener {
             val neutralBtn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-            if (!repo.filterPrefs) {
+            if (!repo.filterSwitch) {
                 neutralBtn?.isEnabled = false
                 neutralBtn?.setTextColor(Color.GRAY)
             }

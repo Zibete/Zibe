@@ -41,7 +41,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -60,6 +59,8 @@ import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -68,15 +69,14 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.chat.ChatViewModel
+import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.utils.ChatUtils
-import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.UserRepository
 import dagger.hilt.android.AndroidEntryPoint
 import de.hdodenhof.circleimageview.CircleImageView
@@ -91,11 +91,12 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var firebaseAuth: FirebaseAuth
 
-    // --------- ViewModel ---------
-    private val viewModel: ChatViewModel by viewModels()
+    private val user: FirebaseUser
+        get() = firebaseAuth.currentUser!!
 
     // --------- UI refs ----------
     private lateinit var imgUser: CircleImageView
@@ -350,9 +351,9 @@ class ChatActivity : AppCompatActivity() {
                     btnMic.isVisible = false
                     btnSendMsg.isVisible = true
                     frameSendMsg.isVisible = true
-                    FirebaseRefs.refDatos.child(user.uid).child("Estado").child("estado")
+                    firebaseRefsContainer.refDatos.child(user.uid).child("Estado").child("estado")
                         .setValue(getString(R.string.escribiendo))
-                    FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
+                    firebaseRefsContainer.refCuentas.child(user.uid).child("estado").setValue(true)
                 }
             }
             override fun afterTextChanged(s: Editable?) {
@@ -428,7 +429,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         if (refChatWith == Constants.CHATWITHUNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
-            FirebaseRefs.refGroupUsers.child(repo.groupName)
+            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
         }
@@ -452,7 +453,7 @@ class ChatActivity : AppCompatActivity() {
 
         actionDelete.isVisible = true
 
-        FirebaseRefs.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     val state = ds.getValue(String::class.java)
@@ -528,7 +529,7 @@ class ChatActivity : AppCompatActivity() {
         uCropResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            viewModel.handleCroppedImageResult(result.resultCode, result.data, this)
+//            viewModel.handleCroppedImageResult(result.resultCode, result.data, this)
         }
 
         // 2. Galería moderna
@@ -537,7 +538,7 @@ class ChatActivity : AppCompatActivity() {
         ) { uri ->
             if (uri != null) {
                 // Delegamos la lógica de uCrop al VM, que nos dará las URIs
-                viewModel.startUCropFlow(uri, this, uCropResultLauncher)
+//                viewModel.startUCropFlow(uri, this, uCropResultLauncher)
             }
         }
 
@@ -546,7 +547,7 @@ class ChatActivity : AppCompatActivity() {
             ActivityResultContracts.TakePicture()
         ) { success ->
             if (success && imageUriCamera != null) {
-                viewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
+//                viewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
             } else {
                 imageUriCamera = null
             }
@@ -713,9 +714,9 @@ class ChatActivity : AppCompatActivity() {
         timer.base = recordStartElapsed
         timer.start()
 
-        FirebaseRefs.refDatos.child(user.uid).child("Estado").child("estado")
+        firebaseRefsContainer.refDatos.child(user.uid).child("Estado").child("estado")
             .setValue(getString(R.string.grabando))
-        FirebaseRefs.refCuentas.child(user.uid).child("estado").setValue(true)
+        firebaseRefsContainer.refCuentas.child(user.uid).child("estado").setValue(true)
     }
 
     private fun stopRecordAudio() {
@@ -888,6 +889,9 @@ class ChatActivity : AppCompatActivity() {
 
     // ----------------------------- Envío de mensajes -----------------------------
     private fun sendMessage(timerText: String?) {
+
+        val user = user ?: return
+
         val (textMiChatw, textSuChatw) = when (msgType) {
             Constants.PHOTO -> {
                 linearPhotoView.visibility = View.GONE
@@ -943,7 +947,7 @@ class ChatActivity : AppCompatActivity() {
             textMiChatw!!, finalDate, null, user.uid,
             idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
         )
-        FirebaseRefs.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
+        firebaseRefsContainer.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
 
         if (suActual != user.uid + refChatWith || suActual == null) {
             val count = noVisto + 1
@@ -951,7 +955,7 @@ class ChatActivity : AppCompatActivity() {
                 textSuChatw!!, finalDate, null, user.uid,
                 user.uid, myName!!, myPhoto, estadoUser!!, count, 1
             )
-            FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user!!.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user!!.uid)
                 .setValue(suChat)
 
             if (estadoUser != "silent") {
@@ -982,7 +986,7 @@ class ChatActivity : AppCompatActivity() {
                 textSuChatw!!, finalDate, null, user.uid,
                 user.uid, myName!!, myPhoto, estadoUser!!, 0, 3
             )
-            FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user.uid)
                 .setValue(suChat)
         }
 
@@ -1029,7 +1033,7 @@ class ChatActivity : AppCompatActivity() {
             myPhoto = me.photoUrl?.toString() ?: ""
             myName = me.displayName ?: ""
 
-            FirebaseRefs.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
+            firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val thisUser = ds.getValue(Users::class.java)
@@ -1039,7 +1043,7 @@ class ChatActivity : AppCompatActivity() {
                         nameUser.text = nameUserFinal
                         Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
                     } else {
-                        FirebaseRefs.refDatos.child(me.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
+                        firebaseRefsContainer.refDatos.child(me.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
                                 yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
                                 nameUserFinal = snap.child("wUserName").getValue(String::class.java)
@@ -1055,16 +1059,16 @@ class ChatActivity : AppCompatActivity() {
         } else {
             // Chat UNKNOWN
             findViewById<View>(R.id.cardview_title)?.visibility = View.VISIBLE
-            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${repo.groupName}"
+            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${userPreferencesRepository.groupName}"
 
             idUserFinal = idUserUnknown
             nameUserFinal = unknownName
             refChat = Constants.UNKNOWN
             refChatWith = Constants.CHATWITHUNKNOWN
-            myName = repo.userName
+            myName = userPreferencesRepository.userName
             nameUser.text = nameUserFinal
 
-            FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUserUnknown!!).child("type")
+            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserUnknown!!).child("type")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         if (ds.exists()) {
@@ -1073,7 +1077,7 @@ class ChatActivity : AppCompatActivity() {
                                 yourPhoto = getString(R.string.URL_PHOTO_DEF)
                                 Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
                             } else {
-                                FirebaseRefs.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object : ValueEventListener {
+                                firebaseRefsContainer.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object : ValueEventListener {
                                     override fun onDataChange(d2: DataSnapshot) {
                                         if (d2.exists()) {
                                             yourPhoto = d2.child("foto").getValue(String::class.java).orEmpty()
@@ -1088,7 +1092,7 @@ class ChatActivity : AppCompatActivity() {
                     override fun onCancelled(error: DatabaseError) {}
                 })
 
-            myPhoto = if (repo.userType == 0) {
+            myPhoto = if (userPreferencesRepository.userType == 0) {
                 getString(R.string.URL_PHOTO_DEF)
             } else {
                 me.photoUrl?.toString() ?: ""
@@ -1107,13 +1111,13 @@ class ChatActivity : AppCompatActivity() {
                 }
                 override fun onCancelled(error: DatabaseError) {}
             }
-            FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUserFinal!!)
+            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserFinal!!)
                 .addValueEventListener(listenerChatUnknown!!)
         }
 
         // Token del receptor
         if (idUserFinal != null) {
-            FirebaseRefs.refCuentas.child(idUserFinal!!).child("token")
+            firebaseRefsContainer.refCuentas.child(idUserFinal!!).child("token")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) { token = ds.getValue(String::class.java) }
                     override fun onCancelled(error: DatabaseError) {}
@@ -1124,11 +1128,11 @@ class ChatActivity : AppCompatActivity() {
         refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
         refMyReceiverData = Constants.storageReference.child("${refChatWith}/${me.uid}/")
 
-        refActual = FirebaseRefs.refDatos.child(user.uid).child("ChatList").child("Actual")
+        refActual = firebaseRefsContainer.refDatos.child(user.uid).child("ChatList").child("Actual")
 
         // Ramas de mensajes
-        startedByMe  = FirebaseRefs.refChats.child(refChat!!).child("${me.uid} <---> $idUserFinal").child("Mensajes")
-        startedByHim = FirebaseRefs.refChats.child(refChat!!).child("$idUserFinal <---> ${me.uid}").child("Mensajes")
+        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${me.uid} <---> $idUserFinal").child("Mensajes")
+        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${me.uid}").child("Mensajes")
     }
 
     private fun hookChatListeners() {
@@ -1150,7 +1154,7 @@ class ChatActivity : AppCompatActivity() {
     private fun hookBlockAndPresence() {
         val me = user ?: return
 
-        FirebaseRefs.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
+        firebaseRefsContainer.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) { suActual = ds.getValue(String::class.java) ?: "" }
                 override fun onCancelled(error: DatabaseError) {}
@@ -1165,7 +1169,7 @@ class ChatActivity : AppCompatActivity() {
             refChatWith
         )
 
-        FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val state = snapshot.getValue(String::class.java)
@@ -1182,7 +1186,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        FirebaseRefs.refDatos.child(idUserFinal!!).child(refChatWith!!).child(me.uid).child("estado")
+        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(me.uid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoUser = ds.getValue(String::class.java) ?: refChatWith
@@ -1190,7 +1194,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoYo = ds.getValue(String::class.java) ?: refChatWith
@@ -1241,7 +1245,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun visto() {
         val me = user ?: return
-        FirebaseRefs.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!)
+        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dsMain: DataSnapshot) {
                     miNoVisto = 0
@@ -1295,7 +1299,7 @@ class ChatActivity : AppCompatActivity() {
 
         val count = msgSelected.size
         Toast.makeText(this, if (count > 1) "$count mensajes eliminados" else "mensaje eliminado", Toast.LENGTH_SHORT).show()
-        RemoveChatWith(count)
+        removeChatWith(count)
         msgSelected.clear()
         countDeleteMsg.text = msgSelected.size.toString()
     }
@@ -1347,7 +1351,10 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    fun RemoveChatWith(countList: Int) {
+    fun removeChatWith(countList: Int) {
+
+        val user = user ?: return
+
         startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(ds: DataSnapshot) {
                 if (ds.exists()) deleteChatWith(ds) else {
@@ -1377,7 +1384,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 val count = messages - (senderDelete.size + receiverDelete.size + countList)
                 if (count == 0L) {
-                    FirebaseRefs.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
+                    firebaseRefsContainer.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
                     onBackPressedDispatcher.onBackPressed()
                 }
             }

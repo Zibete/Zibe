@@ -25,11 +25,11 @@ class FirebaseRefsContainer @Inject constructor(
 
     // === Referencias a Grupos ===
     @Named("refGroupChat") val refGroupChat: DatabaseReference,
-    @Named("refGroupUsers") val refGroupUsers: DatabaseReference
+    @Named("refGroupUsers") val refGroupUsers: DatabaseReference,
     // Puedes inyectar más referencias aquí (ej: refZibe) si son necesarias en tu Manager.
 
 
-
+    @Named("refChatsRoot") val refChatsRoot: DatabaseReference,
 //
 //// Chats
 //@JvmField val refChats: DatabaseReference = db.getReference("Chats")

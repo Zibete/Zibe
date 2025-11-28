@@ -272,9 +272,9 @@ fun DotsIndicator(totalDots: Int, selectedIndex: Int) {
 @Composable
 fun OnboardingPreviewFull() {
     val demoPages = listOf(
-        OnboardingPage(R.raw.chat_right, "Chatea", "Chatea con amigos en tiempo real."),
-        OnboardingPage(R.raw.lf30_editor_miibzys8, "Descubre", "Encuentra personas cercanas."),
-        OnboardingPage(R.raw.onboarding_persons, "Socializa", "Únete a salas de chat!")
+        OnboardingPage(R.raw.onboarding1, "Chatea", "Chatea con amigos en tiempo real."),
+        OnboardingPage(R.raw.onboarding2, "Descubre", "Encuentra personas cercanas."),
+        OnboardingPage(R.raw.onboarding3, "Socializa", "Únete a salas de chat!")
     )
 
     ZibeTheme {

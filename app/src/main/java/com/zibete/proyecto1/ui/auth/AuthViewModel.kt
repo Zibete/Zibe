@@ -5,28 +5,36 @@ import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FacebookAuthProvider
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.storage.FirebaseStorage
+import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
-import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.auth
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-class AuthViewModel : ViewModel() {
+import javax.inject.Inject
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+        private val userPreferencesRepository: UserPreferencesRepository, // ← Inyectado
+        private val firebaseAuth: FirebaseAuth,
+        private val firebaseRefsContainer: FirebaseRefsContainer
+    ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState = _uiState.asStateFlow()
@@ -53,7 +61,7 @@ class AuthViewModel : ViewModel() {
 
             _uiState.update { it.copy(isLoading = true) }
 
-            auth.signInWithEmailAndPassword(email, password)
+            firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         val msg = getAuthErrorMessage(task.exception)
@@ -79,7 +87,7 @@ class AuthViewModel : ViewModel() {
 
         _uiState.update { it.copy(isLoading = true) }
 
-        auth.sendPasswordResetEmail(email)
+        firebaseAuth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
                 val msg: String
                 val type: ZibeSnackType
@@ -107,7 +115,7 @@ class AuthViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true) }
 
         val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-        auth.signInWithCredential(credential)
+        firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     val msg = getAuthErrorMessage(task.exception)
@@ -124,7 +132,7 @@ class AuthViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true) }
 
         val credential = FacebookAuthProvider.getCredential(token.token)
-        auth.signInWithCredential(credential)
+        firebaseAuth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     val msg = getAuthErrorMessage(task.exception)
@@ -138,7 +146,7 @@ class AuthViewModel : ViewModel() {
     // ================= DELETE USER FLOW =================
 
     private fun handleAuthSuccess() {
-        val user = auth.currentUser
+        val user = firebaseAuth.currentUser
         if (user == null) {
             showMessage(
                 ERR_ZIBE,
@@ -159,8 +167,8 @@ class AuthViewModel : ViewModel() {
 
     private suspend fun deleteCurrentUser(user: FirebaseUser) {
         // Eliminar datos del usuario en RTDB
-        FirebaseRefs.refDatos.child(user.uid).removeValue()
-        FirebaseRefs.refCuentas.child(user.uid).removeValue()
+        firebaseRefsContainer.refDatos.child(user.uid).removeValue()
+        firebaseRefsContainer.refCuentas.child(user.uid).removeValue()
 
         // Eliminar foto de perfil en Storage
         FirebaseStorage.getInstance()

@@ -93,3 +93,14 @@ const val DIALOG_CONTINUE = "Continuar"
 // Content description
 const val LOGO_CONTENT_DESC = "Logo de ZIBE"
 
+const val ONBOARDING_TITLE_1 = "Chatea"
+const val ONBOARDING_TITLE_2 = "Descubre"
+const val ONBOARDING_TITLE_3 = "Socializa"
+
+
+const val ONBOARDING_DESC_1 = "Chatea con familiares y amigos en tiempo real."
+const val ONBOARDING_DESC_2 = "Encuentra personas cercanas y hace nuevos contactos."
+const val ONBOARDING_DESC_3 = "Crea salas o unite a salas de chat."
+
+
+

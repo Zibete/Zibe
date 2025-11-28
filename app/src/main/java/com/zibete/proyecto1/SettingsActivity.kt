@@ -1,6 +1,5 @@
 package com.zibete.proyecto1
 
-import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Intent
@@ -19,9 +18,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import com.facebook.AccessToken
-import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
@@ -30,42 +30,32 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.Query
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
-import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
-import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
-import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import androidx.core.content.edit
-import androidx.core.view.isGone
-import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserSessionManager
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
-    @Inject lateinit var sessionManager: UserSessionManager
-    @Inject lateinit var repo: UserPreferencesRepository
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var firebaseAuth: FirebaseAuth
+
+    private val user: FirebaseUser
+        get() = firebaseAuth.currentUser!!
 
     // UI
     private lateinit var toolbar: MaterialToolbar
@@ -104,8 +94,6 @@ class SettingsActivity : AppCompatActivity() {
     private var password: String? = null
     private lateinit var progress: ProgressDialog
     private var provider: String? = null
-
-    private val user get() = currentUser!!
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -179,13 +167,13 @@ class SettingsActivity : AppCompatActivity() {
         val root = findViewById<View>(android.R.id.content)
 
         // Estado inicial desde prefs
-        switchGroupNotifications.isChecked = repo.groupNotifications
-        switchIndividualNotifications.isChecked = repo.individualNotifications
+        switchGroupNotifications.isChecked = userPreferencesRepository.groupNotifications
+        switchIndividualNotifications.isChecked = userPreferencesRepository.individualNotifications
 
         // Grupales
         switchGroupNotifications.setOnClickListener {
             val enabled = switchGroupNotifications.isChecked
-            repo.groupNotifications = enabled
+            userPreferencesRepository.groupNotifications = enabled
 
             UserMessageUtils.showInfo(
                 root,
@@ -199,7 +187,7 @@ class SettingsActivity : AppCompatActivity() {
         // Individuales
         switchIndividualNotifications.setOnClickListener {
             val enabled = switchIndividualNotifications.isChecked
-            repo.individualNotifications = enabled
+            userPreferencesRepository.individualNotifications = enabled
 
             UserMessageUtils.showInfo(
                 root,
@@ -506,20 +494,20 @@ class SettingsActivity : AppCompatActivity() {
 //            query.removeEventListener(it)
 //        }
 
-        sessionManager.performExitGroupDataCleanup()
+        userSessionManager.performExitGroupDataCleanup()
 
         PageAdapterGroup.valueEventListenerTitle?.let {
-            refGroupUsers.child(repo.groupName)
+            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
                 .removeEventListener(it)
         }
 
         ChatGroupFragment.listenerGroupChat?.let {
-            refGroupChat.child(repo.groupName)
+            firebaseRefsContainer.refGroupChat.child(userPreferencesRepository.groupName)
                 .removeEventListener(it)
         }
 
         // Reset estado local
-        repo.resetGroupState()
+        userPreferencesRepository.resetGroupState()
 
 //        MainActivity.layoutSettings?.visibility = View.GONE
 
@@ -536,14 +524,14 @@ class SettingsActivity : AppCompatActivity() {
     fun logOut(deleteUser: String?) {
 
 //        MainActivity.listenerToken?.let {
-//            FirebaseRefs.refCuentas.child(user.uid)
+//            firebaseRefsContainer.refCuentas.child(user.uid)
 //                .child("installId")
 //                .removeEventListener(it)
 //        }
 
         EditProfileFragment.deleteProfilePreferences(this)
 
-        sessionManager.logOutCleanup(deleteUser)
+        userSessionManager.logOutCleanup(deleteUser)
     }
 
     // endregion
@@ -632,8 +620,8 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean("deleteFirebaseAccount", true)
         }
 
-        refDatos.child(user.uid).removeValue()
-        refCuentas.child(user.uid).removeValue()
+        firebaseRefsContainer.refDatos.child(user.uid).removeValue()
+        firebaseRefsContainer.refCuentas.child(user.uid).removeValue()
 
         FirebaseStorage.getInstance().reference
             .child("Users/imgPerfil/${user.uid}.jpg")

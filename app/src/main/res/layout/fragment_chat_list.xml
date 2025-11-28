@@ -52,7 +52,7 @@
                     android:layout_gravity="right"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/chat_right" />
+                    app:lottie_rawRes="@raw/onboarding1" />
             </LinearLayout>
 
             <TextView

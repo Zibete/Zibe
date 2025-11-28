@@ -41,7 +41,6 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
     private val firebaseRefs: FirebaseRefsContainer //
 ) : ViewModel() {
 
-    // Esto es más seguro que tener una variable fija.
     private val user: FirebaseUser?
         get() = auth.currentUser
 
