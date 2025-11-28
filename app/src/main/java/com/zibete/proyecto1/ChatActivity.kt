@@ -41,6 +41,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -56,7 +57,6 @@ import com.airbnb.lottie.LottieAnimationView
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
-import com.canhub.cropper.CropImageContractOptions
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -71,14 +71,14 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.ChatUtils
+import com.zibete.proyecto1.ui.chat.ChatViewModel
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.utils.CropHelper
+import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.UserRepository
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
 import de.hdodenhof.circleimageview.CircleImageView
 import org.json.JSONObject
 import java.io.File
@@ -86,8 +86,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var repo: UserPreferencesRepository
+
+    // --------- ViewModel ---------
+    private val viewModel: ChatViewModel by viewModels()
 
     // --------- UI refs ----------
     private lateinit var imgUser: CircleImageView
@@ -164,7 +172,7 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var iconVibrator: android.os.Vibrator
 
     // --------- Crop / pickers / permisos ---------
-    private lateinit var cropLauncher: ActivityResultLauncher<CropImageContractOptions>
+    private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var pickImageLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
     private lateinit var requestPermissionsLauncher: ActivityResultLauncher<Array<String>>
@@ -173,8 +181,6 @@ class ChatActivity : AppCompatActivity() {
 
     // callback pendiente para ejecutar luego de otorgar permisos
     private var onPermissionsGranted: (() -> Unit)? = null
-
-    private val user get() = currentUser!!
 
     // ==================================== onCreate ====================================
     @SuppressLint("ClickableViewAccessibility")
@@ -252,7 +258,7 @@ class ChatActivity : AppCompatActivity() {
         loadingPhoto.isVisible = false
 
         // --- extras ---
-        UserRepository.setUserOnline(applicationContext, user!!.uid)
+        UserRepository.setUserOnline(applicationContext, user.uid)
 
         idUser = intent.extras?.getString("id_user")
         unknownName = intent.extras?.getString("unknownName")
@@ -261,31 +267,31 @@ class ChatActivity : AppCompatActivity() {
         // ===== Config chat =====
         setupChatHeaderAndRefs()
 
-        // ===== CropHelper =====
-        cropLauncher = CropHelper.registerLauncher(
-            caller = this,
-            ctx = this,
-            refSendImages = refMyReceiverData!!,
-            linearPhotoView = linearPhotoView,
-            linearPhoto = linearPhoto,
-            photo = photo,
-            loadingPhoto = loadingPhoto,
-            loadingButton = loadingButton,
-            frameSendMsg = frameSendMsg,
-            msg = msg,
-            btnCamera = btnCamera,
-            btnSendMsg = btnSendMsg
-        ) { uri ->
-            // Hay foto lista para enviar
-            msgType = Constants.PHOTO
-            stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
-            btnMic.isVisible = false
-            loadingPhoto.isVisible = false
-            loadingButton.isVisible = false
-            frameSendMsg.isVisible = true
-            btnSendMsg.isVisible = true
-
-        }
+//        // ===== CropHelper =====
+//        cropLauncher = CropHelper.registerLauncher(
+//            caller = this,
+//            ctx = this,
+//            refSendImages = refMyReceiverData!!,
+//            linearPhotoView = linearPhotoView,
+//            linearPhoto = linearPhoto,
+//            photo = photo,
+//            loadingPhoto = loadingPhoto,
+//            loadingButton = loadingButton,
+//            frameSendMsg = frameSendMsg,
+//            msg = msg,
+//            btnCamera = btnCamera,
+//            btnSendMsg = btnSendMsg
+//        ) { uri ->
+//            // Hay foto lista para enviar
+//            msgType = Constants.PHOTO
+//            stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
+//            btnMic.isVisible = false
+//            loadingPhoto.isVisible = false
+//            loadingButton.isVisible = false
+//            frameSendMsg.isVisible = true
+//            btnSendMsg.isVisible = true
+//
+//        }
 
         // ===== UI listeners =====
         val photoList = ArrayList<String>()
@@ -518,34 +524,38 @@ class ChatActivity : AppCompatActivity() {
 
     // ----------------------------- Activity Result Launchers -----------------------------
     private fun initActivityResultLaunchers() {
-        // Galería moderna
+        // ✅ 1. uCrop Launcher (REEMPLAZO DE LA DEPENDENCIA OBSOLETA)
+        uCropResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            viewModel.handleCroppedImageResult(result.resultCode, result.data, this)
+        }
+
+        // 2. Galería moderna
         pickImageLauncher = registerForActivityResult(
             ActivityResultContracts.PickVisualMedia()
         ) { uri ->
             if (uri != null) {
-                CropHelper.launchCrop(cropLauncher, uri)
+                // Delegamos la lógica de uCrop al VM, que nos dará las URIs
+                viewModel.startUCropFlow(uri, this, uCropResultLauncher)
             }
         }
 
-        // Cámara moderna
+        // 3. Cámara moderna
         takePictureLauncher = registerForActivityResult(
             ActivityResultContracts.TakePicture()
         ) { success ->
             if (success && imageUriCamera != null) {
-                CropHelper.launchCrop(cropLauncher, imageUriCamera!!)
+                viewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
             } else {
                 imageUriCamera = null
             }
         }
 
-        // Permisos múltiples
+        // 4. Permisos múltiples
         requestPermissionsLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { result ->
-            hasCameraPermission.set(result[Manifest.permission.CAMERA] == true)
-            hasMicPermission.set(result[Manifest.permission.RECORD_AUDIO] == true)
-
-            // Si se otorgaron todos los solicitados, ejecutar el callback pendiente
             val allGranted = result.values.all { it == true }
             if (allGranted) {
                 onPermissionsGranted?.invoke()

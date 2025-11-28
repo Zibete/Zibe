@@ -1,5 +1,8 @@
 package com.zibete.proyecto1.utils
 
+import android.app.Activity
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.AndroidViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
@@ -14,6 +17,18 @@ object FirebaseRefs {
 
     val currentUser: FirebaseUser?
         get() = auth.currentUser
+
+    // 1. Para usar "user" directo en cualquier Activity (MainActivity, etc)
+    val Activity.user: FirebaseUser
+        get() = currentUser!!
+
+    // 2. Para usar "user" directo en cualquier Fragment
+    val Fragment.user: FirebaseUser
+        get() = currentUser!!
+
+    // 3. Para usar "user" directo en tus ViewModels
+    val AndroidViewModel.user: FirebaseUser
+        get() = currentUser!!
     // === Database ===
     private val db: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
 

@@ -19,7 +19,6 @@ import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -33,20 +32,25 @@ import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.main.MainUiViewModel
-import com.zibete.proyecto1.utils.Utils.calcAge
-import com.zibete.proyecto1.utils.Utils.repo
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.utils.Utils.calcAge
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.Collections
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
-    // Shared UI state with MainActivity
-    private val mainUiViewModel: MainUiViewModel by activityViewModels()
+    @Inject
+    lateinit var repo: UserPreferencesRepository
+    @Inject
+    lateinit var profileUiBinder: ProfileUiBinder
+
     // UI Elements
     private var root: View? = null
     private var progressbar: ProgressBar? = null
@@ -110,7 +114,8 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
             onListUpdated = {
                 // Lógica de scrollbar que tenías estática, ahora local
                 rv?.scrollToPosition((adapterUsers?.itemCount ?: 1) - 1)
-            }
+            },
+            profileUiBinder = profileUiBinder
         )
         rv?.adapter = adapterUsers
 
@@ -237,7 +242,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
                     // Calcular datos derivados
                     u.age = calcAge(u.birthDay)
-                    u.distance = ProfileUiBinder.getDistanceMeters(
+                    u.distance = profileUiBinder.getDistanceMeters(
                         UserRepository.latitude,
                         UserRepository.longitude,
                         u.latitude,
@@ -394,7 +399,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
     override fun onResume() {
         super.onResume()
-        mainUiViewModel.showToolbar()
-        mainUiViewModel.hideLayoutSettings()
+//        mainUiViewModel.showToolbar()
+//        mainUiViewModel.hideLayoutSettings()
     }
 }

@@ -304,10 +304,11 @@ class EditProfileFragment : Fragment() {
                         .load(if (!foto.isNullOrEmpty()) foto else getString(R.string.URL_PHOTO_DEF))
                         .apply(opts)
                         .listener(object : RequestListener<Drawable?> {
+
                             override fun onLoadFailed(
                                 e: GlideException?,
                                 model: Any?,
-                                target: Target<Drawable?>?,
+                                target: Target<Drawable?>,
                                 isFirstResource: Boolean
                             ): Boolean {
                                 loadingPhoto?.visibility = View.GONE
@@ -322,8 +323,9 @@ class EditProfileFragment : Fragment() {
                                 isFirstResource: Boolean
                             ): Boolean {
                                 loadingPhoto?.visibility = View.GONE
-                                return false
-                            }
+                                return false                            }
+
+
                         })
                         .into(ftPerfil!!)
 
@@ -448,15 +450,15 @@ class EditProfileFragment : Fragment() {
                 .load(imageUri)
                 .apply(RequestOptions().dontTransform())
                 .listener(object : RequestListener<Drawable?> {
+
                     override fun onLoadFailed(
                         e: GlideException?,
                         model: Any?,
-                        target: Target<Drawable?>?,
+                        target: Target<Drawable?>,
                         isFirstResource: Boolean
                     ): Boolean {
                         loadingPhoto?.visibility = View.GONE
-                        return false
-                    }
+                        return false                    }
 
                     override fun onResourceReady(
                         resource: Drawable?,
@@ -468,6 +470,8 @@ class EditProfileFragment : Fragment() {
                         loadingPhoto?.visibility = View.GONE
                         return false
                     }
+
+
                 })
                 .into(ftPerfil!!)
 

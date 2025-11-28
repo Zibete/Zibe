@@ -194,11 +194,23 @@ class AdapterChatGroup(
                     .load(chat.message)
                     .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
                     .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
+
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable?>,
+                            isFirstResource: Boolean
+                        ): Boolean {
                             b.loadingPhoto?.visibility = View.GONE
-                            return false
-                        }
-                        override fun onResourceReady(r: Drawable?, m: Any?, t: Target<Drawable>?, ds: DataSource?, isFirst: Boolean): Boolean {
+                            return false                        }
+
+                        override fun onResourceReady(
+                            resource: Drawable,
+                            model: Any,
+                            target: Target<Drawable?>?,
+                            dataSource: DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
                             b.loadingPhoto?.visibility = View.GONE
                             return false
                         }

@@ -2,10 +2,11 @@ package com.zibete.proyecto1.utils
 
 import android.graphics.drawable.AnimationDrawable
 import android.view.View
-import eightbitlab.com.blurview.BlurTarget
+import android.view.ViewGroup
 import eightbitlab.com.blurview.BlurView
 
 object GlassEffect {
+
     fun startGlowIfAny(glowBorder: View?) {
         if (glowBorder == null) return
         val bg = glowBorder.background
@@ -16,20 +17,25 @@ object GlassEffect {
         }
     }
 
-    /** Configura el efecto glass (BlurView 3.x con BlurTarget)  */
+    /**
+     * Configura el efecto glass usando BlurView 3.x (sin setBlurAlgorithm)
+     */
     fun applyGlassEffect(blurView: BlurView?, itemView: View) {
         if (blurView == null) return
 
         val radius = 16f
 
-        // El BlurTarget es el "contenedor base" a desenfocar
-        val blurTarget = BlurTarget(itemView.rootView.context)
+        // Root sobre el que se va a tomar el contenido a desenfocar
+        val rootView = itemView.rootView as? ViewGroup ?: return
+        val windowBackground = rootView.background
 
-        blurView.setupWith(blurTarget)
-            .setBlurRadius(radius)
-            .setBlurAutoUpdate(true)
+//        blurView.setupWith(rootView)
+//            .setFrameClearDrawable(windowBackground) // opcional
+//            .setBlurRadius(radius)
+//            .setBlurAutoUpdate(true)
+//            .setHasFixedTransformationMatrix(true)
 
         // sombreado suave para contraste
-        blurView.setOverlayColor(0x1A000000)
+        blurView.setOverlayColor(0x1A000000.toInt())
     }
 }

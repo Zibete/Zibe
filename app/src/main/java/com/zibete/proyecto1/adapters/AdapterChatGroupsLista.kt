@@ -24,7 +24,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.UserRepository
 import java.text.SimpleDateFormat
@@ -42,13 +42,13 @@ class AdapterChatGroupsLista(
     OnCreateContextMenuListener {
 
     private val fullChatList: MutableList<ChatWith> = mutableListOf()
-    private val user get() = currentUser!!
-
 
     // Variables para el menú contextual
     private var menu1: String? = null
     private var menu2: String? = null
     private var contextMenuPosition: Int = 0
+
+    var user = FirebaseAuth.getInstance().currentUser!!
 
     // -------- ViewHolder --------
     class ChatGroupViewHolder(val binding: RowChatlistaBinding) : RecyclerView.ViewHolder(binding.root) {

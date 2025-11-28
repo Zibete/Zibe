@@ -55,10 +55,17 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import androidx.core.content.edit
 import androidx.core.view.isGone
+import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
+
+    @Inject lateinit var sessionManager: UserSessionManager
+    @Inject lateinit var repo: UserPreferencesRepository
 
     // UI
     private lateinit var toolbar: MaterialToolbar
@@ -484,21 +491,22 @@ class SettingsActivity : AppCompatActivity() {
     // region Group / Logout
 
     fun exitGroup() {
-        repo.inGroup = false
 
         // listeners globales definidos en MainActivity
-        MainActivity.listenerGroupBadge?.let {
-            refGroupChat.child(repo.groupName)
-                .removeEventListener(it)
-        }
+//        MainActivity.listenerGroupBadge?.let {
+//            refGroupChat.child(repo.groupName)
+//                .removeEventListener(it)
+//        }
+//
+//        MainActivity.listenerMsgUnreadBadge?.let {
+//            val query: Query = refDatos.child(user.uid)
+//                .child(CHATWITHUNKNOWN)
+//                .orderByChild("noVisto")
+//                .startAt(1.0)
+//            query.removeEventListener(it)
+//        }
 
-        MainActivity.listenerMsgUnreadBadge?.let {
-            val query: Query = refDatos.child(user.uid)
-                .child(CHATWITHUNKNOWN)
-                .orderByChild("noVisto")
-                .startAt(1.0)
-            query.removeEventListener(it)
-        }
+        sessionManager.performExitGroupDataCleanup()
 
         PageAdapterGroup.valueEventListenerTitle?.let {
             refGroupUsers.child(repo.groupName)
@@ -510,59 +518,11 @@ class SettingsActivity : AppCompatActivity() {
                 .removeEventListener(it)
         }
 
-        // Eliminar chats unknown vinculados
-        refDatos.child(user.uid).child(CHATWITHUNKNOWN)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    for (snapshot in dataSnapshot.children) {
-                        val key = snapshot.key ?: continue
-                        refChatUnknown.child("${user.uid} <---> $key").removeValue()
-                        refChatUnknown.child("$key <---> ${user.uid}").removeValue()
-                        refDatos.child(key).child(CHATWITHUNKNOWN)
-                            .child(user.uid)
-                            .removeValue()
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        refDatos.child(user.uid).child(CHATWITHUNKNOWN).removeValue()
-
-        @SuppressLint("SimpleDateFormat")
-        val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
-
-        val chatmsg = ChatsGroup(
-            "abandonó la sala",
-            dateFormat3.format(Calendar.getInstance().time),
-            repo.userName,
-            user.uid,
-            0,
-            repo.userType
-        )
-        refGroupChat.child(repo.groupName).push().setValue(chatmsg)
-
-        refGroupUsers.child(repo.groupName)
-            .child(user.uid)
-            .removeValue()
-
         // Reset estado local
-        repo.inGroup = false
-        repo.userName = ""
-        repo.groupName = ""
-        repo.userType = 2
-        repo.readGroupMsg = 0
-        repo.userDate = ""
+        repo.resetGroupState()
 
-        repo.inGroup = false
-        repo.userName = ""
-        repo.groupName = ""
-        repo.userType = 2
-        repo.readGroupMsg = 0
-        repo.userDate = ""
+//        MainActivity.layoutSettings?.visibility = View.GONE
 
-        //todas las referencias a layoutSettings dentro de SettingsActivity las borraría o las apuntaría a vistas propias de Settings, nunca a MainActivity.
-        //        MainActivity.layoutSettings?.visibility = View.GONE
         invalidateOptionsMenu()
 
         val newFragment = GruposFragment()
@@ -574,30 +534,16 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     fun logOut(deleteUser: String?) {
-        if (deleteUser == null) {
-            setUserOffline(applicationContext, user.uid)
-        }
 
-        if (repo.inGroup) {
-            exitGroup()
-        }
+//        MainActivity.listenerToken?.let {
+//            FirebaseRefs.refCuentas.child(user.uid)
+//                .child("installId")
+//                .removeEventListener(it)
+//        }
 
-        MainActivity.listenerToken?.let {
-            FirebaseRefs.refCuentas.child(user.uid)
-                .child("installId")
-                .removeEventListener(it)
-        }
-
-        repo.clearAllData()
         EditProfileFragment.deleteProfilePreferences(this)
 
-        FirebaseAuth.getInstance().signOut()
-        LoginManager.getInstance().logOut()
-
-        finish()
-        val intent = Intent(applicationContext, SplashActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
+        sessionManager.logOutCleanup(deleteUser)
     }
 
     // endregion
@@ -612,26 +558,29 @@ class SettingsActivity : AppCompatActivity() {
     ) {
         val credential: AuthCredential?
 
-        when (provider) {
-            null if password != null -> {
-                credential = EmailAuthProvider.getCredential(user.email!!, password)
+        when {
+            provider == null && password != null -> {
+                val credential = EmailAuthProvider.getCredential(user.email!!, password)
                 reAuthenticate(newEmail, newPassword, deleteUser, credential)
             }
-            "Facebook" -> {
+
+            provider == "Facebook" -> {
                 val token = AccessToken.getCurrentAccessToken()
                 if (token != null) {
-                    credential = FacebookAuthProvider.getCredential(token.token)
+                    val credential = FacebookAuthProvider.getCredential(token.token)
                     reAuthenticate(newEmail, newPassword, deleteUser, credential)
                 }
             }
-            "Google" -> {
+
+            provider == "Google" -> {
                 val acct = GoogleSignIn.getLastSignedInAccount(this)
                 if (acct != null) {
-                    credential = GoogleAuthProvider.getCredential(acct.idToken, null)
+                    val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
                     reAuthenticate(newEmail, newPassword, deleteUser, credential)
                 }
             }
         }
+
     }
 
     private fun reAuthenticate(

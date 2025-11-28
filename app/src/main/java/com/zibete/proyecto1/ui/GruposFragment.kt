@@ -21,6 +21,7 @@ import com.zibete.proyecto1.MainActivity
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterGroups
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.DialogGoGroupBinding
 import com.zibete.proyecto1.databinding.DialogGoNewGroupBinding
 import com.zibete.proyecto1.databinding.FragmentGruposBinding
@@ -31,11 +32,16 @@ import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
+
+    @Inject
+    lateinit var repo: UserPreferencesRepository
 
     private var _binding: FragmentGruposBinding? = null
     private val binding get() = _binding!!
@@ -312,18 +318,18 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         // --- FIREBASE LOGIC ---
         val chatMsg = ChatsGroup("se unió a la sala", date, userName, currentUser.uid, 0, type)
         FirebaseRefs.refGroupChat.child(groupName).push().setValue(chatMsg)
-
-        MainActivity.listenerGroupBadge?.let { listener ->
-            FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listener)
-        }
+//
+//        MainActivity.listenerGroupBadge?.let { listener ->
+//            FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listener)
+//        }
 
         val query: Query = FirebaseRefs.refDatos.child(currentUser.uid)
             .child(Constants.CHATWITHUNKNOWN)
             .orderByChild("noVisto").startAt(1.0)
 
-        MainActivity.listenerMsgUnreadBadge?.let { listener ->
-            query.addValueEventListener(listener)
-        }
+//        MainActivity.listenerMsgUnreadBadge?.let { listener ->
+//            query.addValueEventListener(listener)
+//        }
 
         // --- UI UPDATES ---
         (activity as? MainActivity)?.invalidateOptionsMenu()

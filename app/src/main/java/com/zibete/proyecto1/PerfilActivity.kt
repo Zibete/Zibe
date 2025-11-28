@@ -32,6 +32,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
@@ -43,11 +44,17 @@ import com.zibete.proyecto1.utils.UserRepository.setBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUnBlockUser
 import com.zibete.proyecto1.utils.UserRepository.setUserOffline
 import com.zibete.proyecto1.utils.UserRepository.setUserOnline
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
 import java.math.BigDecimal
 import java.math.RoundingMode
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PerfilActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var repo: UserPreferencesRepository
+    @Inject lateinit var profileUiBinder: ProfileUiBinder
 
     // UI
     private lateinit var ftPerfil: ImageView
@@ -278,7 +285,7 @@ class PerfilActivity : AppCompatActivity() {
                     // Distancia
                     if (otherLatitude != null && otherLongitude != null
                     ) {
-                        val distanceMeters = ProfileUiBinder.getDistanceMeters(
+                        val distanceMeters = profileUiBinder.getDistanceMeters(
                             UserRepository.latitude,
                             UserRepository.longitude,
                             otherLatitude,
@@ -325,10 +332,11 @@ class PerfilActivity : AppCompatActivity() {
                         .load(foto)
                         .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
                         .listener(object : RequestListener<Drawable> {
+
                             override fun onLoadFailed(
                                 e: GlideException?,
                                 model: Any?,
-                                target: Target<Drawable>?,
+                                target: Target<Drawable?>,
                                 isFirstResource: Boolean
                             ): Boolean {
                                 loadingPhoto.visibility = View.GONE
@@ -336,10 +344,10 @@ class PerfilActivity : AppCompatActivity() {
                             }
 
                             override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable>?,
-                                dataSource: DataSource?,
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable?>?,
+                                dataSource: DataSource,
                                 isFirstResource: Boolean
                             ): Boolean {
                                 loadingPhoto.visibility = View.GONE

@@ -4,6 +4,7 @@ import android.app.ActionBar
 import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
+import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.SystemClock
@@ -22,6 +23,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.target.Target
 import com.google.firebase.auth.FirebaseAuth
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
@@ -426,9 +430,9 @@ class AdapterChat(
                     .load(model.message)
                     .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
                         override fun onLoadFailed(
-                            e: com.bumptech.glide.load.engine.GlideException?,
+                            e: GlideException?,
                             model: Any?,
-                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
+                            target: Target<Drawable>,
                             isFirstResource: Boolean
                         ): Boolean {
                             bCommon.tvNotFound?.visibility = View.VISIBLE
@@ -437,10 +441,10 @@ class AdapterChat(
                         }
 
                         override fun onResourceReady(
-                            resource: android.graphics.drawable.Drawable?,
-                            model: Any?,
-                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
-                            dataSource: com.bumptech.glide.load.DataSource?,
+                            resource: Drawable,
+                            model: Any,
+                            target: Target<Drawable>,
+                            dataSource: DataSource,
                             isFirstResource: Boolean
                         ): Boolean {
                             bCommon.loadingPhoto?.visibility = View.GONE

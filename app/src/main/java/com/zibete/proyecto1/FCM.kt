@@ -21,9 +21,14 @@ import com.zibete.proyecto1.ui.constants.Constants.UNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class FCM : FirebaseMessagingService() {
+
+    @Inject
+    lateinit var repo: UserPreferencesRepository
 
     override fun onDeletedMessages() {
         super.onDeletedMessages()

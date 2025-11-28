@@ -31,8 +31,10 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
+import javax.inject.Inject
 
-class SliderProfileAdapter(
+class SliderProfileAdapter @Inject constructor(
+    private val profileUiBinder: ProfileUiBinder,
     private val context: Context,
     private val userList: MutableList<Users>,
     private val rotation: Int
@@ -135,20 +137,28 @@ class SliderProfileAdapter(
             .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .listener(object : RequestListener<Drawable?> {
+
                 override fun onLoadFailed(
-                    e: GlideException?, model: Any?, target: Target<Drawable?>?, isFirstResource: Boolean
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable?>,
+                    isFirstResource: Boolean
                 ): Boolean {
                     progressBar.visibility = View.GONE
                     return false
                 }
 
                 override fun onResourceReady(
-                    resource: Drawable?, model: Any?, target: Target<Drawable?>?,
-                    dataSource: DataSource?, isFirstResource: Boolean
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable?>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
                 ): Boolean {
                     progressBar.visibility = View.GONE
-                    return false
-                }
+                    return false                }
+
+
             })
             .into(holder.ftPerfil)
 
@@ -175,11 +185,11 @@ class SliderProfileAdapter(
         UserRepository.setUserOnline(context, user.id)
 
         // Binders auxiliares
-        ProfileUiBinder.setFavorite(user.id, holder.perfilFavoriteOn, holder.perfilFavoriteOff)
-        ProfileUiBinder.getBloqMe(user.id, holder.perfilBloqMe)
-        ProfileUiBinder.getAge(user.id, holder.age)
-        ProfileUiBinder.getDistanceToUser(user.id, holder.distanceUser)
-        ProfileUiBinder.addPhotoReceived(user.id, adapterPhotoReceived, holder.linearPhotos)
-        ProfileUiBinder.setMenuProfile(context, user.id, holder.subMenuChatWithUnknown, holder.subMenuChatWith)
+        profileUiBinder.setFavorite(user.id, holder.perfilFavoriteOn, holder.perfilFavoriteOff)
+        profileUiBinder.getBloqMe(user.id, holder.perfilBloqMe)
+        profileUiBinder.getAge(user.id, holder.age)
+        profileUiBinder.getDistanceToUser(user.id, holder.distanceUser)
+        profileUiBinder.addPhotoReceived(user.id, adapterPhotoReceived, holder.linearPhotos)
+        profileUiBinder.setMenuProfile(context, user.id, holder.subMenuChatWithUnknown, holder.subMenuChatWith)
     }
 }

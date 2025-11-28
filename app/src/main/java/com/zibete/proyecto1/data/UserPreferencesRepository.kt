@@ -1,24 +1,26 @@
-package com.zibete.proyecto1.data // 1. Ajusta esto a tu paquete real
+package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class UserPreferencesRepository private constructor(context: Context) {
-
-    // Inicializamos con ApplicationContext para evitar Memory Leaks si pasas una Activity
+/**
+ * Repositorio para gestionar las SharedPreferences de la aplicación (filtros, estado de grupo, notificaciones).
+ * Utiliza @Inject constructor para que Hilt maneje su ciclo de vida como Singleton.
+ */
+@Singleton // Hilt asegura que solo exista una instancia
+class UserPreferencesRepository @Inject constructor(
+    // Hilt inyecta el Contexto de la Aplicación (seguro)
+    @ApplicationContext context: Context
+) {
+    // Inicializamos con ApplicationContext para evitar Memory Leaks
     private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("FilterUsers", Context.MODE_PRIVATE)
 
-    companion object {
-        @Volatile
-        private var INSTANCE: UserPreferencesRepository? = null
-
-        fun getInstance(context: Context): UserPreferencesRepository {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: UserPreferencesRepository(context).also { INSTANCE = it }
-            }
-        }
-    }
+    // Nota: El antiguo 'companion object' y 'getInstance' fueron eliminados
+    // porque Hilt (@Singleton) maneja esa lógica automáticamente.
 
     // ==========================================
     // SECCIÓN 1: DATOS DE USUARIO Y GRUPO
@@ -89,8 +91,7 @@ class UserPreferencesRepository private constructor(context: Context) {
     // ==========================================
 
     /**
-     * Guarda toda la info del usuario de una sola vez.
-     * Reemplaza al bloque 'apply { ... }' que tenías en el Fragment.
+     * Guarda la info de sesión del usuario de una sola vez.
      */
     fun saveUserSession(
         inGroup: Boolean,
@@ -111,8 +112,7 @@ class UserPreferencesRepository private constructor(context: Context) {
     }
 
     /**
-     * Limpia la sesión y resetea filtros.
-     * Reemplaza a tu antigua función 'deletePreferences'.
+     * Limpia la sesión y resetea filtros (llamado en Logout).
      */
     fun clearAllData() {
         prefs.edit {
@@ -121,13 +121,32 @@ class UserPreferencesRepository private constructor(context: Context) {
             putString("groupName", "")
             putString("userName", "")
             putInt("userType", 2)
+            putInt("readGroupMsg", 0)
+            putString("userDate", "")
 
-            // Reseteo Filtros
+            // Reseteo Filtros (Manteniendo las notificaciones)
             putBoolean("filterPrefs", false)
             putBoolean("checkPref", false)
             putBoolean("edadPref", false)
             putInt("desdePref", 0)
             putInt("hastaPref", 0)
+        }
+    }
+
+    /**
+     * Resetea solo el estado de la sesión de grupo (llamado al Salir del Grupo).
+     * [CRÍTICO]: Se aseguró que solo use el editor de prefs para evitar recursividad
+     * o llamadas a un Singleton externo que ya no existe.
+     */
+    fun resetGroupState() {
+        // Limpiamos todos los campos relacionados con el estado de grupo de forma atómica.
+        prefs.edit {
+            putBoolean("inGroup", false)
+            putString("userName", "")
+            putString("groupName", "")
+            putInt("userType", 2)
+            putInt("readGroupMsg", 0)
+            putString("userDate", "")
         }
     }
 }

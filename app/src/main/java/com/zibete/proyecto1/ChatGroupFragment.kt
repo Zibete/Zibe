@@ -34,7 +34,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
-import com.canhub.cropper.CropImageContractOptions
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
@@ -50,22 +49,25 @@ import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
-import com.zibete.proyecto1.utils.CropHelper
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONException
 import org.json.JSONObject
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ChatGroupFragment : Fragment() {
 
+    @Inject
+    lateinit var repo: UserPreferencesRepository
     private var _binding: FragmentGroupBinding? = null
     private val binding get() = _binding!!
 
@@ -99,12 +101,12 @@ class ChatGroupFragment : Fragment() {
     }
 
     // Launcher CropActivity
-    private lateinit var cropImageLauncher: ActivityResultLauncher<CropImageContractOptions>
+    private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        initActivityResultLaunchers()
+//        initActivityResultLaunchers()
     }
 
     @SuppressLint("InflateParams")
@@ -117,7 +119,7 @@ class ChatGroupFragment : Fragment() {
         val view = binding.root
 
         // Ocultar badge de grupos al entrar
-        MainActivity.badgeDrawableGroup?.isVisible = false
+//        MainActivity.badgeDrawableGroup?.isVisible = false
 
         // Marcar mensajes leídos del grupo activo
         refGroupChat.child(repo.groupName)
@@ -324,30 +326,30 @@ class ChatGroupFragment : Fragment() {
     private fun initCropLauncher() = with(binding) {
         // El CropHelper ya se encarga de mostrar / ocultar preview y loaders.
         // El callback lo dejamos por si en el futuro querés lógica extra.
-        cropImageLauncher = CropHelper.registerLauncherForFragment(
-            this@ChatGroupFragment,
-            refSendImages,
-            linearPhotoView,
-            linearPhoto,
-            photo,
-            loadingPhoto,
-            loadingButton,
-            frameSendMsg,
-            msg,
-            btnCamera,
-            btnSendMsg
-        ) { uri: Uri? ->
-            if (uri != null) {
-                msgType = Constants.PHOTO
-                stringMsg = uri.toString()
-                loadingPhoto.isVisible = false
-                loadingButton.isVisible = false
-                frameSendMsg.isVisible = true
-                btnSendMsg.isVisible = true
-            } else {
-                cancelPreviewPhoto()
-            }
-        }
+//        cropImageLauncher = CropHelper.registerLauncherForFragment(
+//            this@ChatGroupFragment,
+//            refSendImages,
+//            linearPhotoView,
+//            linearPhoto,
+//            photo,
+//            loadingPhoto,
+//            loadingButton,
+//            frameSendMsg,
+//            msg,
+//            btnCamera,
+//            btnSendMsg
+//        ) { uri: Uri? ->
+//            if (uri != null) {
+//                msgType = Constants.PHOTO
+//                stringMsg = uri.toString()
+//                loadingPhoto.isVisible = false
+//                loadingButton.isVisible = false
+//                frameSendMsg.isVisible = true
+//                btnSendMsg.isVisible = true
+//            } else {
+//                cancelPreviewPhoto()
+//            }
+//        }
     }
 
     // ================== FOTO ==================
@@ -544,45 +546,45 @@ class ChatGroupFragment : Fragment() {
 
     // ================== CAMERA / GALLERY (LEGACY) ==================
 
-    private fun initActivityResultLaunchers() {
-        // Galería (Photo Picker)
-        pickImageLauncher = registerForActivityResult(
-            ActivityResultContracts.PickVisualMedia()
-        ) { uri ->
-            if (uri != null) {
-                // Mismo flujo que cuando viene de cámara
-                CropHelper.launchCrop(
-                    cropImageLauncher,
-                    uri
-                )
-            }
-        }
-
-        // Cámara moderna
-        takePictureLauncher = registerForActivityResult(
-            ActivityResultContracts.TakePicture()
-        ) { success ->
-            if (success && imageUriCamera != null) {
-                CropHelper.launchCrop(
-                    cropImageLauncher,
-                    imageUriCamera!!
-                )
-            } else {
-                imageUriCamera = null
-            }
-        }
-
-        // Permisos múltiples
-        requestPermissionsLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { result ->
-            val allGranted = result.values.all { it }
-            if (allGranted) {
-                onPermissionsGranted?.invoke()
-            }
-            onPermissionsGranted = null
-        }
-    }
+//    private fun initActivityResultLaunchers() {
+//        // Galería (Photo Picker)
+//        pickImageLauncher = registerForActivityResult(
+//            ActivityResultContracts.PickVisualMedia()
+//        ) { uri ->
+//            if (uri != null) {
+//                // Mismo flujo que cuando viene de cámara
+//                CropHelper.launchCrop(
+//                    cropImageLauncher,
+//                    uri
+//                )
+//            }
+//        }
+//
+//        // Cámara moderna
+//        takePictureLauncher = registerForActivityResult(
+//            ActivityResultContracts.TakePicture()
+//        ) { success ->
+//            if (success && imageUriCamera != null) {
+//                CropHelper.launchCrop(
+//                    cropImageLauncher,
+//                    imageUriCamera!!
+//                )
+//            } else {
+//                imageUriCamera = null
+//            }
+//        }
+//
+//        // Permisos múltiples
+//        requestPermissionsLauncher = registerForActivityResult(
+//            ActivityResultContracts.RequestMultiplePermissions()
+//        ) { result ->
+//            val allGranted = result.values.all { it }
+//            if (allGranted) {
+//                onPermissionsGranted?.invoke()
+//            }
+//            onPermissionsGranted = null
+//        }
+//    }
 
     private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
         val need = perms.any {

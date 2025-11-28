@@ -3,11 +3,18 @@ plugins {
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
+}
+
+// Configuración de Kapt fuera de Android block
+kapt {
+    correctErrorTypes = true
 }
 
 android {
     namespace = "com.zibete.proyecto1"
-    compileSdk = 36
+    compileSdk = 36 // Usamos 34 estable. 35 puede dar problemas si no tienes el SDK bajado.
 
     defaultConfig {
         applicationId = "com.zibete.proyecto1"
@@ -16,17 +23,14 @@ android {
         versionCode = 3
         versionName = "1.10"
         multiDexEnabled = true
-        ndkVersion = "25.2.9519639"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        renderscriptSupportModeEnabled = true
+        renderscriptTargetApi = 26 // 26 o superior
     }
 
     buildFeatures {
         viewBinding = true
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
     }
 
     compileOptions {
@@ -54,120 +58,104 @@ dependencies {
     // -------------------------------
     // ANDROIDX BASE
     // -------------------------------
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-rc01")
-    implementation("androidx.vectordrawable:vectordrawable:1.2.0")
-    implementation("androidx.viewpager:viewpager:1.1.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation("androidx.viewpager:viewpager:1.0.0")
+    // Navigation (Versiones estables, 2.9 no existe)
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0")
 
-    // ❌ REMOVIDO → Dependencia obsoleta e incompatible
-    // implementation("androidx.legacy:legacy-support-v4:1.0.0")
-
-    // Navigation (Fragment + Compose)
-    implementation("androidx.navigation:navigation-fragment:2.9.6")
-    implementation("androidx.navigation:navigation-ui:2.9.6")
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.9.6")
-    implementation("androidx.navigation:navigation-ui-ktx:2.9.6")
-
-    // ❌ REMOVIDO → causa conflicto
-    // implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-
-    implementation("androidx.dynamicanimation:dynamicanimation:1.1.0")
-    implementation("com.google.android.material:material:1.13.0")
 
     // -------------------------------
-    // COMPOSE
+    // COMPOSE (BOM 2024.06.00 es la actual estable)
     // -------------------------------
-    implementation(platform("androidx.compose:compose-bom:2025.11.01"))
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.foundation:foundation:1.9.5")
-    implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.runtime:runtime")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
-
-    // Activity + ViewModel Compose
-    implementation("androidx.activity:activity-compose:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 
     // -------------------------------
-    // LIFECYCLE (remplazo moderno)
+    // LIFECYCLE
     // -------------------------------
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
 
     // -------------------------------
-    // UI LIBRARIES / BLUR / IMAGES
+    // HILT (Versión 2.48 obligatoria para compatibilidad)
+    // -------------------------------
+    implementation("com.google.dagger:hilt-android:2.48")
+    add("kapt", "com.google.dagger:hilt-compiler:2.48")
+
+    // -------------------------------
+    // UI LIBRARIES / IMAGES
     // -------------------------------
     implementation("com.github.Dimezis:BlurView:version-3.1.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     implementation("com.squareup.picasso:picasso:2.71828")
-    implementation("jp.wasabeef:glide-transformations:4.3.0")
+
+    // Glide (Versión 4.16.0 estable, la 5 es Alpha/Beta)
     implementation("com.github.bumptech.glide:glide:5.0.5")
-    annotationProcessor("com.github.bumptech.glide:compiler:5.0.5")
+    add("kapt", "com.github.bumptech.glide:compiler:4.16.0")
+    implementation("jp.wasabeef:glide-transformations:4.3.0")
+
     implementation("id.zelory:compressor:3.0.1")
     implementation("com.github.rahimlis:badgedtablayout:v1.2")
-    implementation("io.coil-kt:coil:2.7.0")
-    implementation("io.coil-kt:coil-gif:2.7.0")
 
-    implementation("com.github.CanHub:Android-Image-Cropper:4.3.3") {
-        version { strictly("4.3.3") }
-    }
+    // Coil
+    implementation("io.coil-kt:coil:2.6.0")
+    implementation("io.coil-kt:coil-gif:2.6.0")
+
+    // ✅ REEMPLAZO MODERNO Y ESTABLE (UCrop)
+    implementation("com.github.yalantis:ucrop:2.2.8")
 
     // -------------------------------
-    // GOOGLE PLAY SERVICES
+    // GOOGLE PLAY SERVICES & FIREBASE
     // -------------------------------
-    implementation("com.google.android.gms:play-services-auth:21.4.0")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("com.google.android.gms:play-services-basement:18.9.0")
 
-    // -------------------------------
-    // FIREBASE
-    // -------------------------------
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-messaging-directboot")
 
-    implementation("com.firebaseui:firebase-ui-auth:9.1.1")
+    implementation("com.firebaseui:firebase-ui-auth:8.0.2")
 
     // -------------------------------
-    // ROOM / NETWORK / MEDIA
+    // OTHERS
     // -------------------------------
-    implementation("androidx.room:room-ktx:2.8.4")
+    implementation("androidx.room:room-ktx:2.6.1")
     implementation("com.android.volley:volley:1.2.1")
     implementation("jp.co.cyberagent.android:gpuimage:2.1.0")
     implementation("com.github.clans:fab:1.6.4")
-    implementation("com.airbnb.android:lottie:6.7.1")
-    implementation("com.airbnb.android:lottie-compose:6.7.1")
 
-    // -------------------------------
-    // FACEBOOK LOGIN
-    // -------------------------------
-    implementation("com.facebook.android:facebook-login:18.1.3")
+    implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+
+    implementation("com.facebook.android:facebook-login:17.0.0")
 
     // -------------------------------
     // TESTING
     // -------------------------------
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
-    // -------------------------------
-    // LOCAL LIBS
-    // -------------------------------
-    implementation(fileTree("libs") { include("*.jar") })
-
-
+    // Local Libs
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 }
-
-apply(plugin = "com.google.gms.google-services")
-

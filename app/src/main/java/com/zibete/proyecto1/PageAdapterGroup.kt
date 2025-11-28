@@ -23,14 +23,19 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PageAdapterGroup : Fragment() {
 
+    @Inject
+    lateinit var repo: UserPreferencesRepository
     private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
 
     private lateinit var viewPager: ViewPager

@@ -8,24 +8,32 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.github.clans.fab.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
-import com.zibete.proyecto1.ui.UsersFragment
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
-import com.zibete.proyecto1.utils.Utils.repo
+
 import java.math.BigDecimal
 import java.math.RoundingMode
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.math.*
 
-object ProfileUiBinder : AppCompatActivity() {
+@Singleton // 👈 Hilt asegura una única instancia
+class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor (forma correcta)
+    private val repo: UserPreferencesRepository,
+    private val auth: FirebaseAuth,
+) {
 
-    private val user get() = currentUser!!
+    private val user: FirebaseUser
+        get() = auth.currentUser!!
 
 
     // === Edad ===

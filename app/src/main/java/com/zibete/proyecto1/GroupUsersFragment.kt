@@ -18,12 +18,19 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterGroupUsers
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
-import com.zibete.proyecto1.utils.Utils.repo
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class GroupUsersFragment : Fragment(), SearchView.OnQueryTextListener {
+
+    @Inject
+    lateinit var repo: UserPreferencesRepository
+
     var rvGroupUsers: RecyclerView? = null
     var progressbar: ProgressBar? = null
     var imgCancelDialog: ImageView? = null

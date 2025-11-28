@@ -30,8 +30,10 @@ import com.zibete.proyecto1.utils.Utils
 import eightbitlab.com.blurview.BlurView
 import java.math.BigDecimal
 import java.math.RoundingMode
+import javax.inject.Inject
 
-class AdapterUsers(
+class AdapterUsers @Inject constructor(
+    private val profileUiBinder: ProfileUiBinder,
     private val usersList: MutableList<Users>,
     private val usersListAll: MutableList<Users>,
     private val context: Context,
@@ -130,7 +132,7 @@ class AdapterUsers(
         h.tvUsuario1.text = users.name
 
         // Distancia
-        val dist = ProfileUiBinder.getDistanceMeters(
+        val dist = profileUiBinder.getDistanceMeters(
             UserRepository.latitude,
             UserRepository.longitude,
             users.latitude,

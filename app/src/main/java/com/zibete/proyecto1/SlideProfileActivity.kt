@@ -18,9 +18,16 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.utils.UserRepository
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SlideProfileActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var profileUiBinder: ProfileUiBinder
 
     private val user = FirebaseAuth.getInstance().currentUser
     private lateinit var progressbarImage: ProgressBar
@@ -49,7 +56,7 @@ class SlideProfileActivity : AppCompatActivity() {
         val rotation = intent.extras?.getInt("rotation") ?: 0
 
         viewPager = findViewById(R.id.viewPager)
-        viewPager.adapter = SliderProfileAdapter(this, userList, rotation)
+        viewPager.adapter = SliderProfileAdapter(profileUiBinder, this, userList, rotation)
         viewPager.setCurrentItem(position.coerceIn(0, (userList.size - 1).coerceAtLeast(0)), false)
     }
 
