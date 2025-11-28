@@ -35,7 +35,9 @@ class SplashViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
-    val user = firebaseAuth.currentUser
+    private val user: FirebaseUser?
+        get() = firebaseAuth.currentUser
+
 
     // replay = 1 para no perder el último evento (ej. sin internet antes de que Compose empiece a colectar)
     private val _events = MutableSharedFlow<SplashUiEvent>(replay = 1)
@@ -86,7 +88,7 @@ class SplashViewModel @Inject constructor(
             }
 
             // 7) Token + ruta
-            queryTokenAndRoute(user)
+            queryTokenAndRoute(user!!)
         }
     }
 

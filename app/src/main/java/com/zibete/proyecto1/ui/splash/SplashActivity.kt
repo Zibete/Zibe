@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,7 +21,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -149,7 +149,7 @@ class SplashActivity : ComponentActivity() {
                         // ======================================
                         composable("auth") {
 
-                            val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
+                            val uiState by authViewModel.uiState.collectAsState()
 
                             authViewModel.initFromPrefs(userPreferencesRepository.deleteUser,
                                                         userPreferencesRepository.deleteFirebaseAccount)
@@ -210,15 +210,15 @@ class SplashActivity : ComponentActivity() {
                         // ======================================
                         composable("signup") {
 
-                            val vm: SignUpViewModel = viewModel()
-                            val uiState by vm.uiState.collectAsStateWithLifecycle()
+                            val signUpViewModel: SignUpViewModel = viewModel()
+                            val uiState by signUpViewModel.uiState.collectAsState()
 
                             SignUpScreen(
                                 onBack = { navController.popBackStack() },
 
                                 onRegister = { email, pass, name, birthday, desc ->
                                     val defaultPhotoUrl = getString(R.string.URL_PHOTO_DEF)
-                                    vm.onRegister(
+                                    signUpViewModel.onRegister(
                                         email = email,
                                         password = pass,
                                         name = name,
@@ -228,7 +228,7 @@ class SplashActivity : ComponentActivity() {
                                     )
                                 },
 
-                                signUpEvents = vm.events,
+                                signUpEvents = signUpViewModel.events,
                                 isLoading = uiState.isLoading,
 
                                 onNavigateToPermission = {
