@@ -1,12 +1,13 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.main
 
 import android.Manifest
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.IntentSender.SendIntentException
+import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.Menu
@@ -49,6 +50,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.zibete.proyecto1.PageAdapterGroup
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.SettingsActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
@@ -56,16 +60,12 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.main.CurrentScreen
-import com.zibete.proyecto1.ui.main.MainUiViewModel
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.UserRepository.setUserOffline
-import com.zibete.proyecto1.utils.UserRepository.setUserOnline
-import com.zibete.proyecto1.utils.UserRepository.updateLocationUI
-import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
-import kotlinx.coroutines.launch
 import com.zibete.proyecto1.utils.FirebaseRefs.user
+import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint // <--- ESTO HACE QUE LA ACTIVITY PUEDA RECIBIR INYECCIONES
@@ -74,9 +74,12 @@ class MainActivity : AppCompatActivity() {
     // ViewModel y Repository
     private val viewModel: MainUiViewModel by viewModels()
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userSessionManager: UserSessionManager
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject
+    lateinit var userSessionManager: UserSessionManager
+    @Inject
+    lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
      // ViewBinding
     private lateinit var binding: ActivityMainBinding
@@ -146,7 +149,7 @@ class MainActivity : AppCompatActivity() {
         mBottomNavigation = appBar.contentMain.navView3
         setupBadges()
 
-        ScreenUtils.init(this)
+        ZibeApp.ScreenUtils.init(this)
     }
 
     private fun setupHeader(headerView: View?) {
@@ -160,7 +163,7 @@ class MainActivity : AppCompatActivity() {
 
         linearImage?.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            ScreenUtils.heightPx / 2
+            ZibeApp.ScreenUtils.heightPx / 2
         )
 
         tvUser?.text = user.displayName
@@ -361,9 +364,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performLogout() {
-        setUserOffline(applicationContext, user.uid)
+        UserRepository.setUserOffline(applicationContext, user.uid)
         viewModel.logout() // Delega lógica a VM
-        EditProfileFragment.deleteProfilePreferences(this)
+        EditProfileFragment.Companion.deleteProfilePreferences(this)
         stopLocationUpdates()
 
         // Navegación final
@@ -399,7 +402,7 @@ class MainActivity : AppCompatActivity() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { updateLocationUI(it) }
+                result.lastLocation?.let { UserRepository.updateLocationUI(it) }
             }
         }
         ensureLocationSettingsAndStart()
@@ -417,7 +420,7 @@ class MainActivity : AppCompatActivity() {
             ?.addOnSuccessListener { startLocationUpdates() }
             ?.addOnFailureListener { e ->
                 if (e is ResolvableApiException) {
-                    try { e.startResolutionForResult(this, 0x1) } catch (_: SendIntentException) {}
+                    try { e.startResolutionForResult(this, 0x1) } catch (_: IntentSender.SendIntentException) {}
                 }
             }
     }
@@ -449,7 +452,7 @@ class MainActivity : AppCompatActivity() {
         refresh?.setOnClickListener { onRefresh() }
         filter?.setOnClickListener { onFilterClick() }
         val colorRes = if (filterActive) R.color.accent else R.color.blanco
-        filter?.setColorFilter(getColorCompat(colorRes), android.graphics.PorterDuff.Mode.SRC_IN)
+        filter?.setColorFilter(getColorCompat(colorRes), PorterDuff.Mode.SRC_IN)
     }
 
     private fun getColorCompat(resId: Int) = ContextCompat.getColor(this, resId)
@@ -526,13 +529,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        setUserOnline(applicationContext, user.uid)
+        UserRepository.setUserOnline(applicationContext, user.uid)
         startLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
-        setUserOffline(applicationContext, user.uid)
+        UserRepository.setUserOffline(applicationContext, user.uid)
         stopLocationUpdates()
     }
 

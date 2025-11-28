@@ -75,7 +75,7 @@
 
         <activity
             android:name=".ChatActivity"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName=".ui.main.MainActivity"
             android:theme="@style/AppThemeChat"
             android:windowSoftInputMode="adjustResize" />
 
@@ -90,7 +90,7 @@
             android:theme="@style/AppTheme.MainActivity" />
         <activity
             android:name=".PerfilActivity"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName=".ui.main.MainActivity"
             android:theme="@style/AppTheme.MainActivity"
             android:windowSoftInputMode="adjustPan" />
 
@@ -126,7 +126,7 @@
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.main.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.MainActivity" />
 

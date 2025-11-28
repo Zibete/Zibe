@@ -35,7 +35,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.MainActivity
+import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
 import com.zibete.proyecto1.data.UserPreferencesRepository

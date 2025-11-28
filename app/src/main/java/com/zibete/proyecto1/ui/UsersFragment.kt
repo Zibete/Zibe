@@ -28,7 +28,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatActivity
 import com.zibete.proyecto1.FixedSwipeRefreshLayout
-import com.zibete.proyecto1.MainActivity
+import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers

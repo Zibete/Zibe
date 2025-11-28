@@ -8,30 +8,26 @@
         android:icon="@drawable/ic_home_black_24dp"
         android:title="@string/inicio"
         android:titleCondensed="@string/inicio"
-        android:contentDescription="@string/inicio"
-        android:onClick="index" />
+        android:contentDescription="@string/inicio" />
 
     <item
         android:id="@+id/editPerfil"
         android:icon="@drawable/fui_ic_anonymous_white_24dp"
         android:title="@string/menu_edit"
         android:titleCondensed="@string/menu_edit"
-        android:contentDescription="@string/menu_edit"
-        android:onClick="editProfile" />
+        android:contentDescription="@string/menu_edit" />
 
     <item
         android:id="@+id/delete_account"
         android:icon="@drawable/ic_baseline_settings_24"
         android:title="@string/ajustes"
         android:titleCondensed="@string/ajustes"
-        android:contentDescription="@string/ajustes"
-        android:onClick="settings" />
+        android:contentDescription="@string/ajustes"/>
 
     <item
         android:id="@+id/logout"
         android:icon="@drawable/ic_baseline_exit_to_app_24"
         android:title="@string/Logout"
         android:titleCondensed="@string/Logout"
-        android:contentDescription="@string/Logout"
-        android:onClick="logout" />
+        android:contentDescription="@string/Logout"/>
 </menu>
