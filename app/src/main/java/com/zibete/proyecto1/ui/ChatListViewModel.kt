@@ -21,7 +21,7 @@ class ChatListViewModel @Inject constructor(
         viewModelScope.launch {
             when (action) {
                 ChatMenuAction.MarkAsReadChat -> userRepository.markAsReadChat(chatWithId, chatType)
-                ChatMenuAction.SilentUser -> userRepository.silentUser(chatWithId)
+                ChatMenuAction.SilentUser -> userRepository.toggleNotifications(chatWithId)
                 ChatMenuAction.BlockUser -> userRepository.blockUser(chatWithId)
                 ChatMenuAction.UnhideChat -> userRepository.unHideChat(chatWithId)
                 ChatMenuAction.DeleteChat -> userRepository.deleteChat(chatWithId)

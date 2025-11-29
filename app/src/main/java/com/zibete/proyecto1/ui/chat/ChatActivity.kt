@@ -497,28 +497,26 @@ class ChatActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val view = findViewById<View>(android.R.id.content)
         when (item.itemId) {
             android.R.id.home -> {
                 onBackPressedDispatcher.onBackPressed()
                 return true
             }
-            R.id.action_silent -> {
-                userRepository.silent(nameUserFinal, idUserFinal, refChatWith)
-                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
-            }
-            R.id.action_notif -> {
-                userRepository.silent(nameUserFinal, idUserFinal, refChatWith)
-                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+            R.id.action_silent, R.id.action_notif -> {  // ← mismo método para ambos!
+                chatViewModel.toggleNotifications()
+                return true
             }
             R.id.action_bloq -> {
-                userRepository.setBlockUser(this, nameUserFinal, idUserFinal, view, refChatWith)
+                chatViewModel.blockUser()
+                return true
             }
             R.id.action_desbloq -> {
-                userRepository.setUnBlockUser(this, idUserFinal, nameUserFinal, view, refChatWith)
+                chatViewModel.unblockUser()
+                return true
             }
             R.id.action_delete -> {
-                ChatUtils.deleteChat(this, idUserFinal!!, nameUserFinal, view, refChatWith!!)
+                chatViewModel.deleteChat()
+                return true
             }
         }
         return super.onOptionsItemSelected(item)

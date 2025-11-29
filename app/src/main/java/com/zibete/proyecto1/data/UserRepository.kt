@@ -1,12 +1,9 @@
 package com.zibete.proyecto1.data
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Typeface
 import android.location.Location
 import android.view.View
 import android.widget.ImageView
-import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -153,54 +150,95 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun toggleNotifications(chatWithId: String, chatType: String, nameUser: String) {
+        val chatRef = firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child(chatType)
+            .child(chatWithId)
 
+        val snapshot = chatRef.get().await()
 
-    fun silent(nameUser: String?, idUser: String?, type: String?) {
-        firebaseRefsContainer.refDatos.child(myUid).child(type!!).child(idUser!!)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    if (dataSnapshot.exists()) {
-                        val state =
-                            dataSnapshot.child("estado").getValue(String::class.java)
-                        val photo =
-                            dataSnapshot.child("wUserPhoto").getValue(String::class.java)
+        if (!snapshot.exists()) {
+            // Si no existe el nodo → no hacemos nada (o crear uno por defecto)
+            val c = Calendar.getInstance()
+            val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
+            val newChat = ChatWith(
+                "",
+                dateFormat3.format(c.getTime()),
+                null,
+                "",
+                chatWithId,
+                nameUser,
+                Constants.EMPTY,
+                "silent",
+                0,
+                1
+            )
+            chatRef.setValue(newChat).await()
+            return
+        }
 
-                        if (photo == Constants.EMPTY) {
-                            dataSnapshot.ref.removeValue()
-                        } else {
-                            if (state == "silent") {
-                                dataSnapshot.ref.child("estado").setValue(type)
-                            } else {
-                                dataSnapshot.ref.child("estado").setValue("silent")
-                            }
-                        }
-                    } else {
-                        newChatWith(dataSnapshot, idUser, nameUser!!, "silent")
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {
-                }
-            })
+        val currentState = snapshot.child("estado").getValue(String::class.java)
+        val photo = snapshot.child("wUserPhoto").getValue(String::class.java).orEmpty()
+
+        // Si la foto está vacía → eliminar nodo: cuando un usuario borraba su cuenta o se eliminaba del chat,
+        // no se borraba el nodo completo en /Datos/otroUid/CHATWITH/miUid
+        if (photo == Constants.EMPTY) {
+            chatRef.removeValue().await()
+            return
+        }
+
+        // Toggle: "silent" ↔ chatType (ej: "CHATWITH")
+        val newState = if (currentState == "silent") chatType else "silent"
+        chatRef.child("estado").setValue(newState).await()
     }
 
-    fun newChatWith(dataSnapshot: DataSnapshot, idUser: String, nameUser: String, state: String) {
-        val c = Calendar.getInstance()
-        val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
-        val newChat = ChatWith(
-            "",
-            dateFormat3.format(c.getTime()),
-            null,
-            "",
-            idUser,
-            nameUser,
-            Constants.EMPTY,
-            state,
-            0,
-            1
-        )
-
-        dataSnapshot.ref.setValue(newChat)
-    }
+//    fun silent(nameUser: String?, idUser: String?, type: String?) {
+//        firebaseRefsContainer.refDatos.child(myUid).child(type!!).child(idUser!!)
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(dataSnapshot: DataSnapshot) {
+//                    if (dataSnapshot.exists()) {
+//                        val state =
+//                            dataSnapshot.child("estado").getValue(String::class.java)
+//                        val photo =
+//                            dataSnapshot.child("wUserPhoto").getValue(String::class.java)
+//
+//                        if (photo == Constants.EMPTY) {
+//                            dataSnapshot.ref.removeValue()
+//                        } else {
+//                            if (state == "silent") {
+//                                dataSnapshot.ref.child("estado").setValue(type)
+//                            } else {
+//                                dataSnapshot.ref.child("estado").setValue("silent")
+//                            }
+//                        }
+//                    } else {
+//                        newChatWith(dataSnapshot, idUser, nameUser!!, "silent")
+//                    }
+//                }
+//                override fun onCancelled(error: DatabaseError) {
+//                }
+//            })
+//    }
+//
+//    fun newChatWith(dataSnapshot: DataSnapshot, idUser: String, nameUser: String, state: String) {
+//        val c = Calendar.getInstance()
+//        val dateFormat3 = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
+//        val newChat = ChatWith(
+//            "",
+//            dateFormat3.format(c.getTime()),
+//            null,
+//            "",
+//            idUser,
+//            nameUser,
+//            Constants.EMPTY,
+//            state,
+//            0,
+//            1
+//        )
+//
+//        dataSnapshot.ref.setValue(newChat)
+//    }
 
 
     fun setBlockUser(

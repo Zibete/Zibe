@@ -300,6 +300,25 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun toggleNotifications() {
+        viewModelScope.launch {
+            val currentName = (headerState.value as? ChatHeaderState.Loaded)?.name
+                ?: return@launch
+
+            userRepository.toggleNotifications(
+                chatWithId = targetUserId ?: return@launch,
+                chatType = _chatRefs.value?.refChatWith ?: return@launch,
+                nameUser = currentName
+            )
+        }
+    }
+
+    // Opcional: helper para saber el estado actual (si querés mensaje preciso)
+    private fun isCurrentlySilent(): Boolean {
+        val current = headerState.value as? ChatHeaderState.Loaded ?: return false
+        return current.status == "silent" // o podés guardar el estado en una variable
+    }
+
     fun setBlockUser(view: View) {
         // 🛑 Lógica de UserRepository.setBlockUser(...)
         viewModelScope.launch {
