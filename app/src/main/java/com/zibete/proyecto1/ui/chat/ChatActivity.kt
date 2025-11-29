@@ -184,7 +184,7 @@ class ChatActivity : AppCompatActivity() {
 //                                    .placeholder(R.drawable.user_default)
                                     .into(binding.userImage)
                                 if (state.shouldCloseChat) finish()
-                                if (state.isBlocked) showBlockedUI()
+//                                if (state.isBlocked) showBlockedUI()
                             }
                         }
                     }
@@ -1164,14 +1164,14 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        userRepository.stateUser(
-            applicationContext,
-            idUserFinal!!,
-            binding.iconConnected,
-            binding.iconDisconnected,
-            binding.tvStatus,
-            refChatWith
-        )
+//        userRepository.stateUser(
+//            applicationContext,
+//            idUserFinal!!,
+//            binding.iconConnected,
+//            binding.iconDisconnected,
+//            binding.tvStatus,
+//            refChatWith
+//        )
 
         firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {

@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -263,21 +264,24 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
         return true
     }
 
+    private val chatListViewModel: ChatListViewModel by viewModels()
+
     private fun runItemSelected(
         item: MenuItem,
         type: String,
         idUser: String,
         nameUser: String
     ) {
-        val view = requireActivity().findViewById<View>(R.id.content)
-
-        when (item.itemId) {
-            1 -> UserRepository.setNoLeido(idUser, type)
-            2 -> UserRepository.silent(nameUser, idUser, type)
-            3 -> UserRepository.setBlockUser(requireContext(), nameUser, idUser, view, type)
-            4 -> ChatUtils.unhiddenChat(requireContext(), idUser, nameUser, view, type)
-            5 -> ChatUtils.deleteChat(requireContext(), idUser, nameUser, view, type)
+        val action = when (item.itemId) {
+            1 -> ChatMenuAction.MarkAsReadChat
+            2 -> ChatMenuAction.SilentUser
+            3 -> ChatMenuAction.BlockUser
+            4 -> ChatMenuAction.UnhideChat
+            5 -> ChatMenuAction.DeleteChat
+            else -> return
         }
+
+        chatListViewModel.onChatItemMenuAction(action, idUser, type, nameUser)
     }
 
     // ---------- SearchView ----------

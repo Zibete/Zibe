@@ -329,5 +329,5 @@ class ChatViewModel @Inject constructor(
 
     // Online / Offline
     fun setUserOnline() = viewModelScope.launch { userRepository.setUserOnline() }
-    fun setUserOffline() = viewModelScope.launch { userRepository.setUserOffline() }
+    fun setUserOffline() = viewModelScope.launch { userRepository.setUserLastSeen() }
 }

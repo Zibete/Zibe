@@ -35,44 +35,43 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 
-
-
-
 // Clase que maneja la comunicación con Firebase para datos de usuario
 // (repository = repositorio → capa de acceso a datos)
 @Singleton
 class UserRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val sessionManager: UserSessionManager,
+    private val userSessionManager: UserSessionManager,
     @ApplicationContext private val context: Context
 ) {
+
+    private val myUid = userSessionManager.uid
 
     suspend fun setUserOnline() = withContext(Dispatchers.IO) {
         val state = State(context.getString(R.string.online), "", "")
 
-        firebaseRefsContainer.refDatos.child(sessionManager.uid).child("Estado").setValue(state).await()
-        firebaseRefsContainer.refCuentas.child(sessionManager.uid).child("estado").setValue(true).await()
+        firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
+        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true).await()
     }
 
-    suspend fun setUserOffline() = withContext(Dispatchers.IO) {
+    suspend fun setUserLastSeen() = withContext(Dispatchers.IO) {
         val c = Calendar.getInstance()
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(c.time)
         val date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(c.time)
 
         val state = State(context.getString(R.string.ultVez), date, time)
 
-        firebaseRefsContainer.refDatos.child(sessionManager.uid).child("Estado").setValue(state).await()
-        firebaseRefsContainer.refCuentas.child(sessionManager.uid).child("estado").setValue(false).await()
+        firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
+        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(false).await()
     }
 
 
     // ------------------------------------------------------------
-
-
+    // Convierte un DataSnapshot de Firebase en un UserStatus
     private fun DataSnapshot.toUserStatus(
         myUid: String,
         chatType: String? = null
     ): UserStatus {
+        // No existe nodo "Estado"
         if (!exists()) return UserStatus.Offline
 
         val estado = child("estado").getValue(String::class.java)
@@ -80,7 +79,7 @@ class UserRepository @Inject constructor(
         val hora = child("hora").getValue(String::class.java)
 
         // Online simple
-        if (estado == "conectado") return UserStatus.Online
+        if (estado == context.getString(R.string.online)) return UserStatus.Online
 
         // Escribiendo / Grabando (y solo si es conmigo)
         if (estado == context.getString(R.string.escribiendo) ||
@@ -104,7 +103,7 @@ class UserRepository @Inject constructor(
         return UserStatus.LastSeen("Últ. vez $lastSeenText")
     }
 
-
+    // Observa los cambios en el estado de un usuario y emite UserStatus
     fun observeUserStatus(
         userId: String,
         chatType: String? = null
@@ -114,7 +113,7 @@ class UserRepository @Inject constructor(
             .child("Estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    trySend(snapshot.toUserStatus(sessionManager.uid, chatType))
+                    trySend(snapshot.toUserStatus(myUid, chatType))
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -129,176 +128,35 @@ class UserRepository @Inject constructor(
     }.flowOn(Dispatchers.IO)
 
 
+    suspend fun markAsReadChat(chatWithId: String, chatType: String) {
+        val chatNode = firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child(chatType)        // ← "CHATWITH" o "CHATWITHUNKNOWN"
+            .child(chatWithId)      // ← el ID del otro usuario
+        val noVistoRef = chatNode.child("noVisto")
+        val totalNoLeidosRef = firebaseRefsContainer.refDatos.child(myUid).child("ChatList").child("msgNoLeidos")
 
-    fun stateUser(
-        context: Context,
-        userId: String,  // id_user → usuario a mostrar
-        iconConnected: ImageView,  // icon_conectado
-        iconDisconnected: ImageView,  // icon_desconectado
-        tvStatus: TextView,  // tv_estado
-        type: String? // type → ej. "chatWith"
-    ) {
-        firebaseRefsContainer.refDatos.child(userId).child("Estado").addValueEventListener(object :
-            ValueEventListener {
-            @SuppressLint("SetTextI18n")
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    val c = Calendar.getInstance()
-                    val dateFormat = SimpleDateFormat("dd/MM/yyyy")
+        // Leer ambos valores en paralelo
+        val noVistoSnap = noVistoRef.get().await()
+        val totalNoLeidosSnap = totalNoLeidosRef.get().await()
 
-                    val estado = dataSnapshot.child("estado")
-                        .getValue(String::class.java) // estado → "conectado", "escribiendo", etc.
-                    val fecha = dataSnapshot.child("fecha")
-                        .getValue(String::class.java) // fecha última vez
-                    val hora = dataSnapshot.child("hora")
-                        .getValue(String::class.java) // hora última vez
+        val currentNoVisto = noVistoSnap.getValue(Int::class.java) ?: 0
+        val currentTotal = totalNoLeidosSnap.getValue(Int::class.java) ?: 0
 
-                    if (estado != null && estado == context.getString(R.string.online)) {
-                        // ✅ Conectado (online)
-                        iconConnected.visibility = View.VISIBLE
-                        iconDisconnected.visibility = View.GONE
-                        tvStatus.text = context.getString(R.string.online) // "en línea"
-                        tvStatus.setTypeface(null, Typeface.NORMAL)
-                        tvStatus.setTextColor(context.resources.getColor(R.color.colorClaro))
-                    } else {
-                        // ⚠️ Puede estar escribiendo / grabando / desconectado
-
-                        if (estado != null &&
-                            (estado == context.getString(R.string.escribiendo) ||
-                                    estado == context.getString(R.string.grabando))
-                        ) {
-                            // 📝 Escribiendo / 🎙 Grabando
-                            // Tenemos que chequear si el chat actual es conmigo
-
-                            firebaseRefsContainer.refDatos.child(userId)
-                                .child("ChatList")
-                                .child("Actual")
-                                .addValueEventListener(object : ValueEventListener {
-                                    override fun onDataChange(dsChat: DataSnapshot) {
-                                        if (dsChat.exists()) {
-                                            val currentChat =
-                                                dsChat.getValue(String::class.java)
-//                                            // usuario actual logueado
-//                                            val myUid: String? = if (auth.currentUser != null)
-//                                                auth.currentUser?.uid
-//                                            else
-//                                                null
-
-                                            // compara: if (Actual == userLogged + type)
-                                            if (currentChat != null && currentChat == sessionManager.user.uid + type) {
-                                                // ✅ Mostrar “escribiendo” o “grabando”
-
-                                                iconConnected.visibility = View.VISIBLE
-                                                iconDisconnected.visibility = View.GONE
-                                                tvStatus.text = estado
-                                                tvStatus.setTypeface(null, Typeface.ITALIC)
-                                                tvStatus.setTextColor(
-                                                    context.resources.getColor(R.color.accent)
-                                                )
-                                            } else {
-                                                // está escribiendo pero NO conmigo → mostrar online normal
-                                                iconConnected.visibility = View.VISIBLE
-                                                iconDisconnected.visibility = View.GONE
-                                                tvStatus.text = context.getString(R.string.online)
-                                                tvStatus.setTypeface(null, Typeface.NORMAL)
-                                                tvStatus.setTextColor(
-                                                    context.resources
-                                                        .getColor(R.color.colorClaro)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    override fun onCancelled(error: DatabaseError) {
-                                        // opcional: log
-                                    }
-                                })
-                        } else {
-                            // ⏱ Última vez conectado
-                            iconConnected.visibility = View.GONE
-                            iconDisconnected.visibility = View.VISIBLE
-                            tvStatus.setTypeface(null, Typeface.NORMAL)
-                            tvStatus.setTextColor(
-                                context.resources.getColor(R.color.colorClaro)
-                            )
-
-                            if (fecha != null && fecha == dateFormat.format(c.getTime())) {
-                                // hoy
-                                tvStatus.text = context.getString(R.string.ultVez) + " " +
-                                        context.getString(R.string.today) + " " +
-                                        context.getString(R.string.a_las) + " " +
-                                        hora
-                            } else {
-                                // quizá ayer
-                                val calendar = Calendar.getInstance()
-                                calendar.add(Calendar.DATE, -1)
-
-                                if (fecha != null && fecha == dateFormat.format(calendar.getTime())) {
-                                    tvStatus.text = context.getString(R.string.ultVez) + " " +
-                                            context.getString(R.string.yesterday) + " " +
-                                            context.getString(R.string.a_las) + " " +
-                                            hora
-                                } else {
-                                    // fecha cualquiera
-                                    tvStatus.text = context.getString(R.string.ultVez) + " " +
-                                            fecha + " " +
-                                            context.getString(R.string.a_las) + " " +
-                                            hora
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // no hay nodo "Estado" → mostrar desconectado
-                    iconConnected.visibility = View.GONE
-                    iconDisconnected.visibility = View.VISIBLE
-                    tvStatus.text = context.getString(R.string.offline) // "disconnected" → desconectado
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // opcional: log
-            }
-        })
+        // Toggle: si tenía mensajes no leídos → marcar como leído (0), sino → +1
+        if (currentNoVisto > 0) {
+            noVistoRef.setValue(0).await()
+            totalNoLeidosRef.setValue(currentTotal - currentNoVisto).await()
+        } else {
+            noVistoRef.setValue(1).await()
+            totalNoLeidosRef.setValue(currentTotal + 1).await()
+        }
     }
 
-    fun setNoLeido(idUser: String, type: String) {
-        firebaseRefsContainer.refDatos.child(sessionManager.uid).child(type).child(idUser).child("noVisto")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(dataVistos: DataSnapshot) {
-                    if (dataVistos.exists()) {
-                        val noVistos = dataVistos.getValue(Int::class.java)
-
-                        firebaseRefsContainer.refDatos.child(sessionManager.uid).child("ChatList").child("msgNoLeidos")
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(dataLeidos: DataSnapshot) {
-                                    if (dataLeidos.exists()) {
-                                        val noLeidos = dataLeidos.getValue<Int?>(Int::class.java)
-                                        val count = noLeidos!! - noVistos!!
-                                        if ((noVistos > 0)) {
-                                            dataVistos.ref.setValue(0)
-                                            dataLeidos.ref.setValue(count)
-                                        } else {
-                                            dataVistos.ref.setValue(1)
-                                            dataLeidos.ref.setValue(noLeidos + 1)
-                                        }
-                                    }
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                }
-                            })
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                }
-            })
-    }
 
 
     fun silent(nameUser: String?, idUser: String?, type: String?) {
-        firebaseRefsContainer.refDatos.child(sessionManager.uid).child(type!!).child(idUser!!)
+        firebaseRefsContainer.refDatos.child(myUid).child(type!!).child(idUser!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
@@ -359,7 +217,7 @@ class UserRepository @Inject constructor(
             title = "Bloquear",
             message = "¿Desea bloquear a $nameUser?",
             onConfirm = {
-                firebaseRefsContainer.refDatos.child(sessionManager.uid).child(type).child(idUser)
+                firebaseRefsContainer.refDatos.child(myUid).child(type).child(idUser)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             if (dataSnapshot.exists()) {
@@ -400,7 +258,7 @@ class UserRepository @Inject constructor(
             title = "Desbloquear",
             message = "¿Desea desbloquear a $nameUser?",
             onConfirm = {
-                firebaseRefsContainer.refDatos.child(sessionManager.uid).child(type).child(idUser)
+                firebaseRefsContainer.refDatos.child(myUid).child(type).child(idUser)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
                             val photo = dataSnapshot.child("wUserPhoto").getValue(String::class.java)
@@ -429,7 +287,7 @@ class UserRepository @Inject constructor(
         profile_bloc: ImageView
     ) { // bindBlockStatus = vincular estado de bloqueo
 
-        firebaseRefsContainer.refDatos.child(sessionManager.uid).child(Constants.CHATWITH).child(user_id).child("estado")
+        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH).child(user_id).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.getValue<String?>(String::class.java) == "bloq") {
@@ -455,12 +313,12 @@ class UserRepository @Inject constructor(
         latitude = mLastLocation.latitude
         longitude = mLastLocation.longitude
 
-        firebaseRefsContainer.refCuentas.child(sessionManager.uid).addListenerForSingleValueEvent(object :
+        firebaseRefsContainer.refCuentas.child(myUid).addListenerForSingleValueEvent(object :
             ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    firebaseRefsContainer.refCuentas.child(sessionManager.uid).child("latitud").setValue(latitude)
-                    firebaseRefsContainer.refCuentas.child(sessionManager.uid).child("longitud").setValue(
+                    firebaseRefsContainer.refCuentas.child(myUid).child("latitud").setValue(latitude)
+                    firebaseRefsContainer.refCuentas.child(myUid).child("longitud").setValue(
                         longitude
                     )
                 }
