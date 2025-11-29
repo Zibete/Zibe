@@ -12,7 +12,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -31,8 +31,13 @@ class UserSessionManager @Inject constructor(
 ) {
 
     // Propiedad calculada: Acceso seguro al usuario (mantiene la lógica "crash-si-no-hay")
-    private val user: FirebaseUser
-        get() = firebaseAuth.currentUser!!
+    val user: FirebaseUser
+        get() = checkNotNull(firebaseAuth.currentUser) {
+        "User must be logged in to access this property"
+    }
+
+    val uid: String
+        get() = user.uid
 
     /**
      * Lógica de abandono de grupo (Solo manipulación de datos y Firebase).

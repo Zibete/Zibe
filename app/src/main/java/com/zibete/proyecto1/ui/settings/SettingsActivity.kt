@@ -1,4 +1,4 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.settings
 
 import android.app.AlertDialog
 import android.app.ProgressDialog
@@ -17,6 +17,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.view.isGone
@@ -30,10 +31,14 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.storage.FirebaseStorage
+import com.zibete.proyecto1.ChatGroupFragment
+import com.zibete.proyecto1.PageAdapterGroup
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ReportActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
@@ -41,21 +46,24 @@ import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.UserMessageUtils
-import com.zibete.proyecto1.utils.UserRepository.setUserOffline
-import com.zibete.proyecto1.utils.UserRepository.setUserOnline
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlin.getValue
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userSessionManager: UserSessionManager
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var firebaseAuth: FirebaseAuth
+    @Inject
+    lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject
+    lateinit var userSessionManager: UserSessionManager
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject
+    lateinit var userRepository: UserRepository
 
-    private val user: FirebaseUser
-        get() = firebaseAuth.currentUser!!
+    private val settingsViewModel: SettingsViewModel by viewModels()
+
 
     // UI
     private lateinit var toolbar: MaterialToolbar
@@ -208,7 +216,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        val email = user.email.orEmpty()
+        val email = userSessionManager.user.email.orEmpty()
         myEmail.text = if (provider == null) {
             email
         } else {
@@ -496,18 +504,17 @@ class SettingsActivity : AppCompatActivity() {
 
         userSessionManager.performExitGroupDataCleanup()
 
-        PageAdapterGroup.valueEventListenerTitle?.let {
+        PageAdapterGroup.Companion.valueEventListenerTitle?.let {
             firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
                 .removeEventListener(it)
         }
 
-        ChatGroupFragment.listenerGroupChat?.let {
+        ChatGroupFragment.Companion.listenerGroupChat?.let {
             firebaseRefsContainer.refGroupChat.child(userPreferencesRepository.groupName)
                 .removeEventListener(it)
         }
 
-        // Reset estado local
-        userPreferencesRepository.resetGroupState()
+
 
 //        MainActivity.layoutSettings?.visibility = View.GONE
 
@@ -518,7 +525,7 @@ class SettingsActivity : AppCompatActivity() {
             .replace(R.id.nav_host_fragment, newFragment)
             .commit()
 
-        toolbar.setTitle(R.string.menu_grupos)
+        toolbar.setTitle(R.string.menu_groups)
     }
 
     fun logOut(deleteUser: String?) {
@@ -529,7 +536,7 @@ class SettingsActivity : AppCompatActivity() {
 //                .removeEventListener(it)
 //        }
 
-        EditProfileFragment.deleteProfilePreferences(this)
+        EditProfileFragment.Companion.deleteProfilePreferences(this)
 
         userSessionManager.logOutCleanup(deleteUser)
     }
@@ -548,12 +555,12 @@ class SettingsActivity : AppCompatActivity() {
 
         when {
             provider == null && password != null -> {
-                val credential = EmailAuthProvider.getCredential(user.email!!, password)
+                val credential = EmailAuthProvider.getCredential(userSessionManager.user.email!!, password)
                 reAuthenticate(newEmail, newPassword, deleteUser, credential)
             }
 
             provider == "Facebook" -> {
-                val token = AccessToken.getCurrentAccessToken()
+                val token = AccessToken.Companion.getCurrentAccessToken()
                 if (token != null) {
                     val credential = FacebookAuthProvider.getCredential(token.token)
                     reAuthenticate(newEmail, newPassword, deleteUser, credential)
@@ -577,7 +584,7 @@ class SettingsActivity : AppCompatActivity() {
         deleteUser: String?,
         credential: AuthCredential
     ) {
-        user.reauthenticate(credential)
+        userSessionManager.user.reauthenticate(credential)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     progress.dismiss()
@@ -620,19 +627,19 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean("deleteFirebaseAccount", true)
         }
 
-        firebaseRefsContainer.refDatos.child(user.uid).removeValue()
-        firebaseRefsContainer.refCuentas.child(user.uid).removeValue()
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).removeValue()
+        firebaseRefsContainer.refCuentas.child(userSessionManager.uid).removeValue()
 
         FirebaseStorage.getInstance().reference
-            .child("Users/imgPerfil/${user.uid}.jpg")
+            .child("Users/imgPerfil/${userSessionManager.uid}.jpg")
             .delete()
 
         logOut(deleteUser)
-        user.delete()
+        userSessionManager.user.delete()
     }
 
     private fun updatePassword(newPassword: String) {
-        user.updatePassword(newPassword)
+        userSessionManager.user.updatePassword(newPassword)
             .addOnCompleteListener { task ->
                 progress.dismiss()
                 if (task.isSuccessful) {
@@ -654,7 +661,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateEmail(newEmail: String) {
-        user!!.updateEmail(newEmail)
+        userSessionManager.user.updateEmail(newEmail)
             .addOnCompleteListener { task ->
                 progress.dismiss()
                 if (task.isSuccessful) {
@@ -704,12 +711,12 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        user?.uid?.let { setUserOffline(applicationContext, it) }
+        settingsViewModel.setUserOffline()
     }
 
     override fun onResume() {
         super.onResume()
-        user?.uid?.let { setUserOnline(applicationContext, it) }
+        settingsViewModel.setUserOnline()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

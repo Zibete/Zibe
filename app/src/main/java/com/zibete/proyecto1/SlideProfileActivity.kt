@@ -19,7 +19,7 @@ import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

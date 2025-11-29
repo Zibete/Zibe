@@ -20,6 +20,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterGroupUsers
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.UserGroup
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
 import dagger.hilt.android.AndroidEntryPoint

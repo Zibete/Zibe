@@ -15,7 +15,6 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -25,13 +24,15 @@ import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.GlassEffect
 import com.zibete.proyecto1.utils.ProfileUiBinder
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.utils.Utils
+import dagger.hilt.android.AndroidEntryPoint
 import eightbitlab.com.blurview.BlurView
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class AdapterUsers @Inject constructor(
     private val profileUiBinder: ProfileUiBinder,
     private val usersList: MutableList<Users>,
@@ -43,7 +44,6 @@ class AdapterUsers @Inject constructor(
     private val onListUpdated: () -> Unit              // Para notificar scroll o cambios
 ) : RecyclerView.Adapter<AdapterUsers.ViewHolderAdapter>(), Filterable {
 
-    private val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid
 
     // --------------------- Filtro --------------------- //
     override fun getFilter(): Filter = filterChats
@@ -74,10 +74,10 @@ class AdapterUsers @Inject constructor(
         val tvEdad: TextView = itemView.findViewById(R.id.tv_edad)
         val distance: TextView = itemView.findViewById(R.id.distance)
         val tvDesc: TextView = itemView.findViewById(R.id.tv_desc)
-        val tvEstado: TextView = itemView.findViewById(R.id.tv_estado)
+        val tvEstado: TextView = itemView.findViewById(R.id.`@+id/tv_status`)
         val imgUser: ImageView = itemView.findViewById(R.id.image_user1)
-        val iconConectado: ImageView = itemView.findViewById(R.id.icon_conectado)
-        val iconDesconectado: ImageView = itemView.findViewById(R.id.icon_desconectado)
+        val iconConectado: ImageView = itemView.findViewById(R.id.`@+id/icon_connected`)
+        val iconDesconectado: ImageView = itemView.findViewById(R.id.`@+id/icon_disconnected`)
         val goChat: ImageView = itemView.findViewById(R.id.goChat)
         val favoriteOn: ImageView = itemView.findViewById(R.id.favorite_on)
         val bloqMe: ImageView = itemView.findViewById(R.id.bloq_me)
@@ -133,7 +133,7 @@ class AdapterUsers @Inject constructor(
 
         // Distancia
         val dist = profileUiBinder.getDistanceMeters(
-            UserRepository.latitude,
+            userRepository.latitude,
             UserRepository.longitude,
             users.latitude,
             users.longitude

@@ -5,7 +5,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 class SlidePhotoActivity : AppCompatActivity() {

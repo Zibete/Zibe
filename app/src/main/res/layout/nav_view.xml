@@ -2,7 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/editPerfil"
+    android:id="@+id/edit_profile_button"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -12,7 +12,7 @@
 
     <!-- Imagen de perfil centrada -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/linear_image_user"
+        android:id="@+id/card_user_image"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:layout_marginBottom="12dp"
@@ -21,7 +21,7 @@
         app:strokeColor="@color/zibe_surface">
 
         <com.zibete.proyecto1.ui.ResizableImageView
-            android:id="@+id/image_user"
+            android:id="@+id/user_image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"/>
@@ -44,7 +44,7 @@
             android:paddingEnd="8dp">
 
             <TextView
-                android:id="@+id/tv_usuario"
+                android:id="@+id/tv_user_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_header_title"

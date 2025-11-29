@@ -13,7 +13,6 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
-import com.zibete.proyecto1.utils.FirebaseRefs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,13 +35,13 @@ sealed class MainUiEvent {
 }
 @HiltViewModel // 1. Marcamos el VM
 class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
-    private val repo: UserPreferencesRepository, // Hilt nos da esto gratis
-    private val auth: FirebaseAuth,
-    private val firebaseRefs: FirebaseRefsContainer //
+    private val userPreferencesRepository: UserPreferencesRepository, // Hilt nos da esto gratis
+    private val firebaseAuth: FirebaseAuth,
+    private val firebaseRefsContainer: FirebaseRefsContainer //
 ) : ViewModel() {
 
-    private val user: FirebaseUser?
-        get() = auth.currentUser
+    private val user: FirebaseUser
+        get() = firebaseAuth.currentUser!!
 
     private var groupMsgCountListener: ValueEventListener? = null
 
@@ -101,7 +100,7 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
 
     private fun listenToChatBadges() {
         val uid = user?.uid ?: return
-        firebaseRefs.refDatos.child(uid).child(Constants.CHATWITH)
+        firebaseRefsContainer.refDatos.child(uid).child(Constants.CHATWITH)
             .orderByChild("noVisto").startAt(1.0)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -119,11 +118,11 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         val uid = user?.uid ?: return
 
         // El listener solo debe estar activo si no estamos DENTRO de un chat de grupo.
-        if (repo.inGroup) return
+        if (userPreferencesRepository.inGroup) return
 
         // Apunta al nodo de grupos (asumiendo que quieres el total de mensajes/grupos)
         // Usamos el contenedor inyectado: firebaseRefs
-        val query = firebaseRefs.refGroupChat.parent
+        val query = firebaseRefsContainer.refGroupChat.parent
 
         groupMsgCountListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -147,13 +146,13 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         val totalMsgCount = snapshot.children.sumOf { it.childrenCount }
 
         // 2. Obtener los mensajes leídos por el usuario (Asíncrono 1)
-        firebaseRefs.refDatos.child(uid).child("ChatList").child("msgReadGroup") // 👈 firebaseRefs
+        firebaseRefsContainer.refDatos.child(uid).child("ChatList").child("msgReadGroup") // 👈 firebaseRefs
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot1: DataSnapshot) {
                     val leidos = dataSnapshot1.getValue(Int::class.java) ?: 0
 
                     // 3. Obtener los mensajes no leídos en chats desconocidos (Asíncrono 2)
-                    val queryUnreadUnknown = firebaseRefs.refDatos.child(uid) // 👈 firebaseRefs
+                    val queryUnreadUnknown = firebaseRefsContainer.refDatos.child(uid) // 👈 firebaseRefs
                         .child(CHATWITHUNKNOWN)
                         .orderByChild("noVisto")
                         .startAt(1.0)
@@ -187,7 +186,7 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         // Asegúrate de que los listeners de badges se eliminen
         groupMsgCountListener?.let {
             // Usamos firebaseRefs aquí también
-            firebaseRefs.refGroupChat.parent?.removeEventListener(it)
+            firebaseRefsContainer.refGroupChat.parent?.removeEventListener(it)
         }
         // ... cualquier otro listener que uses debe limpiarse aquí
     }
@@ -204,13 +203,13 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         }
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                firebaseRefs.refCuentas.child(uid).child("fcmToken").setValue(task.result)
+                firebaseRefsContainer.refCuentas.child(uid).child("fcmToken").setValue(task.result)
             }
         }
     }
 
     private fun checkSessionConflict(uid: String) {
-        val ref = firebaseRefs.refCuentas.child(uid).child("installId")
+        val ref = firebaseRefsContainer.refCuentas.child(uid).child("installId")
 
         installIdListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -231,17 +230,17 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         val uid = user?.uid ?: return
 
         // 1. Salir del grupo si corresponde
-        if (repo.inGroup) {
+        if (userPreferencesRepository.inGroup) {
             performExitGroupLogic()
         }
 
         // 2. Limpiar listeners
         installIdListener?.let {
-            firebaseRefs.refCuentas.child(uid).child("installId").removeEventListener(it)
+            firebaseRefsContainer.refCuentas.child(uid).child("installId").removeEventListener(it)
         }
 
         // 3. Limpiar Repo y Auth
-        repo.clearAllData()
+        userPreferencesRepository.clearAllData()
         FirebaseAuth.getInstance().signOut()
         // LoginManager.getInstance().logOut() // Facebook, requiere dependencia en gradle
 
@@ -249,35 +248,35 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
         _chatBadgeCount.value = 0
     }
 
-    fun exitGroup() {
-        if (!repo.inGroup) return
-        performExitGroupLogic()
-    }
+//    fun exitGroup() {
+//        if (!userPreferencesRepository.inGroup) return
+//        performExitGroupLogic()
+//    }
 
-    private fun performExitGroupLogic() {
-        val uid = user?.uid ?: return
-        val groupName = repo.groupName
-
-        // ... (Toda tu lógica de borrar nodos de firebaseRefs va aquí) ...
-
-        // Ejemplo simplificado de lo que tenías:
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())
-        val chatMsg = ChatsGroup(
-            "abandonó la sala",
-            dateFormat.format(Calendar.getInstance().time),
-            repo.userName,
-            uid,
-            0,
-            repo.userType
-        )
-        firebaseRefs.refGroupChat.child(groupName).push().setValue(chatMsg)
-        firebaseRefs.refGroupUsers.child(groupName).child(uid).removeValue()
-
-        // Actualizar Repo
-        repo.clearAllData() // O solo las keys de grupo
-
-        // Actualizar estado UI
-        _toolbarVisible.value = true // Reset toolbar
-    }
+//    private fun performExitGroupLogic() {
+//        val uid = user?.uid ?: return
+//        val groupName = userPreferencesRepository.groupName
+//
+//        // ... (Toda tu lógica de borrar nodos de firebaseRefs va aquí) ...
+//
+//        // Ejemplo simplificado de lo que tenías:
+//        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())
+//        val chatMsg = ChatsGroup(
+//            "abandonó la sala",
+//            dateFormat.format(Calendar.getInstance().time),
+//            userPreferencesRepository.userName,
+//            uid,
+//            0,
+//            userPreferencesRepository.userType
+//        )
+//        firebaseRefsContainer.refGroupChat.child(groupName).push().setValue(chatMsg)
+//        firebaseRefsContainer.refGroupUsers.child(groupName).child(uid).removeValue()
+//
+//        // Actualizar Repo
+//        userPreferencesRepository.clearAllData() // O solo las keys de grupo
+//
+//        // Actualizar estado UI
+//        _toolbarVisible.value = true // Reset toolbar
+//    }
 
 }

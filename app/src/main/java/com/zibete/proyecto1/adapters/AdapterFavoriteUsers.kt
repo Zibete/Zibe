@@ -34,8 +34,8 @@ class AdapterFavoriteUsers(
         val tvAge: TextView = itemView.findViewById(R.id.tv_favorite_age)
         val imgUser: ImageView = itemView.findViewById(R.id.image_favorite_user)
         val card: CardView = itemView.findViewById(R.id.cardview_favorites)
-        val iconOnline: ImageView = itemView.findViewById(R.id.icon_conectado)
-        val iconOffline: ImageView = itemView.findViewById(R.id.icon_desconectado)
+        val iconOnline: ImageView = itemView.findViewById(R.id.`@+id/icon_connected`)
+        val iconOffline: ImageView = itemView.findViewById(R.id.`@+id/icon_disconnected`)
         val container: LinearLayout = itemView.findViewById(R.id.linearCardFavorites)
     }
 
@@ -128,7 +128,7 @@ class AdapterFavoriteUsers(
                     }
 
                     val estado = snapshot.child("estado").getValue(String::class.java)
-                    if (estado == context.getString(R.string.conectado)) {
+                    if (estado == context.getString(R.string.online)) {
                         showOnline(holder)
                     } else {
                         showOffline(holder)

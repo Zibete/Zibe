@@ -14,9 +14,10 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.ChatActivity
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
 

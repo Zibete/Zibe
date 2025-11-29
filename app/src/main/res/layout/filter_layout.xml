@@ -18,7 +18,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/Enlinea"
+            android:text="@string/online_upercase"
             android:textSize="18sp"/>
 
         <androidx.appcompat.widget.SwitchCompat

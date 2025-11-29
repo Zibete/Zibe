@@ -53,7 +53,7 @@ class Notify : Service() {
         val estadoRef = refEstado
         if (estadoRef != null) {
             val cState = State(
-                getString(R.string.conectado),
+                getString(R.string.online),
                 "",
                 ""
             )

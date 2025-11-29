@@ -27,7 +27,7 @@ import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Collections

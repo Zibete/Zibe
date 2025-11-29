@@ -13,8 +13,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.FirebaseRefs.refZibe
-import com.zibete.proyecto1.utils.UserRepository.setUserOffline
-import com.zibete.proyecto1.utils.UserRepository.setUserOnline
+import com.zibete.proyecto1.data.UserRepository.setUserOffline
+import com.zibete.proyecto1.data.UserRepository.setUserOnline
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale

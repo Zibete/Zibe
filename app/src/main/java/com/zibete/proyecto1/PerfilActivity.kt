@@ -38,12 +38,13 @@ import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
-import com.zibete.proyecto1.utils.UserRepository
-import com.zibete.proyecto1.utils.UserRepository.silent
-import com.zibete.proyecto1.utils.UserRepository.setBlockUser
-import com.zibete.proyecto1.utils.UserRepository.setUnBlockUser
-import com.zibete.proyecto1.utils.UserRepository.setUserOffline
-import com.zibete.proyecto1.utils.UserRepository.setUserOnline
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserRepository.silent
+import com.zibete.proyecto1.data.UserRepository.setBlockUser
+import com.zibete.proyecto1.data.UserRepository.setUnBlockUser
+import com.zibete.proyecto1.data.UserRepository.setUserOffline
+import com.zibete.proyecto1.data.UserRepository.setUserOnline
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -132,9 +133,9 @@ class PerfilActivity : AppCompatActivity() {
         nameUser = findViewById(R.id.nameUser)
         desc = findViewById(R.id.desc)
         age = findViewById(R.id.edad)
-        tvEstado = findViewById(R.id.tv_estado)
-        iconConectado = findViewById(R.id.icon_conectado)
-        iconDesconectado = findViewById(R.id.icon_desconectado)
+        tvEstado = findViewById(R.id.`@+id/tv_status`)
+        iconConectado = findViewById(R.id.`@+id/icon_connected`)
+        iconDesconectado = findViewById(R.id.`@+id/icon_disconnected`)
         perfilFavoriteOff = findViewById(R.id.perfil_favorite_off)
         perfilFavoriteOn = findViewById(R.id.perfil_favorite_on)
         perfilBloq = findViewById(R.id.perfil_bloq)

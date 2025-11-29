@@ -138,7 +138,7 @@
 
                             <ImageView
                                 android:visibility="gone"
-                                android:id="@+id/icon_conectado"
+                                android:id="@+id/icon_connected"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:src="@drawable/ic_circle_online"
@@ -146,14 +146,14 @@
 
                             <ImageView
                                 android:visibility="gone"
-                                android:id="@+id/icon_desconectado"
+                                android:id="@+id/icon_disconnected"
                                 android:layout_width="wrap_content"
                                 android:layout_height="match_parent"
                                 android:src="@drawable/ic_circle_offline"
                                 android:layout_gravity="center_vertical"/>
                             <TextView
                                 android:layout_gravity="center_vertical"
-                                android:id="@+id/tv_estado"
+                                android:id="@+id/tv_status"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"/>
 

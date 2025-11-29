@@ -62,7 +62,7 @@
 
 
                         <ImageView
-                            android:id="@+id/icon_conectado"
+                            android:id="@+id/icon_connected"
                             android:layout_width="18dp"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -70,7 +70,7 @@
                             android:visibility="gone"/>
 
                         <ImageView
-                            android:id="@+id/icon_desconectado"
+                            android:id="@+id/icon_disconnected"
                             android:layout_width="18dp"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"

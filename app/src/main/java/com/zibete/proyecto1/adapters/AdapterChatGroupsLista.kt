@@ -26,7 +26,7 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import java.text.SimpleDateFormat
 import java.util.Calendar
 

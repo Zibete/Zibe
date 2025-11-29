@@ -39,7 +39,7 @@
                     android:gravity="center_vertical">
 
                     <de.hdodenhof.circleimageview.CircleImageView
-                        android:id="@+id/image_user"
+                        android:id="@+id/user_image"
                         android:layout_width="60dp"
                         android:layout_height="60dp"
                         android:padding="4dp" />
@@ -67,21 +67,21 @@
                             android:gravity="center_vertical">
 
                             <ImageView
-                                android:id="@+id/icon_conectado"
+                                android:id="@+id/icon_connected"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:src="@drawable/ic_circle_online"
                                 android:visibility="gone" />
 
                             <ImageView
-                                android:id="@+id/icon_desconectado"
+                                android:id="@+id/icon_disconnected"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:src="@drawable/ic_circle_offline"
                                 android:visibility="gone" />
 
                             <TextView
-                                android:id="@+id/tv_estado"
+                                android:id="@+id/tv_status"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
@@ -202,7 +202,7 @@
             android:visibility="gone">
 
             <Button
-                android:id="@+id/btnDesbloq"
+                android:id="@+id/button_unlock_user"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/marco_color_b_round"

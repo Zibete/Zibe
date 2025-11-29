@@ -35,7 +35,7 @@
 
     <item
         android:id="@+id/action_favorites"
-        android:title="@string/favoritos"
+        android:title="@string/menu_favorites"
         android:orderInCategory="100"
         app:showAsAction="never" />
 </menu>

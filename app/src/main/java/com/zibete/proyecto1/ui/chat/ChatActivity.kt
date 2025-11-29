@@ -1,4 +1,4 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.chat
 
 import android.Manifest
 import android.animation.Animator
@@ -10,6 +10,7 @@ import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -20,6 +21,7 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
@@ -29,18 +31,14 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.Chronometer
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -50,36 +48,40 @@ import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.airbnb.lottie.LottieAnimationView
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.utils.ChatUtils
 import dagger.hilt.android.AndroidEntryPoint
-import de.hdodenhof.circleimageview.CircleImageView
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
@@ -87,46 +89,17 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import kotlin.collections.plusAssign
 
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var firebaseAuth: FirebaseAuth
-
-    private val user: FirebaseUser
-        get() = firebaseAuth.currentUser!!
-
-    // --------- UI refs ----------
-    private lateinit var imgUser: CircleImageView
-    private lateinit var nameUser: TextView
-    private lateinit var tvCancelAudio: TextView
-    private lateinit var tvState: TextView
-    private lateinit var msg: EditText
-    private lateinit var btnCamera: ImageView
-    private lateinit var btnSendMsg: ImageView
-    private lateinit var btnMic: LottieAnimationView
-    private lateinit var linearPhotoView: LinearLayout
-    private lateinit var linearPhoto: LinearLayout
-    private lateinit var loadingPhoto: ProgressBar
-    private lateinit var loadingButton: ProgressBar
-    private lateinit var photo: ImageView
-    private lateinit var rvMsg: RecyclerView
-    private lateinit var buttonScrollBack: FloatingActionButton
-    private lateinit var buttonUnlockUser: Button
-    private lateinit var timer: Chronometer
-    private lateinit var trashAnimated: LottieAnimationView
-    private lateinit var trashAnimated2: LottieAnimationView
-    private lateinit var linearLottie: LinearLayout
-    private lateinit var layoutChat: LinearLayout
-    private lateinit var layoutBloq: LinearLayout
-
-    private lateinit var frameSendMsg: FrameLayout
-    private lateinit var iconConnected: ImageView
-    private lateinit var iconDisconnected: ImageView
-    private lateinit var cancelAction: ImageView
-    private lateinit var tvDate: TextView
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+    private val chatViewModel: ChatViewModel by viewModels()
+    private lateinit var binding: ActivityChatBinding
 
     // --------- Estado / datos ---------
     private var idUser: String? = null
@@ -170,7 +143,7 @@ class ChatActivity : AppCompatActivity() {
     private var refMyReceiverData: StorageReference? = null
     private var listenerChatUnknown: ValueEventListener? = null
 
-    private lateinit var iconVibrator: android.os.Vibrator
+    private lateinit var iconVibrator: Vibrator
 
     // --------- Crop / pickers / permisos ---------
     private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
@@ -187,7 +160,68 @@ class ChatActivity : AppCompatActivity() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_chat)
+        binding = ActivityChatBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+
+
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Header (nombre, foto, bloqueo, etc.)
+                launch {
+                    chatViewModel.headerState.collect { state ->
+                        when (state) {
+                            ChatHeaderState.Loading -> {
+                                binding.nameUser.text = getString(R.string.cargando)
+                                binding.tvStatus.text = getString(R.string.offline)
+                            }
+                            is ChatHeaderState.Loaded -> {
+                                binding.nameUser.text = state.name
+                                binding.tvStatus.text = state.status
+                                Glide.with(this@ChatActivity)
+                                    .load(state.photoUrl)
+//                                    .placeholder(R.drawable.user_default)
+                                    .into(binding.userImage)
+                                if (state.shouldCloseChat) finish()
+                                if (state.isBlocked) showBlockedUI()
+                            }
+                        }
+                    }
+                }
+
+                // Estado online/escribiendo (mismo repeatOnLifecycle)
+                launch {
+                    chatViewModel.userStatus.collect { status ->
+                        when (status) {
+                            is UserStatus.Online -> {
+                                binding.iconConnected.isVisible = true
+                                binding.iconDisconnected.isVisible = false
+                                binding.tvStatus.text = getString(R.string.online)
+                                binding.tvStatus.setTypeface(null, Typeface.NORMAL)
+                            }
+                            is UserStatus.TypingOrRecording -> {
+                                binding.iconConnected.isVisible = true
+                                binding.iconDisconnected.isVisible = false
+                                binding.tvStatus.text = status.text
+                                binding.tvStatus.setTypeface(null, Typeface.ITALIC)
+                            }
+                            is UserStatus.LastSeen -> {
+                                binding.iconConnected.isVisible = false
+                                binding.iconDisconnected.isVisible = true
+                                binding.tvStatus.text = status.text
+                            }
+                            is UserStatus.Offline -> {
+                                binding.iconDisconnected.isVisible = true
+                                binding.iconConnected.isVisible = false
+                                binding.tvStatus.text = getString(R.string.offline)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
         // --- toolbar y notifs ---
         val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
@@ -196,70 +230,42 @@ class ChatActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
 
-        // --- bindViews ---
-        imgUser = findViewById(R.id.image_user)
-        nameUser = findViewById(R.id.nameUser)
-        tvState = findViewById(R.id.tv_estado)
-        msg = findViewById(R.id.msg)
-        tvDate = findViewById(R.id.tv_date)
-        btnCamera = findViewById(R.id.btnCamera)
-        btnSendMsg = findViewById(R.id.btnSendMsg)
-        btnMic = findViewById(R.id.btnMic)
-        linearPhotoView = findViewById(R.id.linear_photo_view)
-        cancelAction = findViewById(R.id.cancel_action)
-        linearPhoto = findViewById(R.id.linear_photo)
-        loadingPhoto = findViewById(R.id.loadingPhoto)
-        loadingButton = findViewById(R.id.loadingButton)
-        photo = findViewById(R.id.photo)
-        linearTimer = findViewById(R.id.linear_timer)
-        timer = findViewById(R.id.timer)
-        linearDeleteMsg = findViewById(R.id.linearDeleteMsg)
-        countDeleteMsg = findViewById(R.id.countDeleteMsg)
-        trashAnimated = findViewById(R.id.trashAnimated)
-        trashAnimated2 = findViewById(R.id.trashAnimated2)
-        linearLottie = findViewById(R.id.linearLottie)
-        linearNameUser = findViewById(R.id.linearNameUser)
-        layoutChat = findViewById(R.id.layoutChat)
-        layoutBloq = findViewById(R.id.layoutBloq)
-        frameSendMsg = findViewById(R.id.frameSendMsg)
-        iconConnected = findViewById(R.id.icon_conectado)
-        iconDisconnected = findViewById(R.id.icon_desconectado)
-        buttonScrollBack = findViewById(R.id.buttonScrollBack)
-        buttonUnlockUser = findViewById(R.id.btnDesbloq)
-        tvCancelAudio = findViewById(R.id.tv_cancel_audio)
-
-        ObjectAnimator.ofFloat(tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
+        ObjectAnimator.ofFloat(binding.tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
             duration = 800; repeatCount = ValueAnimator.INFINITE; start()
         }
 
         currentAudioUri = null
-        iconVibrator = getSystemService(VIBRATOR_SERVICE) as android.os.Vibrator
+        iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
 
         // --- Recycler ---
-        rvMsg = findViewById(R.id.rvMsg)
+//        rvMsg = findViewById(R.id.rvMsg)
         mLayoutManager = LinearLayoutManager(this).apply {
             reverseLayout = false
             stackFromEnd = true
         }
-        rvMsg.layoutManager = mLayoutManager
-        adapter = AdapterChat(chatsArrayList as ArrayList<Chats>, Constants.MAXCHATSIZE, applicationContext)
-        rvMsg.adapter = adapter
+        binding.rvMsg.layoutManager = mLayoutManager
+        adapter = AdapterChat(
+            chatsArrayList as ArrayList<Chats>,
+            Constants.MAXCHATSIZE,
+            applicationContext
+        )
+        binding.rvMsg.adapter = adapter
 
         // --- init launchers ---
         initActivityResultLaunchers()
 
         // --- estado inicial botones ---
-        msg.isVisible = true
-        btnMic.isVisible = true
-        btnCamera.isVisible = true
-        loadingButton.isVisible = false
-        frameSendMsg.isVisible = false
-        btnSendMsg.isVisible = false
-        linearPhotoView.isVisible = false
-        loadingPhoto.isVisible = false
+        binding.msg.isVisible = true
+        binding.btnMic.isVisible = true
+        binding.btnCamera.isVisible = true
+        binding.loadingButton.isVisible = false
+        binding.frameSendMsg.isVisible = false
+        binding.btnSendMsg.isVisible = false
+        binding.linearPhotoView.isVisible = false
+        binding.loadingPhoto.isVisible = false
 
         // --- extras ---
-        UserRepository.setUserOnline(applicationContext, user.uid)
+        chatViewModel.setUserOnline()
 
         idUser = intent.extras?.getString("id_user")
         unknownName = intent.extras?.getString("unknownName")
@@ -296,20 +302,20 @@ class ChatActivity : AppCompatActivity() {
 
         // ===== UI listeners =====
         val photoList = ArrayList<String>()
-        btnCamera.setOnClickListener {
+        binding.btnCamera.setOnClickListener {
             sendPhoto()
         }
-        btnSendMsg.setOnClickListener {
+        binding.btnSendMsg.setOnClickListener {
             sendMessage(null)
         }
         linearDeleteMsg.setOnClickListener {
-            trashAnimated.playAnimation()
+            binding.trashAnimated.playAnimation()
             DeleteMsgs()
         }
-        cancelAction.setOnClickListener {
+        binding.cancelAction.setOnClickListener {
             cancelSendPhoto()
         }
-        photo.setOnClickListener {
+        binding.photo.setOnClickListener {
             photoList.add(stringMsg!!)
             val intent = Intent(this@ChatActivity, SlidePhotoActivity::class.java).apply {
                 putExtra("photoList", photoList)
@@ -318,9 +324,9 @@ class ChatActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
-        buttonUnlockUser.setOnClickListener {
+        binding.buttonUnlockUser.setOnClickListener {
             val view = findViewById<View>(android.R.id.content)
-            UserRepository.setUnBlockUser(this@ChatActivity, idUserFinal!!, nameUserFinal!!, view, refChatWith!!)
+            userRepository.setUnBlockUser(this@ChatActivity, idUserFinal!!, nameUserFinal!!, view, refChatWith!!)
         }
 
         linearNameUser.setOnClickListener { v ->
@@ -336,33 +342,33 @@ class ChatActivity : AppCompatActivity() {
 
 
 
-        msg.addTextChangedListener(object : TextWatcher {
+        binding.msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                if (msg.text.isEmpty()) {
-                    btnCamera.isVisible = true
-                    btnMic.isVisible = true
-                    btnSendMsg.isVisible = false
-                    frameSendMsg.isVisible = false
+                if (binding.msg.text.isEmpty()) {
+                    binding.btnCamera.isVisible = true
+                    binding.btnMic.isVisible = true
+                    binding.btnSendMsg.isVisible = false
+                    binding.frameSendMsg.isVisible = false
                 }
             }
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (msg.text.isNotEmpty()) {
-                    btnCamera.isVisible = false
-                    btnMic.isVisible = false
-                    btnSendMsg.isVisible = true
-                    frameSendMsg.isVisible = true
-                    firebaseRefsContainer.refDatos.child(user.uid).child("Estado").child("estado")
+                if (binding.msg.text.isNotEmpty()) {
+                    binding.btnCamera.isVisible = false
+                    binding.btnMic.isVisible = false
+                    binding.btnSendMsg.isVisible = true
+                    binding.frameSendMsg.isVisible = true
+                    firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("Estado").child("estado")
                         .setValue(getString(R.string.escribiendo))
-                    firebaseRefsContainer.refCuentas.child(user.uid).child("estado").setValue(true)
+                    firebaseRefsContainer.refCuentas.child(userSessionManager.uid).child("estado").setValue(true)
                 }
             }
             override fun afterTextChanged(s: Editable?) {
-                if (msg.text.isEmpty()) {
-                    btnCamera.isVisible = true
-                    btnMic.isVisible = true
-                    btnSendMsg.isVisible = false
-                    frameSendMsg.isVisible = false
-                    UserRepository.setUserOnline(applicationContext, user.uid)
+                if (binding.msg.text.isEmpty()) {
+                    binding.btnCamera.isVisible = true
+                    binding.btnMic.isVisible = true
+                    binding.btnSendMsg.isVisible = false
+                    binding.frameSendMsg.isVisible = false
+                    chatViewModel.setUserOnline()
                 }
             }
         })
@@ -371,7 +377,7 @@ class ChatActivity : AppCompatActivity() {
         setupMicGesture()
 
         // ===== Scroll / fecha =====
-        rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        binding.rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val total = adapter.itemCount
                 val last = mLayoutManager.findLastVisibleItemPosition()
@@ -384,14 +390,14 @@ class ChatActivity : AppCompatActivity() {
                         findViewById<View>(R.id.linearDate).visibility = View.GONE
                     }, 2000)
                     val date = adapter.getDate(first)
-                    tvDate.text = date
+                    binding.tvDate.text = date
                 } else {
                     findViewById<View>(R.id.linearBack).visibility = View.GONE
                     findViewById<View>(R.id.linearDate).visibility = View.GONE
                 }
             }
         })
-        buttonScrollBack.setOnClickListener { setScrollbar() }
+        binding.buttonScrollBack.setOnClickListener { setScrollbar() }
 
         // ===== Observadores =====
         hookChatListeners()
@@ -406,26 +412,21 @@ class ChatActivity : AppCompatActivity() {
     // ---------------- Ciclo de vida ----------------
     override fun onPause() {
         super.onPause()
-        user.let {
-            UserRepository.setUserOffline(applicationContext, it.uid)
-            refActual.setValue("") // Limpia referencia de chat activo
-        }
+        chatViewModel.setUserOffline()
+        refActual.setValue("") // Limpia referencia de chat activo
     }
 
     override fun onResume() {
         super.onResume()
-        user.let {
-            UserRepository.setUserOnline(applicationContext, it.uid)
-            // Alineado con la comparación suActual != user.uid + refChatWith
-            refActual.setValue(it.uid + (refChatWith ?: ""))
-        }
+        chatViewModel.setUserOnline()
+        refActual.setValue(userSessionManager.uid + (refChatWith ?: ""))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        AdapterChat.mediaPlayer?.let { player ->
+        AdapterChat.Companion.mediaPlayer?.let { player ->
             try { player.stop() } catch (_: Exception) {}
-            AdapterChat.mediaPlayer = null
+            AdapterChat.Companion.mediaPlayer = null
         }
 
         if (refChatWith == Constants.CHATWITHUNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
@@ -453,7 +454,7 @@ class ChatActivity : AppCompatActivity() {
 
         actionDelete.isVisible = true
 
-        firebaseRefsContainer.refDatos.child(user!!.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     val state = ds.getValue(String::class.java)
@@ -503,18 +504,18 @@ class ChatActivity : AppCompatActivity() {
                 return true
             }
             R.id.action_silent -> {
-                UserRepository.silent(nameUserFinal, idUserFinal, refChatWith)
+                userRepository.silent(nameUserFinal, idUserFinal, refChatWith)
                 Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_notif -> {
-                UserRepository.silent(nameUserFinal, idUserFinal, refChatWith)
+                userRepository.silent(nameUserFinal, idUserFinal, refChatWith)
                 Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
             }
             R.id.action_bloq -> {
-                UserRepository.setBlockUser(this, nameUserFinal, idUserFinal, view, refChatWith)
+                userRepository.setBlockUser(this, nameUserFinal, idUserFinal, view, refChatWith)
             }
             R.id.action_desbloq -> {
-                UserRepository.setUnBlockUser(this, idUserFinal, nameUserFinal, view, refChatWith)
+                userRepository.setUnBlockUser(this, idUserFinal, nameUserFinal, view, refChatWith)
             }
             R.id.action_delete -> {
                 ChatUtils.deleteChat(this, idUserFinal!!, nameUserFinal, view, refChatWith!!)
@@ -529,7 +530,7 @@ class ChatActivity : AppCompatActivity() {
         uCropResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-//            viewModel.handleCroppedImageResult(result.resultCode, result.data, this)
+            chatViewModel.handleCroppedImageResult(result.resultCode, result.data, this)
         }
 
         // 2. Galería moderna
@@ -538,7 +539,7 @@ class ChatActivity : AppCompatActivity() {
         ) { uri ->
             if (uri != null) {
                 // Delegamos la lógica de uCrop al VM, que nos dará las URIs
-//                viewModel.startUCropFlow(uri, this, uCropResultLauncher)
+                chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
             }
         }
 
@@ -547,7 +548,7 @@ class ChatActivity : AppCompatActivity() {
             ActivityResultContracts.TakePicture()
         ) { success ->
             if (success && imageUriCamera != null) {
-//                viewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
+//                chatViewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
             } else {
                 imageUriCamera = null
             }
@@ -557,7 +558,7 @@ class ChatActivity : AppCompatActivity() {
         requestPermissionsLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { result ->
-            val allGranted = result.values.all { it == true }
+            val allGranted = result.values.all { it }
             if (allGranted) {
                 onPermissionsGranted?.invoke()
             }
@@ -628,7 +629,7 @@ class ChatActivity : AppCompatActivity() {
         // 1) Permisos
         val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
         val needsLegacyWrite = Build.VERSION.SDK_INT <= 28
-        if (needsLegacyWrite) perms += Manifest.permission.WRITE_EXTERNAL_STORAGE
+//        if (needsLegacyWrite) perms plusAssign Manifest.permission.WRITE_EXTERNAL_STORAGE
 
         val anyDenied = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         if (anyDenied) {
@@ -638,8 +639,8 @@ class ChatActivity : AppCompatActivity() {
         if (mediaRecorder != null) return
 
         // 2) Preparar destino
-        val sdf = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
-        nameAudio = "AUD_${sdf.format(java.util.Date())}.m4a"
+        val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+        nameAudio = "AUD_${sdf.format(Date())}.m4a"
 
         currentPfd = null
         currentAudioUri = null
@@ -708,15 +709,15 @@ class ChatActivity : AppCompatActivity() {
         // 4) UI grabando
         recordStartElapsed = SystemClock.elapsedRealtime()
         setMicAnimated()
-        msg.visibility = View.GONE
-        btnCamera.visibility = View.GONE
+        binding.msg.visibility = View.GONE
+        binding.btnCamera.visibility = View.GONE
         linearTimer.visibility = View.VISIBLE
-        timer.base = recordStartElapsed
-        timer.start()
+        binding.timer.base = recordStartElapsed
+        binding.timer.start()
 
-        firebaseRefsContainer.refDatos.child(user.uid).child("Estado").child("estado")
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("Estado").child("estado")
             .setValue(getString(R.string.grabando))
-        firebaseRefsContainer.refCuentas.child(user.uid).child("estado").setValue(true)
+        firebaseRefsContainer.refCuentas.child(userSessionManager.uid).child("estado").setValue(true)
     }
 
     private fun stopRecordAudio() {
@@ -781,7 +782,7 @@ class ChatActivity : AppCompatActivity() {
             }
 
         normalizeUiCancelRecordAudio()
-        UserRepository.setUserOnline(applicationContext, user!!.uid)
+        chatViewModel.setUserOnline()
         // No anulamos immediately el URI por si falla la subida; si preferís, podés setearlo en null acá.
     }
 
@@ -804,7 +805,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         // Animación de trash y ocultar al terminar
-        trashAnimated2.apply {
+        binding.trashAnimated2.apply {
             visibility = View.VISIBLE
             playAnimation()
             addAnimatorListener(object : AnimatorListenerAdapter() {
@@ -813,7 +814,7 @@ class ChatActivity : AppCompatActivity() {
         }
 
         normalizeUiCancelRecordAudio()
-        UserRepository.setUserOnline(applicationContext, user.uid)
+        chatViewModel.setUserOnline()
 
         // Borrado del archivo (si existe)
         runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
@@ -823,12 +824,12 @@ class ChatActivity : AppCompatActivity() {
 
     private fun normalizeUiCancelRecordAudio() {
         vibrate(80)
-        btnMic.cancelAnimation()
-        btnMic.clearAnimation()
-        timer.stop()
+        binding.btnMic.cancelAnimation()
+        binding.btnMic.clearAnimation()
+        binding.timer.stop()
         linearTimer.visibility = View.GONE
-        msg.visibility = View.VISIBLE
-        btnCamera.visibility = View.VISIBLE
+        binding.msg.visibility = View.VISIBLE
+        binding.btnCamera.visibility = View.VISIBLE
     }
 
     private fun ParcelFileDescriptor.closeQuietly() {
@@ -842,11 +843,11 @@ class ChatActivity : AppCompatActivity() {
         var dX = 0f
         val scale = resources.displayMetrics.density
 
-        btnMic.setOnTouchListener { v, event ->
-            if (linearPhotoView.isVisible) return@setOnTouchListener true
-            if (firstTouchX == 0f) firstTouchX = btnMic.x
+        binding.btnMic.setOnTouchListener { v, event ->
+            if (binding.linearPhotoView.isVisible) return@setOnTouchListener true
+            if (firstTouchX == 0f) firstTouchX = binding.btnMic.x
 
-            val xAnim = SpringAnimation(btnMic, SpringAnimation.X).apply {
+            val xAnim = SpringAnimation(binding.btnMic, SpringAnimation.X).apply {
                 spring = SpringForce().apply {
                     dampingRatio = SpringForce.DAMPING_RATIO_HIGH_BOUNCY
                     stiffness = SpringForce.STIFFNESS_HIGH
@@ -873,7 +874,7 @@ class ChatActivity : AppCompatActivity() {
                     if (linearTimer.isVisible) {
                         if (event.rawX > halfWidth) {
                             val move = event.rawX + dX
-                            btnMic.animate().x(move).setDuration(0).start()
+                            binding.btnMic.animate().x(move).setDuration(0).start()
                         } else {
                             setMicButton()
                             cancelRecordAudio()
@@ -890,20 +891,20 @@ class ChatActivity : AppCompatActivity() {
     // ----------------------------- Envío de mensajes -----------------------------
     private fun sendMessage(timerText: String?) {
 
-        val user = user ?: return
+//        val user = user ?: return
 
         val (textMiChatw, textSuChatw) = when (msgType) {
             Constants.PHOTO -> {
-                linearPhotoView.visibility = View.GONE
-                msg.visibility = View.VISIBLE
-                btnCamera.visibility = View.VISIBLE
-                btnMic.visibility = View.VISIBLE
+                binding.linearPhotoView.visibility = View.GONE
+                binding.msg.visibility = View.VISIBLE
+                binding.btnCamera.visibility = View.VISIBLE
+                binding.btnMic.visibility = View.VISIBLE
                 getString(R.string.photo_send) to getString(R.string.photo_received)
             }
             Constants.AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
             else -> {
                 msgType = Constants.MSG
-                stringMsg = msg.text.toString()
+                stringMsg = binding.msg.text.toString()
                 stringMsg to stringMsg
             }
         }
@@ -915,16 +916,17 @@ class ChatActivity : AppCompatActivity() {
             return
         }
 
-        val visto = if (suActual != user.uid + refChatWith || suActual == null) 1 else 3
+        val visto = if (suActual != userSessionManager.uid + refChatWith || suActual == null) 1 else 3
         val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
         val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
 
         val chatmsg = Chats(
             stringMsg!!,
             finalDate,
-            user.uid,
+            userSessionManager.uid,
             msgType,
-            visto)
+            visto
+        )
 
         startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(sbMe: DataSnapshot) {
@@ -944,18 +946,18 @@ class ChatActivity : AppCompatActivity() {
         })
 
         val miChat = ChatWith(
-            textMiChatw!!, finalDate, null, user.uid,
+            textMiChatw!!, finalDate, null, userSessionManager.uid,
             idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
         )
-        firebaseRefsContainer.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
 
-        if (suActual != user.uid + refChatWith || suActual == null) {
+        if (suActual != userSessionManager.uid + refChatWith || suActual == null) {
             val count = noVisto + 1
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, user.uid,
-                user.uid, myName!!, myPhoto, estadoUser!!, count, 1
+                textSuChatw!!, finalDate, null, userSessionManager.uid,
+                userSessionManager.uid, myName!!, myPhoto, estadoUser!!, count, 1
             )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user!!.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid)
                 .setValue(suChat)
 
             if (estadoUser != "silent") {
@@ -983,20 +985,20 @@ class ChatActivity : AppCompatActivity() {
             }
         } else {
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, user.uid,
-                user.uid, myName!!, myPhoto, estadoUser!!, 0, 3
+                textSuChatw!!, finalDate, null, userSessionManager.uid,
+                userSessionManager.uid, myName!!, myPhoto, estadoUser!!, 0, 3
             )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(user.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid)
                 .setValue(suChat)
         }
 
-        msg.setText("")
+        binding.msg.setText("")
         stringMsg = null
         msgType = Constants.MSG
     }
 
     // ----------------------------- Helpers -----------------------------
-    private fun setScrollbar() = rvMsg.scrollToPosition(adapter.itemCount - 1)
+    private fun setScrollbar() = binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
 
     private fun snackCenter(text: String) {
         val snack = Snackbar.make(findViewById(android.R.id.content), text, Snackbar.LENGTH_SHORT)
@@ -1022,7 +1024,6 @@ class ChatActivity : AppCompatActivity() {
     // ========================= Bloques mantenidos =========================
 
     private fun setupChatHeaderAndRefs() {
-        val me = user ?: return
 
         if (idUser != null) {
             // 1 a 1
@@ -1030,25 +1031,27 @@ class ChatActivity : AppCompatActivity() {
             idUserFinal = idUser
             refChat = Constants.CHAT
             refChatWith = Constants.CHATWITH
-            myPhoto = me.photoUrl?.toString() ?: ""
-            myName = me.displayName ?: ""
+            myPhoto = userSessionManager.user.photoUrl?.toString() ?: ""
+            myName = userSessionManager.user.displayName ?: ""
 
-            firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
+            firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object :
+                ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val thisUser = ds.getValue(Users::class.java)
                         extraUserList.add(thisUser)
                         yourPhoto = ds.child("foto").getValue(String::class.java).orEmpty()
                         nameUserFinal = ds.child("nombre").getValue(String::class.java)
-                        nameUser.text = nameUserFinal
-                        Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
+                        binding.nameUser.text = nameUserFinal
+                        Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                     } else {
-                        firebaseRefsContainer.refDatos.child(me.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object : ValueEventListener {
+                        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
+                            ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
                                 yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
                                 nameUserFinal = snap.child("wUserName").getValue(String::class.java)
-                                nameUser.text = nameUserFinal
-                                Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
+                                binding.nameUser.text = nameUserFinal
+                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                             }
                             override fun onCancelled(error: DatabaseError) {}
                         })
@@ -1066,7 +1069,7 @@ class ChatActivity : AppCompatActivity() {
             refChat = Constants.UNKNOWN
             refChatWith = Constants.CHATWITHUNKNOWN
             myName = userPreferencesRepository.userName
-            nameUser.text = nameUserFinal
+            binding.nameUser.text = nameUserFinal
 
             firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserUnknown!!).child("type")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -1075,13 +1078,14 @@ class ChatActivity : AppCompatActivity() {
                             val type = ds.getValue(Int::class.java)
                             if (type == 0) {
                                 yourPhoto = getString(R.string.URL_PHOTO_DEF)
-                                Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
+                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                             } else {
-                                firebaseRefsContainer.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object : ValueEventListener {
+                                firebaseRefsContainer.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object :
+                                    ValueEventListener {
                                     override fun onDataChange(d2: DataSnapshot) {
                                         if (d2.exists()) {
                                             yourPhoto = d2.child("foto").getValue(String::class.java).orEmpty()
-                                            Glide.with(this@ChatActivity).load(yourPhoto).into(imgUser)
+                                            Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                                         }
                                     }
                                     override fun onCancelled(error: DatabaseError) {}
@@ -1095,7 +1099,7 @@ class ChatActivity : AppCompatActivity() {
             myPhoto = if (userPreferencesRepository.userType == 0) {
                 getString(R.string.URL_PHOTO_DEF)
             } else {
-                me.photoUrl?.toString() ?: ""
+                userSessionManager.user.photoUrl?.toString() ?: ""
             }
 
             listenerChatUnknown = object : ValueEventListener {
@@ -1126,13 +1130,13 @@ class ChatActivity : AppCompatActivity() {
 
         // Storage refs
         refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
-        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${me.uid}/")
+        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${userSessionManager.uid}/")
 
-        refActual = firebaseRefsContainer.refDatos.child(user.uid).child("ChatList").child("Actual")
+        refActual = firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("ChatList").child("Actual")
 
         // Ramas de mensajes
-        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${me.uid} <---> $idUserFinal").child("Mensajes")
-        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${me.uid}").child("Mensajes")
+        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${userSessionManager.uid} <---> $idUserFinal").child("Mensajes")
+        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${userSessionManager.uid}").child("Mensajes")
     }
 
     private fun hookChatListeners() {
@@ -1152,7 +1156,7 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun hookBlockAndPresence() {
-        val me = user ?: return
+//        val me = user ?: return
 
         firebaseRefsContainer.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
             .addValueEventListener(object : ValueEventListener {
@@ -1160,33 +1164,33 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        UserRepository.stateUser(
+        userRepository.stateUser(
             applicationContext,
             idUserFinal!!,
-            iconConnected,
-            iconDisconnected,
-            tvState,
+            binding.iconConnected,
+            binding.iconDisconnected,
+            binding.tvStatus,
             refChatWith
         )
 
-        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val state = snapshot.getValue(String::class.java)
                     if (state == "bloq") {
-                        layoutBloq.visibility = View.VISIBLE
-                        layoutChat.visibility = View.GONE
-                        linearLottie.visibility = View.GONE
+                        binding.layoutBloq.visibility = View.VISIBLE
+                        binding.layoutChat.visibility = View.GONE
+                        binding.linearLottie.visibility = View.GONE
                     } else {
-                        layoutBloq.visibility = View.GONE
-                        layoutChat.visibility = View.VISIBLE
-                        linearLottie.visibility = View.VISIBLE
+                        binding.layoutBloq.visibility = View.GONE
+                        binding.layoutChat.visibility = View.VISIBLE
+                        binding.linearLottie.visibility = View.VISIBLE
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(me.uid).child("estado")
+        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoUser = ds.getValue(String::class.java) ?: refChatWith
@@ -1194,7 +1198,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoYo = ds.getValue(String::class.java) ?: refChatWith
@@ -1208,15 +1212,15 @@ class ChatActivity : AppCompatActivity() {
         val dp200 = (200 * scale + 0.5f).toInt()
         val dp65 = (65 * scale + 0.5f).toInt()
 
-        btnMic.setImageResource(android.R.color.transparent)
-        btnMic.setBackgroundResource(R.color.transparent)
-        btnMic.setAnimation(R.raw.lf30_editor_24iqgref)
-        btnMic.layoutParams = LinearLayout.LayoutParams(dp200, dp200).apply {
+        binding.btnMic.setImageResource(android.R.color.transparent)
+        binding.btnMic.setBackgroundResource(R.color.transparent)
+        binding.btnMic.setAnimation(R.raw.lf30_editor_24iqgref)
+        binding.btnMic.layoutParams = LinearLayout.LayoutParams(dp200, dp200).apply {
             gravity = Gravity.END or Gravity.BOTTOM
         }
-        btnMic.playAnimation()
+        binding.btnMic.playAnimation()
 
-        linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
+        binding.linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
@@ -1225,27 +1229,27 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setMicButton() {
-        btnMic.setBackgroundResource(R.drawable.marco_color_b_round)
-        btnMic.setImageResource(R.drawable.ic_baseline_mic_24)
+        binding.btnMic.setBackgroundResource(R.drawable.marco_color_b_round)
+        binding.btnMic.setImageResource(R.drawable.ic_baseline_mic_24)
 
         val scale = resources.displayMetrics.density
         val dp10 = (10 * scale + 0.5f).toInt()
         val dp13 = (13 * scale + 0.5f).toInt()
         val dp50 = (50 * scale + 0.5f).toInt()
 
-        linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
+        binding.linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
         )
-        btnMic.layoutParams = LinearLayout.LayoutParams(dp50, dp50).apply {
+        binding.btnMic.layoutParams = LinearLayout.LayoutParams(dp50, dp50).apply {
             gravity = Gravity.END or Gravity.BOTTOM
             setMargins(dp10, dp10, dp10, dp10)
         }
-        btnMic.setPadding(dp13, dp13, dp13, dp13)
+        binding.btnMic.setPadding(dp13, dp13, dp13, dp13)
     }
 
     private fun visto() {
-        val me = user ?: return
-        firebaseRefsContainer.refDatos.child(me.uid).child(refChatWith!!).child(idUserFinal!!)
+//        val me = user ?: return
+        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dsMain: DataSnapshot) {
                     miNoVisto = 0
@@ -1309,7 +1313,7 @@ class ChatActivity : AppCompatActivity() {
             val type = snap.child("type").getValue(Int::class.java)
             val sender = snap.child("envia").getValue(String::class.java)
 
-            if (sender == user.uid) {
+            if (sender == userSessionManager.uid) {
                 when (type) {
                     Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
                     Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
@@ -1334,14 +1338,14 @@ class ChatActivity : AppCompatActivity() {
                     Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
                     Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
                     Constants.PHOTO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(user.uid) + user.uid.length + 3
+                        val start = chat.message.indexOf(userSessionManager.uid) + userSessionManager.uid.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
                     Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
                     Constants.AUDIO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(user.uid) + user.uid.length + 3
+                        val start = chat.message.indexOf(userSessionManager.uid) + userSessionManager.uid.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
@@ -1353,7 +1357,7 @@ class ChatActivity : AppCompatActivity() {
 
     fun removeChatWith(countList: Int) {
 
-        val user = user ?: return
+//        val user = user ?: return
 
         startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(ds: DataSnapshot) {
@@ -1372,7 +1376,7 @@ class ChatActivity : AppCompatActivity() {
                 for (snap in data.children) {
                     val chat = snap.getValue(Chats::class.java) ?: continue
                     val key = snap.key ?: continue
-                    if (chat.sender == user.uid) {
+                    if (chat.sender == userSessionManager.uid) {
                         when (chat.type) {
                             Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
                         }
@@ -1384,7 +1388,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 val count = messages - (senderDelete.size + receiverDelete.size + countList)
                 if (count == 0L) {
-                    firebaseRefsContainer.refDatos.child(user.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
+                    firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
                     onBackPressedDispatcher.onBackPressed()
                 }
             }
@@ -1408,12 +1412,12 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun cancelSendPhoto(){
-        linearPhotoView.isVisible = false
-        msg.isVisible = true
-        btnCamera.isVisible = true
-        btnMic.isVisible = true
-        btnSendMsg.isVisible = false
-        frameSendMsg.isVisible = false
+        binding.linearPhotoView.isVisible = false
+        binding.msg.isVisible = true
+        binding.btnCamera.isVisible = true
+        binding.btnMic.isVisible = true
+        binding.btnSendMsg.isVisible = false
+        binding.frameSendMsg.isVisible = false
 
         msgType = Constants.MSG
 

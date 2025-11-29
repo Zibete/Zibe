@@ -14,7 +14,7 @@
         android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar">
 
         <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
+            android:id="@+id/material_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:contentInsetStart="0dp"
@@ -24,7 +24,7 @@
             app:titleTextColor="@color/zibe_text_light">
 
             <LinearLayout
-                android:id="@+id/layoutSettings"
+                android:id="@+id/linear_layout_settings"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
@@ -34,7 +34,7 @@
                 android:paddingEnd="8dp">
 
                 <ImageView
-                    android:id="@+id/refresh"
+                    android:id="@+id/refresh_button"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:paddingHorizontal="8dp"
@@ -42,7 +42,7 @@
                     app:tint="@color/zibe_text_light" />
 
                 <ImageView
-                    android:id="@+id/filter"
+                    android:id="@+id/filter_button"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:paddingHorizontal="8dp"

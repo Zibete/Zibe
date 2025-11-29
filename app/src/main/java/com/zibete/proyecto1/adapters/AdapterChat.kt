@@ -27,7 +27,7 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.ChatActivity
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity

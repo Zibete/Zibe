@@ -6,17 +6,17 @@
     app:startDestination="@id/nav_chat">
 
     <fragment
-        android:id="@+id/nav_grupos"
+        android:id="@+id/nav_groups"
         android:name="com.zibete.proyecto1.ui.GruposFragment"
-        android:label="@string/menu_grupos"
+        android:label="@string/menu_groups"
         tools:layout="@layout/fragment_grupos" />
 
 
 
     <fragment
-        android:id="@+id/nav_usuarios"
+        android:id="@+id/nav_users"
         android:name="com.zibete.proyecto1.ui.UsersFragment"
-        android:label="@string/menu_usuarios"
+        android:label="@string/menu_users"
         tools:layout="@layout/fragment_usuarios"/>
 
     <fragment
@@ -35,7 +35,7 @@
         app:popUpTo="@id/nav_editPerfil"/>
 
     <fragment
-        android:id="@+id/nav_favoritos"
+        android:id="@+id/nav_favorites"
         android:name="com.zibete.proyecto1.ui.FavoritesFragment"
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_chat_list"/>

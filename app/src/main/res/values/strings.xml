@@ -25,16 +25,16 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="ajustes">Ajustes</string>
     <string name="unlock_users">Desbloquear usuarios</string>
-    <string name="favoritos">Favoritos</string>
-    <string name="menu_grupos">Salas</string>
-    <string name="menu_usuarios">Personas</string>
+    <string name="menu_favorites">Favoritos</string>
+    <string name="menu_groups">Salas</string>
+    <string name="menu_users">Personas</string>
     <string name="menu_chat">Chat</string>
     <string name="fragment_left_name">Nombre</string>
     <string name="usuario">Usuario</string>
     <string name="atras">Atrás</string>
     <string name="siguiente">Siguiente</string>
     <string name="comenzar">Comenzar</string>
-    <string name="desconectado">Desconectado</string>
+    <string name="offline">desconectado</string>
     <string name="saltar">Saltar</string>
 
     <string name="facebook_app_id">fb971156603326191</string>
@@ -59,10 +59,9 @@
     <string name="today">hoy</string>
     <string name="yesterday">ayer</string>
     <string name="a_las">a las</string>
-    <string name="conectado">conectado</string>
+    <string name="online">en línea</string>
     <string name="escribiendo">escribiendo...</string>
-    <string name="enlinea">en línea</string>
-    <string name="Enlinea">En línea</string>
+    <string name="online_upercase">En línea</string>
     <string name="title_activity_main2">MainActivity</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
@@ -105,6 +104,8 @@
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finalizar_registro">Finalizar registro</string>
     <string name="default_web_client_id">572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com</string>
+    <string name="cargando">Cargando...</string>
+    <string name="anonimous">Anónimo</string>
 
     <string-array name="edad">
         <item>18</item>

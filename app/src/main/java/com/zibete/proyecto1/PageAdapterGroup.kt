@@ -34,9 +34,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class PageAdapterGroup : Fragment() {
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var firebaseAuth: FirebaseAuth
+    private val user: FirebaseUser
+        get() = firebaseAuth.currentUser!!
 
     private lateinit var viewPager: ViewPager
     private lateinit var linearProgressBar: LinearLayout
@@ -180,8 +181,8 @@ class PageAdapterGroup : Fragment() {
             }
 
             // Escuchamos usuarios del grupo actual
-            if (repo.groupName.isNotEmpty()) {
-                refGroupUsers.child(repo.groupName)
+            if (userPreferencesRepository.groupName.isNotEmpty()) {
+                refGroupUsers.child(userPreferencesRepository.groupName)
                     .addValueEventListener(valueEventListenerTitle as ValueEventListener)
             }
         }
@@ -191,8 +192,8 @@ class PageAdapterGroup : Fragment() {
         override fun getItem(position: Int): Fragment = fragments[position]
 
         override fun getPageTitle(position: Int): CharSequence? = when (position) {
-            0 -> "(${membersCount}) ${requireContext().getString(R.string.menu_usuarios)}"
-            1 -> repo.groupName
+            0 -> "(${membersCount}) ${requireContext().getString(R.string.menu_users)}"
+            1 -> userPreferencesRepository.groupName
             2 -> requireContext().getString(R.string.menu_chat)
             else -> null
         }
@@ -201,7 +202,7 @@ class PageAdapterGroup : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         // Limpio listener del título para evitar fugas
-        val groupName = repo.groupName
+        val groupName = userPreferencesRepository.groupName
         if (groupName.isNotEmpty() && valueEventListenerTitle != null) {
             refGroupUsers.child(groupName).removeEventListener(valueEventListenerTitle!!)
         }

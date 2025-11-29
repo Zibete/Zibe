@@ -11,7 +11,7 @@
         android:contentDescription="@string/inicio" />
 
     <item
-        android:id="@+id/editPerfil"
+        android:id="@+id/edit_profile_button"
         android:icon="@drawable/fui_ic_anonymous_white_24dp"
         android:title="@string/menu_edit"
         android:titleCondensed="@string/menu_edit"

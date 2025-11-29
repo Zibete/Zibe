@@ -47,6 +47,7 @@ import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.utils.FirebaseRefs

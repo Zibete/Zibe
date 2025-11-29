@@ -8,6 +8,9 @@ import android.content.Context
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.AndroidViewModel
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 object Utils {
     @JvmStatic
@@ -20,6 +23,16 @@ object Utils {
         } catch (e: Exception) {
             return -1 // error de formato
         }
+    }
+
+    fun today(): String {
+        val c = Calendar.getInstance()
+        return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(c.time)
+    }
+    fun yesterday(): String {
+        val c = Calendar.getInstance()
+        c.add(Calendar.DATE, -1)
+        return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(c.time)
     }
 
 }

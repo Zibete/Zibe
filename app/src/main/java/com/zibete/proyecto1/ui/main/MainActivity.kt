@@ -50,9 +50,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SettingsActivity
+import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
@@ -60,9 +62,9 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs.user
-import com.zibete.proyecto1.utils.UserRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -71,28 +73,29 @@ import javax.inject.Inject
 @AndroidEntryPoint // <--- ESTO HACE QUE LA ACTIVITY PUEDA RECIBIR INYECCIONES
 class MainActivity : AppCompatActivity() {
 
-    // ViewModel y Repository
-    private val viewModel: MainUiViewModel by viewModels()
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var firebaseAuth: FirebaseAuth
 
-    @Inject
-    lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject
-    lateinit var userSessionManager: UserSessionManager
-    @Inject
-    lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    private val user: FirebaseUser
+        get() = firebaseAuth.currentUser!!
 
-     // ViewBinding
-    private lateinit var binding: ActivityMainBinding
+    // ViewModel
+    private val mainUiViewModel: MainUiViewModel by viewModels()
+
+    // ViewBinding
+    private lateinit var activityMainBinding: ActivityMainBinding
     // UI Components
     private lateinit var appBarConfiguration: AppBarConfiguration
     private var navController: NavController? = null
-    private var drawer: DrawerLayout? = null
+    private var drawerLayout: DrawerLayout? = null
     private var navigationView: NavigationView? = null
-    private var toolbar: MaterialToolbar? = null
+    private var materialToolbar: MaterialToolbar? = null
     private var layoutSettings: View? = null
-    private var filter: ImageView? = null
-    private var refresh: ImageView? = null
-    private var mBottomNavigation: BottomNavigationView? = null
+    private var filterButton: ImageView? = null
+    private var refreshButton: ImageView? = null
+    private var bottomNavigationView: BottomNavigationView? = null
     private var searchView: SearchView? = null
 
     // Badges
@@ -100,15 +103,15 @@ class MainActivity : AppCompatActivity() {
     private var badgeDrawableGroup: BadgeDrawable? = null
 
     // Ubicación
-    private var fusedLocationClient: FusedLocationProviderClient? = null
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var settingsClient: SettingsClient? = null
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(activityMainBinding.root)
 
         setupUI()
         setupNavigation()
@@ -124,29 +127,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         // Toolbar & Layouts
-        val appBar = binding.appBarMain
-        toolbar = appBar.toolbar
-        layoutSettings = appBar.layoutSettings
-        filter = appBar.filter
-        refresh = appBar.refresh
+        val appBarMain = activityMainBinding.appBarMain
+        materialToolbar = appBarMain.materialToolbar
+        layoutSettings = appBarMain.linearLayoutSettings
+        filterButton = appBarMain.filterButton
+        refreshButton = appBarMain.refreshButton
 
         // Transiciones suaves
-        appBar.toolbar.layoutTransition = LayoutTransition().apply {
+        appBarMain.materialToolbar.layoutTransition = LayoutTransition().apply {
             enableTransitionType(LayoutTransition.CHANGING)
         }
 
-        setSupportActionBar(toolbar)
+        setSupportActionBar(materialToolbar)
 
         // Drawer
-        drawer = binding.drawerLayout
-        navigationView = binding.navView
+        drawerLayout = activityMainBinding.drawerLayout
+        navigationView = activityMainBinding.navView
 
         // Header Info
         val headerView = navigationView?.getHeaderView(0)
         setupHeader(headerView)
 
         // Bottom Nav
-        mBottomNavigation = appBar.contentMain.navView3
+        bottomNavigationView = appBarMain.contentMain.navView3
         setupBadges()
 
         ZibeApp.ScreenUtils.init(this)
@@ -155,22 +158,37 @@ class MainActivity : AppCompatActivity() {
     private fun setupHeader(headerView: View?) {
         if (headerView == null) return
 
-        val linearImage = headerView.findViewById<MaterialCardView>(R.id.linear_image_user)
-        val imgUser = headerView.findViewById<ImageView>(R.id.image_user)
-        val tvUser = headerView.findViewById<TextView>(R.id.tv_usuario)
-        val tvMail = headerView.findViewById<TextView>(R.id.tv_mail)
-        val editProfileBtn = headerView.findViewById<LinearLayout>(R.id.editPerfil)
+        val cardUserImage = headerView.findViewById<MaterialCardView>(R.id.card_user_image)
+        val userImage = headerView.findViewById<ImageView>(R.id.user_image)
+        val tvUserName = headerView.findViewById<TextView>(R.id.tv_user_name)
+        val tvUserEmail = headerView.findViewById<TextView>(R.id.tv_mail)
+        val editProfileButton = headerView.findViewById<LinearLayout>(R.id.edit_profile_button)
 
-        linearImage?.layoutParams = LinearLayout.LayoutParams(
+        cardUserImage?.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             ZibeApp.ScreenUtils.heightPx / 2
         )
 
-        tvUser?.text = user.displayName
-        tvMail?.text = user.email
-        Glide.with(this).load(user.photoUrl).into(imgUser!!)
+        tvUserName?.text = user.displayName
+        tvUserEmail?.text = user.email
+        Glide.with(this).load(user.photoUrl).into(userImage)
 
-        editProfileBtn?.setOnClickListener { editProfile(null) }
+        editProfileButton?.setOnClickListener { editProfileNavigation() }
+    }
+
+    private fun setupBadges() {
+        // Chat Badge
+        badgeDrawableChat = bottomNavigationView?.getOrCreateBadge(R.id.navBottomChat)?.apply {
+            backgroundColor = getColorCompat(R.color.accent)
+            badgeTextColor = getColorCompat(R.color.white)
+            isVisible = false
+        }
+        // Group Badge
+        badgeDrawableGroup = bottomNavigationView?.getOrCreateBadge(R.id.navBottomGrupos)?.apply {
+            backgroundColor = getColorCompat(R.color.accent)
+            badgeTextColor = getColorCompat(R.color.white)
+            isVisible = false
+        }
     }
 
     private fun setupNavigation() {
@@ -178,8 +196,12 @@ class MainActivity : AppCompatActivity() {
         navController = navHostFragment?.navController
 
         appBarConfiguration = AppBarConfiguration(
-            setOf(R.id.nav_chat, R.id.nav_usuarios, R.id.nav_grupos, R.id.nav_favoritos),
-            drawer
+            setOf(
+                R.id.nav_chat,
+                R.id.nav_users,
+                R.id.nav_groups,
+                R.id.nav_favorites),
+            drawerLayout
         )
 
         navController?.let { nav ->
@@ -190,22 +212,7 @@ class MainActivity : AppCompatActivity() {
         setupBottomNavListeners()
 
         // Estado inicial
-        navChatList()
-    }
-
-    private fun setupBadges() {
-        // Chat Badge
-        badgeDrawableChat = mBottomNavigation?.getOrCreateBadge(R.id.navBottomChat)?.apply {
-            backgroundColor = getColorCompat(R.color.accent)
-            badgeTextColor = getColorCompat(R.color.zibe_night_start)
-            isVisible = false
-        }
-        // Group Badge
-        badgeDrawableGroup = mBottomNavigation?.getOrCreateBadge(R.id.navBottomGrupos)?.apply {
-            backgroundColor = getColorCompat(R.color.accent)
-            badgeTextColor = getColorCompat(R.color.zibe_night_start)
-            isVisible = false
-        }
+        chatNavigation()
     }
 
     // ==========================================
@@ -216,19 +223,19 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Observar Visibilidad
-                launch { viewModel.toolbarVisible.collect { toolbar?.isVisible = it } }
-                launch { viewModel.layoutSettingsVisible.collect { layoutSettings?.isVisible = it } }
-                launch { viewModel.bottomNavVisible.collect { mBottomNavigation?.isVisible = it } }
+                launch { mainUiViewModel.toolbarVisible.collect { materialToolbar?.isVisible = it } }
+                launch { mainUiViewModel.layoutSettingsVisible.collect { layoutSettings?.isVisible = it } }
+                launch { mainUiViewModel.bottomNavVisible.collect { bottomNavigationView?.isVisible = it } }
 
                 // Observar Badges
                 launch {
-                    viewModel.chatBadgeCount.collect { count ->
+                    mainUiViewModel.chatBadgeCount.collect { count ->
                         badgeDrawableChat?.isVisible = count > 0
                         badgeDrawableChat?.number = count
                     }
                 }
                 launch {
-                    viewModel.groupBadgeCount.collect { count ->
+                    mainUiViewModel.groupBadgeCount.collect { count ->
                         // Nota: La lógica compleja de grupos está migrando, por ahora mostramos si VM dice
                         badgeDrawableGroup?.isVisible = count > 0
                         badgeDrawableGroup?.number = count
@@ -247,34 +254,34 @@ class MainActivity : AppCompatActivity() {
     // ==========================================
 
     private fun setupBottomNavListeners() {
-        mBottomNavigation?.setOnItemSelectedListener { item ->
+        bottomNavigationView?.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navBottomUsers -> {
-                    if (viewModel.currentScreen.value != CurrentScreen.USERS) {
-                        viewModel.setScreen(CurrentScreen.USERS)
-                        viewModel.showLayoutSettings(true)
+                    if (mainUiViewModel.currentScreen.value != CurrentScreen.USERS) {
+                        mainUiViewModel.setScreen(CurrentScreen.USERS)
+                        mainUiViewModel.showLayoutSettings(true)
                         invalidateOptionsMenu()
-                        navController?.navigate(R.id.nav_usuarios)
-                        toolbar?.setTitle(R.string.menu_usuarios)
+                        navController?.navigate(R.id.nav_users)
+                        materialToolbar?.setTitle(R.string.menu_users)
                     }
                     true
                 }
                 R.id.navBottomChat -> {
-                    navChatList()
+                    chatNavigation()
                     true
                 }
                 R.id.navBottomFavorites -> {
-                    if (viewModel.currentScreen.value != CurrentScreen.FAVORITES) {
-                        viewModel.setScreen(CurrentScreen.FAVORITES)
-                        viewModel.showLayoutSettings(false)
-                        toolbar?.setTitle(R.string.favoritos)
+                    if (mainUiViewModel.currentScreen.value != CurrentScreen.FAVORITES) {
+                        mainUiViewModel.setScreen(CurrentScreen.FAVORITES)
+                        mainUiViewModel.showLayoutSettings(false)
+                        materialToolbar?.setTitle(R.string.menu_favorites)
                         invalidateOptionsMenu()
-                        navController?.navigate(R.id.nav_favoritos)
+                        navController?.navigate(R.id.nav_favorites)
                     }
                     true
                 }
                 R.id.navBottomGrupos -> {
-                    handleGroupsNavigation()
+                    groupsNavigation()
                     true
                 }
                 else -> false
@@ -282,78 +289,71 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleGroupsNavigation() {
-        if (!userPreferencesRepository.inGroup) {
-            if (viewModel.currentScreen.value != CurrentScreen.GROUPS) {
-                viewModel.setScreen(CurrentScreen.GROUPS)
-                viewModel.showLayoutSettings(false)
+    fun groupsNavigation() {
+        if (mainUiViewModel.currentScreen.value != CurrentScreen.GROUPS) {
+            mainUiViewModel.setScreen(CurrentScreen.GROUPS)
+            mainUiViewModel.showLayoutSettings(false)
+            if (!userPreferencesRepository.inGroup) {
                 invalidateOptionsMenu()
-                navController?.navigate(R.id.nav_grupos)
-                toolbar?.setTitle(R.string.menu_grupos)
-            }
-        } else {
-            viewModel.setScreen(CurrentScreen.GROUPS)
-            viewModel.showToolbar(true)
-            viewModel.showLayoutSettings(false)
-            invalidateOptionsMenu()
-
-            val newFragment = PageAdapterGroup().apply {
-                arguments = Bundle().apply {
-                    putString("group_name", repo.groupName)
-                    putString("getUid", repo.userName)
+                navController?.navigate(R.id.nav_groups)
+                materialToolbar?.setTitle(R.string.menu_groups)
+            } else {
+                mainUiViewModel.showToolbar(true)
+                invalidateOptionsMenu()
+                val newFragment = PageAdapterGroup().apply {
+                    arguments = Bundle().apply {
+                        putString("group_name", userPreferencesRepository.groupName)
+                        putString("getUid", userPreferencesRepository.userName)
+                    }
                 }
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.nav_host_fragment, newFragment)
+                    .commit()
+                materialToolbar?.title = userPreferencesRepository.groupName
             }
-
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.nav_host_fragment, newFragment)
-                .commit()
-
-            toolbar?.title = userPreferencesRepository.groupName
         }
     }
 
-    // Navigation Helpers
+    fun chatNavigation() {
+        if (mainUiViewModel.currentScreen.value != CurrentScreen.CHAT) {
+            mainUiViewModel.setScreen(CurrentScreen.CHAT)
 
-    fun navChatList() {
-        if (viewModel.currentScreen.value != CurrentScreen.CHAT) {
-            viewModel.setScreen(CurrentScreen.CHAT)
-
-            viewModel.showToolbar(true)
-            viewModel.showLayoutSettings(false)
+            mainUiViewModel.showToolbar(true)
+            mainUiViewModel.showLayoutSettings(false)
             invalidateOptionsMenu()
 
             navController?.navigate(R.id.nav_chat)
-            toolbar?.setTitle(R.string.menu_chat)
+            materialToolbar?.setTitle(R.string.menu_chat)
 
-            mBottomNavigation?.visibility = View.VISIBLE
+//            bottomNavigationView?.visibility = View.VISIBLE
 
             // Fix loop infinito
-            if (mBottomNavigation?.selectedItemId != R.id.navBottomChat) {
-                mBottomNavigation?.selectedItemId = R.id.navBottomChat
+            if (bottomNavigationView?.selectedItemId != R.id.navBottomChat) {
+                bottomNavigationView?.selectedItemId = R.id.navBottomChat
             }
 
-            drawer?.closeDrawer(GravityCompat.START)
+            drawerLayout?.closeDrawer(GravityCompat.START)
         }
     }
 
-    fun editProfile(item: MenuItem?) {
-        if (viewModel.currentScreen.value != CurrentScreen.EDIT_PROFILE) {
-            viewModel.showBottomNav(false)
-            viewModel.showLayoutSettings(false)
-            toolbar?.setTitle(R.string.menu_edit)
+    fun editProfileNavigation() {
+        if (mainUiViewModel.currentScreen.value != CurrentScreen.EDIT_PROFILE) {
+            mainUiViewModel.showBottomNav(false)
+            mainUiViewModel.showLayoutSettings(false)
+            materialToolbar?.setTitle(R.string.menu_edit)
             invalidateOptionsMenu()
 
             navController?.navigate(R.id.nav_editPerfil)
-            viewModel.setScreen(CurrentScreen.EDIT_PROFILE)
+            mainUiViewModel.setScreen(CurrentScreen.EDIT_PROFILE)
         }
-        drawer?.closeDrawer(GravityCompat.START)
+        drawerLayout?.closeDrawer(GravityCompat.START)
     }
 
     // ==========================================
     // 4. LOGIC (Logout, Exit, Etc)
     // ==========================================
 
-    fun logout(item: MenuItem?) {
+    fun logout() {
         AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
             .setTitle("Cerrar sesión")
             .setMessage("¿Está seguro de cerrar su sesión?")
@@ -365,8 +365,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun performLogout() {
         UserRepository.setUserOffline(applicationContext, user.uid)
-        viewModel.logout() // Delega lógica a VM
-        EditProfileFragment.Companion.deleteProfilePreferences(this)
+        mainUiViewModel.logout() // Delega lógica a VM
+        EditProfileFragment.deleteProfilePreferences(this)
         stopLocationUpdates()
 
         // Navegación final
@@ -375,18 +375,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun exitGroup() {
-        // La lógica visual inmediata
-        val groupName = userPreferencesRepository.groupName // Guardamos antes de limpiar
-        viewModel.exitGroup() // VM limpia Firebase y Repo
-
+        userSessionManager.performExitGroupDataCleanup()
         // Limpieza de UI local (Fragments)
         // Nota: Idealmente el Fragmento debería observar y cerrarse solo, pero forzamos por ahora
         supportFragmentManager.beginTransaction()
             .replace(R.id.nav_host_fragment, GruposFragment())
             .commit()
 
-        toolbar?.setTitle(R.string.menu_grupos)
-        viewModel.setScreen(CurrentScreen.GROUPS)
+        materialToolbar?.setTitle(R.string.menu_groups)
+        mainUiViewModel.setScreen(CurrentScreen.GROUPS)
     }
 
     // ==========================================
@@ -394,7 +391,7 @@ class MainActivity : AppCompatActivity() {
     // ==========================================
 
     private fun setupLocation() {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         settingsClient = LocationServices.getSettingsClient(this)
         locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
             .setMinUpdateIntervalMillis(500)
@@ -427,12 +424,12 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        fusedLocationClient?.requestLocationUpdates(locationRequest!!, locationCallback!!, mainLooper)
+        fusedLocationProviderClient?.requestLocationUpdates(locationRequest!!, locationCallback!!, mainLooper)
     }
 
     private fun stopLocationUpdates() {
-        if (fusedLocationClient != null && locationCallback != null) {
-            fusedLocationClient?.removeLocationUpdates(locationCallback!!)
+        if (fusedLocationProviderClient != null && locationCallback != null) {
+            fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
         }
     }
 
@@ -442,17 +439,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleIncomingIntentFlag() {
         intent.extras?.getInt("flagIntent", -1)?.let { flag ->
-            if (flag == 0) editProfile(null)
+            if (flag == 0) editProfileNavigation()
         }
     }
 
     // --- Legacy / UI Utils ---
 
     fun configureUsersToolbar(filterActive: Boolean, onRefresh: () -> Unit, onFilterClick: () -> Unit) {
-        refresh?.setOnClickListener { onRefresh() }
-        filter?.setOnClickListener { onFilterClick() }
+        refreshButton?.setOnClickListener { onRefresh() }
+        filterButton?.setOnClickListener { onFilterClick() }
         val colorRes = if (filterActive) R.color.accent else R.color.blanco
-        filter?.setColorFilter(getColorCompat(colorRes), PorterDuff.Mode.SRC_IN)
+        filterButton?.setColorFilter(getColorCompat(colorRes), PorterDuff.Mode.SRC_IN)
     }
 
     private fun getColorCompat(resId: Int) = ContextCompat.getColor(this, resId)
@@ -464,27 +461,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onBackPressedLegacy() {
-        if (viewModel.currentScreen.value == CurrentScreen.EDIT_PROFILE) {
+        if (mainUiViewModel.currentScreen.value == CurrentScreen.EDIT_PROFILE) {
             // Lógica simple de back en edit profile
             val btSave = findViewById<ImageButton?>(R.id.bt_save)
             if (btSave?.isEnabled == true) {
                 showSnack("Guarde los cambios antes de salir") // Simplificado
             } else {
-                navChatList()
+                chatNavigation()
             }
             return
         }
 
-        if (drawer?.isDrawerOpen(GravityCompat.START) == true) {
-            drawer?.closeDrawer(GravityCompat.START)
+        if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
+            drawerLayout?.closeDrawer(GravityCompat.START)
             return
         }
 
-        if (viewModel.currentScreen.value == CurrentScreen.CHAT || viewModel.currentScreen.value == CurrentScreen.USERS) {
+        if (mainUiViewModel.currentScreen.value == CurrentScreen.CHAT || mainUiViewModel.currentScreen.value == CurrentScreen.USERS) {
             if (searchView?.isIconified == false) searchView?.onActionViewCollapsed()
             else finish()
         } else {
-            navChatList()
+            chatNavigation()
         }
     }
 
@@ -506,14 +503,14 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_favorites -> {
-                mBottomNavigation?.selectedItemId = R.id.navBottomFavorites
+                bottomNavigationView?.selectedItemId = R.id.navBottomFavorites
                 true
             }
             R.id.action_exit -> {
                 AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
-                    .setTitle("Salir")
+                    .setTitle(DIALOG_EXIT)
                     .setMessage("¿Desea abandonar ${userPreferencesRepository.groupName}?")
-                    .setPositiveButton("Salir") { _, _ -> exitGroup() }
+                    .setPositiveButton(DIALOG_EXIT) { _, _ -> exitGroup() }
                     .setNegativeButton(DIALOG_CANCEL, null)
                     .show()
                 true
