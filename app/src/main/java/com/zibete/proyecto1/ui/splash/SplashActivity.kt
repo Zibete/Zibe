@@ -317,31 +317,22 @@ class SplashActivity : ComponentActivity() {
                             is SplashUiEvent.ShowTokenDialog ->
                                 tokenDialogState = TokenDialogState(event.mail, event.flag)
 
-                            SplashUiEvent.NavigateOnBoarding ->
+                            is SplashUiEvent.NavigateOnBoarding ->
                                 navController.navigate("onboarding") {
                                     popUpTo("splash") { inclusive = true }
                                 }
 
-                            SplashUiEvent.NavigateAuth ->
+                            is SplashUiEvent.NavigateAuth ->
                                 navController.navigate("auth") {
                                     popUpTo("splash") { inclusive = true }
                                 }
 
-                            SplashUiEvent.RequestLocationPermission ->
+                            is SplashUiEvent.RequestLocationPermission ->
                                 navController.navigate("permission")
 
-                            SplashUiEvent.NavigateEditProfile -> {
+                            is SplashUiEvent.NavigateMain -> {
                                 startActivity(
                                     Intent(this@SplashActivity, MainActivity::class.java)
-                                        .apply { putExtra("flagIntent", 0) }
-                                )
-                                finish()
-                            }
-
-                            SplashUiEvent.NavigateMain -> {
-                                startActivity(
-                                    Intent(this@SplashActivity, MainActivity::class.java)
-                                        .apply { putExtra("flagIntent", 1) }
                                 )
                                 finish()
                             }

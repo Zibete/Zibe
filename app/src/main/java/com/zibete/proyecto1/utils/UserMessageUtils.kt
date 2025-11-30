@@ -105,23 +105,40 @@ object UserMessageUtils {
         message: String,
         positiveText: String = DIALOG_ACCEPT,
         negativeText: String = DIALOG_CANCEL,
+        choices: Array<String>? = null,
+        selectedIndex: Int = -1,
+        onChoiceSelected: ((index: Int) -> Unit)? = null,
         onConfirm: () -> Unit,
         onCancel: (() -> Unit)? = null
     ) {
-        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+
+        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
             .setTitle(title)
-            .setMessage(message)
             .setCancelable(false)
-            .setPositiveButton(positiveText) { dialog, _ ->
-                dialog.dismiss()
-                onConfirm()
+
+        if (choices != null) {
+            // Modo lista de selección única
+            builder.setSingleChoiceItems(choices, selectedIndex) { _, index ->
+                onChoiceSelected?.invoke(index)
             }
-            .setNegativeButton(negativeText) { dialog, _ ->
-                dialog.dismiss()
-                onCancel?.invoke()
-            }
-            .show()
+        } else {
+            // Modo mensaje normal
+            builder.setMessage(message)
+        }
+
+        builder.setPositiveButton(positiveText) { dialog, _ ->
+            dialog.dismiss()
+            onConfirm()
+        }
+
+        builder.setNegativeButton(negativeText) { dialog, _ ->
+            dialog.dismiss()
+            onCancel?.invoke()
+        }
+
+        builder.show()
     }
+
 
     // ========= PROGRESS DIALOG =========
 

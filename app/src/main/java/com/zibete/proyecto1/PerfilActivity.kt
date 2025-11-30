@@ -39,11 +39,6 @@ import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserRepository.silent
-import com.zibete.proyecto1.data.UserRepository.setBlockUser
-import com.zibete.proyecto1.data.UserRepository.setUnBlockUser
-import com.zibete.proyecto1.data.UserRepository.setUserOffline
-import com.zibete.proyecto1.data.UserRepository.setUserOnline
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import java.math.BigDecimal

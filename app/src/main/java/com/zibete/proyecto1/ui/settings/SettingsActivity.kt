@@ -528,7 +528,7 @@ class SettingsActivity : AppCompatActivity() {
         toolbar.setTitle(R.string.menu_groups)
     }
 
-    fun logOut(deleteUser: String?) {
+    suspend fun logOut(deleteUser: String?) {
 
 //        MainActivity.listenerToken?.let {
 //            firebaseRefsContainer.refCuentas.child(user.uid)
@@ -538,7 +538,7 @@ class SettingsActivity : AppCompatActivity() {
 
         EditProfileFragment.Companion.deleteProfilePreferences(this)
 
-        userSessionManager.logOutCleanup(deleteUser)
+        userSessionManager.logOutCleanup()
     }
 
     // endregion
@@ -607,7 +607,7 @@ class SettingsActivity : AppCompatActivity() {
                                 zibeAppPrefs.edit {
                                     putBoolean("deleteUser", true)
                                 }
-                                logOut(null)
+                                logOut(deleteUser)
                             }
                             .show()
                     }

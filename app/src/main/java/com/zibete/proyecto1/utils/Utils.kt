@@ -35,4 +35,9 @@ object Utils {
         return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(c.time)
     }
 
+    fun now(): String {
+        val c = Calendar.getInstance()
+        return SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(c.time)
+    }
+
 }

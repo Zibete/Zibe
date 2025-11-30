@@ -12,7 +12,6 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.data.UserRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -27,7 +26,8 @@ class UserSessionManager @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseAuth: FirebaseAuth,
     private val loginManager: LoginManager,
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userRepository: UserRepository
 ) {
 
     // Propiedad calculada: Acceso seguro al usuario (mantiene la lógica "crash-si-no-hay")
@@ -41,12 +41,11 @@ class UserSessionManager @Inject constructor(
 
     /**
      * Lógica de abandono de grupo (Solo manipulación de datos y Firebase).
-     * Toda la lógica de UI, Fragmentos y Toolbars DEBE estar fuera de aquí.
      */
     fun performExitGroupDataCleanup() {
         val currentGroup = userPreferencesRepository.groupName
-        val currentUid = user.uid
-        val currentUserName = userPreferencesRepository.userName
+        val myUid = user.uid
+        val myUserName = userPreferencesRepository.userName
 
         if (currentGroup.isEmpty()) return
 
@@ -56,35 +55,35 @@ class UserSessionManager @Inject constructor(
         // de estado (repo.inGroup = false) o al recibir un evento.
 
         // 1. Eliminar chats unknown vinculados (Lógica de negocio)
-        firebaseRefsContainer.refDatos.child(currentUid).child(CHATWITHUNKNOWN)
+        firebaseRefsContainer.refDatos.child(myUid).child(CHATWITHUNKNOWN)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
-                        firebaseRefsContainer.refChatUnknown.child("$currentUid <---> $key").removeValue()
-                        firebaseRefsContainer.refChatUnknown.child("$key <---> $currentUid").removeValue()
-                        firebaseRefsContainer.refDatos.child(key).child(CHATWITHUNKNOWN).child(currentUid).removeValue()
+                        firebaseRefsContainer.refChatUnknown.child("$myUid <---> $key").removeValue()
+                        firebaseRefsContainer.refChatUnknown.child("$key <---> $myUid").removeValue()
+                        firebaseRefsContainer.refDatos.child(key).child(CHATWITHUNKNOWN).child(myUid).removeValue()
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(currentUid).child(CHATWITHUNKNOWN).removeValue()
+        firebaseRefsContainer.refDatos.child(myUid).child(CHATWITHUNKNOWN).removeValue()
 
         // 2. Notificación de Abandono al grupo
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())
         val chatmsg = ChatsGroup(
             "abandonó la sala",
             dateFormat.format(Calendar.getInstance().time),
-            currentUserName,
-            currentUid,
+            myUserName,
+            myUid,
             0,
             userPreferencesRepository.userType
         )
         firebaseRefsContainer.refGroupChat.child(currentGroup).push().setValue(chatmsg)
 
         // 3. Eliminar usuario del nodo Users
-        firebaseRefsContainer.refGroupUsers.child(currentGroup).child(currentUid).removeValue()
+        firebaseRefsContainer.refGroupUsers.child(currentGroup).child(myUid).removeValue()
 
         // 4. Reset estado local (Repo)
         userPreferencesRepository.resetGroupState() // Función que limpia el estado de grupo en el Repo
@@ -92,34 +91,26 @@ class UserSessionManager @Inject constructor(
 
     /**
      * Ejecuta toda la limpieza de sesión y devuelve el Intent de navegación.
-     * @param deleteUser Si es distinto de null, implica que el usuario está siendo borrado.
      * @return Intent configurado para navegar a SplashActivity.
      */
-    fun logOutCleanup(deleteUser: String?): Intent {
-        val currentUid = user.uid
+    suspend fun logOutCleanup(): Intent {
 
-        // 1. Limpieza de estado y listeners globales (Datos)
-        if (deleteUser == null) {
-            UserRepository.setUserOffline(applicationContext, currentUid)
-        }
+        // 1. Limpieza de estado
+        userRepository.setUserLastSeen()
 
+        // 2. Si está en grupo, realizar limpieza de grupo
         if (userPreferencesRepository.inGroup) {
-            // Llama a la lógica de limpieza de grupo (solo datos)
             performExitGroupDataCleanup()
         }
 
-        // 🛑 CRÍTICO: Eliminación de Listeners Estáticos
-        // El listenerToken de sesión DEBE ser removido por la Activity/ViewModel que lo esté gestionando.
-
-        // 2. Limpieza de datos
+        // 3. Limpieza de preferencias
         userPreferencesRepository.clearAllData()
-        // EditProfileFragment.deleteProfilePreferences(this) <--- Tarea UI/Contextual (se queda en Activity)
 
-        // 3. Auth
+        // 4. Cierre de sesión en Firebase y Facebook
         firebaseAuth.signOut()
-        loginManager.logOut() // Facebook Logout
+        loginManager.logOut()
 
-        // 4. Devolver el Intent (La Activity lo lanzará)
+        // 5. Devolver Intent para navegación
         return Intent(applicationContext, SplashActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         }

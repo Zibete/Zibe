@@ -152,7 +152,7 @@ class AdapterUsers @Inject constructor(
         }
 
         // Estado (Online/Offline)
-        UserRepository.stateUser(context, users.id, h.iconConectado, h.iconDesconectado, h.tvEstado, Constants.CHATWITH)
+//        UserRepository.stateUser(context, users.id, h.iconConectado, h.iconDesconectado, h.tvEstado, Constants.CHATWITH)
 
         // Listeners Visuales (Favorito, Bloqueado, Me Bloqueó)
         currentUserUid?.let { uid ->

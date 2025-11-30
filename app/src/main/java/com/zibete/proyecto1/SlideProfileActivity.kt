@@ -108,32 +108,32 @@ class SlideProfileActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val u = userList.getOrNull(viewPager.currentItem) ?: return super.onOptionsItemSelected(item)
-        val root = findViewById<android.view.View>(android.R.id.content)
-        when (item.itemId) {
-            android.R.id.home -> onBackPressedDispatcher.onBackPressed()
-            R.id.action_silent -> {
-                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
-                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
-            }
-            R.id.action_notif -> {
-                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
-                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
-            }
-            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)
-            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.CHATWITH)
-            R.id.action_delete -> ChatUtils.deleteChat(this, u.id, u.name, root, Constants.CHATWITH)
-        }
+//        val u = userList.getOrNull(viewPager.currentItem) ?: return super.onOptionsItemSelected(item)
+//        val root = findViewById<android.view.View>(android.R.id.content)
+//        when (item.itemId) {
+//            android.R.id.home -> onBackPressedDispatcher.onBackPressed()
+//            R.id.action_silent -> {
+//                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
+//                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
+//            }
+//            R.id.action_notif -> {
+//                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
+//                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+//            }
+//            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)
+//            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.CHATWITH)
+//            R.id.action_delete -> ChatUtils.deleteChat(this, u.id, u.name, root, Constants.CHATWITH)
+//        }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onPause() {
         super.onPause()
-        user?.uid?.let { UserRepository.setUserOffline(applicationContext, it) }
+//        user?.uid?.let { UserRepository.setUserOffline(applicationContext, it) }
     }
 
     override fun onResume() {
         super.onResume()
-        user?.uid?.let { UserRepository.setUserOnline(applicationContext, it) }
+//        user?.uid?.let { UserRepository.setUserOnline(applicationContext, it) }
     }
 }

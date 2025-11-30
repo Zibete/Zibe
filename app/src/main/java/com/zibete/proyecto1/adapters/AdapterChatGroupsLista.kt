@@ -54,9 +54,9 @@ class AdapterChatGroupsLista(
     class ChatGroupViewHolder(val binding: RowChatlistaBinding) : RecyclerView.ViewHolder(binding.root) {
         init {
             binding.cardview.isVisible = false
-            binding.iconConectado.isVisible = false
-            binding.iconDesconectado.isVisible = false
-            binding.tvEstado.isVisible = false
+            binding.iconConnected.isVisible = false
+            binding.iconDisconnected.isVisible = false
+            binding.tvStatus.isVisible = false
             binding.notifOff.isVisible = false
             binding.nuevoMsg.isVisible = false
             binding.relativeLayout.isVisible = false
@@ -100,7 +100,7 @@ class AdapterChatGroupsLista(
         } catch (_: Exception) {}
 
         // 2. Estado Online (Visual)
-        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
+//        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
         refDatos.child(chat.userId).child(Constants.CHATWITHUNKNOWN).child(user.uid)

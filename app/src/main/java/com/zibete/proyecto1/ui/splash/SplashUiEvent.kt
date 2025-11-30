@@ -18,7 +18,6 @@ sealed class SplashUiEvent {
     ) : SplashUiEvent()
 
     object NavigateAuth : SplashUiEvent()
-    object NavigateEditProfile : SplashUiEvent()
     object NavigateMain : SplashUiEvent()
     object RequestLocationPermission : SplashUiEvent()
     object NavigateOnBoarding : SplashUiEvent()

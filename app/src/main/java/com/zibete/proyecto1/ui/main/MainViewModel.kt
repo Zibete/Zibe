@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.ui.main
 
+import android.location.Location
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
@@ -9,16 +11,19 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // Enum para controlar la pantalla actual desde el VM
@@ -33,15 +38,16 @@ sealed class MainUiEvent {
     data class ShowSnack(val message: String) : MainUiEvent()
     data class NavigateTo(val screenId: Int) : MainUiEvent()
 }
-@HiltViewModel // 1. Marcamos el VM
-class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
-    private val userPreferencesRepository: UserPreferencesRepository, // Hilt nos da esto gratis
-    private val firebaseAuth: FirebaseAuth,
-    private val firebaseRefsContainer: FirebaseRefsContainer //
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userSessionManager: UserSessionManager,
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val user: FirebaseUser
-        get() = firebaseAuth.currentUser!!
+
+    private val myUid = userSessionManager.user.uid
 
     private var groupMsgCountListener: ValueEventListener? = null
 
@@ -68,6 +74,10 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
 
     private val _groupBadgeCount = MutableStateFlow(0)
     val groupBadgeCount = _groupBadgeCount.asStateFlow()
+
+    private val _navEvents = MutableSharedFlow<MainNavEvent>()
+    val navEvents: SharedFlow<MainNavEvent> = _navEvents.asSharedFlow()
+
 
     // --- LOGICA DE SESION ---
     private var myInstallId: String? = null
@@ -99,8 +109,8 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
     // --- LOGICA DE BADGES ---
 
     private fun listenToChatBadges() {
-        val uid = user?.uid ?: return
-        firebaseRefsContainer.refDatos.child(uid).child(Constants.CHATWITH)
+
+        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH)
             .orderByChild("noVisto").startAt(1.0)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -115,7 +125,6 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
     }
 
     private fun listenToGroupBadges() {
-        val uid = user?.uid ?: return
 
         // El listener solo debe estar activo si no estamos DENTRO de un chat de grupo.
         if (userPreferencesRepository.inGroup) return
@@ -126,7 +135,7 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
 
         groupMsgCountListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                calculateGroupBadgeCount(uid, snapshot)
+                calculateGroupBadgeCount(myUid, snapshot)
             }
 
             override fun onCancelled(error: DatabaseError) { /* Manejo de errores */ }
@@ -194,16 +203,16 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
     // --- LOGICA DE SESIÓN (Install ID) ---
 
     private fun setupInstallIdAndFcm() {
-        val uid = user?.uid ?: return
+
         FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 myInstallId = task.result
-                checkSessionConflict(uid)
+                checkSessionConflict(myUid)
             }
         }
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                firebaseRefsContainer.refCuentas.child(uid).child("fcmToken").setValue(task.result)
+                firebaseRefsContainer.refCuentas.child(myUid).child("fcmToken").setValue(task.result)
             }
         }
     }
@@ -226,27 +235,87 @@ class MainUiViewModel @Inject constructor( // 2. Inyectamos el constructor
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
 
-    fun logout() {
-        val uid = user?.uid ?: return
-
-        // 1. Salir del grupo si corresponde
-        if (userPreferencesRepository.inGroup) {
-            performExitGroupLogic()
+    fun onLocationChanged(location: Location) {
+        viewModelScope.launch {
+            userRepository.updateLocation(location)
         }
-
-        // 2. Limpiar listeners
-        installIdListener?.let {
-            firebaseRefsContainer.refCuentas.child(uid).child("installId").removeEventListener(it)
-        }
-
-        // 3. Limpiar Repo y Auth
-        userPreferencesRepository.clearAllData()
-        FirebaseAuth.getInstance().signOut()
-        // LoginManager.getInstance().logOut() // Facebook, requiere dependencia en gradle
-
-        // 4. Reset VM state
-        _chatBadgeCount.value = 0
     }
+
+    fun onChatTabSelected() {
+        if (currentScreen.value == CurrentScreen.CHAT) return
+
+        setScreen(CurrentScreen.CHAT)
+        showToolbar(true)
+        showLayoutSettings(false)
+        showBottomNav(true)
+
+        viewModelScope.launch {
+            _navEvents.emit(MainNavEvent.ToChat)
+        }
+    }
+
+    fun onGroupsTabSelected() {
+        if (currentScreen.value == CurrentScreen.GROUPS) return
+
+        setScreen(CurrentScreen.GROUPS)
+        showLayoutSettings(false)
+
+        viewModelScope.launch {
+            if (!userPreferencesRepository.inGroup) {
+                // No está en grupo → ir al flujo de selección de grupo
+                _navEvents.emit(MainNavEvent.ToGroupsSelect)
+            } else {
+                // Ya está en grupo → ir al PageAdapterGroup
+                showToolbar(true)
+                _navEvents.emit(
+                    MainNavEvent.ToGroupsDetail(
+                        groupName = userPreferencesRepository.groupName,
+                        userName = userPreferencesRepository.userName
+                    )
+                )
+            }
+        }
+    }
+
+    fun onEditProfileSelected() {
+        if (currentScreen.value == CurrentScreen.EDIT_PROFILE) return
+
+        setScreen(CurrentScreen.EDIT_PROFILE)
+        showBottomNav(false)
+        showLayoutSettings(false)
+
+        viewModelScope.launch {
+            _navEvents.emit(MainNavEvent.ToEditProfile)
+        }
+    }
+
+    fun onLogoutConfirmed() {
+        viewModelScope.launch {
+            val intent = userSessionManager.logOutCleanup()
+            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+        }
+    }
+
+    fun checkIfMustOpenEditProfile() {
+        if (!userPreferencesRepository.firstLoginDone) {
+            viewModelScope.launch {
+                _navEvents.emit(MainNavEvent.ToEditProfile)
+            }
+        }
+    }
+
+
+    fun onExitGroupConfirmed() {
+        viewModelScope.launch {
+            userSessionManager.performExitGroupDataCleanup()
+            setScreen(CurrentScreen.GROUPS)
+            _navEvents.emit(MainNavEvent.ToGroupsAfterExit)
+        }
+    }
+
+
+
+
 
 //    fun exitGroup() {
 //        if (!userPreferencesRepository.inGroup) return

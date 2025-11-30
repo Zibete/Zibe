@@ -12,6 +12,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
@@ -19,37 +21,120 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object ChatUtils {
-
-    private val user get() = currentUser!!
-
+@Singleton
+class ChatUtils @Inject constructor(
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userSessionManager: UserSessionManager,
+    @ApplicationContext private val context: Context
+) {
 
     // ---------- OCULTAR CHAT ----------
-    fun unhiddenChat(
-        ctx: Context,
-        idUser: String,
-        nameUser: String,
-        view: View,
-        type: String
-    ) {
-        AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
-            .setTitle("Ocultar chat con $nameUser")
-            .setPositiveButton(DIALOG_ACCEPT) { _, _ ->
-                refDatos.child(user.uid).child(type).child(idUser)
-                    .child("estado").setValue("delete")
+//    fun unhiddenChat(
+//        ctx: Context,
+//        idUser: String,
+//        nameUser: String,
+//        view: View,
+//        type: String
+//    ) {
+//        AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
+//            .setTitle("Ocultar chat con $nameUser")
+//            .setPositiveButton(DIALOG_ACCEPT) { _, _ ->
+//                refDatos.child(user.uid).child(type).child(idUser)
+//                    .child("estado").setValue("delete")
+//
+//                val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
+//                snack.setBackgroundTint(ctx.getColor(R.color.colorC))
+//                snack.view.findViewById<TextView>(
+//                    com.google.android.material.R.id.snackbar_text
+//                ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+//                snack.show()
+//            }
+//            .setNegativeButton(DIALOG_CANCEL, null)
+//            .setCancelable(false)
+//            .show()
+//    }
 
-                val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
-                snack.setBackgroundTint(ctx.getColor(R.color.colorC))
-                snack.view.findViewById<TextView>(
-                    com.google.android.material.R.id.snackbar_text
-                ).textAlignment = View.TEXT_ALIGNMENT_CENTER
-                snack.show()
-            }
+//    fun showUnhideConfirmation(
+//        context: Context,
+//        nameUser: String,
+//        onConfirm: () -> Unit
+//    ) {
+//        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+//            .setTitle("Ocultar chat con $nameUser")
+//            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> onConfirm() }
+//            .setNegativeButton(DIALOG_CANCEL, null)
+//            .setCancelable(false)
+//            .show()
+//    }
+//
+//    fun showUnhiddenSnack(view: View, context: Context) {
+//        val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
+//        snack.setBackgroundTint(context.getColor(R.color.colorC))
+//        snack.view.findViewById<TextView>(
+//            com.google.android.material.R.id.snackbar_text
+//        ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+//        snack.show.show()
+//    }
+
+    private val myUid = userSessionManager.user.uid
+
+
+
+    fun showDeleteConfirmation(context: Context,nameUser: String,onConfirm: () -> Unit) {
+        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+            .setTitle("Eliminar chat con $nameUser")
+            .setSingleChoiceItems(
+                arrayOf(
+                    "Ocultar chat",
+                    "Eliminar mensajes"
+                ),
+                0
+            ) { _, which -> /* Manejar selección si es necesario */ }
+            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> onConfirm() }
             .setNegativeButton(DIALOG_CANCEL, null)
             .setCancelable(false)
             .show()
     }
+
+    fun showChatDeletedSnack(context: Context, view: View, count: Int) {
+        val message = if (count == 1) "$count mensaje eliminado" else "$count mensajes eliminados"
+        val snack = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
+        snack.setBackgroundTint(context.getColor(R.color.colorC))
+        snack.view.findViewById<TextView>(
+            com.google.android.material.R.id.snackbar_text
+        ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+        snack.show()
+    }
+
+    fun showEmptyChatSnack(context: Context, view: View) {
+        val snack = Snackbar.make(view, "Chat vacío", Snackbar.LENGTH_SHORT)
+        snack.setBackgroundTint(context.getColor(R.color.colorC))
+        snack.view.findViewById<TextView>(
+            com.google.android.material.R.id.snackbar_text
+        ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+        snack.show()
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // ---------- ELIMINAR CHAT ----------
     fun deleteChat(
@@ -62,10 +147,10 @@ object ChatUtils {
         val ref = if (type == Constants.CHATWITH) Constants.CHAT else Constants.UNKNOWN
 
         val refYourReceiverData: StorageReference = Constants.storageReference.child("$type/$idUser/")
-        val refMyReceiverData: StorageReference = Constants.storageReference.child("$type/${user!!.uid}/")
+        val refMyReceiverData: StorageReference = Constants.storageReference.child("$type/${myUid}/")
 
-        val startedByMe = refChats.child(ref).child("${user.uid} <---> $idUser").child("Mensajes")
-        val startedByHim = refChats.child(ref).child("$idUser <---> ${user.uid}").child("Mensajes")
+        val startedByMe = refChats.child(ref).child("${myUid} <---> $idUser").child("Mensajes")
+        val startedByHim = refChats.child(ref).child("$idUser <---> ${myUid}").child("Mensajes")
 
         startedByMe.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -102,7 +187,7 @@ object ChatUtils {
 
         for (snap in dataSnapshot.children) {
             val chat = snap.getValue(Chats::class.java) ?: continue
-            val isMine = chat.sender == user.uid
+            val isMine = chat.sender == myUid
 
             if (isMine && chat.type in listOf(Constants.MSG, Constants.PHOTO, Constants.AUDIO, Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT))
                 messages.add(chat)
@@ -129,7 +214,7 @@ object ChatUtils {
 
         builder.setPositiveButton(DIALOG_ACCEPT) { _, _ ->
             if (itemSelected[0] == 0) {
-                refDatos.child(user.uid).child(type).child(idUser)
+                refDatos.child(myUid).child(type).child(idUser)
                     .child("estado").setValue("delete")
                 showSnack(context, view, "Se ha ocultado el chat")
             } else {
@@ -137,7 +222,7 @@ object ChatUtils {
                     dataSnapshot, messages,
                     refYourReceiverData, refMyReceiverData
                 )
-                refDatos.child(user.uid).child(type).child(idUser).removeValue()
+                refDatos.child(myUid).child(type).child(idUser).removeValue()
                 Toast.makeText(
                     context,
                     if (count == 1) "$count mensaje eliminado" else "$count mensajes eliminados",
@@ -165,7 +250,7 @@ object ChatUtils {
                             val type = snap.child("type").getValue(Int::class.java)
                             val sender = snap.child("envia").getValue(String::class.java)
 
-                            val isMine = sender == user.uid
+                            val isMine = sender == myUid
 
                             when {
                                 isMine && type == Constants.MSG -> snap.child("type").ref.setValue(
@@ -200,7 +285,7 @@ object ChatUtils {
 
     private fun deleteRemoteFile(ref: StorageReference, chat: Chats) {
         val msg = chat.message
-        val start = msg.indexOf(user.uid) + user.uid.length + 3
+        val start = msg.indexOf(myUid) + myUid.length + 3
         val ext = if (msg.contains(".jpg")) ".jpg" else ".mp3"
         val end = msg.indexOf(ext) + ext.length
         if (start in 0..end && end <= msg.length) {

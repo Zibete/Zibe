@@ -59,9 +59,9 @@ class AdapterChatLista(
         init {
             // Estado inicial controlado por código (no por XML)
             binding.cardview.isVisible = false
-            binding.iconConectado.isVisible = false
-            binding.iconDesconectado.isVisible = false
-            binding.tvEstado.isVisible = false
+            binding.iconConnected.isVisible = false
+            binding.iconDisconnected.isVisible = false
+            binding.tvStatus.isVisible = false
             binding.notifOff.isVisible = false
             binding.nuevoMsg.isVisible = false
             binding.relativeLayout.isVisible = false
@@ -155,9 +155,9 @@ class AdapterChatLista(
         UserRepository.stateUser(
             context,
             chat.userId,
-            binding.iconConectado,
-            binding.iconDesconectado,
-            binding.tvEstado,
+            binding.iconConnected,
+            binding.iconDisconnected,
+            binding.tvStatus,
             Constants.CHATWITH
         )
 

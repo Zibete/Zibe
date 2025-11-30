@@ -25,6 +25,7 @@ import android.os.Vibrator
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
@@ -79,7 +80,9 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.utils.ChatUtils
+import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -216,6 +219,81 @@ class ChatActivity : AppCompatActivity() {
                                 binding.iconConnected.isVisible = false
                                 binding.tvStatus.text = getString(R.string.offline)
                             }
+                        }
+                    }
+                }
+
+                launch {
+                    chatViewModel.events.collect { event ->
+                        when (event) {
+//                                is ChatUiEvent.ShowSnackbar -> {
+//                                    // Nada aquí por ahora – se verá en Compose cuando migres
+//                                }
+                            is ChatUiEvent.ConfirmBlock -> {
+                                UserMessageUtils.confirm(
+                                    context = this@ChatActivity,
+                                    title = "Bloquear",
+                                    message = "¿Desea bloquear a ${event.name}?",
+                                    onConfirm = { chatViewModel.onBlockConfirmed() }
+                                )
+                            }
+                            is ChatUiEvent.ConfirmUnblock -> {
+                                UserMessageUtils.confirm(
+                                    context = this@ChatActivity,
+                                    title = "Desbloquear",
+                                    message = "¿Desea desbloquear a ${event.name}?",
+                                    onConfirm = { chatViewModel.onUnblockConfirmed() }
+                                )
+                            }
+                            is ChatUiEvent.ShowBlockSuccess -> {
+                                UserMessageUtils.showSnack(
+                                    root = binding.root,
+                                    message = "Bloqueaste a ${event.name}, podrás desbloquearlo cuando desees",
+                                    duration = Snackbar.LENGTH_INDEFINITE,
+                                    actionText = "OK",
+                                    iconRes = R.drawable.ic_info_24
+                                )
+                            }
+                            is ChatUiEvent.ShowToggleNotificationSuccess -> {
+                                UserMessageUtils.showSnack(
+                                    root = binding.root,
+                                    message =   if (event.enabled) "Notificaciones de ${event.name} activadas"
+                                                else "Notificaciones de ${event.name} desactivadas",
+                                    duration = Snackbar.LENGTH_INDEFINITE,
+                                    iconRes = R.drawable.ic_info_24
+                                )
+                            }
+
+                            is ChatUiEvent.ShowUnblockSuccess -> {
+                                UserMessageUtils.showSnack(
+                                    root = binding.root,
+                                    message = "Desbloqueaste a ${event.name}",
+                                    duration = Snackbar.LENGTH_SHORT,
+                                    iconRes = R.drawable.ic_info_24
+                                )
+                            }
+                            is ChatUiEvent.ConfirmDeleteChat -> {
+                                var deleteMessages = false
+                                UserMessageUtils.confirm(
+                                    context = this@ChatActivity,
+                                    title = "Eliminar chat con ${event.name}",
+                                    message = "",
+                                    choices = arrayOf("Ocultar chat", "Eliminar mensajes"),
+                                    selectedIndex = 0,
+                                    onChoiceSelected = { index -> deleteMessages = (index == 1) },
+                                    onConfirm = { chatViewModel.onDeleteChatConfirmed(deleteMessages) }
+                                )
+                            }
+
+//                                is ChatUiEvent.ConfirmDeleteChat -> {
+//                                    ChatUtils.showDeleteConfirmation(this@ChatActivity, event.name) { deleteMessages ->
+//                                        event.onConfirm(deleteMessages)
+//                                    }
+//                                }
+//                                is ChatUiEvent.ShowChatDeleted -> {
+//                                    ChatUtils.showChatDeletedSnack(this@ChatActivity, binding.root, count) // count desde VM si necesitas
+//                                }
+                            else -> {}
                         }
                     }
                 }
@@ -446,6 +524,7 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         super.onPrepareOptionsMenu(menu)
+
         val actionSilent = menu.findItem(R.id.action_silent)
         val actionNotif = menu.findItem(R.id.action_notif)
         val actionBloq = menu.findItem(R.id.action_bloq)
@@ -454,45 +533,19 @@ class ChatActivity : AppCompatActivity() {
 
         actionDelete.isVisible = true
 
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    val state = ds.getValue(String::class.java)
-                    when (state) {
-                        "silent" -> {
-                            actionSilent.isVisible = false
-                            actionNotif.isVisible = true
-                            actionDesbloq.isVisible = false
-                            actionBloq.isVisible = true
-                        }
-                        refChatWith -> {
-                            actionSilent.isVisible = true
-                            actionNotif.isVisible = false
-                            actionDesbloq.isVisible = false
-                            actionBloq.isVisible = true
-                        }
-                        "bloq" -> {
-                            actionSilent.isVisible = false
-                            actionNotif.isVisible = false
-                            actionDesbloq.isVisible = true
-                            actionBloq.isVisible = false
-                        }
-                        "delete" -> {
-                            actionSilent.isVisible = true
-                            actionNotif.isVisible = false
-                            actionDesbloq.isVisible = false
-                            actionBloq.isVisible = true
-                        }
-                        else -> {
-                            actionSilent.isVisible = true
-                            actionNotif.isVisible = false
-                            actionDesbloq.isVisible = false
-                            actionBloq.isVisible = true
-                        }
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        val headerState = chatViewModel.headerState.value
+
+        if (headerState is ChatHeaderState.Loaded) {
+
+            // ----- NOTIFICACIONES -----
+            actionSilent.isVisible = headerState.notificationsEnabled
+            actionNotif.isVisible  = !headerState.notificationsEnabled
+
+            // ----- BLOQUEO -----
+            actionBloq.isVisible    = !headerState.isBlocked
+            actionDesbloq.isVisible = headerState.isBlocked
+        }
+
         return true
     }
 
@@ -1154,7 +1207,6 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun hookBlockAndPresence() {
-//        val me = user ?: return
 
         firebaseRefsContainer.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
             .addValueEventListener(object : ValueEventListener {
@@ -1162,14 +1214,6 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-//        userRepository.stateUser(
-//            applicationContext,
-//            idUserFinal!!,
-//            binding.iconConnected,
-//            binding.iconDisconnected,
-//            binding.tvStatus,
-//            refChatWith
-//        )
 
         firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {

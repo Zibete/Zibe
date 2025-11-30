@@ -14,17 +14,16 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
@@ -32,7 +31,8 @@ import kotlin.coroutines.resume
 class SplashViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository, // ← Inyectado
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val user: FirebaseUser?
@@ -75,11 +75,10 @@ class SplashViewModel @Inject constructor(
 
             // Sin usuario → navegar a Auth
             if (user == null) {
-                firebaseAuth.signOut()
-                LoginManager.getInstance().logOut()
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
+
 
             // 6) Permisos de ubicación
             if (!hasLocationPermission(context)) {
@@ -180,58 +179,29 @@ class SplashViewModel @Inject constructor(
     // ============================================================
 
     private suspend fun updateUserFlow(user: FirebaseUser) {
+
         val snapshot = suspendFirebaseQuery {
             firebaseRefsContainer.refCuentas.child(user.uid)
         }
 
-        val firstTime = !userPreferencesRepository.firstLoginDone
-
         // Usuario nuevo
         if (!snapshot.exists()) {
-            createUserNode(user)
-            userPreferencesRepository.firstLoginDone = true
-            _events.emit(SplashUiEvent.NavigateEditProfile)
-            return
-        }
+            viewModelScope.launch {
+                userRepository.createUserNode(user, userToken)
+            }
 
-        // Primer inicio (post registro)
-        if (firstTime) {
-            userPreferencesRepository.firstLoginDone = true
-            _events.emit(SplashUiEvent.NavigateEditProfile)
-            return
-        }
-
-        // Usuario ya existente → verificar perfil
-        val birthDay = snapshot.child("birthDay").getValue(String::class.java) ?: ""
-
-        if (birthDay.isEmpty()) {
-            _events.emit(SplashUiEvent.NavigateEditProfile)
-        } else {
+            userPreferencesRepository.firstLoginDone = false
             _events.emit(SplashUiEvent.NavigateMain)
+            return
         }
-    }
 
-    private fun createUserNode(user: FirebaseUser) {
-        val now = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            .format(Calendar.getInstance().time)
+        // Usuario existente → verificar perfil
+        val birthDay = snapshot.child("birthDay").getValue(String::class.java).orEmpty()
 
-        val newUser = Users(
-            user.uid,
-            user.displayName ?: "",
-            "",
-            now,
-            0,
-            user.email ?: "",
-            user.photoUrl?.toString() ?: "",
-            true,
-            userToken ?: "",
-            0.0,
-            "",
-            0.0,
-            0.0
-        )
+        // Perfil incompleto → Main luego enviará a EditProfile
+        userPreferencesRepository.firstLoginDone = birthDay.isNotEmpty()
 
-        firebaseRefsContainer.refCuentas.child(user.uid).setValue(newUser)
+        _events.emit(SplashUiEvent.NavigateMain)
     }
 
     // ============================================================

@@ -1,6 +1,5 @@
-package com.zibete.proyecto1.ui
+package com.zibete.proyecto1.ui.chatlist
 
-import android.R
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.os.Handler
@@ -14,61 +13,95 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
+import com.facebook.FacebookSdk.getApplicationContext
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.ChatListGroupsFragment
-import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatLista
-import com.zibete.proyecto1.databinding.FragmentChatListBinding
-import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.utils.ChatUtils
-import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.databinding.FragmentChatListBinding
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.UserMessageUtils
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.Collections
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
+
+
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+
+    private val myUid = userSessionManager.user.uid
+    private val chatListViewModel: ChatListViewModel by viewModels()
+
 
     private var _binding: FragmentChatListBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var adapterChatLista: AdapterChatLista
     private lateinit var layoutManager: LinearLayoutManager
-
     private val chatsArrayList: ArrayList<ChatWith> = ArrayList()
-
-    // Listeners para limpiarlos correctamente
     private var chatListChildListener: ChildEventListener? = null
     private var emptyStateListener: ValueEventListener? = null
-
-    private val currentUser
-        get() = FirebaseAuth.getInstance().currentUser
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
 
-        val u = currentUser
-        if (u == null) {
-            setupInitialUi()
-            showOnBoarding()
-            return binding.root
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                chatListViewModel.events.collect { event ->
+                    when (event) {
+                        is ChatListUiEvent.ConfirmHideChat -> {
+                            UserMessageUtils.confirm(
+                                context = getApplicationContext(),
+                                title = "Ocultar chat",
+                                message = "¿Ocultar chat con ${event.name}?",
+                                onConfirm = event.onConfirm
+                            )
+                        }
+                        is ChatListUiEvent.ShowChatHidden -> {
+                            UserMessageUtils.showSnack(
+                                root = binding.root,
+                                message = "Se ha ocultado el chat",
+                                duration = Snackbar.LENGTH_SHORT,
+                                iconRes = R.drawable.ic_info_24
+                            )
+                        }
+                        else -> {}
+                    }
+                }
+            }
         }
-
+        
         setupRecycler()
         setupInitialUi()
-        setupChatListListener(u.uid)
-        setupEmptyStateListener(u.uid)
+        setupChatListListener()
+        setupEmptyStateListener()
         setupAdapterObserver()
 
         return binding.root
@@ -103,8 +136,8 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // ---------- Listener principal de lista de chats ----------
 
-    private fun setupChatListListener(userId: String) {
-        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH)
+    private fun setupChatListListener() {
+        val ref = FirebaseRefs.refDatos.child(myUid).child(Constants.CHATWITH)
 
         val listener = object : ChildEventListener {
             // Nuevo chat
@@ -162,13 +195,13 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
             } catch (_: ParseException) {
             }
         }
-        Collections.sort(list)
+        list.sort()
     }
 
     // ---------- Empty state / onboarding ----------
 
-    private fun setupEmptyStateListener(userId: String) {
-        val ref = FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH)
+    private fun setupEmptyStateListener() {
+        val ref = FirebaseRefs.refDatos.child(myUid).child(Constants.CHATWITH)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -256,15 +289,13 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
         // Chat unknown / grupos
         if (item.groupId == Constants.FRAGMENT_ID_CHATGROUPLIST) {
-            val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
+            val wChat = ChatListGroupsFragment.Companion.chatsGroupArrayList[item.order]
             val type = Constants.CHATWITHUNKNOWN
             runItemSelected(item, type, wChat.userId, wChat.userName)
         }
 
         return true
     }
-
-    private val chatListViewModel: ChatListViewModel by viewModels()
 
     private fun runItemSelected(
         item: MenuItem,
@@ -276,7 +307,7 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
             1 -> ChatMenuAction.MarkAsReadChat
             2 -> ChatMenuAction.SilentUser
             3 -> ChatMenuAction.BlockUser
-            4 -> ChatMenuAction.UnhideChat
+            4 -> ChatMenuAction.HideChat
             5 -> ChatMenuAction.DeleteChat
             else -> return
         }
@@ -290,9 +321,9 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        val actionSearch = menu.findItem(com.zibete.proyecto1.R.id.action_search)
-        val actionUnlock = menu.findItem(com.zibete.proyecto1.R.id.action_unlock)
-        val actionExit = menu.findItem(com.zibete.proyecto1.R.id.action_exit)
+        val actionSearch = menu.findItem(R.id.action_search)
+        val actionUnlock = menu.findItem(R.id.action_unlock)
+        val actionExit = menu.findItem(R.id.action_exit)
 
         actionExit.isVisible = false
         actionSearch.isVisible = true
@@ -312,12 +343,10 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
     // ---------- Ciclo de vida ----------
 
     override fun onDestroyView() {
-        val u = currentUser
-        if (u != null) {
-            val ref = FirebaseRefs.refDatos.child(u.uid).child(Constants.CHATWITH)
-            chatListChildListener?.let { ref.removeEventListener(it) }
-            emptyStateListener?.let { ref.removeEventListener(it) }
-        }
+
+        val ref = FirebaseRefs.refDatos.child(myUid).child(Constants.CHATWITH)
+        chatListChildListener?.let { ref.removeEventListener(it) }
+        emptyStateListener?.let { ref.removeEventListener(it) }
 
         chatListChildListener = null
         emptyStateListener = null

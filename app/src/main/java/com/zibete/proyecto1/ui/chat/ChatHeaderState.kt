@@ -8,6 +8,7 @@ sealed class ChatHeaderState {
         val status: String,
         val photoUrl: String,
         val isBlocked: Boolean = false,
+        val notificationsEnabled: Boolean = true,
         val isConnected: Boolean = false,
         val shouldCloseChat: Boolean = false
     ) : ChatHeaderState()

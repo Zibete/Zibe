@@ -18,6 +18,7 @@ import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
 
@@ -30,11 +31,10 @@ import kotlin.math.*
 @Singleton // 👈 Hilt asegura una única instancia
 class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor (forma correcta)
     private val repo: UserPreferencesRepository,
-    private val auth: FirebaseAuth,
+    private val sessionManager: UserSessionManager
 ) {
 
-    private val user: FirebaseUser
-        get() = auth.currentUser!!
+    private val myUid = sessionManager.user.uid
 
 
     // === Edad ===
@@ -150,7 +150,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         favOn: ImageView,
         favOff: ImageView
     ) {
-        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList").child(userId)
+        FirebaseRefs.refDatos.child(myUid).child("FavoriteList").child(userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val exists = snapshot.exists()
@@ -167,7 +167,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         userId: String,
         blockIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(userId).child("estado")
+        FirebaseRefs.refDatos.child(myUid).child(Constants.CHATWITH).child(userId).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val isBlocked = snapshot.getValue(String::class.java) == "bloq"
@@ -183,7 +183,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         userId: String,
         blockMeIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH).child(user!!.uid).child("estado")
+        FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH).child(myUid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val blocked = snapshot.getValue(String::class.java) == "bloq"
@@ -203,7 +203,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         if (idUser.isNullOrEmpty()) return
 
         // Mis mensajes hacia él
-        FirebaseRefs.refChat.child("${user.uid} <---> $idUser").child("Mensajes")
+        FirebaseRefs.refChat.child("${myUid} <---> $idUser").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)
@@ -216,7 +216,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
             })
 
         // Sus mensajes hacia mí
-        FirebaseRefs.refChat.child("$idUser <---> ${user.uid}").child("Mensajes")
+        FirebaseRefs.refChat.child("$idUser <---> ${myUid}").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)
@@ -240,7 +240,7 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         val sender = snapshot.child("envia").getValue(String::class.java)
         val url = snapshot.child("mensaje").getValue(String::class.java)
 
-        if (sender != user.uid && url != null && (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT)) {
+        if (sender != myUid && url != null && (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT)) {
             adapter.addString(url)
             linearPhotos.visibility = View.VISIBLE
         }
