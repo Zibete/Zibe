@@ -45,7 +45,7 @@ class UserSessionManager @Inject constructor(
     fun performExitGroupDataCleanup() {
         val currentGroup = userPreferencesRepository.groupName
         val myUid = user.uid
-        val myUserName = userPreferencesRepository.userName
+        val myUserNameGroup = userPreferencesRepository.userNameGroup
 
         if (currentGroup.isEmpty()) return
 
@@ -75,7 +75,7 @@ class UserSessionManager @Inject constructor(
         val chatmsg = ChatsGroup(
             "abandonó la sala",
             dateFormat.format(Calendar.getInstance().time),
-            myUserName,
+            myUserNameGroup,
             myUid,
             0,
             userPreferencesRepository.userType

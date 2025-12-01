@@ -25,7 +25,6 @@ import android.os.Vibrator
 import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
@@ -80,8 +79,6 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -92,7 +89,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
-import kotlin.collections.plusAssign
 
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity() {
@@ -1119,7 +1115,7 @@ class ChatActivity : AppCompatActivity() {
             nameUserFinal = unknownName
             refChat = Constants.UNKNOWN
             refChatWith = Constants.CHATWITHUNKNOWN
-            myName = userPreferencesRepository.userName
+            myName = userPreferencesRepository.userNameGroup
             binding.nameUser.text = nameUserFinal
 
             firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserUnknown!!).child("type")

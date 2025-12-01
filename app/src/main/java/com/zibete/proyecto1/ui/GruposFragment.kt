@@ -309,7 +309,7 @@ class GruposFragment : Fragment(), SearchView.OnQueryTextListener {
         val date = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS").format(Date())
 
         // --- REPO: Guardado automático ---
-        repo.userName = userName
+        repo.userNameGroup = userName
         repo.groupName = groupName
         repo.inGroup = true
         repo.userType = type

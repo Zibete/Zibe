@@ -32,7 +32,7 @@ class UserPreferencesRepository @Inject constructor(
         get() = userPrefs.getBoolean("inGroup", false)
         set(value) = userPrefs.edit { putBoolean("inGroup", value) }
 
-    var userName: String
+    var userNameGroup: String
         get() = userPrefs.getString("userName", "") ?: ""
         set(value) = userPrefs.edit { putString("userName", value) }
 

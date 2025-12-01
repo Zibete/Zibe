@@ -24,6 +24,7 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
@@ -35,9 +36,10 @@ import javax.inject.Inject
 class PageAdapterGroup : Fragment() {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var firebaseAuth: FirebaseAuth
-    private val user: FirebaseUser
-        get() = firebaseAuth.currentUser!!
+    @Inject lateinit var userSessionManager: UserSessionManager
+
+    private val myUid = userSessionManager.user.uid
+
 
     private lateinit var viewPager: ViewPager
     private lateinit var linearProgressBar: LinearLayout
@@ -56,8 +58,6 @@ class PageAdapterGroup : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.pager_groups_chat, container, false)
-
-        if (user == null) return view
 
         // Bind views
         viewPager = view.findViewById(R.id.viewPager)
@@ -134,9 +134,8 @@ class PageAdapterGroup : Fragment() {
     // ========== Badge de incógnito (CHATWITHUNKNOWN) ==========
 
     private fun setupUnknownChatBadge() {
-        val uid = user?.uid ?: return
 
-        val newQuery: Query = refDatos.child(uid)
+        val newQuery: Query = refDatos.child(myUid)
             .child(Constants.CHATWITHUNKNOWN)
             .orderByChild("noVisto")
             .startAt(1.0)

@@ -3,8 +3,7 @@ package com.zibete.proyecto1.ui.main
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.zibete.proyecto1.R
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -14,7 +13,6 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -241,6 +239,68 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun onLogoutConfirmed() {
+        viewModelScope.launch {
+            val intent = userSessionManager.logOutCleanup()
+            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+        }
+    }
+
+    fun checkIfMustOpenEditProfile() {
+        if (!userPreferencesRepository.firstLoginDone) {
+            viewModelScope.launch {
+                _navEvents.emit(MainNavEvent.ToEditProfile)
+            }
+        }
+    }
+
+    fun onExitGroupConfirmed() {
+        viewModelScope.launch {
+            userSessionManager.performExitGroupDataCleanup()
+            setScreen(CurrentScreen.GROUPS)
+            _navEvents.emit(MainNavEvent.ToGroupsAfterExit)
+        }
+    }
+
+    fun onBottomItemSelected(itemId: Int) {
+        when (itemId) {
+
+            R.id.navBottomUsers -> {
+                if (currentScreen.value == CurrentScreen.USERS) return
+
+                setScreen(CurrentScreen.USERS)
+                showToolbar(true)
+                showLayoutSettings(true)
+                showBottomNav(true)
+
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.ToUsers)
+                }
+            }
+
+            R.id.navBottomChat -> {
+                onChatTabSelected()
+            }
+
+            R.id.navBottomFavorites -> {
+                if (currentScreen.value == CurrentScreen.FAVORITES) return
+
+                setScreen(CurrentScreen.FAVORITES)
+                showToolbar(true)
+                showLayoutSettings(false)
+                showBottomNav(true)
+
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.ToFavorites)
+                }
+            }
+
+            R.id.navBottomGrupos -> {
+                onGroupsTabSelected()
+            }
+        }
+    }
+
     fun onChatTabSelected() {
         if (currentScreen.value == CurrentScreen.CHAT) return
 
@@ -258,19 +318,18 @@ class MainViewModel @Inject constructor(
         if (currentScreen.value == CurrentScreen.GROUPS) return
 
         setScreen(CurrentScreen.GROUPS)
+        showBottomNav(true)
         showLayoutSettings(false)
 
         viewModelScope.launch {
             if (!userPreferencesRepository.inGroup) {
-                // No está en grupo → ir al flujo de selección de grupo
                 _navEvents.emit(MainNavEvent.ToGroupsSelect)
             } else {
-                // Ya está en grupo → ir al PageAdapterGroup
                 showToolbar(true)
                 _navEvents.emit(
                     MainNavEvent.ToGroupsDetail(
                         groupName = userPreferencesRepository.groupName,
-                        userName = userPreferencesRepository.userName
+                        userName = userPreferencesRepository.userNameGroup
                     )
                 )
             }
@@ -281,6 +340,7 @@ class MainViewModel @Inject constructor(
         if (currentScreen.value == CurrentScreen.EDIT_PROFILE) return
 
         setScreen(CurrentScreen.EDIT_PROFILE)
+        showToolbar(true)
         showBottomNav(false)
         showLayoutSettings(false)
 
@@ -289,31 +349,53 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun onLogoutConfirmed() {
-        viewModelScope.launch {
-            val intent = userSessionManager.logOutCleanup()
-            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+    fun onBackPressed() {
+        when (currentScreen.value) {
+
+            CurrentScreen.EDIT_PROFILE -> {
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.BackFromEditProfile)
+                }
+            }
+
+            CurrentScreen.CHAT,
+            CurrentScreen.USERS -> {
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.BackExitAppOrCloseSearch)
+                }
+            }
+
+            else -> {
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.BackToChat)
+                }
+            }
         }
     }
 
-    fun checkIfMustOpenEditProfile() {
-        if (!userPreferencesRepository.firstLoginDone) {
-            viewModelScope.launch {
-                _navEvents.emit(MainNavEvent.ToEditProfile)
+    fun onToolbarItemSelected(itemId: Int) {
+        when (itemId) {
+
+            R.id.action_settings -> {
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.ToSettings)
+                }
+            }
+
+            R.id.action_favorites -> {
+                onBottomItemSelected(R.id.navBottomFavorites)
+            }
+
+            R.id.action_exit -> {
+                viewModelScope.launch {
+                    _navEvents.emit(MainNavEvent.ConfirmExitGroup(userPreferencesRepository.groupName))
+                }
             }
         }
     }
 
 
-    fun onExitGroupConfirmed() {
-        viewModelScope.launch {
-            userSessionManager.performExitGroupDataCleanup()
-            setScreen(CurrentScreen.GROUPS)
-            _navEvents.emit(MainNavEvent.ToGroupsAfterExit)
-        }
-    }
-
-
+}
 
 
 
@@ -348,4 +430,3 @@ class MainViewModel @Inject constructor(
 //        _toolbarVisible.value = true // Reset toolbar
 //    }
 
-}

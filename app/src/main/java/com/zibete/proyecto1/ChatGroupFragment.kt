@@ -45,7 +45,10 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
@@ -67,10 +70,13 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ChatGroupFragment : Fragment() {
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
-    private var _binding: FragmentGroupBinding? = null
-    private val binding get() = _binding!!
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+
+    private lateinit var _binding: FragmentGroupBinding
+    private val binding get() = _binding
 
     private val chatsArrayList: ArrayList<ChatsGroup> = ArrayList()
     private var adapter: AdapterChatGroup? = null
@@ -123,11 +129,11 @@ class ChatGroupFragment : Fragment() {
 //        MainActivity.badgeDrawableGroup?.isVisible = false
 
         // Marcar mensajes leídos del grupo activo
-        refGroupChat.child(repo.groupName)
+        refGroupChat.child(userPreferencesRepository.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (this@ChatGroupFragment.isResumed &&
-                        repo.groupName.isNotEmpty()
+                        userPreferencesRepository.groupName.isNotEmpty()
                     ) {
                         val count = snapshot.childrenCount.toInt()
                         refDatos.child(user.uid)
@@ -268,7 +274,7 @@ class ChatGroupFragment : Fragment() {
     }
 
     private fun initOnBoardingObserver() = with(binding) {
-        refGroupChat.child(repo.groupName)
+        refGroupChat.child(userPreferencesRepository.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     progressbar2.isVisible = false
@@ -292,7 +298,7 @@ class ChatGroupFragment : Fragment() {
                 dataSnapshot: DataSnapshot,
                 previousChildName: String?
             ) {
-                if (!dataSnapshot.exists() || !repo.inGroup) return
+                if (!dataSnapshot.exists() || !userPreferencesRepository.inGroup) return
 
                 val chat = dataSnapshot.getValue(ChatsGroup::class.java) ?: return
                 val fmt = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
@@ -304,7 +310,7 @@ class ChatGroupFragment : Fragment() {
                 }
 
                 val dateUser = try {
-                    fmt.parse(repo.userDate)
+                    fmt.parse(userPreferencesRepository.userDate)
                 } catch (e: ParseException) {
                     null
                 }
@@ -320,7 +326,7 @@ class ChatGroupFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {}
         }
 
-        refGroupChat.child(repo.groupName)
+        refGroupChat.child(userPreferencesRepository.groupName)
             .addChildEventListener(listenerGroupChat as ChildEventListener)
     }
 
@@ -434,14 +440,14 @@ class ChatGroupFragment : Fragment() {
         val chatMsg = ChatsGroup(
             stringMsg!!,
             dateFormat.format(c.time),
-            repo.userName,
+            userPreferencesRepository.userNameGroup,
             user.uid,
             msgType,
-            repo.userType
+            userPreferencesRepository.userType
         )
 
         // Enviar a Firebase
-        refGroupChat.child(repo.groupName)
+        refGroupChat.child(userPreferencesRepository.groupName)
             .push()
             .setValue(chatMsg)
             .addOnCompleteListener {
@@ -454,7 +460,7 @@ class ChatGroupFragment : Fragment() {
             }
 
         // Notificaciones a los demás miembros del grupo
-        refGroupUsers.child(repo.groupName)
+        refGroupUsers.child(userPreferencesRepository.groupName)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
@@ -487,10 +493,10 @@ class ChatGroupFragment : Fragment() {
         try {
             val data = JSONObject().apply {
                 put("novistos", "")
-                put("user", repo.userName)
+                put("user", userPreferencesRepository.userNameGroup)
                 put("msg", msg)
                 put("id_user", user.uid)
-                put("type", repo.groupName)
+                put("type", userPreferencesRepository.groupName)
             }
 
             val json = JSONObject().apply {
@@ -655,7 +661,7 @@ class ChatGroupFragment : Fragment() {
         if (chat.id == currentUserId) return
 
         // Usamos el Repo (si ya migraste repo.groupName) o la variable global que tengas
-        val groupName = repo.groupName // O UsersFragment.groupName si aún no migras todo
+        val groupName = userPreferencesRepository.groupName // O UsersFragment.groupName si aún no migras todo
 
         refGroupUsers.child(groupName)
             .child(chat.id)

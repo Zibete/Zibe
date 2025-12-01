@@ -1,9 +1,10 @@
-package com.zibete.proyecto1.ui
+package com.zibete.proyecto1.ui.users
 
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -16,9 +17,13 @@ import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -26,30 +31,53 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.FixedSwipeRefreshLayout
-import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
-import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.utils.Utils.calcAge
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.databinding.FragmentGroupBinding
+import com.zibete.proyecto1.databinding.FragmentUsersBinding
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.extensions.getColorCompat
+import com.zibete.proyecto1.ui.main.MainActivity
+import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.ProfileUiBinder
+import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.util.Collections
 import javax.inject.Inject
+import kotlin.getValue
 
 @AndroidEntryPoint
 class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
-    @Inject
-    lateinit var profileUiBinder: ProfileUiBinder
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var userSessionManager: UserSessionManager
+    @Inject lateinit var userRepository: UserRepository
+
+    @Inject lateinit var profileUiBinder: ProfileUiBinder
+
+    private val myUid = userSessionManager.user.uid
+
+
+    private lateinit var _binding: FragmentUsersBinding
+    private val binding get() = _binding
+
+
+    private val usersViewModel: UsersViewModel by viewModels()
+
+
+
+
+
 
     // UI Elements
     private var root: View? = null
@@ -62,14 +90,19 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
     private var adapterUsers: AdapterUsers? = null
     private val usersArrayList = mutableListOf<Users>()
     private val originalUsersList = mutableListOf<Users>()
-    private val user: FirebaseUser? = FirebaseAuth.getInstance().currentUser
+
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        root = inflater.inflate(R.layout.fragment_usuarios, container, false)
+
+        _binding = FragmentUsersBinding.inflate(inflater, container, false)
+        val view = binding.root
+
         setHasOptionsMenu(true)
 
         initViews()
@@ -82,8 +115,28 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
         // Carga inicial
         loadUsers(isRefresh = false)
 
-        return root!!
+
+
+        binding.refreshButton.setOnClickListener {
+            usersViewModel.onRefreshRequested()
+        }
+
+        binding.filterButton.setOnClickListener {
+            usersViewModel.onFilterClicked()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            usersViewModel.filterActive.collect { active ->
+                val color = if (active) R.color.accent else R.color.blanco
+                binding.filterButton.setColorFilter(
+                    requireContext().getColorCompat(color),
+                    PorterDuff.Mode.SRC_IN
+                )
+            }
+        }
+        return view
     }
+
 
     private fun initViews() {
         progressbar = root!!.findViewById(R.id.progressbar)
@@ -132,12 +185,28 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun updateToolbarState() {
-        (activity as? MainActivity)?.configureUsersToolbar(
-            filterActive = repo.filterSwitch, // Leemos directo del repo
-            onRefresh = { loadUsers(isRefresh = true) },
-            onFilterClick = { showFilterDialog() }
+        val filterActive = userPreferencesRepository.filterSwitch
+
+        // Botón de refrescar
+        binding.btnRefresh.setOnClickListener {
+            loadUsers(isRefresh = true)
+        }
+
+        // Botón de filtro
+        binding.btnFilter.setOnClickListener {
+            showFilterDialog()
+        }
+
+        // Cambiar color si hay filtro activo
+        val colorRes = if (filterActive) R.color.accent else R.color.blanco
+        binding.btnFilter.setColorFilter(
+            requireContext().getColorCompat(colorRes),
+            PorterDuff.Mode.SRC_IN
         )
     }
+
+    private fun getColorCompat(resId: Int) = ContextCompat.getColor(this, resId)
+
 
     private fun showFilterDialog() {
         val ctx = requireContext()
@@ -156,14 +225,14 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
         spinnerAge2.adapter = adapter
 
         // --- Cargar estado actual desde el Repo ---
-        if (repo.filterSwitch) {
-            val savedDesde = if (repo.desdePref < 18) 18 else repo.desdePref
-            val savedHasta = if (repo.hastaPref < 18) 18 else repo.hastaPref
+        if (userPreferencesRepository.filterSwitch) {
+            val savedDesde = if (userPreferencesRepository.desdePref < 18) 18 else userPreferencesRepository.desdePref
+            val savedHasta = if (userPreferencesRepository.hastaPref < 18) 18 else userPreferencesRepository.hastaPref
 
             spinnerAge.setSelection(savedDesde - 18)
             spinnerAge2.setSelection(savedHasta - 18)
-            switchOnline.isChecked = repo.checkPref
-            switchEdad.isChecked = repo.edadPref
+            switchOnline.isChecked = userPreferencesRepository.checkPref
+            switchEdad.isChecked = userPreferencesRepository.edadPref
         }
 
         spinnerAge.isEnabled = switchEdad.isChecked
@@ -176,16 +245,16 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
             .setView(viewFilter)
             .setPositiveButton("Filtrar") { _, _ ->
                 // Guardar en Repo
-                repo.filterSwitch = true
-                repo.checkPref = switchOnline.isChecked
-                repo.edadPref = switchEdad.isChecked
+                userPreferencesRepository.filterSwitch = true
+                userPreferencesRepository.checkPref = switchOnline.isChecked
+                userPreferencesRepository.edadPref = switchEdad.isChecked
 
                 if (switchEdad.isChecked) {
-                    repo.desdePref = edades[spinnerAge.selectedItemPosition]
-                    repo.hastaPref = edades[spinnerAge2.selectedItemPosition]
+                    userPreferencesRepository.desdePref = edades[spinnerAge.selectedItemPosition]
+                    userPreferencesRepository.hastaPref = edades[spinnerAge2.selectedItemPosition]
                 } else {
-                    repo.desdePref = 0
-                    repo.hastaPref = 0
+                    userPreferencesRepository.desdePref = 0
+                    userPreferencesRepository.hastaPref = 0
                 }
 
                 loadUsers(isRefresh = false)
@@ -193,7 +262,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
             }
             .setNegativeButton(DIALOG_CANCEL) { _, _ -> }
             .setNeutralButton("Quitar filtro") { _, _ ->
-                repo.clearAllData() // Limpia filtros y sesión (revisar si solo quieres limpiar filtros)
+                userPreferencesRepository.clearAllData() // Limpia filtros y sesión (revisar si solo quieres limpiar filtros)
                 // Si solo quieres limpiar filtros, crea un metod específico en el Repo.
 
                 loadUsers(isRefresh = false)
@@ -216,7 +285,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
     fun loadUsers(isRefresh: Boolean) {
         progressbar?.visibility = View.VISIBLE
 
-        refCuentas.addListenerForSingleValueEvent(object : ValueEventListener {
+        FirebaseRefs.refCuentas.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!snapshot.exists()) {
                     progressbar?.visibility = View.GONE
@@ -226,22 +295,21 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
                 // Lista temporal para procesar
                 val tempList = mutableListOf<Users>()
-                val currentUid = user?.uid
 
                 // Leemos configuración del repo una sola vez
-                val applyAgeFilter = repo.edadPref
-                val applyOnlineFilter = repo.checkPref
-                val minAge = repo.desdePref
-                val maxAge = repo.hastaPref
+                val applyAgeFilter = userPreferencesRepository.edadPref
+                val applyOnlineFilter = userPreferencesRepository.checkPref
+                val minAge = userPreferencesRepository.desdePref
+                val maxAge = userPreferencesRepository.hastaPref
 
                 for (child in snapshot.children) {
                     val key = child.key ?: continue
-                    if (key == currentUid) continue
+                    if (key == myUid) continue
 
                     val u = child.getValue(Users::class.java) ?: continue
 
                     // Calcular datos derivados
-                    u.age = calcAge(u.birthDay)
+                    u.age = Utils.calcAge(u.birthDay)
                     u.distance = profileUiBinder.getDistanceMeters(
                         UserRepository.latitude,
                         UserRepository.longitude,
@@ -268,7 +336,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 // Ordenar
-                Collections.sort(tempList)
+                tempList.sort()
 
                 // Actualizar listas principales
                 usersArrayList.clear()
@@ -322,7 +390,7 @@ class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
     private fun setupDialogButtonListeners(dialog: AlertDialog, ctx: Context, swOnline: SwitchCompat, swAge: SwitchCompat) {
         dialog.setOnShowListener {
             val neutralBtn = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
-            if (!repo.filterSwitch) {
+            if (!userPreferencesRepository.filterSwitch) {
                 neutralBtn?.isEnabled = false
                 neutralBtn?.setTextColor(Color.GRAY)
             }

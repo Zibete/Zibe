@@ -2,18 +2,13 @@ package com.zibete.proyecto1.ui.main
 
 import android.Manifest
 import android.animation.LayoutTransition
-import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.graphics.PorterDuff
 import android.os.Bundle
-import android.view.ContextThemeWrapper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -22,7 +17,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
@@ -62,6 +56,7 @@ import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
+import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.UserMessageUtils
@@ -78,7 +73,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userRepository: UserRepository
 
-    private val user = userSessionManager.user
+    private val user get() = userSessionManager.user
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var activityMainBinding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -239,55 +234,69 @@ class MainActivity : AppCompatActivity() {
                     mainViewModel.navEvents.collect { event ->
                         when (event) {
 
+                            is MainNavEvent.ToUsers -> {
+                                invalidateOptionsMenu()
+                                navController?.navigate(R.id.nav_users)
+                                materialToolbar?.setTitle(R.string.menu_users)
+
+                                bottomNavigationView?.selectedItemId = R.id.navBottomUsers
+                                drawerLayout?.closeDrawer(GravityCompat.START)
+                            }
+
                             is MainNavEvent.ToChat -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_chat)
                                 materialToolbar?.setTitle(R.string.menu_chat)
 
-                                if (bottomNavigationView?.selectedItemId != R.id.navBottomChat) {
-                                    bottomNavigationView?.selectedItemId = R.id.navBottomChat
-                                }
-
+                                bottomNavigationView?.selectedItemId = R.id.navBottomChat
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
-                            is MainNavEvent.ToGroupsSelect -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_groups)
-                                materialToolbar?.setTitle(R.string.menu_groups)
-                            }
-
                             is MainNavEvent.ToGroupsDetail -> {
-                                mainViewModel.showToolbar(true) // por si acaso
 
+                                userPreferencesRepository.groupName = event.groupName
+                                userPreferencesRepository.userNameGroup = event.userName
+                                userPreferencesRepository.inGroup = true
+
+                                mainViewModel.showToolbar(true)
                                 invalidateOptionsMenu()
 
-                                val newFragment = PageAdapterGroup().apply {
-                                    arguments = Bundle().apply {
-                                        putString("group_name", event.groupName)
-                                        putString("getUid", event.userName)
-                                    }
-                                }
+                                val newFragment = PageAdapterGroup()
 
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, newFragment)
                                     .commit()
 
                                 materialToolbar?.title = event.groupName
+                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                            }
+
+                            is MainNavEvent.ToGroupsSelect -> {
+                                invalidateOptionsMenu()
+                                navController?.navigate(R.id.nav_groups)
+                                materialToolbar?.setTitle(R.string.menu_groups)
+
+                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                            }
+
+                            is MainNavEvent.ToFavorites -> {
+                                invalidateOptionsMenu()
+                                navController?.navigate(R.id.nav_favorites)
+                                materialToolbar?.setTitle(R.string.menu_favorites)
+
+                                bottomNavigationView?.selectedItemId = R.id.navBottomFavorites
                             }
 
                             is MainNavEvent.ToEditProfile -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_editPerfil)
                                 materialToolbar?.setTitle(R.string.menu_edit)
+
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainNavEvent.ToSplashAfterLogout -> {
                                 stopLocationUpdates()
-                                // Si moviste prefs al VM, esto ya no va acá
-                                // EditProfileFragment.deleteProfilePreferences(this)
-
                                 finish()
                                 startActivity(Intent(this@MainActivity, SplashActivity::class.java))
                             }
@@ -299,6 +308,40 @@ class MainActivity : AppCompatActivity() {
 
                                 materialToolbar?.setTitle(R.string.menu_groups)
                                 invalidateOptionsMenu()
+                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                            }
+
+                            is MainNavEvent.BackFromEditProfile -> {
+                                handleBackFromEditProfile()
+                            }
+
+                            is MainNavEvent.BackExitAppOrCloseSearch -> {
+                                if (searchView?.isIconified == false) {
+                                    searchView?.onActionViewCollapsed()
+                                } else {
+                                    finish()
+                                }
+                            }
+
+                            is MainNavEvent.BackToChat -> {
+                                mainViewModel.onChatTabSelected()
+                            }
+
+                            is MainNavEvent.ToSettings -> {
+                                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                            }
+
+                            is MainNavEvent.ConfirmExitGroup -> {
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = DIALOG_EXIT,
+                                    message = "¿Desea abandonar ${event.groupName}?",
+                                    positiveText = DIALOG_ACCEPT,
+                                    negativeText = DIALOG_CANCEL,
+                                    onConfirm = {
+                                        mainViewModel.onExitGroupConfirmed()
+                                    }
+                                )
                             }
                         }
                     }
@@ -307,49 +350,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     // ==========================================
     // 3. NAVEGACIÓN (BottomNav & Menu)
     // ==========================================
 
     private fun setupBottomNavListeners() {
         bottomNavigationView?.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navBottomUsers -> {
-                    if (mainViewModel.currentScreen.value != CurrentScreen.USERS) {
-                        mainViewModel.setScreen(CurrentScreen.USERS)
-                        mainViewModel.showLayoutSettings(true)
-                        invalidateOptionsMenu()
-                        navController?.navigate(R.id.nav_users)
-                        materialToolbar?.setTitle(R.string.menu_users)
-                    }
-                    true
-                }
-                R.id.navBottomChat -> {
-                    chatNavigation()
-                    true
-                }
-                R.id.navBottomFavorites -> {
-                    if (mainViewModel.currentScreen.value != CurrentScreen.FAVORITES) {
-                        mainViewModel.setScreen(CurrentScreen.FAVORITES)
-                        mainViewModel.showLayoutSettings(false)
-                        materialToolbar?.setTitle(R.string.menu_favorites)
-                        invalidateOptionsMenu()
-                        navController?.navigate(R.id.nav_favorites)
-                    }
-                    true
-                }
-                R.id.navBottomGrupos -> {
-                    groupsNavigation()
-                    true
-                }
-                else -> false
-            }
+            mainViewModel.onBottomItemSelected(item.itemId)
+            true
         }
-    }
-
-    fun groupsNavigation() {
-        mainViewModel.onGroupsTabSelected()
     }
 
     fun chatNavigation() {
@@ -358,6 +367,24 @@ class MainActivity : AppCompatActivity() {
 
     fun editProfileNavigation() {
         mainViewModel.onEditProfileSelected()
+    }
+
+    private fun handleBackFromEditProfile() {
+        val frag = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+
+        if (frag is EditProfileFragment) {
+            if (!frag.canExit()) {
+                UserMessageUtils.showSnack(
+                    root = activityMainBinding.root,
+                    message = "Guarde los cambios antes de salir",
+                    duration = Snackbar.LENGTH_SHORT,
+                    iconRes = R.drawable.ic_info_24
+                )
+                return
+            }
+        }
+
+        mainViewModel.onChatTabSelected()
     }
 
     // ==========================================
@@ -376,20 +403,6 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
-
-    fun exitGroup() {
-        UserMessageUtils.confirm(
-            context = this,
-            title = "Salir del grupo",
-            message = "¿Querés salir de este grupo?",
-            positiveText = DIALOG_ACCEPT,
-            negativeText = DIALOG_CANCEL,
-            onConfirm = {
-                mainViewModel.onExitGroupConfirmed()
-            }
-        )
-    }
-
 
     // ==========================================
     // 5. LOCATION (Mantenido en Activity)
@@ -428,7 +441,6 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         fusedLocationProviderClient?.requestLocationUpdates(locationRequest!!, locationCallback!!, mainLooper)
     }
@@ -441,85 +453,34 @@ class MainActivity : AppCompatActivity() {
     // 6. OVERRIDES & HELPERS
     // ==========================================
 
-    // --- Legacy / UI Utils ---
-
-    fun configureUsersToolbar(filterActive: Boolean, onRefresh: () -> Unit, onFilterClick: () -> Unit) {
-        refreshButton?.setOnClickListener { onRefresh() }
-        filterButton?.setOnClickListener { onFilterClick() }
-        val colorRes = if (filterActive) R.color.accent else R.color.blanco
-        filterButton?.setColorFilter(getColorCompat(colorRes), PorterDuff.Mode.SRC_IN)
-    }
-
-    private fun getColorCompat(resId: Int) = ContextCompat.getColor(this, resId)
-
     private fun setupOnBackPressedDispatcher() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() { onBackPressedLegacy() }
+            override fun handleOnBackPressed() {
+
+                // 1. Si el drawer está abierto → cerrarlo
+                if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
+                    drawerLayout?.closeDrawer(GravityCompat.START)
+                    return
+                }
+
+                // 2. Manejo global delegado al ViewModel
+                mainViewModel.onBackPressed()
+            }
         })
     }
 
-    private fun onBackPressedLegacy() {
-        if (mainViewModel.currentScreen.value == CurrentScreen.EDIT_PROFILE) {
-            // Lógica simple de back en edit profile
-            val btSave = findViewById<ImageButton?>(R.id.bt_save)
-            if (btSave?.isEnabled == true) {
-                showSnack("Guarde los cambios antes de salir") // Simplificado
-            } else {
-                chatNavigation()
-            }
-            return
-        }
-
-        if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
-            drawerLayout?.closeDrawer(GravityCompat.START)
-            return
-        }
-
-        if (mainViewModel.currentScreen.value == CurrentScreen.CHAT || mainViewModel.currentScreen.value == CurrentScreen.USERS) {
-            if (searchView?.isIconified == false) searchView?.onActionViewCollapsed()
-            else finish()
-        } else {
-            chatNavigation()
-        }
-    }
-
-    // --- Menu Options (Unlock/Hide - Lógica visual se queda aquí por ahora) ---
-    // (Puedes mantener tus funciones unlockUser y unhideChats aquí abajo como estaban,
-    // usando repo en lugar de variables estáticas)
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main, menu)
+
         val searchItem = menu.findItem(R.id.action_search)
         searchView = searchItem.actionView as SearchView
+
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                startActivity(Intent(applicationContext, SettingsActivity::class.java))
-                true
-            }
-            R.id.action_favorites -> {
-                bottomNavigationView?.selectedItemId = R.id.navBottomFavorites
-                true
-            }
-            R.id.action_exit -> {
-                AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
-                    .setTitle(DIALOG_EXIT)
-                    .setMessage("¿Desea abandonar ${userPreferencesRepository.groupName}?")
-                    .setPositiveButton(DIALOG_EXIT) { _, _ -> exitGroup() }
-                    .setNegativeButton(DIALOG_CANCEL, null)
-                    .show()
-                true
-            }
-            // Agrega aquí unlockUser() y unhideChats() llamando a tus funciones legacy
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun showSnack(message: String) {
-        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show()
+        mainViewModel.onToolbarItemSelected(item.itemId)
+        return true
     }
 
     override fun onResume() {

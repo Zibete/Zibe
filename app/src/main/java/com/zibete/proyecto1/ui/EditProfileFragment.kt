@@ -726,6 +726,11 @@ class EditProfileFragment : Fragment() {
         }
     }
 
+    fun canExit(): Boolean {
+        return !binding.btSave.isEnabled
+    }
+
+
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         try {
