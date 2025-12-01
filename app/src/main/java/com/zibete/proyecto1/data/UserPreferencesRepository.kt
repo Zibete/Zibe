@@ -11,18 +11,14 @@ import javax.inject.Singleton
  * Repositorio para gestionar las SharedPreferences de la aplicación (filtros, estado de grupo, notificaciones).
  * Utiliza @Inject constructor para que Hilt maneje su ciclo de vida como Singleton.
  */
-@Singleton // Hilt asegura que solo exista una instancia
+@Singleton
 class UserPreferencesRepository @Inject constructor(
-    // Hilt inyecta el Contexto de la Aplicación (seguro)
     @ApplicationContext context: Context
 ) {
-    // Inicializamos con ApplicationContext para evitar Memory Leaks
+
     private val userPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("userPrefs", Context.MODE_PRIVATE)
     private val appPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
     private val filterPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("filterPrefs", Context.MODE_PRIVATE)
-
-    // Nota: El antiguo 'companion object' y 'getInstance' fueron eliminados
-    // porque Hilt (@Singleton) maneja esa lógica automáticamente.
 
     // ==========================================
     // SECCIÓN 1: DATOS DE USUARIO Y GRUPO

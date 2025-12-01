@@ -51,7 +51,7 @@ class ChatViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val myUid = userSessionManager.uid
+    private val myUid = userSessionManager.myUid
     private val targetUserId: String? = savedStateHandle["userId"]
 
     // Header (nombre, estado, foto, bloqueo, notifs, etc.)

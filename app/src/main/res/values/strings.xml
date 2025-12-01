@@ -106,6 +106,7 @@
     <string name="default_web_client_id">572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com</string>
     <string name="cargando">Cargando...</string>
     <string name="anonimous">Anónimo</string>
+    <string name="deleted_profile_fallback">Perfil eliminado</string>
 
     <string-array name="edad">
         <item>18</item>

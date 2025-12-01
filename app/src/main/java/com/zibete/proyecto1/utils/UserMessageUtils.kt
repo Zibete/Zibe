@@ -5,6 +5,7 @@ import android.content.Context
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -38,16 +39,21 @@ object UserMessageUtils {
     ) {
         val snackbar = Snackbar.make(root, "", duration)
 
-        val layout = snackbar.view as SnackbarLayout
-        layout.setBackgroundColor(0x00000000) // fondo del snackbar transparente
+        // ⚠️ IMPORTANTE:
+        // Ya NO se usa Snackbar.SnackbarLayout (restringido)
+        val snackbarView = snackbar.view
+        val parent = snackbarView as ViewGroup     // 👈 seguro, sin warnings
 
+        parent.setBackgroundColor(0x00000000)       // fondo transparente
+
+        // Inflamos TU layout personalizado
         val customView = LayoutInflater.from(root.context)
-            .inflate(R.layout.layout_snackbar_zibe, layout, false)
+            .inflate(R.layout.layout_snackbar_zibe, parent, false)
 
-        // Texto
+        // --- Texto ---
         customView.findViewById<TextView>(R.id.snack_text).text = message
 
-        // Ícono opcional
+        // --- Ícono opcional ---
         val iv = customView.findViewById<ImageView>(R.id.snack_icon)
         if (iconRes != 0) {
             iv.visibility = View.VISIBLE
@@ -56,7 +62,7 @@ object UserMessageUtils {
             iv.visibility = View.GONE
         }
 
-        // Acción opcional
+        // --- Acción opcional ---
         val tvAction = customView.findViewById<TextView>(R.id.snack_action)
         if (actionText != null && action != null) {
             tvAction.visibility = View.VISIBLE
@@ -69,15 +75,17 @@ object UserMessageUtils {
             tvAction.visibility = View.GONE
         }
 
-        // Color fondo de la card
+        // --- Color de fondo de la card ---
         customView.backgroundTintList =
             ContextCompat.getColorStateList(root.context, bgColor)
 
-        layout.removeAllViews()
-        layout.addView(customView)
+        // --- Remplazamos la vista del snackbar por la custom ---
+        parent.removeAllViews()
+        parent.addView(customView)
 
         snackbar.show()
     }
+
 
     @JvmStatic
     fun showInfo(root: View, message: String) {

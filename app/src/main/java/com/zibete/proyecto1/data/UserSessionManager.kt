@@ -36,7 +36,7 @@ class UserSessionManager @Inject constructor(
         "User must be logged in to access this property"
     }
 
-    val uid: String
+    val myUid: String
         get() = user.uid
 
     /**
@@ -44,7 +44,6 @@ class UserSessionManager @Inject constructor(
      */
     fun performExitGroupDataCleanup() {
         val currentGroup = userPreferencesRepository.groupName
-        val myUid = user.uid
         val myUserNameGroup = userPreferencesRepository.userNameGroup
 
         if (currentGroup.isEmpty()) return

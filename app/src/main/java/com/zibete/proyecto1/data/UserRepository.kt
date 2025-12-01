@@ -45,7 +45,52 @@ class UserRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    private val myUid = userSessionManager.uid
+    private val myUid get() = userSessionManager.myUid
+
+    suspend fun markMessagesAsSeen(
+        otherUserId: String,
+        chatType: String,
+        noVistos: Int
+    ) {
+        if (noVistos <= 0) return
+
+        val path1 = "$myUid <---> $otherUserId"
+        val path2 = "$otherUserId <---> $myUid"
+
+        fun markSeen(ds: DataSnapshot) {
+            for (msg in ds.children) {
+                msg.ref.child("visto").setValue(2)
+            }
+        }
+
+        // 1) Intentar con userA <---> userB
+        val snap1 = firebaseRefsContainer.refChat
+            .child(path1)
+            .child("Mensajes")
+            .limitToLast(noVistos)
+            .get()
+            .await()
+
+        if (snap1.exists()) {
+            markSeen(snap1)
+        } else {
+            // 2) Intentar con userB <---> userA
+            val snap2 = firebaseRefsContainer.refChat
+                .child(path2)
+                .child("Mensajes")
+                .limitToLast(noVistos)
+                .get()
+                .await()
+
+            if (snap2.exists()) {
+                markSeen(snap2)
+            }
+        }
+
+        // 3) Actualizar los contadores como siempre
+        markAsReadChat(otherUserId, chatType)
+    }
+
 
     suspend fun markAsReadChat(chatWithId: String, chatType: String) {
         val chatNode = firebaseRefsContainer.refDatos
@@ -215,19 +260,7 @@ class UserRepository @Inject constructor(
         }
     }
 
-
-
-
-
-
-
-    fun setUnBlockUser(
-        context: Context,
-        idUser: String?,
-        nameUser: String?,
-        view: View,
-        type: String?
-    ) {
+    fun setUnBlockUser(context: Context, idUser: String?, nameUser: String?, view: View, type: String?) {
         if (idUser == null || nameUser == null || type == null) return
 
         UserMessageUtils.confirm(
@@ -280,10 +313,7 @@ class UserRepository @Inject constructor(
 //    }
 
 
-    private fun createDefaultChatWith(
-        chatWithId: String,
-        userName: String
-    ): ChatWith {
+    private fun createDefaultChatWith(chatWithId: String, userName: String): ChatWith {
         return ChatWith(
             "",
             now(),
@@ -323,7 +353,6 @@ class UserRepository @Inject constructor(
             .await()
     }
 
-
     suspend fun updateLocation(location: Location) {
         firebaseRefsContainer.refCuentas
             .child(myUid)
@@ -334,7 +363,6 @@ class UserRepository @Inject constructor(
                 )
             ).await()
     }
-
 
     suspend fun setUserOnline() = withContext(Dispatchers.IO) {
         val state = State(context.getString(R.string.online), "", "")

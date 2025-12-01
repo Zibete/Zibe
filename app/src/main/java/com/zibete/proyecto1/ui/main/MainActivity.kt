@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
@@ -75,7 +76,7 @@ class MainActivity : AppCompatActivity() {
 
     private val user get() = userSessionManager.user
     private val mainViewModel: MainViewModel by viewModels()
-    private lateinit var activityMainBinding: ActivityMainBinding
+    private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
     private var navController: NavController? = null
     private var drawerLayout: DrawerLayout? = null
@@ -95,8 +96,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(activityMainBinding.root)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setupUI()
         setupNavigation()
@@ -114,7 +115,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         // Toolbar & Layouts
-        val appBarMain = activityMainBinding.appBarMain
+        val appBarMain = binding.appBarMain
         materialToolbar = appBarMain.materialToolbar
         layoutSettings = appBarMain.linearLayoutSettings
         filterButton = appBarMain.filterButton
@@ -128,8 +129,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(materialToolbar)
 
         // Drawer
-        drawerLayout = activityMainBinding.drawerLayout
-        navigationView = activityMainBinding.navView
+        drawerLayout = binding.drawerLayout
+        navigationView = binding.navView
 
         // Header Info
         val headerView = navigationView?.getHeaderView(0)
@@ -375,7 +376,7 @@ class MainActivity : AppCompatActivity() {
         if (frag is EditProfileFragment) {
             if (!frag.canExit()) {
                 UserMessageUtils.showSnack(
-                    root = activityMainBinding.root,
+                    root = binding.root,
                     message = "Guarde los cambios antes de salir",
                     duration = Snackbar.LENGTH_SHORT,
                     iconRes = R.drawable.ic_info_24
@@ -441,6 +442,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocationUpdates() {
         fusedLocationProviderClient?.requestLocationUpdates(locationRequest!!, locationCallback!!, mainLooper)
     }
@@ -483,6 +485,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { userRepository.setUserOnline() }

@@ -97,6 +97,13 @@ class ChatActivity : AppCompatActivity() {
     @Inject lateinit var userSessionManager: UserSessionManager
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
+
+    private val user
+        get() = userSessionManager.user
+
+    val myUid: String
+        get() = user.uid
+
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var binding: ActivityChatBinding
 
@@ -431,9 +438,9 @@ class ChatActivity : AppCompatActivity() {
                     binding.btnMic.isVisible = false
                     binding.btnSendMsg.isVisible = true
                     binding.frameSendMsg.isVisible = true
-                    firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("Estado").child("estado")
+                    firebaseRefsContainer.refDatos.child(myUid).child("Estado").child("estado")
                         .setValue(getString(R.string.escribiendo))
-                    firebaseRefsContainer.refCuentas.child(userSessionManager.uid).child("estado").setValue(true)
+                    firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true)
                 }
             }
             override fun afterTextChanged(s: Editable?) {
@@ -493,7 +500,7 @@ class ChatActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         chatViewModel.setUserOnline()
-        refActual.setValue(userSessionManager.uid + (refChatWith ?: ""))
+        refActual.setValue(myUid + (refChatWith ?: ""))
     }
 
     override fun onDestroy() {
@@ -762,9 +769,9 @@ class ChatActivity : AppCompatActivity() {
         binding.timer.base = recordStartElapsed
         binding.timer.start()
 
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("Estado").child("estado")
+        firebaseRefsContainer.refDatos.child(myUid).child("Estado").child("estado")
             .setValue(getString(R.string.grabando))
-        firebaseRefsContainer.refCuentas.child(userSessionManager.uid).child("estado").setValue(true)
+        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true)
     }
 
     private fun stopRecordAudio() {
@@ -963,14 +970,14 @@ class ChatActivity : AppCompatActivity() {
             return
         }
 
-        val visto = if (suActual != userSessionManager.uid + refChatWith || suActual == null) 1 else 3
+        val visto = if (suActual != myUid + refChatWith || suActual == null) 1 else 3
         val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
         val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
 
         val chatmsg = Chats(
             stringMsg!!,
             finalDate,
-            userSessionManager.uid,
+            myUid,
             msgType,
             visto
         )
@@ -993,18 +1000,18 @@ class ChatActivity : AppCompatActivity() {
         })
 
         val miChat = ChatWith(
-            textMiChatw!!, finalDate, null, userSessionManager.uid,
+            textMiChatw!!, finalDate, null, myUid,
             idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
         )
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
+        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
 
-        if (suActual != userSessionManager.uid + refChatWith || suActual == null) {
+        if (suActual != myUid + refChatWith || suActual == null) {
             val count = noVisto + 1
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, userSessionManager.uid,
-                userSessionManager.uid, myName!!, myPhoto, estadoUser!!, count, 1
+                textSuChatw!!, finalDate, null, myUid,
+                myUid, myName!!, myPhoto, estadoUser!!, count, 1
             )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
                 .setValue(suChat)
 
             if (estadoUser != "silent") {
@@ -1032,10 +1039,10 @@ class ChatActivity : AppCompatActivity() {
             }
         } else {
             val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, userSessionManager.uid,
-                userSessionManager.uid, myName!!, myPhoto, estadoUser!!, 0, 3
+                textSuChatw!!, finalDate, null, myUid,
+                myUid, myName!!, myPhoto, estadoUser!!, 0, 3
             )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid)
+            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
                 .setValue(suChat)
         }
 
@@ -1078,8 +1085,8 @@ class ChatActivity : AppCompatActivity() {
             idUserFinal = idUser
             refChat = Constants.CHAT
             refChatWith = Constants.CHATWITH
-            myPhoto = userSessionManager.user.photoUrl?.toString() ?: ""
-            myName = userSessionManager.user.displayName ?: ""
+            myPhoto = user.photoUrl?.toString() ?: ""
+            myName = user.displayName ?: ""
 
             firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object :
                 ValueEventListener {
@@ -1092,7 +1099,7 @@ class ChatActivity : AppCompatActivity() {
                         binding.nameUser.text = nameUserFinal
                         Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                     } else {
-                        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
+                        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
                             ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
                                 yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
@@ -1146,7 +1153,7 @@ class ChatActivity : AppCompatActivity() {
             myPhoto = if (userPreferencesRepository.userType == 0) {
                 getString(R.string.URL_PHOTO_DEF)
             } else {
-                userSessionManager.user.photoUrl?.toString() ?: ""
+                user.photoUrl?.toString() ?: ""
             }
 
             listenerChatUnknown = object : ValueEventListener {
@@ -1177,13 +1184,13 @@ class ChatActivity : AppCompatActivity() {
 
         // Storage refs
         refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
-        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${userSessionManager.uid}/")
+        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${myUid}/")
 
-        refActual = firebaseRefsContainer.refDatos.child(userSessionManager.uid).child("ChatList").child("Actual")
+        refActual = firebaseRefsContainer.refDatos.child(myUid).child("ChatList").child("Actual")
 
         // Ramas de mensajes
-        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${userSessionManager.uid} <---> $idUserFinal").child("Mensajes")
-        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${userSessionManager.uid}").child("Mensajes")
+        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${myUid} <---> $idUserFinal").child("Mensajes")
+        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${myUid}").child("Mensajes")
     }
 
     private fun hookChatListeners() {
@@ -1211,7 +1218,7 @@ class ChatActivity : AppCompatActivity() {
             })
 
 
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val state = snapshot.getValue(String::class.java)
@@ -1228,7 +1235,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(userSessionManager.uid).child("estado")
+        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoUser = ds.getValue(String::class.java) ?: refChatWith
@@ -1236,7 +1243,7 @@ class ChatActivity : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     estadoYo = ds.getValue(String::class.java) ?: refChatWith
@@ -1287,7 +1294,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun visto() {
 //        val me = user ?: return
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!)
+        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dsMain: DataSnapshot) {
                     miNoVisto = 0
@@ -1351,7 +1358,7 @@ class ChatActivity : AppCompatActivity() {
             val type = snap.child("type").getValue(Int::class.java)
             val sender = snap.child("envia").getValue(String::class.java)
 
-            if (sender == userSessionManager.uid) {
+            if (sender == myUid) {
                 when (type) {
                     Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
                     Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
@@ -1376,14 +1383,14 @@ class ChatActivity : AppCompatActivity() {
                     Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
                     Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
                     Constants.PHOTO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(userSessionManager.uid) + userSessionManager.uid.length + 3
+                        val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
                     Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
                     Constants.AUDIO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(userSessionManager.uid) + userSessionManager.uid.length + 3
+                        val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
@@ -1414,7 +1421,7 @@ class ChatActivity : AppCompatActivity() {
                 for (snap in data.children) {
                     val chat = snap.getValue(Chats::class.java) ?: continue
                     val key = snap.key ?: continue
-                    if (chat.sender == userSessionManager.uid) {
+                    if (chat.sender == myUid) {
                         when (chat.type) {
                             Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
                         }
@@ -1426,7 +1433,7 @@ class ChatActivity : AppCompatActivity() {
                 }
                 val count = messages - (senderDelete.size + receiverDelete.size + countList)
                 if (count == 0L) {
-                    firebaseRefsContainer.refDatos.child(userSessionManager.uid).child(refChatWith!!).child(idUserFinal!!).removeValue()
+                    firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).removeValue()
                     onBackPressedDispatcher.onBackPressed()
                 }
             }

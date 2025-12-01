@@ -627,11 +627,11 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean("deleteFirebaseAccount", true)
         }
 
-        firebaseRefsContainer.refDatos.child(userSessionManager.uid).removeValue()
-        firebaseRefsContainer.refCuentas.child(userSessionManager.uid).removeValue()
+        firebaseRefsContainer.refDatos.child(userSessionManager.myUid).removeValue()
+        firebaseRefsContainer.refCuentas.child(userSessionManager.myUid).removeValue()
 
         FirebaseStorage.getInstance().reference
-            .child("Users/imgPerfil/${userSessionManager.uid}.jpg")
+            .child("Users/imgPerfil/${userSessionManager.myUid}.jpg")
             .delete()
 
         logOut(deleteUser)
