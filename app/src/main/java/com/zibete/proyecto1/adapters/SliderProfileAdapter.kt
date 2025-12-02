@@ -188,7 +188,11 @@ class SliderProfileAdapter @Inject constructor(
         profileUiBinder.setFavorite(user.id, holder.perfilFavoriteOn, holder.perfilFavoriteOff)
         profileUiBinder.getBloqMe(user.id, holder.perfilBloqMe)
         profileUiBinder.getAge(user.id, holder.age)
-        profileUiBinder.getDistanceToUser(user.id, holder.distanceUser)
+
+        profileUiBinder.getDistanceToUser(user.id) { distanceText ->
+            holder.distanceUser.text = distanceText
+        }
+
         profileUiBinder.addPhotoReceived(user.id, adapterPhotoReceived, holder.linearPhotos)
         profileUiBinder.setMenuProfile(context, user.id, holder.subMenuChatWithUnknown, holder.subMenuChatWith)
     }

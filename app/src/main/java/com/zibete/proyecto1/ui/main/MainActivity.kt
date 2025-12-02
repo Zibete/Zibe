@@ -5,6 +5,7 @@ import android.animation.LayoutTransition
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -12,6 +13,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
@@ -45,6 +47,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserPreferencesRepository
@@ -52,6 +57,7 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.EditProfileFragment
 import com.zibete.proyecto1.ui.GruposFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
@@ -60,7 +66,10 @@ import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.ui.users.UsersViewModel
+import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -76,6 +85,7 @@ class MainActivity : AppCompatActivity() {
 
     private val user get() = userSessionManager.user
     private val mainViewModel: MainViewModel by viewModels()
+    private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
     private var navController: NavController? = null
@@ -120,6 +130,25 @@ class MainActivity : AppCompatActivity() {
         layoutSettings = appBarMain.linearLayoutSettings
         filterButton = appBarMain.filterButton
         refreshButton = appBarMain.refreshButton
+
+        // Botón de refrescar
+        refreshButton?.setOnClickListener {
+            usersViewModel.loadUsers(isRefresh = true)
+        }
+
+        // Botón de filtro → dispara un evento, el Fragment abre el diálogo
+        filterButton?.setOnClickListener {
+            usersViewModel.onFilterClicked()
+        }
+
+        val hasActiveFilter = userPreferencesRepository.filterSwitch
+
+        val colorRes = if (hasActiveFilter) R.color.accent else R.color.blanco
+        filterButton?.setColorFilter(
+            this.getColorCompat(colorRes),
+            PorterDuff.Mode.SRC_IN
+        )
+
 
         // Transiciones suaves
         appBarMain.materialToolbar.layoutTransition = LayoutTransition().apply {

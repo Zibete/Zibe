@@ -98,11 +98,9 @@ class ChatActivity : AppCompatActivity() {
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
 
-    private val user
-        get() = userSessionManager.user
+    val myUid  = userRepository.myUid
 
-    val myUid: String
-        get() = user.uid
+    val user  = userRepository.user
 
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var binding: ActivityChatBinding

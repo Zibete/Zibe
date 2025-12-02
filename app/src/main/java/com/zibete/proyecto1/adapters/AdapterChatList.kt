@@ -23,7 +23,6 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -40,7 +39,8 @@ class AdapterChatList(
     ChatDiffCallback()
 ), OnCreateContextMenuListener {
 
-    private val user get() = userSessionManager.user
+    private val user
+        get() = userSessionManager.user
     private var menu1: String? = null
     private var menu2: String? = null
     private var contextMenuPosition: Int = 0
@@ -331,7 +331,7 @@ class AdapterChatList(
             userRepository.markMessagesAsSeen(
                 otherUserId = chat.userId,
                 chatType = Constants.CHATWITH,
-                noVistos = noSeen
+                noSeen = noSeen
             )
         }
     }

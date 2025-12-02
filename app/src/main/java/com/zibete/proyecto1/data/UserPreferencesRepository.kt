@@ -60,19 +60,19 @@ class UserPreferencesRepository @Inject constructor(
         get() = filterPrefs.getBoolean("filterPrefs", false)
         set(value) = filterPrefs.edit { putBoolean("filterPrefs", value) }
 
-    var checkPref: Boolean
+    var applyOnlineFilter: Boolean
         get() = filterPrefs.getBoolean("checkPref", false)
         set(value) = filterPrefs.edit { putBoolean("checkPref", value) }
 
-    var edadPref: Boolean
+    var applyAgeFilter: Boolean
         get() = filterPrefs.getBoolean("edadPref", false)
         set(value) = filterPrefs.edit { putBoolean("edadPref", value) }
 
-    var desdePref: Int
+    var minAgePref: Int
         get() = filterPrefs.getInt("desdePref", 0)
         set(value) = filterPrefs.edit { putInt("desdePref", value) }
 
-    var hastaPref: Int
+    var maxAgePref: Int
         get() = filterPrefs.getInt("hastaPref", 0)
         set(value) = filterPrefs.edit { putInt("hastaPref", value) }
 

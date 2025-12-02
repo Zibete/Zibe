@@ -32,6 +32,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
+import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
@@ -50,7 +51,7 @@ class PerfilActivity : AppCompatActivity() {
 
     @Inject
     lateinit var repo: UserPreferencesRepository
-    @Inject lateinit var profileUiBinder: ProfileUiBinder
+    @Inject lateinit var locationRepository: LocationRepository
 
     // UI
     private lateinit var ftPerfil: ImageView
@@ -271,46 +272,20 @@ class PerfilActivity : AppCompatActivity() {
                     foto = snapshot.child("foto").getValue(String::class.java)
                     nombre = snapshot.child("nombre").getValue(String::class.java)
                     val descripcion = snapshot.child("descripcion").getValue(String::class.java)
-                    val otherLatitude = snapshot.child("latitud").getValue(Double::class.java)
-                    val otherLongitude = snapshot.child("longitud").getValue(Double::class.java)
+//                    val otherLatitude = snapshot.child("latitud").getValue(Double::class.java)
+//                    val otherLongitude = snapshot.child("longitud").getValue(Double::class.java)
 
                     // Edad
                     val edad = calcAge(birthDay)
-                    age.text = edad?.toString() ?: ""
+                    age.text = edad.toString()
+
+
 
                     // Distancia
-                    if (otherLatitude != null && otherLongitude != null
-                    ) {
-                        val distanceMeters = profileUiBinder.getDistanceMeters(
-                            UserRepository.latitude,
-                            UserRepository.longitude,
-                            otherLatitude,
-                            otherLongitude
-                        )
-
-                        val text = when {
-                            distanceMeters > 10_000 -> {
-                                val bd = BigDecimal(distanceMeters / 1000)
-                                    .setScale(0, RoundingMode.HALF_UP)
-                                "A $bd kilómetros"
-                            }
-
-                            distanceMeters > 1_000 -> {
-                                val bd = BigDecimal(distanceMeters / 1000)
-                                    .setScale(1, RoundingMode.HALF_UP)
-                                "A $bd kilómetros"
-                            }
-
-                            else -> {
-                                val bd = BigDecimal(distanceMeters)
-                                    .setScale(0, RoundingMode.HALF_UP)
-                                "A $bd metros"
-                            }
-                        }
-                        distanceUser.text = text
-                    } else {
-                        distanceUser.text = ""
+                    locationRepository.getDistanceToUser(idUser) { distanceText ->
+                        distanceUser.text = distanceText
                     }
+
 
                     foto?.let { photoList.add(it) }
 

@@ -47,11 +47,10 @@ class ChatViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val myUid = userSessionManager.myUid
+    private val myUid = userRepository.myUid
     private val targetUserId: String? = savedStateHandle["userId"]
 
     // Header (nombre, estado, foto, bloqueo, notifs, etc.)

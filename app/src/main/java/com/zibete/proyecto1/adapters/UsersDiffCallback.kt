@@ -13,7 +13,7 @@ class UsersDiffCallback(
     override fun getOldListSize(): Int { return oldlist.size }
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-        oldlist[oldItemPosition].distance == newlist[newItemPosition].distance
+        oldlist[oldItemPosition].distanceMeters == newlist[newItemPosition].distanceMeters
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
         oldlist[oldItemPosition] == newlist[newItemPosition]
@@ -23,8 +23,8 @@ class UsersDiffCallback(
         val oldItem = oldlist[oldItemPosition]
         val diff = Bundle()
 
-        if (oldItem.distance != newItem.distance)
-            diff.putDouble("distance", newItem.distance)
+        if (oldItem.distanceMeters != newItem.distanceMeters)
+            diff.putDouble("distance", newItem.distanceMeters)
 
         if (oldItem.age != newItem.age)
             newItem.age?.let { diff.putInt("age", it) }

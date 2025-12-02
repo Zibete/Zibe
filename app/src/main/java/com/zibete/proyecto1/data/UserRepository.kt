@@ -45,14 +45,27 @@ class UserRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    private val myUid get() = userSessionManager.myUid
+    val myUid
+        get() = userSessionManager.myUid
 
-    suspend fun markMessagesAsSeen(
-        otherUserId: String,
-        chatType: String,
-        noVistos: Int
-    ) {
-        if (noVistos <= 0) return
+    val user
+        get() = userSessionManager.user
+
+    val latitude: Double
+        get() = userSessionManager.latitude
+
+    val longitude: Double
+        get() = userSessionManager.longitude
+
+
+    fun updateMyLocation(lat: Double, lon: Double) {
+        userSessionManager.latitude = lat
+        userSessionManager.longitude = lon
+    }
+
+
+    suspend fun markMessagesAsSeen(otherUserId: String, chatType: String, noSeen: Int ) {
+        if (noSeen <= 0) return
 
         val path1 = "$myUid <---> $otherUserId"
         val path2 = "$otherUserId <---> $myUid"
@@ -67,7 +80,7 @@ class UserRepository @Inject constructor(
         val snap1 = firebaseRefsContainer.refChat
             .child(path1)
             .child("Mensajes")
-            .limitToLast(noVistos)
+            .limitToLast(noSeen)
             .get()
             .await()
 
@@ -78,7 +91,7 @@ class UserRepository @Inject constructor(
             val snap2 = firebaseRefsContainer.refChat
                 .child(path2)
                 .child("Mensajes")
-                .limitToLast(noVistos)
+                .limitToLast(noSeen)
                 .get()
                 .await()
 
@@ -90,7 +103,6 @@ class UserRepository @Inject constructor(
         // 3) Actualizar los contadores como siempre
         markAsReadChat(otherUserId, chatType)
     }
-
 
     suspend fun markAsReadChat(chatWithId: String, chatType: String) {
         val chatNode = firebaseRefsContainer.refDatos

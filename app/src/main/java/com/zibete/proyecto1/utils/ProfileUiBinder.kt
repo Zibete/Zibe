@@ -6,35 +6,35 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import com.firebase.ui.auth.data.model.User
 import com.github.clans.fab.FloatingActionButton
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
-
+import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.*
 
-@Singleton // 👈 Hilt asegura una única instancia
-class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor (forma correcta)
+@Singleton
+class ProfileUiBinder @Inject constructor(
     private val repo: UserPreferencesRepository,
     private val sessionManager: UserSessionManager
 ) {
 
-    private val myUid = sessionManager.user.uid
+    private val myUid
+        get() = sessionManager.myUid
 
 
     // === Edad ===
@@ -49,49 +49,6 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
 
                 override fun onCancelled(error: DatabaseError) {}
             })
-    }
-
-    // === Distancia (texto listo para UI) ===
-    fun getDistanceToUser(idUser: String, distanceView: TextView) {
-        FirebaseRefs.refCuentas.child(idUser)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val otherLat = snapshot.child("latitud").getValue(Double::class.java)
-                    val otherLng = snapshot.child("longitud").getValue(Double::class.java)
-
-                    if (otherLat == null || otherLng == null) return
-
-                    val distanceMeters = getDistanceMeters(
-                        UserRepository.latitude,
-                        UserRepository.longitude,
-                        otherLat,
-                        otherLng
-                    )
-
-                    distanceView.text = formatDistance(distanceMeters)
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
-
-    private fun formatDistance(distanceMeters: Double): String {
-        return when {
-            distanceMeters > 10_000 -> {
-                val km = distanceMeters / 1000
-                val bd = BigDecimal(km).setScale(0, RoundingMode.HALF_UP)
-                "A $bd kilómetros"
-            }
-            distanceMeters > 1_000 -> {
-                val km = distanceMeters / 1000
-                val bd = BigDecimal(km).setScale(1, RoundingMode.HALF_UP)
-                "A $bd kilómetros"
-            }
-            else -> {
-                val bd = BigDecimal(distanceMeters).setScale(0, RoundingMode.HALF_UP)
-                "A $bd metros"
-            }
-        }
     }
 
     // === Menú flotante de perfil (chat normal / chat incógnito) ===
@@ -246,28 +203,5 @@ class ProfileUiBinder @Inject constructor( // 👈 Inyección en el constructor 
         }
     }
 
-    // === Distancia en metros (Haversine / coseno esférico simplificado) ===
-    fun getDistanceMeters(
-        myLatitude: Double,
-        myLongitude: Double,
-        otherLatitude: Double,
-        otherLongitude: Double
-    ): Double {
-        val lat1 = Math.toRadians(myLatitude)
-        val lat2 = Math.toRadians(otherLatitude)
-        val lon1 = Math.toRadians(myLongitude)
-        val lon2 = Math.toRadians(otherLongitude)
 
-        var dist = acos(
-            sin(lat1) * sin(lat2) +
-                    cos(lat1) * cos(lat2) * cos(lon1 - lon2)
-        )
-
-        if (dist < 0) {
-            dist += Math.PI
-        }
-
-        // Radio aproximado de la Tierra en metros
-        return (dist * 6_378_100).roundToLong().toDouble()
-    }
 }

@@ -21,7 +21,6 @@ import javax.inject.Singleton
 
 @Singleton
 class UserSessionManager @Inject constructor(
-    // Dependencias inyectadas por Hilt
     @ApplicationContext private val applicationContext: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseAuth: FirebaseAuth,
@@ -30,7 +29,6 @@ class UserSessionManager @Inject constructor(
     private val userRepository: UserRepository
 ) {
 
-    // Propiedad calculada: Acceso seguro al usuario (mantiene la lógica "crash-si-no-hay")
     val user: FirebaseUser
         get() = checkNotNull(firebaseAuth.currentUser) {
         "User must be logged in to access this property"
@@ -38,6 +36,10 @@ class UserSessionManager @Inject constructor(
 
     val myUid: String
         get() = user.uid
+
+    var latitude: Double = 0.0
+    var longitude: Double = 0.0
+
 
     /**
      * Lógica de abandono de grupo (Solo manipulación de datos y Firebase).

@@ -53,14 +53,12 @@ import kotlin.getValue
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject
-    lateinit var userSessionManager: UserSessionManager
-    @Inject
-    lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject
-    lateinit var userRepository: UserRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+
+    private val myUid = userRepository.myUid
+
 
     private val settingsViewModel: SettingsViewModel by viewModels()
 

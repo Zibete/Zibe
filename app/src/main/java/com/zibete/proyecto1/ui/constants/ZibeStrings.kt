@@ -86,6 +86,10 @@ const val PERMISSION_DENIED_MESSAGE =
 
 const val DIALOG_ACCEPT ="Aceptar"
 const val DIALOG_CANCEL ="Cancelar"
+
+const val DIALOG_FILTER_ON ="Filtrar"
+const val DIALOG_FILTER_OFF ="Quitar filtro"
+
 const val DIALOG_EXIT ="Salir"
 const val DIALOG_OK = "OK"
 const val DIALOG_CONTINUE = "Continuar"

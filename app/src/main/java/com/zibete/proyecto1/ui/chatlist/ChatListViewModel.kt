@@ -27,14 +27,13 @@ import javax.inject.Inject
 class ChatListViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userSessionManager: UserSessionManager
 ) : ViewModel() {
 
     // ---------- Firebase ref ----------
 
     private val chatRef
         get() = firebaseRefsContainer.refDatos
-            .child(userSessionManager.user.uid)
+            .child(userRepository.myUid)
             .child(Constants.CHATWITH)
 
     private var chatListListener: ValueEventListener? = null
