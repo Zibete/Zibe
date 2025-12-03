@@ -38,16 +38,13 @@ import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.ProfileUiBinder
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import dagger.hilt.android.AndroidEntryPoint
-import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class PerfilActivity : AppCompatActivity() {
+class ProfileActivity : AppCompatActivity() {
 
     @Inject
     lateinit var repo: UserPreferencesRepository
@@ -299,7 +296,7 @@ class PerfilActivity : AppCompatActivity() {
 
                     // Foto perfil
                     loadingPhoto.visibility = View.VISIBLE
-                    Glide.with(this@PerfilActivity)
+                    Glide.with(this@ProfileActivity)
                         .load(foto)
                         .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
                         .listener(object : RequestListener<Drawable> {

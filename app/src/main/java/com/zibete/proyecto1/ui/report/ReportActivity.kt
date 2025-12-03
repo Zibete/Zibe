@@ -1,4 +1,4 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.report
 
 import android.content.DialogInterface
 import android.content.Intent
@@ -6,26 +6,36 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.auth.FirebaseAuth
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs.refZibe
-import com.zibete.proyecto1.data.UserRepository.setUserOffline
-import com.zibete.proyecto1.data.UserRepository.setUserOnline
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.utils.Utils
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@AndroidEntryPoint
 
 class ReportActivity : AppCompatActivity() {
+
+    @Inject lateinit var userRepository: UserRepository
+
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+
+    private val user = userRepository.user
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var edtComentarios: TextInputEditText
     private lateinit var btnSend: MaterialButton
 
-    private val user = FirebaseAuth.getInstance().currentUser
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,22 +86,15 @@ class ReportActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val dateKey = SimpleDateFormat("yyyy/MM/dd/HH:mm:ss", Locale.getDefault())
-                .format(Calendar.getInstance().time)
+            val dateKey = Utils.now()
 
-            // Guarda datos del usuario si está logueado
-            user?.let { u ->
-                refZibe.child("Comentarios").child(dateKey).apply {
-                    child("ID").setValue(u.uid)
-                    child("nombre").setValue(u.displayName)
-                    child("email").setValue(u.email)
-                }
+            // Guarda datos del usuario
+            firebaseRefsContainer.refZibe.child("Comentarios").child(dateKey).apply {
+                child("ID").setValue(user.uid)
+                child("nombre").setValue(user.displayName)
+                child("email").setValue(user.email)
+                child("mensaje").setValue(mensaje)
             }
-
-            // Guarda mensaje
-            refZibe.child("Comentarios").child(dateKey)
-                .child("mensaje")
-                .setValue(mensaje)
 
             // Dialog Material
             MaterialAlertDialogBuilder(this)
@@ -108,11 +111,11 @@ class ReportActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        user?.uid?.let { setUserOffline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserLastSeen() }
     }
 
     override fun onResume() {
         super.onResume()
-        user?.uid?.let { setUserOnline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserOnline() }
     }
 }

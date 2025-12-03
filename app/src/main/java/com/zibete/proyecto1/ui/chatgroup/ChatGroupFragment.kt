@@ -42,7 +42,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zibete.proyecto1.PerfilActivity
+import com.zibete.proyecto1.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterChatGroup
@@ -648,7 +648,7 @@ class ChatGroupFragment : Fragment() {
         if (chat.typeUser == 0) {
             showSnack(view, getString(R.string.perfil_incognito))
         } else if (chat.id != currentUserId) {
-            val intent = Intent(context, PerfilActivity::class.java)
+            val intent = Intent(context, ProfileActivity::class.java)
                 .putExtra("id_user", chat.id)
                 .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             startActivity(intent)

@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
@@ -14,19 +13,13 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.PerfilActivity
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.Utils.calcAge
-import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
-import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
+import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 
 class AdapterFavoriteUsers(
-    private val favorites: MutableList<String>,
-    private val context: Context
+    private val favorites: MutableList<FavoriteUserUi>,
+    private val context: Context,
+    private val onUserClicked: (FavoriteUserUi) -> Unit
 ) : RecyclerView.Adapter<AdapterFavoriteUsers.FavoriteViewHolder>() {
 
     inner class FavoriteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -34,8 +27,8 @@ class AdapterFavoriteUsers(
         val tvAge: TextView = itemView.findViewById(R.id.tv_favorite_age)
         val imgUser: ImageView = itemView.findViewById(R.id.image_favorite_user)
         val card: CardView = itemView.findViewById(R.id.cardview_favorites)
-        val iconOnline: ImageView = itemView.findViewById(R.id.`@+id/icon_connected`)
-        val iconOffline: ImageView = itemView.findViewById(R.id.`@+id/icon_disconnected`)
+        val iconOnline: ImageView = itemView.findViewById(R.id.icon_connected)
+        val iconOffline: ImageView = itemView.findViewById(R.id.icon_disconnected)
         val container: LinearLayout = itemView.findViewById(R.id.linearCardFavorites)
     }
 
@@ -46,19 +39,13 @@ class AdapterFavoriteUsers(
     }
 
     override fun onBindViewHolder(holder: FavoriteViewHolder, position: Int) {
-        val favoriteUserId = favorites[position]
+        val favorite = favorites[position]
 
-        // Ajuste de alto proporcional (grid 3 columnas estilo card cuadrado-ish)
         adjustItemHeight(holder)
+        bindUserCard(holder, favorite)
 
-        // Cargar info del usuario
-        bindUserCard(holder, favoriteUserId)
-
-        // Click -> Perfil
-        holder.card.setOnClickListener { v ->
-            val intent = Intent(v.context, PerfilActivity::class.java)
-            intent.putExtra("id_user", favoriteUserId)
-            v.context.startActivity(intent)
+        holder.card.setOnClickListener {
+            onUserClicked(favorite)
         }
     }
 
@@ -66,13 +53,8 @@ class AdapterFavoriteUsers(
 
     // ========== Public API ==========
 
-    fun addUser(userId: String) {
-        favorites.add(userId)
-        notifyItemInserted(favorites.size - 1)
-    }
-
-    fun updateDataUsers(newList: List<String>) {
-        val diffCallback = FavoritesDiffCallback(newList, favorites)
+    fun updateDataUsers(newList: List<FavoriteUserUi>) {
+        val diffCallback = FavoriteUsersDiffCallback(newList, favorites)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
 
         favorites.clear()
@@ -96,49 +78,21 @@ class AdapterFavoriteUsers(
         holder.container.layoutParams = params
     }
 
-    private fun bindUserCard(holder: FavoriteViewHolder, userId: String) {
-        // Datos del usuario
-        refCuentas.child(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) return
+    private fun bindUserCard(holder: FavoriteViewHolder, favorite: FavoriteUserUi) {
+        holder.tvName.text = favorite.name
+        holder.tvAge.text = favorite.age.toString()
 
-                    val u = snapshot.getValue(Users::class.java) ?: return
+        Glide.with(context)
+            .load(favorite.profilePhoto)
+            .placeholder(R.drawable.ic_person_24)
+            .error(R.drawable.ic_person_24)
+            .into(holder.imgUser)
 
-                    holder.tvAge.text = calcAge(u.birthDay).toString()
-                    holder.tvName.text = u.name
-
-                    Glide.with(context)
-                        .load(u.profilePhoto)
-                        .placeholder(R.drawable.ic_person_24)
-                        .error(R.drawable.ic_person_24)
-                        .into(holder.imgUser)
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        // Estado online / offline
-        refDatos.child(userId).child("Estado")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) {
-                        showOffline(holder)
-                        return
-                    }
-
-                    val estado = snapshot.child("estado").getValue(String::class.java)
-                    if (estado == context.getString(R.string.online)) {
-                        showOnline(holder)
-                    } else {
-                        showOffline(holder)
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    showOffline(holder)
-                }
-            })
+        if (favorite.isOnline) {
+            showOnline(holder)
+        } else {
+            showOffline(holder)
+        }
     }
 
     private fun showOnline(holder: FavoriteViewHolder) {
@@ -150,4 +104,21 @@ class AdapterFavoriteUsers(
         holder.iconOnline.visibility = View.GONE
         holder.iconOffline.visibility = View.VISIBLE
     }
+}
+
+// DiffUtil específico para FavoriteUserUi
+class FavoriteUsersDiffCallback(
+    private val newList: List<FavoriteUserUi>,
+    private val oldList: List<FavoriteUserUi>
+) : DiffUtil.Callback() {
+
+    override fun getOldListSize(): Int = oldList.size
+
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+        oldList[oldItemPosition].id == newList[newItemPosition].id
+
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+        oldList[oldItemPosition] == newList[newItemPosition]
 }

@@ -5,146 +5,95 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.FixedSwipeRefreshLayout
+import com.zibete.proyecto1.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
-import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class FavoritesFragment : Fragment() {
 
-    private lateinit var progressBar: ProgressBar
-    private lateinit var favoritesSwipeRefresh: FixedSwipeRefreshLayout
-    private lateinit var recyclerView: RecyclerView
+    private var _binding: FragmentFavoritesBinding? = null
+    private val binding get() = _binding!!
+
+    private val viewModel: FavoritesViewModel by viewModels()
+
     private lateinit var adapter: AdapterFavoriteUsers
     private lateinit var layoutManager: GridLayoutManager
-
-    private val user get() = FirebaseRefs.currentUser!!
-    private val favoritesList = mutableListOf<String>()
-    private val favoritesTemp = mutableListOf<String>() // para refresh
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.fragment_favorites, container, false)
+        _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
 
-        progressBar = view.findViewById(R.id.progressbar)
-        recyclerView = view.findViewById(R.id.rv_favorites)
-        favoritesSwipeRefresh = view.findViewById(R.id.favorite_swipe_refresh)
+        setupRecycler()
+        setupSwipeRefresh()
+        collectUiState()
 
+        viewModel.loadFavorites()
+
+        return binding.root
+    }
+
+    private fun setupRecycler() = with(binding) {
         layoutManager = GridLayoutManager(requireContext(), 3)
-        recyclerView.layoutManager = layoutManager
+        rvFavorites.layoutManager = layoutManager
 
-        adapter = AdapterFavoriteUsers(favoritesList, requireContext())
-        recyclerView.adapter = adapter
-
-        favoritesSwipeRefresh.setRecyclerView(recyclerView)
-        favoritesSwipeRefresh.setOnRefreshListener {
-            loadFavorites("refresh")
+        adapter = AdapterFavoriteUsers(
+            favorites = mutableListOf(),
+            context = requireContext()
+        ) { favoriteUser ->
+            // Navegar al perfil
+            val intent = android.content.Intent(requireContext(), ProfileActivity::class.java)
+            intent.putExtra("id_user", favoriteUser.id)
+            startActivity(intent)
         }
 
-        loadFavorites("load")
-
-        return view
+        rvFavorites.adapter = adapter
     }
 
-    private fun loadFavorites(flag: String) {
-        progressBar.visibility = View.VISIBLE
-
-        if (flag == "load") {
-            favoritesList.clear()
-        } else {
-            favoritesTemp.clear()
+    private fun setupSwipeRefresh() = with(binding) {
+        favoriteSwipeRefresh.setRecyclerView(rvFavorites)
+        favoriteSwipeRefresh.setOnRefreshListener {
+            viewModel.refreshFavorites()
         }
-
-        FirebaseRefs.refDatos.child(user.uid).child("FavoriteList")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) {
-                        progressBar.visibility = View.GONE
-                        adapter.updateDataUsers(emptyList())
-                        Toast.makeText(context, "No hay favoritos", Toast.LENGTH_SHORT).show()
-                        favoritesSwipeRefresh.isRefreshing = false
-                        return
-                    }
-
-                    val pending = snapshot.childrenCount
-                    if (pending == 0L) {
-                        progressBar.visibility = View.GONE
-                        favoritesSwipeRefresh.isRefreshing = false
-                        return
-                    }
-
-                    var processed = 0L
-
-                    for (child in snapshot.children) {
-                        val favUserId = child.getValue(String::class.java)
-
-                        if (favUserId.isNullOrEmpty()) {
-                            checkComplete(++processed, pending, flag)
-                            continue
-                        }
-
-                        // Verificamos que el usuario siga existiendo
-                        FirebaseRefs.refCuentas.child(favUserId)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(userSnap: DataSnapshot) {
-                                    if (userSnap.exists()) {
-                                        if (flag == "load") {
-                                            favoritesList.add(favUserId)
-                                        } else {
-                                            favoritesTemp.add(favUserId)
-                                        }
-                                    } else {
-                                        // Limpieza: si ya no existe el user, borramos de favoritos
-                                        child.ref.removeValue()
-                                    }
-
-                                    checkComplete(++processed, pending, flag)
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                    checkComplete(++processed, pending, flag)
-                                }
-                            })
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    progressBar.visibility = View.GONE
-                    favoritesSwipeRefresh.isRefreshing = false
-                }
-            })
     }
 
-    private fun checkComplete(
-        processed: Long,
-        total: Long,
-        flag: String
-    ) {
-        if (processed < total) return
+    private fun collectUiState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    val b = _binding ?: return@collect
 
-        // Orden alfabético por id (como ya tenías)
-        if (flag == "load") {
-            favoritesList.sort()
-            adapter.updateDataUsers(favoritesList)
-        } else {
-            favoritesTemp.sort()
-            adapter.updateDataUsers(favoritesTemp)
+                    b.progressbar.isVisible = state.isLoading
+                    b.favoriteSwipeRefresh.isRefreshing = false
+
+                    if (state.error != null) {
+                        Toast.makeText(requireContext(), state.error, Toast.LENGTH_SHORT).show()
+                    }
+
+                    adapter.updateDataUsers(state.favorites)
+
+                    if (state.isEmpty) {
+                        Toast.makeText(requireContext(), "No hay favoritos", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            }
         }
-
-        progressBar.visibility = View.GONE
-        favoritesSwipeRefresh.isRefreshing = false
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -154,5 +103,10 @@ class FavoritesFragment : Fragment() {
         menu.findItem(R.id.action_unlock)?.isVisible = false
         menu.findItem(R.id.action_favorites)?.isVisible = false
         menu.findItem(R.id.action_exit)?.isVisible = false
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

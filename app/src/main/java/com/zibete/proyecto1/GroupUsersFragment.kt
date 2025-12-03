@@ -125,7 +125,7 @@ class GroupUsersFragment : Fragment(), SearchView.OnQueryTextListener {
     // 2. Single Tap Logic (Perfil o Toast)
     private fun handleUserSingleTap(groupUser: UserGroup) {
         if (groupUser.type == 1) {
-            val intent = Intent(requireContext(), PerfilActivity::class.java).apply {
+            val intent = Intent(requireContext(), ProfileActivity::class.java).apply {
                 putExtra("id_user", groupUser.userId)
                 addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             }

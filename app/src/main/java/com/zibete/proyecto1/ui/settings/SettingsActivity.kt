@@ -36,7 +36,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ReportActivity
+import com.zibete.proyecto1.ui.report.ReportActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
