@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.ui
+package com.zibete.proyecto1.ui.favorites
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,7 +17,6 @@ import com.zibete.proyecto1.FixedSwipeRefreshLayout
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 
 class FavoritesFragment : Fragment() {
 
@@ -27,7 +26,7 @@ class FavoritesFragment : Fragment() {
     private lateinit var adapter: AdapterFavoriteUsers
     private lateinit var layoutManager: GridLayoutManager
 
-    private val user get() = currentUser!!
+    private val user get() = FirebaseRefs.currentUser!!
     private val favoritesList = mutableListOf<String>()
     private val favoritesTemp = mutableListOf<String>() // para refresh
 

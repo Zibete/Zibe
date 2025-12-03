@@ -1,4 +1,4 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.chatgroup
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -31,7 +31,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.material.card.MaterialCardView
@@ -43,6 +42,9 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.zibete.proyecto1.PerfilActivity
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
@@ -52,13 +54,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.utils.FirebaseRefs
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
-import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
-import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupChat
-import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
 import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONException
 import org.json.JSONObject
@@ -70,10 +66,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ChatGroupFragment : Fragment() {
 
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var userSessionManager: UserSessionManager
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userRepository: UserRepository
+    @Inject
+    lateinit var firebaseRefsContainer: FirebaseRefsContainer
+    @Inject
+    lateinit var userSessionManager: UserSessionManager
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject
+    lateinit var userRepository: UserRepository
 
     private lateinit var _binding: FragmentGroupBinding
     private val binding get() = _binding
@@ -101,7 +101,7 @@ class ChatGroupFragment : Fragment() {
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageReference: StorageReference = storage.reference
-    private val user get() = currentUser!!
+    private val user get() = FirebaseRefs.currentUser!!
 
     private val refSendImages: StorageReference by lazy {
         storageReference.child("Chats/${user.uid}/")
@@ -129,14 +129,14 @@ class ChatGroupFragment : Fragment() {
 //        MainActivity.badgeDrawableGroup?.isVisible = false
 
         // Marcar mensajes leídos del grupo activo
-        refGroupChat.child(userPreferencesRepository.groupName)
+        FirebaseRefs.refGroupChat.child(userPreferencesRepository.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (this@ChatGroupFragment.isResumed &&
                         userPreferencesRepository.groupName.isNotEmpty()
                     ) {
                         val count = snapshot.childrenCount.toInt()
-                        refDatos.child(user.uid)
+                        FirebaseRefs.refDatos.child(user.uid)
                             .child("ChatList")
                             .child("msgReadGroup")
                             .setValue(count)
@@ -175,7 +175,7 @@ class ChatGroupFragment : Fragment() {
 
         adapter = AdapterChatGroup(
             context = requireContext(),
-            maxSize = MAXCHATSIZE,
+            maxSize = Constants.MAXCHATSIZE,
             initialList = chatsArrayList, // Tu array actual
             onImageClicked = { url -> navigateToPhoto(url) },
             onUserSingleTap = { chat, view -> handleUserSingleTap(chat, view) },
@@ -195,7 +195,7 @@ class ChatGroupFragment : Fragment() {
 
         buttonScrollBack.setOnClickListener { setScrollbar() }
 
-        adapter?.registerAdapterDataObserver(object : AdapterDataObserver() {
+        adapter?.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
                 setScrollbar()
@@ -274,7 +274,7 @@ class ChatGroupFragment : Fragment() {
     }
 
     private fun initOnBoardingObserver() = with(binding) {
-        refGroupChat.child(userPreferencesRepository.groupName)
+        FirebaseRefs.refGroupChat.child(userPreferencesRepository.groupName)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     progressbar2.isVisible = false
@@ -326,7 +326,7 @@ class ChatGroupFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {}
         }
 
-        refGroupChat.child(userPreferencesRepository.groupName)
+        FirebaseRefs.refGroupChat.child(userPreferencesRepository.groupName)
             .addChildEventListener(listenerGroupChat as ChildEventListener)
     }
 
@@ -447,7 +447,7 @@ class ChatGroupFragment : Fragment() {
         )
 
         // Enviar a Firebase
-        refGroupChat.child(userPreferencesRepository.groupName)
+        FirebaseRefs.refGroupChat.child(userPreferencesRepository.groupName)
             .push()
             .setValue(chatMsg)
             .addOnCompleteListener {
@@ -460,7 +460,7 @@ class ChatGroupFragment : Fragment() {
             }
 
         // Notificaciones a los demás miembros del grupo
-        refGroupUsers.child(userPreferencesRepository.groupName)
+        FirebaseRefs.refGroupUsers.child(userPreferencesRepository.groupName)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
@@ -468,7 +468,7 @@ class ChatGroupFragment : Fragment() {
                             snapshot.child("user_id").getValue(String::class.java) ?: continue
                         if (userId == user.uid) continue
 
-                        refCuentas.child(userId)
+                        FirebaseRefs.refCuentas.child(userId)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(snapshot: DataSnapshot) {
                                     val token =
@@ -663,7 +663,7 @@ class ChatGroupFragment : Fragment() {
         // Usamos el Repo (si ya migraste repo.groupName) o la variable global que tengas
         val groupName = userPreferencesRepository.groupName // O UsersFragment.groupName si aún no migras todo
 
-        refGroupUsers.child(groupName)
+        FirebaseRefs.refGroupUsers.child(groupName)
             .child(chat.id)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {

@@ -33,16 +33,15 @@ import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.ChatGroupFragment
+import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ReportActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
-import com.zibete.proyecto1.ui.GruposFragment
+import com.zibete.proyecto1.ui.groups.GroupsFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.UserMessageUtils
@@ -518,7 +517,7 @@ class SettingsActivity : AppCompatActivity() {
 
         invalidateOptionsMenu()
 
-        val newFragment = GruposFragment()
+        val newFragment = GroupsFragment()
         supportFragmentManager.beginTransaction()
             .replace(R.id.nav_host_fragment, newFragment)
             .commit()

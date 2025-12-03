@@ -25,6 +25,7 @@ import com.google.firebase.database.ValueEventListener
 import com.rahimlis.badgedtablayout.BadgedTabLayout
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
 import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos

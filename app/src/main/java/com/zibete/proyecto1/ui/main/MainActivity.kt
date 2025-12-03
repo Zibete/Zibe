@@ -13,7 +13,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
@@ -47,9 +46,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserPreferencesRepository
@@ -57,9 +53,8 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.EditProfileFragment
-import com.zibete.proyecto1.ui.GruposFragment
+import com.zibete.proyecto1.ui.groups.GroupsFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
@@ -67,9 +62,7 @@ import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
-import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.UserMessageUtils
-import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -333,7 +326,7 @@ class MainActivity : AppCompatActivity() {
 
                             is MainNavEvent.ToGroupsAfterExit -> {
                                 supportFragmentManager.beginTransaction()
-                                    .replace(R.id.nav_host_fragment, GruposFragment())
+                                    .replace(R.id.nav_host_fragment, GroupsFragment())
                                     .commit()
 
                                 materialToolbar?.setTitle(R.string.menu_groups)

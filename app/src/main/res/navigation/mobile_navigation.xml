@@ -7,9 +7,9 @@
 
     <fragment
         android:id="@+id/nav_groups"
-        android:name="com.zibete.proyecto1.ui.GruposFragment"
+        android:name="com.zibete.proyecto1.ui.groups.GroupsFragment"
         android:label="@string/menu_groups"
-        tools:layout="@layout/fragment_grupos" />
+        tools:layout="@layout/fragment_groups" />
 
 
 
@@ -36,14 +36,14 @@
 
     <fragment
         android:id="@+id/nav_favorites"
-        android:name="com.zibete.proyecto1.ui.FavoritesFragment"
+        android:name="com.zibete.proyecto1.ui.favorites.FavoritesFragment"
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_chat_list"/>
 
 
     <fragment
         android:id="@+id/nav_group_chat"
-        android:name="com.zibete.proyecto1.ChatGroupFragment"
+        android:name="com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment"
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_group"/>
 
