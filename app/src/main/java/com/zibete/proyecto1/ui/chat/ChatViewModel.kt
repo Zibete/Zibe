@@ -14,7 +14,6 @@ import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatRefs
 import com.zibete.proyecto1.model.UserStatus
@@ -90,7 +89,7 @@ class ChatViewModel @Inject constructor(
             // Una vez que tenemos header + refs, traemos estado de notifs/bloqueo
             val chatType = _chatRefs.value?.refChatWith
             if (chatType != null) {
-                val state = userRepository.getNotificationState(targetUserId, chatType)
+                val state = userRepository.getChatStateWith(targetUserId, chatType)
                 val notificationsEnabled = (state != "silent")
                 val isBlocked = (state == "bloq")
 
@@ -327,7 +326,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val ctx = getChatContextOrNull() ?: return@launch
 
-            val currentState = userRepository.getNotificationState(ctx.id, ctx.type)
+            val currentState = userRepository.getChatStateWith(ctx.id, ctx.type)
             val newState = if (currentState == "silent") ctx.type else "silent"
 
             userRepository.updateNotificationState(ctx.id, ctx.type, ctx.name)

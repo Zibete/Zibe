@@ -8,14 +8,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.ChatListGroupsFragment
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
@@ -23,15 +21,19 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATGROUPLIST
+import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_UNKNOWN
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
+class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
@@ -49,6 +51,9 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
+        observeChatSessionEvents(chatListViewModel.events)
+
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
 
@@ -64,7 +69,6 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-
                 // UI state
                 launch {
                     chatListViewModel.uiState.collect { state ->
@@ -79,100 +83,6 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
                         adapterChatList.submitList(state.filteredChats)
                         setScrollbar()
 
-                    }
-                }
-
-                // Eventos one-shot
-                launch {
-                    chatListViewModel.events.collect { event ->
-                        when (event) {
-
-                            // ---------------- HIDE CHAT ----------------
-                            is ChatListUiEvent.ConfirmHideChat -> {
-                                UserMessageUtils.confirm(
-                                    context = requireContext(),
-                                    title = "Ocultar chat",
-                                    message = "¿Ocultar chat con ${event.name}?",
-                                    onConfirm = event.onConfirm
-                                )
-                            }
-
-                            is ChatListUiEvent.ShowChatHidden -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Se ha ocultado el chat",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-
-                            // ---------------- BLOCK ----------------
-                            is ChatListUiEvent.ConfirmBlock -> {
-                                UserMessageUtils.confirm(
-                                    context = requireContext(),
-                                    title = "Bloquear usuario",
-                                    message = "¿Bloquear a ${event.name}? No podrá enviarte mensajes.",
-                                    onConfirm = event.onConfirm
-                                )
-                            }
-
-                            is ChatListUiEvent.ShowBlockSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Se ha bloqueado a ${event.name}",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-
-                            // ---------------- UNBLOCK ----------------
-                            is ChatListUiEvent.ConfirmUnblock -> {
-                                UserMessageUtils.confirm(
-                                    context = requireContext(),
-                                    title = "Desbloquear usuario",
-                                    message = "¿Desbloquear a ${event.name}? Podrá volver a enviarte mensajes.",
-                                    onConfirm = event.onConfirm
-                                )
-                            }
-
-                            is ChatListUiEvent.ShowUnblockSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Se ha desbloqueado a ${event.name}",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-
-                            // ---------------- DELETE CHAT ----------------
-                            is ChatListUiEvent.ConfirmDeleteChat -> {
-                                UserMessageUtils.confirm(
-                                    context = requireContext(),
-                                    title = "Eliminar chat",
-                                    message = "¿Eliminar el chat con ${event.name}? También se eliminarán los mensajes en este dispositivo.",
-                                    onConfirm = event.onConfirm
-                                )
-                            }
-
-                            is ChatListUiEvent.ShowDeleteChatSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Se ha eliminado el chat con ${event.name}",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-
-                            // ---------------- GENÉRICO ----------------
-                            is ChatListUiEvent.ShowSnackbar -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = event.message,
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -255,18 +165,14 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
         // Chat individual
-        if (item.groupId == Constants.FRAGMENT_ID_CHATLIST) {
-            val type = Constants.CHATWITH
+        if (item.groupId == FRAGMENT_ID_CHATLIST) {
             val wChat = adapterChatList.currentList[item.order]
-            runItemSelected(item, type, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_TYPE_CHATWITH, wChat.userId, wChat.userName)
         }
-
-
         // Chat unknown / grupos
-        if (item.groupId == Constants.FRAGMENT_ID_CHATGROUPLIST) {
-            val wChat = ChatListGroupsFragment.Companion.chatsGroupArrayList[item.order]
-            val type = Constants.CHATWITHUNKNOWN
-            runItemSelected(item, type, wChat.userId, wChat.userName)
+        if (item.groupId == FRAGMENT_ID_CHATGROUPLIST) {
+            val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
+            runItemSelected(item, NODE_TYPE_UNKNOWN, wChat.userId, wChat.userName)
         }
 
         return true
@@ -274,21 +180,19 @@ class ChatListFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun runItemSelected(
         item: MenuItem,
-        type: String,
         idUser: String,
-        nameUser: String
+        userName: String,
+        nodeType: String
     ) {
-        val action = when (item.itemId) {
-            1 -> ChatMenuAction.MarkAsReadChat
-            2 -> ChatMenuAction.SilentUser
-            3 -> ChatMenuAction.BlockUser
-            4 -> ChatMenuAction.HideChat
-            5 -> ChatMenuAction.DeleteChat
-            else -> return
+        when (item.itemId) {
+            1 -> chatListViewModel.onMarkAsReadClicked(idUser, nodeType)
+            2 -> chatListViewModel.onSilentClicked(idUser, userName)
+            3 -> chatListViewModel.onBlockClicked(idUser, userName, nodeType) //No hay unblock
+            4 -> chatListViewModel.onHideClicked(idUser, userName, nodeType)
+            5 -> chatListViewModel.onDeleteClicked(idUser, userName)
         }
-
-        chatListViewModel.onChatItemMenuAction(action, idUser, type, nameUser)
     }
+
 
     // ---------- SearchView ----------
 

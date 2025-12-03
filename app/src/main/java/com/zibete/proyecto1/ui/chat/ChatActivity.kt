@@ -508,7 +508,7 @@ class ChatActivity : AppCompatActivity() {
             AdapterChat.Companion.mediaPlayer = null
         }
 
-        if (refChatWith == Constants.CHATWITHUNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
+        if (refChatWith == Constants.CHAT_STATE_UNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
             firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
@@ -1081,8 +1081,8 @@ class ChatActivity : AppCompatActivity() {
             // 1 a 1
             findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
             idUserFinal = idUser
-            refChat = Constants.CHAT
-            refChatWith = Constants.CHATWITH
+            refChat = Constants.NODE_TYPE_CHATS
+            refChatWith = Constants.CHAT_STATE_CHATWITH
             myPhoto = user.photoUrl?.toString() ?: ""
             myName = user.displayName ?: ""
 
@@ -1097,7 +1097,7 @@ class ChatActivity : AppCompatActivity() {
                         binding.nameUser.text = nameUserFinal
                         Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
                     } else {
-                        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
+                        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
                             ValueEventListener {
                             override fun onDataChange(snap: DataSnapshot) {
                                 yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
@@ -1118,8 +1118,8 @@ class ChatActivity : AppCompatActivity() {
 
             idUserFinal = idUserUnknown
             nameUserFinal = unknownName
-            refChat = Constants.UNKNOWN
-            refChatWith = Constants.CHATWITHUNKNOWN
+            refChat = Constants.NODE_TYPE_UNKNOWN
+            refChatWith = Constants.CHAT_STATE_UNKNOWN
             myName = userPreferencesRepository.userNameGroup
             binding.nameUser.text = nameUserFinal
 

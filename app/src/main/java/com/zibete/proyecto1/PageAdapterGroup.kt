@@ -16,8 +16,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
@@ -137,7 +135,7 @@ class PageAdapterGroup : Fragment() {
     private fun setupUnknownChatBadge() {
 
         val newQuery: Query = refDatos.child(myUid)
-            .child(Constants.CHATWITHUNKNOWN)
+            .child(Constants.CHAT_STATE_UNKNOWN)
             .orderByChild("noVisto")
             .startAt(1.0)
 

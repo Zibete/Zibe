@@ -1,0 +1,411 @@
+package com.zibete.proyecto1.ui.profile
+
+import android.content.Intent
+import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
+import com.github.clans.fab.FloatingActionButton
+import com.github.clans.fab.FloatingActionMenu
+import com.google.android.material.appbar.MaterialToolbar
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.adapters.AdapterPhotoReceived
+import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.databinding.ActivityPerfilBinding
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
+import com.zibete.proyecto1.ui.base.ChatSessionUiHandler
+import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
+
+@AndroidEntryPoint
+class ProfileActivity : BaseChatSessionActivity() {
+
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var locationRepository: LocationRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
+
+    private val user = userRepository.user
+
+    private val profileViewModel: ProfileViewModel by viewModels()
+
+
+    private lateinit var binding: ActivityPerfilBinding
+
+    // Estado / datos
+    private lateinit var idUser: String
+
+    private var unknownName: String? = null
+
+
+    private val photoList = ArrayList<String>()
+    private val receivedPhotos = ArrayList<String>()
+    private lateinit var adapterPhotoReceived: AdapterPhotoReceived
+
+    private val floatingActionMenu: FloatingActionMenu by lazy { binding.floatingActionMenu }
+    private val subMenuChatWith: FloatingActionButton by lazy { binding.subMenuChatWith }
+    private val subMenuChatWithUnknown: FloatingActionButton by lazy { binding.subMenuChatWithUnknown }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityPerfilBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        observeChatSessionEvents(profileViewModel.events)
+
+        // id del perfil a mostrar
+        idUser = intent.extras?.getString("id_user")
+            ?: run {
+                finish()
+                return
+            }
+
+        setupToolbar()
+        setupRecycler()
+        setupFabMenu()
+
+        binding.perfilFavoriteOff.setOnClickListener {
+            profileViewModel.onToggleFavorite(idUser)
+            Toast.makeText(this, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.perfilFavoriteOn.setOnClickListener {
+            profileViewModel.onToggleFavorite(idUser)
+            Toast.makeText(this, "Quitado de favoritos", Toast.LENGTH_SHORT).show()
+        }
+
+        collectChatPhotos()
+
+        collectUiState()
+        profileViewModel.loadProfile(idUser)
+
+        setupImageLayout()
+
+        lifecycleScope.launch {
+            profileViewModel.userStatus.collect { status ->
+                when (status) {
+                    is UserStatus.Online -> {
+                        binding.iconConnected.isVisible = true
+                        binding.iconDisconnected.isVisible = false
+                        binding.tvStatus.text = getString(R.string.online)
+                        binding.tvStatus.setTypeface(null, Typeface.NORMAL)
+                    }
+                    is UserStatus.TypingOrRecording -> {
+                        binding.iconConnected.isVisible = true
+                        binding.iconDisconnected.isVisible = false
+                        binding.tvStatus.text = status.text
+                        binding.tvStatus.setTypeface(null, Typeface.ITALIC)
+                    }
+                    is UserStatus.LastSeen -> {
+                        binding.iconConnected.isVisible = false
+                        binding.iconDisconnected.isVisible = true
+                        binding.tvStatus.text = status.text
+                    }
+                    is UserStatus.Offline -> {
+                        binding.iconDisconnected.isVisible = true
+                        binding.iconConnected.isVisible = false
+                        binding.tvStatus.text = getString(R.string.offline)
+                    }
+                }
+            }
+        }
+    }
+    private fun collectChatPhotos() {
+        lifecycleScope.launchWhenStarted {
+            profileViewModel.photosFromChat.collect { photos ->
+                if (photos.isNotEmpty()) {
+                    binding.linearPhotos.visibility = View.VISIBLE
+                    adapterPhotoReceived.updateData(photos) // o items.clear+addAll
+                } else {
+                    binding.linearPhotos.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun collectUiState() {
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                profileViewModel.uiState.collect { state ->
+
+                    binding.loadingPhoto.visibility =
+                        if (state.isLoading) View.VISIBLE else View.GONE
+
+                    state.age?.let { binding.edad.text = it.toString() }
+                    binding.nameUser.text = state.name
+                    binding.distanceUser.text = state.distance
+
+                    if (!state.description.isNullOrEmpty()) {
+                        binding.linearDesc.visibility = View.VISIBLE
+                        binding.desc.text = state.description
+                    } else {
+                        binding.linearDesc.visibility = View.GONE
+                    }
+
+                    state.photoUrl?.let { url ->
+                        if (!photoList.contains(url)) photoList.add(url)
+
+                        Glide.with(this@ProfileActivity)
+                            .load(url)
+                            .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
+                            .listener(object : RequestListener<Drawable> {
+                                override fun onLoadFailed(
+                                    e: GlideException?,
+                                    model: Any?,
+                                    target: Target<Drawable?>,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    binding.loadingPhoto.visibility = View.GONE
+                                    return false
+                                }
+
+                                override fun onResourceReady(
+                                    resource: Drawable,
+                                    model: Any,
+                                    target: Target<Drawable?>?,
+                                    dataSource: DataSource,
+                                    isFirstResource: Boolean
+                                ): Boolean {
+                                    binding.loadingPhoto.visibility = View.GONE
+                                    return false
+                                }
+                            })
+                            .into(binding.ftPerfil)
+                    }
+
+                    state.error?.let {
+                        Toast.makeText(this@ProfileActivity, it, Toast.LENGTH_SHORT).show()
+                    }
+
+                    if (state.hasGroupAlias) {
+                        binding.subMenuChatWithUnknown.visibility = View.VISIBLE
+                        binding.subMenuChatWithUnknown.labelText =
+                            "Chat privado de: ${userPreferencesRepository.groupName}"
+                    } else {
+                        binding.subMenuChatWithUnknown.visibility = View.GONE
+                    }
+
+                    // Favorito
+                    if (state.isFavorite) {
+                        binding.perfilFavoriteOn.visibility = View.VISIBLE
+                        binding.perfilFavoriteOff.visibility = View.GONE
+                    } else {
+                        binding.perfilFavoriteOn.visibility = View.GONE
+                        binding.perfilFavoriteOff.visibility = View.VISIBLE
+                    }
+
+                    // Bloqueos
+                    binding.perfilBloq.visibility =
+                        if (state.iBlockedUser) View.VISIBLE else View.GONE
+
+                    binding.perfilBloqMe.visibility =
+                        if (state.userBlockedMe) View.VISIBLE else View.GONE
+                }
+            }
+        }
+    }
+
+    // region Setup
+
+    private fun setupToolbar() {
+        val toolbar: MaterialToolbar = binding.toolbarProfile
+        setSupportActionBar(toolbar)
+        supportActionBar?.apply {
+            title = ""
+            setDisplayHomeAsUpEnabled(true)
+        }
+    }
+
+    private fun setupRecycler() {
+        val layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, true).apply {
+                stackFromEnd = true
+            }
+
+        binding.recyclerPhotos.layoutManager = layoutManager
+        adapterPhotoReceived =
+            AdapterPhotoReceived(receivedPhotos, Constants.MAXCHATSIZE, applicationContext)
+        binding.recyclerPhotos.adapter = adapterPhotoReceived
+    }
+
+    private fun setupFabMenu() {
+        binding.floatingActionMenu.setClosedOnTouchOutside(true)
+
+        binding.subMenuChatWithUnknown.setOnClickListener {
+            val state = profileViewModel.uiState.value
+            if (!state.hasGroupAlias || state.unknownName == null) return@setOnClickListener
+
+            val intent = Intent(this, ChatActivity::class.java).apply {
+                putExtra("unknownName", state.unknownName)
+                putExtra("idUserUnknown", idUser)
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            startActivity(intent)
+        }
+
+        binding.subMenuChatWith.setOnClickListener {
+            val intent = Intent(this, ChatActivity::class.java).apply {
+                putExtra("id_user", idUser)
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            }
+            startActivity(intent)
+        }
+    }
+
+
+
+
+
+
+    private fun setupImageLayout() {
+        val height = ScreenUtils.heightPx
+
+        val layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            height - (height / 4)
+        )
+        binding.linearImageActivity.layoutParams = layoutParams
+
+        binding.linearImageActivity.setOnClickListener {
+            val intent = Intent(this, SlidePhotoActivity::class.java).apply {
+                putStringArrayListExtra("photoList", ArrayList(photoList))
+                putExtra("position", 0)
+                putExtra("rotation", 180)
+            }
+            startActivity(intent)
+        }
+    }
+
+
+
+    // endregion
+
+    // region Lifecycle
+
+    override fun onPause() {
+        super.onPause()
+        lifecycleScope.launch { userRepository.setUserLastSeen() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch { userRepository.setUserOnline() }
+    }
+
+    // endregion
+
+    // region Menu
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_chat_activity, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        super.onPrepareOptionsMenu(menu)
+
+        val actionSilent = menu.findItem(R.id.action_silent)
+        val actionNotif = menu.findItem(R.id.action_notif)
+        val actionBloq = menu.findItem(R.id.action_bloq)
+        val actionDesbloq = menu.findItem(R.id.action_desbloq)
+        val actionDelete = menu.findItem(R.id.action_delete)
+
+        actionDelete.isVisible = true
+
+        val userState = profileViewModel.uiState.value.chatState
+
+        if (userState == CHAT_STATE_BLOQ) {
+            // Bloqueado
+            actionSilent.isVisible = false
+            actionNotif.isVisible = false
+            actionDesbloq.isVisible = true
+            actionBloq.isVisible = false
+        } else {
+            // No bloqueado: puede estar silent/chat/delete
+            val isSilent = userState == CHAT_STATE_SILENT
+
+            actionSilent.isVisible = !isSilent
+            actionNotif.isVisible = isSilent
+            actionDesbloq.isVisible = false
+            actionBloq.isVisible = true
+        }
+
+        return true
+    }
+
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val view = findViewById<View>(android.R.id.content)
+        val nameUser = profileViewModel.uiState.value.name
+
+        return when (item.itemId) {
+            android.R.id.home -> {
+                onBackPressedDispatcher.onBackPressed()
+                true
+            }
+
+            R.id.action_silent -> {
+                silent(nameUser, idUser, CHAT_STATE_CHATWITH)
+                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
+                true
+            }
+
+            R.id.action_notif -> {
+                silent(nameUser, idUser, CHAT_STATE_CHATWITH)
+                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+                true
+            }
+
+            R.id.action_bloq -> {
+                profileViewModel.onBlockClicked(idUser)
+                true
+            }
+
+            R.id.action_desbloq -> { // Desbloquear
+                profileViewModel.onUnblockClicked(idUser, nameUser)
+                true
+            }
+
+            R.id.action_delete -> { // Eliminar chat
+                profileViewModel.onDeleteChatClicked(idUser, nameUser)
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    // endregion
+}

@@ -7,9 +7,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,7 +34,7 @@ class ChatListViewModel @Inject constructor(
     private val chatRef
         get() = firebaseRefsContainer.refDatos
             .child(userRepository.myUid)
-            .child(Constants.CHATWITH)
+            .child(Constants.CHAT_STATE_CHATWITH)
 
     private var chatListListener: ValueEventListener? = null
 
@@ -45,8 +45,8 @@ class ChatListViewModel @Inject constructor(
 
     // ---------- One-shot events ----------
 
-    private val _events = MutableSharedFlow<ChatListUiEvent>()
-    val events: SharedFlow<ChatListUiEvent> = _events.asSharedFlow()
+    private val _events = MutableSharedFlow<ChatSessionUiEvent>()
+    val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
 
     init {
         observeChatList()
@@ -80,7 +80,7 @@ class ChatListViewModel @Inject constructor(
                     val photo = child.child("wUserPhoto").getValue(String::class.java)
 
                     if (photo != Constants.EMPTY &&
-                        (state == Constants.CHATWITH || state == "silent")
+                        (state == Constants.CHAT_STATE_CHATWITH || state == "silent")
                     ) {
                         visibleCount++
                     }
@@ -141,69 +141,49 @@ class ChatListViewModel @Inject constructor(
 
     // ---------- Acciones de menú ----------
 
-    fun onChatItemMenuAction(
-        action: ChatMenuAction,
-        chatWithId: String,
-        chatType: String,
-        userName: String
-    ) {
-        viewModelScope.launch {
-            when (action) {
-                ChatMenuAction.MarkAsReadChat ->
-                    userRepository.markAsReadChat(chatWithId, chatType)
-
-                ChatMenuAction.SilentUser ->
-                    userRepository.updateNotificationState(chatWithId, chatType, userName)
-
-                ChatMenuAction.BlockUser ->
-                    blockUser(chatWithId, chatType, userName)
-
-                ChatMenuAction.HideChat ->
-                    hideChat(chatWithId, chatType, userName)
-
-                ChatMenuAction.DeleteChat ->
-                    deleteChat(chatWithId, chatType, userName)
-            }
-        }
-    }
-
-    private fun deleteChat(chatWithId: String, chatType: String, userName: String) {
+    fun onBlockClicked(idUser: String, userName: String, nodeType : String) {
         viewModelScope.launch {
             _events.emit(
-                ChatListUiEvent.ConfirmDeleteChat(userName) {
-                    viewModelScope.launch {
-                        userRepository.deleteChat(
-                            chatWithId,
-                            chatType,
-                            deleteMessages = true
-                        )
-                        _events.emit(ChatListUiEvent.ShowDeleteChatSuccess(userName))
+                ChatSessionUiEvent.ConfirmBlock(
+                    name = userName,
+                    onConfirm = {
+                        userRepository.blockUser(idUser, userName, nodeType)
+                        _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
                     }
-                }
+                )
             )
         }
     }
 
-    private fun blockUser(chatWithId: String, chatType: String, userName: String) {
+    fun onDeleteClicked(idUser: String, nodeType: String, nameUser: String) {
         viewModelScope.launch {
+            val count = userRepository.getMessageCount(idUser, nodeType)
+
             _events.emit(
-                ChatListUiEvent.ConfirmBlock(userName) {
-                    viewModelScope.launch {
-                        userRepository.blockUser(chatWithId, chatType, userName)
-                        _events.emit(ChatListUiEvent.ShowBlockSuccess(userName))
+                ChatSessionUiEvent.ConfirmDeleteChat(
+                    name = nameUser,
+                    countMessages = count,
+                    onConfirm = { deleteMessages ->
+                        viewModelScope.launch {
+                            userRepository.deleteChat(idUser, nameUser, nodeType, deleteMessages)
+                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(nameUser))
+                        }
                     }
-                }
+                )
             )
         }
     }
+
+
+
 
     private fun unblockUser(chatWithId: String, chatType: String, userName: String) {
         viewModelScope.launch {
             _events.emit(
-                ChatListUiEvent.ConfirmUnblock(userName) {
+                ChatSessionUiEvent.ConfirmUnblock(userName) {
                     viewModelScope.launch {
                         userRepository.unblockUser(chatWithId, chatType)
-                        _events.emit(ChatListUiEvent.ShowUnblockSuccess(userName))
+                        _events.emit(ChatSessionUiEvent.ShowUnblockSuccess(userName))
                     }
                 }
             )
@@ -213,10 +193,10 @@ class ChatListViewModel @Inject constructor(
     private fun hideChat(chatWithId: String, chatType: String, userName: String) {
         viewModelScope.launch {
             _events.emit(
-                ChatListUiEvent.ConfirmHideChat(userName) {
+                ChatSessionUiEvent.ConfirmHideChat(userName) {
                     viewModelScope.launch {
                         userRepository.hideChat(chatWithId, chatType)
-                        _events.emit(ChatListUiEvent.ShowChatHidden)
+                        _events.emit(ChatSessionUiEvent.ShowChatHidden)
                     }
                 }
             )

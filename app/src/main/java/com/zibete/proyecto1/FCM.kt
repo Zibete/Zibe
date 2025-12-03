@@ -15,9 +15,9 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.ui.constants.Constants.CHAT
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITH
-import com.zibete.proyecto1.ui.constants.Constants.UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_UNKNOWN
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
@@ -46,7 +46,7 @@ class FCM : FirebaseMessagingService() {
         val idUser = data["id_user"] ?: return
         val type = data["type"] ?: return
 
-        val ref: String = if (type == CHATWITH) CHAT else UNKNOWN
+        val ref: String = if (type == CHAT_STATE_CHATWITH) NODE_TYPE_CHATS else NODE_TYPE_UNKNOWN
 
         if (type != repo.groupName) {
             if (repo.individualNotifications) {

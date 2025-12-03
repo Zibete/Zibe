@@ -6,7 +6,6 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.firebase.ui.auth.data.model.User
 import com.github.clans.fab.FloatingActionButton
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -14,18 +13,12 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
-import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.Utils.calcAge
-import kotlinx.coroutines.tasks.await
-import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.*
 
 @Singleton
 class ProfileUiBinder @Inject constructor(
@@ -124,7 +117,7 @@ class ProfileUiBinder @Inject constructor(
         userId: String,
         blockIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(myUid).child(Constants.CHATWITH).child(userId).child("estado")
+        FirebaseRefs.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH).child(userId).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val isBlocked = snapshot.getValue(String::class.java) == "bloq"
@@ -140,7 +133,7 @@ class ProfileUiBinder @Inject constructor(
         userId: String,
         blockMeIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(userId).child(Constants.CHATWITH).child(myUid).child("estado")
+        FirebaseRefs.refDatos.child(userId).child(Constants.CHAT_STATE_CHATWITH).child(myUid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val blocked = snapshot.getValue(String::class.java) == "bloq"

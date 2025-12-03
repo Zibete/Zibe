@@ -23,6 +23,10 @@ import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -39,8 +43,7 @@ class AdapterChatList(
     ChatDiffCallback()
 ), OnCreateContextMenuListener {
 
-    private val user
-        get() = userSessionManager.user
+    private val user = userRepository.user
     private var menu1: String? = null
     private var menu2: String? = null
     private var contextMenuPosition: Int = 0
@@ -137,7 +140,7 @@ class AdapterChatList(
         // Estado online / offline (Flow)
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
-            userRepository.observeUserStatus(chat.userId, Constants.CHATWITH)
+            userRepository.observeUserStatus(chat.userId, Constants.CHAT_STATE_CHATWITH)
                 .collectLatest { status ->
                     bindUserStatus(binding, status)
                 }
@@ -272,15 +275,15 @@ class AdapterChatList(
         val photo = chat.userPhoto
 
         when (state) {
-            Constants.CHATWITH -> {
+            CHAT_STATE_CHATWITH -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
-            "silent" -> {
+            CHAT_STATE_SILENT -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = true
             }
-            "bloq", "delete" -> {
+            CHAT_STATE_BLOQ, CHAT_STATE_HIDE -> {
                 binding.cardview.isVisible = false
             }
             else -> {
@@ -330,7 +333,7 @@ class AdapterChatList(
         lifecycleScope.launch {
             userRepository.markMessagesAsSeen(
                 otherUserId = chat.userId,
-                chatType = Constants.CHATWITH,
+                chatType = CHAT_STATE_CHATWITH,
                 noSeen = noSeen
             )
         }

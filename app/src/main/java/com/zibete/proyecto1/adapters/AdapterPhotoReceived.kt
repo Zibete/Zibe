@@ -16,9 +16,9 @@ import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived.ViewHolderAdapterPhoto
 
 class AdapterPhotoReceived(
-    var photoList: ArrayList<String>,
+    private var photoList: ArrayList<String>,
     private val maxSize: Int,
-    var context: Context
+    private val context: Context
 ) : RecyclerView.Adapter<ViewHolderAdapterPhoto>() {
 
     fun addString(photo: String) {
@@ -26,37 +26,43 @@ class AdapterPhotoReceived(
             photoList.removeAt(0)
             notifyItemRemoved(0)
         }
-
         photoList.add(photo)
-        notifyItemInserted(photoList.size)
+        notifyItemInserted(photoList.size - 1)
+    }
+
+    fun updateData(newList: List<String>) {
+        photoList.clear()
+        photoList.addAll(newList)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolderAdapterPhoto {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.row_photos, parent, false)
-        val holder = ViewHolderAdapterPhoto(v)
-
-        return holder
+        val v = LayoutInflater.from(parent.context)
+            .inflate(R.layout.row_photos, parent, false)
+        return ViewHolderAdapterPhoto(v)
     }
 
     override fun onBindViewHolder(holder: ViewHolderAdapterPhoto, position: Int) {
-        //final ArrayList <String> photos = photoList.get(position);
 
         val metrics = DisplayMetrics()
-        val windowManager = context
-            .getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         windowManager.defaultDisplay.getMetrics(metrics)
 
         val widthPixels = metrics.widthPixels
 
         val layoutParams = LinearLayout.LayoutParams(
-            widthPixels / 3, widthPixels / 3
+            widthPixels / 3,
+            widthPixels / 3
         )
 
         holder.linearPhotoView.layoutParams = layoutParams
-
         holder.linearPhotoView.visibility = View.VISIBLE
 
-        Glide.with(holder.itemView).load(photoList[position]).into(holder.photoView)
+        Glide.with(holder.itemView)
+            .load(photoList[position])
+            .placeholder(R.drawable.ic_person_24)
+            .error(R.drawable.ic_person_24)
+            .into(holder.photoView)
 
         holder.photoView.setOnClickListener { v ->
             val intent = Intent(context, SlidePhotoActivity::class.java)
@@ -65,14 +71,12 @@ class AdapterPhotoReceived(
             intent.putExtra("rotation", 180)
             v.context.startActivity(intent)
         }
-    } //Fin del onBindViewHolder
-
-    override fun getItemCount(): Int {
-        return photoList.size
     }
 
+    override fun getItemCount(): Int = photoList.size
+
     class ViewHolderAdapterPhoto(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var photoView: ImageView = itemView.findViewById(R.id.photoView)
-        var linearPhotoView: LinearLayout = itemView.findViewById(R.id.linear_photo_view)
+        val photoView: ImageView = itemView.findViewById(R.id.photoView)
+        val linearPhotoView: LinearLayout = itemView.findViewById(R.id.linear_photo_view)
     }
 }

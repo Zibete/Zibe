@@ -17,6 +17,13 @@ import com.zibete.proyecto1.model.State
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_UNKNOWN
+import com.zibete.proyecto1.ui.profile.UserProfile
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.today
@@ -62,6 +69,148 @@ class UserRepository @Inject constructor(
         userSessionManager.latitude = lat
         userSessionManager.longitude = lon
     }
+
+// UserRepository
+
+    suspend fun getChatPhotosWithUser(otherUid: String): List<String> {
+
+        val pathA = firebaseRefsContainer.refChat
+            .child("$myUid <---> $otherUid")
+            .child("Mensajes")
+
+        val pathB = firebaseRefsContainer.refChat
+            .child("$otherUid <---> $myUid")
+            .child("Mensajes")
+
+        val photos = mutableListOf<String>()
+
+        fun collectFrom(snapshot: DataSnapshot) {
+            for (msgSnap in snapshot.children) {
+                val type = msgSnap.child("type").getValue(Int::class.java)
+                val sender = msgSnap.child("envia").getValue(String::class.java)
+                val message = msgSnap.child("mensaje").getValue(String::class.java)
+
+                if (sender != null && sender != myUid) {
+                    if (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT) {
+                        if (!message.isNullOrEmpty()) {
+                            photos.add(message)
+                        }
+                    }
+                }
+            }
+        }
+
+        val snapA = pathA.get().await()
+        if (snapA.exists()) collectFrom(snapA)
+
+        val snapB = pathB.get().await()
+        if (snapB.exists()) collectFrom(snapB)
+
+        // si querés evitar duplicados:
+        return photos.distinct()
+    }
+
+
+    data class BlockState(
+        val iBlockedUser: Boolean,
+        val userBlockedMe: Boolean
+    )
+
+    suspend fun isUserFavorite(otherUid: String): Boolean {
+        val snap = firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("FavoriteList")
+            .child(otherUid)
+            .get()
+            .await()
+
+        return snap.exists()
+    }
+
+    suspend fun addFavoriteUser(otherUid: String) {
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("FavoriteList")
+            .child(otherUid)
+            .setValue(otherUid)
+            .await()
+    }
+
+    suspend fun removeFavoriteUser(otherUid: String) {
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("FavoriteList")
+            .child(otherUid)
+            .removeValue()
+            .await()
+    }
+
+    suspend fun getBlockStateWith(otherUid: String): BlockState {
+        val meSnap = firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("ChatWith")
+            .child(otherUid)
+            .child("estado")
+            .get()
+            .await()
+
+        val otherSnap = firebaseRefsContainer.refDatos
+            .child(otherUid)
+            .child("ChatWith")
+            .child(myUid)
+            .child("estado")
+            .get()
+            .await()
+
+        val iBlocked = meSnap.getValue(String::class.java) == CHAT_STATE_BLOQ
+        val blockedMe = otherSnap.getValue(String::class.java) == CHAT_STATE_BLOQ
+
+        return BlockState(
+            iBlockedUser = iBlocked,
+            userBlockedMe = blockedMe
+        )
+    }
+
+
+    suspend fun getGroupAliasForUser(groupName: String, userId: String ): String? {
+        val snapshot = firebaseRefsContainer.refGroupUsers
+            .child(groupName)
+            .child(userId)
+            .get()
+            .await()
+
+        if (!snapshot.exists()) return null
+
+        return snapshot.child("user_name").getValue(String::class.java)
+    }
+
+
+    suspend fun getUserProfile(userId: String): UserProfile? {
+        val snapshot = firebaseRefsContainer.refCuentas
+            .child(userId)
+            .get()
+            .await()
+
+        if (!snapshot.exists()) return null
+
+        val birthDay = snapshot.child("birthDay").getValue(String::class.java)
+        val photo = snapshot.child("foto").getValue(String::class.java)
+        val name = snapshot.child("nombre").getValue(String::class.java) ?: ""
+        val description = snapshot.child("descripcion").getValue(String::class.java)
+        val long = snapshot.child("longitud").getValue(Double::class.java) ?: 0.0
+        val lat = snapshot.child("latitud").getValue(Double::class.java) ?: 0.0
+
+        return UserProfile(
+            id = userId,
+            name = name,
+            description = description,
+            birthDay = birthDay,
+            photoUrl = photo,
+            lat = lat,
+            long = long
+        )
+    }
+
 
 
     suspend fun markMessagesAsSeen(otherUserId: String, chatType: String, noSeen: Int ) {
@@ -129,7 +278,7 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun getNotificationState(chatWithId: String, chatType: String): String {
+    suspend fun getChatStateWith(chatWithId: String, chatType: String): String {
         val chatRef = firebaseRefsContainer.refDatos
             .child(myUid)
             .child(chatType)
@@ -140,7 +289,7 @@ class UserRepository @Inject constructor(
             .get()
             .await()
             .getValue(String::class.java)
-            ?: chatType   // default lógico: notificaciones activadas
+            ?: CHAT_STATE_CHATWITH   // default
     }
 
     suspend fun updateNotificationState(chatWithId: String, chatType: String, userName: String) {
@@ -152,7 +301,7 @@ class UserRepository @Inject constructor(
         val snapshot = chatRef.get().await()
 
         if (!snapshot.exists()) {
-            // Crear ChatWith nuevo en estado "silent"
+            // Crear ChatWith nuevo en estado USER_STATE_SILENT
             val newChat = createDefaultChatWith(chatWithId, userName)
             chatRef.setValue(newChat).await()
             return
@@ -168,26 +317,26 @@ class UserRepository @Inject constructor(
             return
         }
 
-        // Toggle: "silent" ↔ chatType (ej: "CHATWITH")
-        val newState = if (currentState == "silent") chatType else "silent"
+        // Toggle: USER_STATE_SILENT ↔ chatType (ej: "CHATWITH")
+        val newState = if (currentState == CHAT_STATE_SILENT) chatType else CHAT_STATE_SILENT
         chatRef.child("estado").setValue(newState).await()
     }
 
-    suspend fun blockUser(chatWithId: String, chatType: String, userName: String) {
+    suspend fun blockUser(idUser: String, userName: String, nodeType : String) {
 
         val chatRef = firebaseRefsContainer.refDatos
             .child(myUid)
-            .child(chatType)
-            .child(chatWithId)
+            .child(nodeType)
+            .child(idUser)
 
         val snapshot = chatRef.get().await()
 
         if (!snapshot.exists()) {
-            val newChatWith = createDefaultChatWith(chatWithId, userName)
+            val newChatWith = createDefaultChatWith(idUser, userName)
             chatRef.setValue(newChatWith).await()
         }
 
-        chatRef.child("estado").setValue("bloq").await()
+        chatRef.child("estado").setValue(CHAT_STATE_BLOQ).await()
     }
 
     suspend fun unblockUser(chatWithId: String, chatType: String) {
@@ -217,14 +366,14 @@ class UserRepository @Inject constructor(
             .child(chatType)
             .child(chatWithId)
             .child("estado")
-            .setValue("delete")
+            .setValue(CHAT_STATE_HIDE)
             .await()
     }
 
-    suspend fun deleteChat(chatWithId: String, chatType: String, deleteMessages: Boolean) {
-        val ref = if (chatType == Constants.CHATWITH) Constants.CHAT else Constants.UNKNOWN
-        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $chatWithId").child("Mensajes")
-        val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$chatWithId <---> $myUid").child("Mensajes")
+    suspend fun deleteChat(idUser: String, userName: String, nodeType: String, deleteMessages: Boolean) {
+        val ref = if (nodeType == CHAT_STATE_CHATWITH) Constants.NODE_TYPE_CHATS else Constants.NODE_TYPE_UNKNOWN
+        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
+        val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$idUser <---> $myUid").child("Mensajes") // No va más
 
         val messagesSnap = startedByMe.get().await()
         val messages = messagesSnap.children.mapNotNull { it.getValue(Chats::class.java) }
@@ -248,19 +397,54 @@ class UserRepository @Inject constructor(
                 messageRef.child("type").setValue(newType).await()
 
                 if (!isMine && newType in listOf(Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT)) {
-                    deleteRemoteFile(Constants.storageReference.child("$chatType/$myUid/"), message)
+                    deleteRemoteFile(Constants.storageReference.child("$nodeType/$myUid/"), message)
                     messageRef.removeValue().await()
                 } else if (isMine && newType in listOf(Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT)) {
-                    deleteRemoteFile(Constants.storageReference.child("$chatType/$chatWithId/"), message)
+                    deleteRemoteFile(Constants.storageReference.child("$nodeType/$idUser/"), message)
                     messageRef.removeValue().await()
                 }
             }
-            firebaseRefsContainer.refDatos.child(myUid).child(chatType).child(chatWithId).removeValue().await()
+            firebaseRefsContainer.refDatos.child(myUid).child(nodeType).child(idUser).removeValue().await()
         } else {
-            firebaseRefsContainer.refDatos.child(myUid).child(chatType).child(chatWithId).child("estado").setValue("delete").await()
+            firebaseRefsContainer.refDatos.child(myUid).child(nodeType).child(idUser).child("estado").setValue(CHAT_STATE_HIDE).await()
         }
     }
+    suspend fun getMessageCount(idUser: String, nodeType: String): Int {
+        var count = 0
 
+        val ref = if (nodeType == CHAT_STATE_CHATWITH) NODE_TYPE_CHATS else NODE_TYPE_UNKNOWN
+        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
+
+        val messagesSnap = startedByMe.get().await()
+
+        for (snap in messagesSnap.children) {
+            val chat = snap.getValue(Chats::class.java) ?: continue
+            val isMine = chat.sender == myUid
+
+            val validTypesMine = listOf(
+                Constants.MSG,
+                Constants.PHOTO,
+                Constants.AUDIO,
+                Constants.MSG_RECEIVER_DLT,
+                Constants.PHOTO_RECEIVER_DLT,
+                Constants.AUDIO_RECEIVER_DLT
+            )
+
+            val validTypesOther = listOf(
+                Constants.MSG,
+                Constants.PHOTO,
+                Constants.AUDIO,
+                Constants.MSG_SENDER_DLT,
+                Constants.PHOTO_SENDER_DLT,
+                Constants.AUDIO_SENDER_DLT
+            )
+
+            if (isMine && chat.type in validTypesMine) count++
+            if (!isMine && chat.type in validTypesOther) count++
+        }
+
+        return count
+    }
     private suspend fun deleteRemoteFile(ref: StorageReference, chat: Chats) {
         val msg = chat.message
         val start = msg.indexOf(myUid) + myUid.length + 3
@@ -312,7 +496,7 @@ class UserRepository @Inject constructor(
 //        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH).child(user_id).child("estado")
 //            .addValueEventListener(object : ValueEventListener {
 //                override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                    if (dataSnapshot.getValue<String?>(String::class.java) == "bloq") {
+//                    if (dataSnapshot.getValue<String?>(String::class.java) == USER_STATE_BLOQ) {
 //                        profile_bloc.visibility = View.VISIBLE
 //                    } else {
 //                        profile_bloc.visibility = View.GONE
@@ -334,7 +518,7 @@ class UserRepository @Inject constructor(
             chatWithId,
             userName,
             Constants.EMPTY,
-            "silent",
+            CHAT_STATE_SILENT,
             0,
             1
         )

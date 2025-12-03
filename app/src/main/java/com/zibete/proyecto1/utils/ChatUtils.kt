@@ -20,7 +20,6 @@ import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.utils.FirebaseRefs.refChats
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -144,7 +143,7 @@ class ChatUtils @Inject constructor(
         view: View,
         type: String
     ) {
-        val ref = if (type == Constants.CHATWITH) Constants.CHAT else Constants.UNKNOWN
+        val ref = if (type == Constants.CHAT_STATE_CHATWITH) Constants.NODE_TYPE_CHATS else Constants.NODE_TYPE_UNKNOWN
 
         val refYourReceiverData: StorageReference = Constants.storageReference.child("$type/$idUser/")
         val refMyReceiverData: StorageReference = Constants.storageReference.child("$type/${myUid}/")
@@ -172,6 +171,8 @@ class ChatUtils @Inject constructor(
             override fun onCancelled(error: DatabaseError) {}
         })
     }
+
+
 
     private fun handleMessages(
         dataSnapshot: DataSnapshot,
@@ -235,6 +236,9 @@ class ChatUtils @Inject constructor(
         builder.setCancelable(false)
         builder.show()
     }
+
+
+
 
     private fun deleteMessages(
         dataSnapshot: DataSnapshot,

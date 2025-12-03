@@ -13,7 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.zibete.proyecto1.ProfileActivity
+import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding

@@ -89,7 +89,7 @@
             android:name=".ui.settings.SettingsActivity"
             android:theme="@style/AppTheme.MainActivity" />
         <activity
-            android:name=".ProfileActivity"
+            android:name=".ui.profile.ProfileActivity"
             android:parentActivityName=".ui.main.MainActivity"
             android:theme="@style/AppTheme.MainActivity"
             android:windowSoftInputMode="adjustPan" />

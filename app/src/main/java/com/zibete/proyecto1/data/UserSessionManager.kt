@@ -10,7 +10,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_UNKNOWN
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
@@ -56,20 +56,20 @@ class UserSessionManager @Inject constructor(
         // de estado (repo.inGroup = false) o al recibir un evento.
 
         // 1. Eliminar chats unknown vinculados (Lógica de negocio)
-        firebaseRefsContainer.refDatos.child(myUid).child(CHATWITHUNKNOWN)
+        firebaseRefsContainer.refDatos.child(myUid).child(CHAT_STATE_UNKNOWN)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
                         firebaseRefsContainer.refChatUnknown.child("$myUid <---> $key").removeValue()
                         firebaseRefsContainer.refChatUnknown.child("$key <---> $myUid").removeValue()
-                        firebaseRefsContainer.refDatos.child(key).child(CHATWITHUNKNOWN).child(myUid).removeValue()
+                        firebaseRefsContainer.refDatos.child(key).child(CHAT_STATE_UNKNOWN).child(myUid).removeValue()
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(myUid).child(CHATWITHUNKNOWN).removeValue()
+        firebaseRefsContainer.refDatos.child(myUid).child(CHAT_STATE_UNKNOWN).removeValue()
 
         // 2. Notificación de Abandono al grupo
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())

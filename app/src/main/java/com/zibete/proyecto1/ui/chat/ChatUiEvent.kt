@@ -10,9 +10,9 @@ sealed class ChatUiEvent {
 
     //--------------------------------------------------
 
-    data class ConfirmDeleteChat(val name: String) : ChatUiEvent()
-    data class ConfirmUnblock(val name: String) : ChatUiEvent()
-    data class ConfirmBlock(val name: String) : ChatUiEvent()
+//    data class ConfirmDeleteChat(val name: String) : ChatUiEvent()
+//    data class ConfirmUnblock(val name: String) : ChatUiEvent()
+//    data class ConfirmBlock(val name: String) : ChatUiEvent()
 
     data class OnDeleteChatConfirmed(val deleteMessages: Boolean) : ChatUiEvent()
 

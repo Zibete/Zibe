@@ -42,7 +42,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zibete.proyecto1.ProfileActivity
+import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterChatGroup
@@ -714,7 +714,7 @@ class ChatGroupFragment : Fragment() {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         currentUserId?.let { uid ->
             FirebaseRefs.refDatos.child(uid)
-                .child(Constants.CHATWITHUNKNOWN)
+                .child(Constants.CHAT_STATE_UNKNOWN)
                 .child(chat.id)
                 .removeValue()
         }

@@ -3,7 +3,6 @@ package com.zibete.proyecto1.adapters
 import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.Typeface
-import android.os.Bundle
 import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
@@ -24,9 +23,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.FirebaseRefs.user
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.data.UserRepository
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -103,7 +100,7 @@ class AdapterChatGroupsLista(
 //        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
-        refDatos.child(chat.userId).child(Constants.CHATWITHUNKNOWN).child(user.uid)
+        refDatos.child(chat.userId).child(Constants.CHAT_STATE_UNKNOWN).child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -124,7 +121,7 @@ class AdapterChatGroupsLista(
             })
 
         // 4. Listener: No Vistos (Counter Visual)
-        refDatos.child(user.uid).child(Constants.CHATWITHUNKNOWN).child(chat.userId).child("noVisto")
+        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN).child(chat.userId).child("noVisto")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val noVistos = snapshot.getValue(Int::class.java) ?: 0
@@ -135,7 +132,7 @@ class AdapterChatGroupsLista(
             })
 
         // 5. Listener: Último Mensaje (Visual + Triggers)
-        refDatos.child(user.uid).child(Constants.CHATWITHUNKNOWN).child(chat.userId)
+        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN).child(chat.userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -170,7 +167,7 @@ class AdapterChatGroupsLista(
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
         when (chat.state) {
-            Constants.CHATWITHUNKNOWN -> {
+            Constants.CHAT_STATE_UNKNOWN -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }

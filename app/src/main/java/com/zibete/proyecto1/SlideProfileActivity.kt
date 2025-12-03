@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -15,11 +14,9 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.SliderProfileAdapter
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.ChatUtils
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
-import com.zibete.proyecto1.data.UserRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -76,7 +73,7 @@ class SlideProfileActivity : AppCompatActivity() {
         val currentIdx = viewPager.currentItem
         val current = userList.getOrNull(currentIdx)
         if (current != null && user != null) {
-            FirebaseRefs.refDatos.child(user.uid).child(Constants.CHATWITH).child(current.id)
+            FirebaseRefs.refDatos.child(user.uid).child(Constants.CHAT_STATE_CHATWITH).child(current.id)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         val state = ds.child("estado").getValue(String::class.java)
@@ -87,7 +84,7 @@ class SlideProfileActivity : AppCompatActivity() {
                                 actionDesbloq.isVisible = false
                                 actionBloq.isVisible = true
                             }
-                            Constants.CHATWITH, "delete", null -> {
+                            Constants.CHAT_STATE_CHATWITH, "delete", null -> {
                                 actionSilent.isVisible = true
                                 actionNotif.isVisible = false
                                 actionDesbloq.isVisible = false

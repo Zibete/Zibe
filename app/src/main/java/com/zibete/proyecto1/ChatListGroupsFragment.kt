@@ -107,7 +107,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         // Reset lista compartida
         chatsGroupArrayList.clear()
 
-        refDatos.child(user.uid).child(Constants.CHATWITHUNKNOWN)
+        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN)
             .addChildEventListener(object : ChildEventListener {
 
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -125,7 +125,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    refDatos.child(user.uid).child(Constants.CHATWITHUNKNOWN)
+                    refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(dataSnapshot: DataSnapshot) {
                                 if (!dataSnapshot.exists()) {
@@ -176,7 +176,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setupEmptyStateListener() {
 
-        refDatos.child(user.uid).child(Constants.CHATWITHUNKNOWN)
+        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
@@ -184,7 +184,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                         for (snapshot in dataSnapshot.children) {
                             val state =
                                 snapshot.child("estado").getValue(String::class.java).orEmpty()
-                            if (state == Constants.CHATWITHUNKNOWN || state == "silent") {
+                            if (state == Constants.CHAT_STATE_UNKNOWN || state == "silent") {
                                 count++
                             }
                         }
@@ -261,7 +261,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
                         // Eliminamos el chat si el usuario ya no existe
                         refDatos.child(user.uid)
-                            .child(Constants.CHATWITHUNKNOWN)
+                            .child(Constants.CHAT_STATE_UNKNOWN)
                             .child(chat.userId)
                             .removeValue()
                     }
@@ -273,7 +273,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     // 2. Marcar chat como visto (wVisto = 2)
     private fun markChatAsSeen(chat: ChatWith) {
         refDatos.child(user.uid)
-            .child(Constants.CHATWITHUNKNOWN)
+            .child(Constants.CHAT_STATE_UNKNOWN)
             .child(chat.userId)
             .child("wVisto")
             .setValue(2)
@@ -282,7 +282,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     // 3. Lógica compleja de Doble Check (setMyDoubleCheck)
     private fun processDoubleCheckLogic(chat: ChatWith) {
         refDatos.child(user.uid)
-            .child(Constants.CHATWITHUNKNOWN)
+            .child(Constants.CHAT_STATE_UNKNOWN)
             .child(chat.userId)
             .child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {

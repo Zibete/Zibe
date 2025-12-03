@@ -35,6 +35,7 @@ import javax.inject.Inject
 
 class SliderProfileAdapter @Inject constructor(
     private val profileUiBinder: ProfileUiBinder,
+    private val userRepository: UserRepository,
     private val context: Context,
     private val userList: MutableList<Users>,
     private val rotation: Int
@@ -54,9 +55,9 @@ class SliderProfileAdapter @Inject constructor(
         val nameUser: TextView = itemView.findViewById(R.id.nameUser)
         val desc: TextView = itemView.findViewById(R.id.desc)
         val age: TextView = itemView.findViewById(R.id.edad)
-        val tvEstado: TextView = itemView.findViewById(R.id.`@+id/tv_status`)
-        val iconConectado: ImageView = itemView.findViewById(R.id.`@+id/icon_connected`)
-        val iconDesconectado: ImageView = itemView.findViewById(R.id.`@+id/icon_disconnected`)
+        val tvEstado: TextView = itemView.findViewById(R.id.tv_status)
+        val iconConectado: ImageView = itemView.findViewById(R.id.icon_connected)
+        val iconDesconectado: ImageView = itemView.findViewById(R.id.icon_disconnected)
         val perfilFavoriteOff: ImageView = itemView.findViewById(R.id.perfil_favorite_off)
         val perfilFavoriteOn: ImageView = itemView.findViewById(R.id.perfil_favorite_on)
         val perfilBloq: ImageView = itemView.findViewById(R.id.perfil_bloq)
@@ -180,9 +181,9 @@ class SliderProfileAdapter @Inject constructor(
             holder.iconConectado,
             holder.iconDesconectado,
             holder.tvEstado,
-            Constants.CHATWITH
+            Constants.CHAT_STATE_CHATWITH
         )
-        UserRepository.setUserOnline(context, user.id)
+        userRepository.setUserOnline(context, user.id)
 
         // Binders auxiliares
         profileUiBinder.setFavorite(user.id, holder.perfilFavoriteOn, holder.perfilFavoriteOff)

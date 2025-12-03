@@ -14,7 +14,7 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_UNKNOWN
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -108,7 +108,7 @@ class MainViewModel @Inject constructor(
 
     private fun listenToChatBadges() {
 
-        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH)
+        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH)
             .orderByChild("noVisto").startAt(1.0)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -160,7 +160,7 @@ class MainViewModel @Inject constructor(
 
                     // 3. Obtener los mensajes no leídos en chats desconocidos (Asíncrono 2)
                     val queryUnreadUnknown = firebaseRefsContainer.refDatos.child(uid) // 👈 firebaseRefs
-                        .child(CHATWITHUNKNOWN)
+                        .child(CHAT_STATE_UNKNOWN)
                         .orderByChild("noVisto")
                         .startAt(1.0)
 
