@@ -227,9 +227,9 @@ class AdapterChatList(
             setPosition(holder.bindingAdapterPosition)
 
             menu2 = if (binding.notifOff.isVisible) {
-                context.getString(R.string.mostrar_notif)
+                context.getString(R.string.menu_notifications_on)
             } else {
-                context.getString(R.string.silenciar)
+                context.getString(R.string.menu_notifications_off)
             }
 
             menu1 = if (binding.nuevoMsg.isVisible) {
@@ -348,7 +348,7 @@ class AdapterChatList(
     ) {
         menu.add(Constants.FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, menu1)
         menu.add(Constants.FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, menu2)
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.bloquear)
+        menu.add(Constants.FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_block)
         menu.add(Constants.FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
         menu.add(Constants.FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.eliminar)
     }

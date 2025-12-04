@@ -23,12 +23,8 @@
     <string name="nav_header_title">Name User</string>
     <string name="nav_header_subtitle">Email User</string>
     <string name="nav_header_desc">Navigation header</string>
-    <string name="ajustes">Ajustes</string>
-    <string name="unlock_users">Desbloquear usuarios</string>
-    <string name="menu_favorites">Favoritos</string>
-    <string name="menu_groups">Salas</string>
-    <string name="menu_users">Personas</string>
-    <string name="menu_chat">Chat</string>
+
+
     <string name="fragment_left_name">Nombre</string>
     <string name="usuario">Usuario</string>
     <string name="atras">Atrás</string>
@@ -46,15 +42,43 @@
     <string name="channel_description">Tienes un nuevo mensaje</string>
     <string name="reply_name">aña</string>
     <string name="snooze">snozze</string>
-    <string name="menu_edit">Editar Perfil</string>
+
     <string name="noleido">Marcar no leído</string>
     <string name="leido">Marcar leído</string>
-    <string name="bloquear">Bloquear</string>
-    <string name="silenciar">Silenciar</string>
+
+
+    <string name="menu_exit_group">Salir</string>
+
+    <string name="menu_edit_profile">Editar Perfil</string>
+
+    <string name="menu_groups">Salas</string>
+    <string name="menu_users">Personas</string>
+    <string name="menu_chat">Chat</string>
+
+    <string name="menu_unblock_users">Desbloquear usuarios</string>
+    <string name="menu_favorites">Favoritos</string>
+
+    <string name="menu_settings">Ajustes</string>
+
+    <string name="menu_unhide_chats">Chats ocultos</string>
+
+    <string name="menu_notifications_on">Mostrar notificaciones</string>
+    <string name="menu_notifications_off">Silenciar</string>
+
+    <string name="menu_block">Bloquear</string>
+    <string name="menu_unblock">Desbloquear</string>
+    <string name="menu_delete_chat">Eliminar chat</string>
+
+
+
+
+
+
+
     <string name="eliminar">Eliminar</string>
-    <string name="eliminar_chat">Eliminar chat</string>
+
     <string name="archivar">Archivar</string>
-    <string name="mostrar_notif">Mostrar notificaciones</string>
+
     <string name="ultVez">últ. vez</string>
     <string name="today">hoy</string>
     <string name="yesterday">ayer</string>
@@ -76,8 +100,7 @@
     <string name="photo_send">Foto enviada</string>
     <string name="audio_received">Audio recibido</string>
     <string name="audio_send">Audio enviado</string>
-    <string name="desbloquear">Desbloquear</string>
-    <string name="salir">Salir</string>
+
     <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8]]></string>
     <string name="photo_message">Photo message</string>
     <string name="perfil_incognito">Perfil incógnito</string>
@@ -86,7 +109,6 @@
 
 
     <string name="inicio">Inicio</string>
-    <string name="unhide_chats">Chats ocultos</string>
     <string name="ocultar">Ocultar</string>
     <string name="grabando">grabando audio...</string>
     <string name="dont_delete_account">Ya no quiero eliminar mi cuenta</string>

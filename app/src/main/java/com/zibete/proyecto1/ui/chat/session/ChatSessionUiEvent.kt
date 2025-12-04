@@ -6,10 +6,8 @@ sealed class ChatSessionUiEvent {
     // ------- HIDE CHAT (solo lo usarás en la lista) -------
     data class ConfirmHideChat(
         val name: String,
-        val onConfirm: () -> Unit
+        val onConfirm: suspend () -> Unit
     ) : ChatSessionUiEvent()
-
-    data object ShowChatHidden : ChatSessionUiEvent()
 
     // ------- BLOCK / UNBLOCK -------
     data class ConfirmBlock(
@@ -19,25 +17,8 @@ sealed class ChatSessionUiEvent {
 
     data class ConfirmUnblock(
         val name: String,
-        val onConfirm: () -> Unit
+        val onConfirm: suspend () -> Unit
     ) : ChatSessionUiEvent()
-
-    data class ShowBlockSuccess(val name: String) : ChatSessionUiEvent()
-    data class ShowUnblockSuccess(val name: String) : ChatSessionUiEvent()
-
-    // ------- MUTE / UNMUTE (silent / notif del menú del perfil) -------
-    data class ConfirmMute(
-        val name: String,
-        val onConfirm: () -> Unit
-    ) : ChatSessionUiEvent()
-
-    data class ConfirmUnmute(
-        val name: String,
-        val onConfirm: () -> Unit
-    ) : ChatSessionUiEvent()
-
-    data class ShowMuteSuccess(val name: String) : ChatSessionUiEvent()
-    data class ShowUnmuteSuccess(val name: String) : ChatSessionUiEvent()
 
     // ------- DELETE CHAT -------
     data class ConfirmDeleteChat(
@@ -46,7 +27,16 @@ sealed class ChatSessionUiEvent {
         val onConfirm: (deleteMessages: Boolean) -> Unit
     ) : ChatSessionUiEvent()
 
+    data class ShowBlockSuccess(val name: String) : ChatSessionUiEvent()
+    data class ShowUnblockSuccess(val name: String) : ChatSessionUiEvent()
+    data class ShowChatHiddenSuccess(val name: String) : ChatSessionUiEvent()
     data class ShowDeleteChatSuccess(val name: String) : ChatSessionUiEvent()
+    data class ShowToggleNotificationSuccess(
+        val name: String,
+        val enabled: Boolean
+    ) : ChatSessionUiEvent()
+
+
 }
 
 

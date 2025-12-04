@@ -351,9 +351,9 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
         val actionSearch = menu.findItem(R.id.action_search)
         val actionSettings = menu.findItem(R.id.action_settings)
-        val actionUnlock = menu.findItem(R.id.action_unlock)
+        val actionUnlock = menu.findItem(R.id.action_unblock)
         val actionFavorites = menu.findItem(R.id.action_favorites)
-        val actionExit = menu.findItem(R.id.action_exit)
+        val actionExit = menu.findItem(R.id.action_exit_group)
 
         actionExit.isVisible = false
         actionSearch.isVisible = true

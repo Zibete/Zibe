@@ -386,7 +386,7 @@ class MainViewModel @Inject constructor(
                 onBottomItemSelected(R.id.navBottomFavorites)
             }
 
-            R.id.action_exit -> {
+            R.id.action_exit_group -> {
                 viewModelScope.launch {
                     _navEvents.emit(MainNavEvent.ConfirmExitGroup(userPreferencesRepository.groupName))
                 }

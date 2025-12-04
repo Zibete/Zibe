@@ -40,7 +40,6 @@ class UserSessionManager @Inject constructor(
     var latitude: Double = 0.0
     var longitude: Double = 0.0
 
-
     /**
      * Lógica de abandono de grupo (Solo manipulación de datos y Firebase).
      */

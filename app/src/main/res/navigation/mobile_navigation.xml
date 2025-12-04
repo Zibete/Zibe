@@ -29,7 +29,7 @@
     <fragment
         android:id="@+id/nav_editPerfil"
         android:name="com.zibete.proyecto1.ui.EditProfileFragment"
-        android:label="@string/menu_edit"
+        android:label="@string/menu_edit_profile"
         tools:layout="@layout/fragment_edit_profile"
         app:popUpToInclusive="true"
         app:popUpTo="@id/nav_editPerfil"/>

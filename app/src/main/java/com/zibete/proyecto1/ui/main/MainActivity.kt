@@ -16,7 +16,6 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
@@ -54,6 +53,7 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.EditProfileFragment
+import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.groups.GroupsFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
@@ -68,15 +68,16 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@AndroidEntryPoint // <--- ESTO HACE QUE LA ACTIVITY PUEDA RECIBIR INYECCIONES
-class MainActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class MainActivity : BaseToolbarActivity() {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userSessionManager: UserSessionManager
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userRepository: UserRepository
 
-    private val user get() = userSessionManager.user
+    private val user = userRepository.user
+
     private val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -313,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                             is MainNavEvent.ToEditProfile -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_editPerfil)
-                                materialToolbar?.setTitle(R.string.menu_edit)
+                                materialToolbar?.setTitle(R.string.menu_edit_profile)
 
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
@@ -494,7 +495,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
+        menuInflater.inflate(R.menu.menu_main, menu)
 
         val searchItem = menu.findItem(R.id.action_search)
         searchView = searchItem.actionView as SearchView

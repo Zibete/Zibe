@@ -32,52 +32,52 @@ class ChatUtils @Inject constructor(
 ) {
 
     // ---------- OCULTAR CHAT ----------
-//    fun unhiddenChat(
-//        ctx: Context,
-//        idUser: String,
-//        nameUser: String,
-//        view: View,
-//        type: String
-//    ) {
-//        AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
-//            .setTitle("Ocultar chat con $nameUser")
-//            .setPositiveButton(DIALOG_ACCEPT) { _, _ ->
-//                refDatos.child(user.uid).child(type).child(idUser)
-//                    .child("estado").setValue("delete")
-//
-//                val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
-//                snack.setBackgroundTint(ctx.getColor(R.color.colorC))
-//                snack.view.findViewById<TextView>(
-//                    com.google.android.material.R.id.snackbar_text
-//                ).textAlignment = View.TEXT_ALIGNMENT_CENTER
-//                snack.show()
-//            }
-//            .setNegativeButton(DIALOG_CANCEL, null)
-//            .setCancelable(false)
-//            .show()
-//    }
+    fun unhiddenChat(
+        ctx: Context,
+        idUser: String,
+        nameUser: String,
+        view: View,
+        type: String
+    ) {
+        AlertDialog.Builder(ContextThemeWrapper(ctx, R.style.AlertDialogApp))
+            .setTitle("Ocultar chat con $nameUser")
+            .setPositiveButton(DIALOG_ACCEPT) { _, _ ->
+                refDatos.child(user.uid).child(type).child(idUser)
+                    .child("estado").setValue("delete")
 
-//    fun showUnhideConfirmation(
-//        context: Context,
-//        nameUser: String,
-//        onConfirm: () -> Unit
-//    ) {
-//        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
-//            .setTitle("Ocultar chat con $nameUser")
-//            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> onConfirm() }
-//            .setNegativeButton(DIALOG_CANCEL, null)
-//            .setCancelable(false)
-//            .show()
-//    }
-//
-//    fun showUnhiddenSnack(view: View, context: Context) {
-//        val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
-//        snack.setBackgroundTint(context.getColor(R.color.colorC))
-//        snack.view.findViewById<TextView>(
-//            com.google.android.material.R.id.snackbar_text
-//        ).textAlignment = View.TEXT_ALIGNMENT_CENTER
-//        snack.show.show()
-//    }
+                val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
+                snack.setBackgroundTint(ctx.getColor(R.color.colorC))
+                snack.view.findViewById<TextView>(
+                    com.google.android.material.R.id.snackbar_text
+                ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+                snack.show()
+            }
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .setCancelable(false)
+            .show()
+    }
+
+    fun showUnhideConfirmation(
+        context: Context,
+        nameUser: String,
+        onConfirm: () -> Unit
+    ) {
+        AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+            .setTitle("Ocultar chat con $nameUser")
+            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> onConfirm() }
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .setCancelable(false)
+            .show()
+    }
+
+    fun showUnhiddenSnack(view: View, context: Context) {
+        val snack = Snackbar.make(view, "Se ha ocultado el chat", Snackbar.LENGTH_SHORT)
+        snack.setBackgroundTint(context.getColor(R.color.colorC))
+        snack.view.findViewById<TextView>(
+            com.google.android.material.R.id.snackbar_text
+        ).textAlignment = View.TEXT_ALIGNMENT_CENTER
+        snack.show.show()
+    }
 
     private val myUid = userSessionManager.user.uid
 
@@ -143,10 +143,10 @@ class ChatUtils @Inject constructor(
         view: View,
         type: String
     ) {
-        val ref = if (type == Constants.CHAT_STATE_CHATWITH) Constants.NODE_TYPE_CHATS else Constants.NODE_TYPE_UNKNOWN
+        val ref = if (type == Constants.CHAT_STATE_CHATWITH) Constants.NODE_CHATS else Constants.NODE_UNKNOWN
 
-        val refYourReceiverData: StorageReference = Constants.storageReference.child("$type/$idUser/")
-        val refMyReceiverData: StorageReference = Constants.storageReference.child("$type/${myUid}/")
+        val refYourReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/$idUser/")
+        val refMyReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/${myUid}/")
 
         val startedByMe = refChats.child(ref).child("${myUid} <---> $idUser").child("Mensajes")
         val startedByHim = refChats.child(ref).child("$idUser <---> ${myUid}").child("Mensajes")

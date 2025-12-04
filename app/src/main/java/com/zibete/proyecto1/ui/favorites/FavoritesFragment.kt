@@ -100,9 +100,9 @@ class FavoritesFragment : Fragment() {
         super.onPrepareOptionsMenu(menu)
 
         menu.findItem(R.id.action_search)?.isVisible = false
-        menu.findItem(R.id.action_unlock)?.isVisible = false
+        menu.findItem(R.id.action_unblock)?.isVisible = false
         menu.findItem(R.id.action_favorites)?.isVisible = false
-        menu.findItem(R.id.action_exit)?.isVisible = false
+        menu.findItem(R.id.action_exit_group)?.isVisible = false
     }
 
     override fun onDestroyView() {

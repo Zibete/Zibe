@@ -1,10 +1,9 @@
-package com.zibete.proyecto1.ui.base
+package com.zibete.proyecto1.ui.chat.session
 
 import android.content.Context
 import android.view.View
 import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.utils.UserMessageUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -30,7 +29,7 @@ object ChatSessionUiHandler {
                 )
             }
 
-                is ChatSessionUiEvent.ShowBlockSuccess -> {
+            is ChatSessionUiEvent.ShowBlockSuccess -> {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha bloqueado a ${event.name}",
@@ -50,7 +49,7 @@ object ChatSessionUiHandler {
                 )
             }
 
-                is ChatSessionUiEvent.ShowChatHidden -> {
+            is ChatSessionUiEvent.ShowChatHiddenSuccess -> {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha ocultado el chat",
@@ -70,7 +69,7 @@ object ChatSessionUiHandler {
                 )
             }
 
-                is ChatSessionUiEvent.ShowUnblockSuccess -> {
+            is ChatSessionUiEvent.ShowUnblockSuccess -> {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha desbloqueado a ${event.name}",
@@ -103,7 +102,7 @@ object ChatSessionUiHandler {
                 )
             }
 
-                is ChatSessionUiEvent.ShowDeleteChatSuccess -> {
+            is ChatSessionUiEvent.ShowDeleteChatSuccess -> {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha eliminado el chat con ${event.name}",
@@ -112,9 +111,15 @@ object ChatSessionUiHandler {
                 )
             }
 
-
-
-            else -> {}
+            is ChatSessionUiEvent.ShowToggleNotificationSuccess -> {
+                UserMessageUtils.showSnack(
+                    root = root,
+                    message =   if (event.enabled) "Notificaciones de ${event.name} activadas"
+                    else "Notificaciones de ${event.name} desactivadas",
+                    duration = Snackbar.LENGTH_INDEFINITE,
+                    iconRes = R.drawable.ic_info_24
+                )
+            }
 
         }
     }

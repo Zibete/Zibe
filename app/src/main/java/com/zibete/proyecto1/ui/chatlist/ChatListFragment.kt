@@ -22,11 +22,10 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATGROUPLIST
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_CHATWITH
-import com.zibete.proyecto1.ui.constants.Constants.NODE_TYPE_UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_UNKNOWN
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -167,12 +166,12 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         // Chat individual
         if (item.groupId == FRAGMENT_ID_CHATLIST) {
             val wChat = adapterChatList.currentList[item.order]
-            runItemSelected(item, NODE_TYPE_CHATWITH, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_CHATWITH, wChat.userId, wChat.userName)
         }
         // Chat unknown / grupos
         if (item.groupId == FRAGMENT_ID_CHATGROUPLIST) {
             val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
-            runItemSelected(item, NODE_TYPE_UNKNOWN, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_UNKNOWN, wChat.userId, wChat.userName)
         }
 
         return true
@@ -180,16 +179,16 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
 
     private fun runItemSelected(
         item: MenuItem,
-        idUser: String,
+        userId: String,
         userName: String,
         nodeType: String
     ) {
         when (item.itemId) {
-            1 -> chatListViewModel.onMarkAsReadClicked(idUser, nodeType)
-            2 -> chatListViewModel.onSilentClicked(idUser, userName)
-            3 -> chatListViewModel.onBlockClicked(idUser, userName, nodeType) //No hay unblock
-            4 -> chatListViewModel.onHideClicked(idUser, userName, nodeType)
-            5 -> chatListViewModel.onDeleteClicked(idUser, userName)
+            1 -> chatListViewModel.onMarkAsReadChatListClicked(userId, nodeType)
+            2 -> chatListViewModel.onToggleNotificationsClicked(userId, userName, nodeType)
+            3 -> chatListViewModel.onBlockClicked(userId, userName, nodeType) //No hay unblock
+            4 -> chatListViewModel.onHideClicked(userId, userName, nodeType)
+            5 -> chatListViewModel.onDeleteClicked(userId, userName, nodeType)
         }
     }
 
@@ -201,8 +200,8 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         super.onPrepareOptionsMenu(menu)
 
         val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnlock = menu.findItem(R.id.action_unlock)
-        val actionExit = menu.findItem(R.id.action_exit)
+        val actionUnlock = menu.findItem(R.id.action_unblock)
+        val actionExit = menu.findItem(R.id.action_exit_group)
 
         actionExit.isVisible = false
         actionSearch.isVisible = true

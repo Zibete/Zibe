@@ -116,11 +116,13 @@ class ProfileViewModel @Inject constructor(
     fun loadGroupAlias(userId: String) {
         viewModelScope.launch {
             val groupName = userPreferencesRepository.groupName
-            val alias = userRepository.getGroupAliasForUser(groupName, userId)
+
+            val userGroup = userRepository.getUserGroup(groupName, userId)
+            val name = userGroup?.userName
 
             _uiState.value = _uiState.value.copy(
-                unknownName = alias,
-                hasGroupAlias = alias != null
+                unknownName = name,
+                hasGroupAlias = name != null
             )
         }
     }
@@ -155,7 +157,7 @@ class ProfileViewModel @Inject constructor(
                     onConfirm = {
                         viewModelScope.launch {
                             userRepository.unblockUser(
-                                chatWithId = idUser,
+                                userId = idUser,
                                 chatType = CHAT_STATE_CHATWITH
                             )
                             _uiState.value = _uiState.value.copy(chatState = CHAT_STATE_CHATWITH)

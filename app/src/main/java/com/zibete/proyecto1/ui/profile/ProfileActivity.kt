@@ -10,7 +10,6 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -37,7 +36,6 @@ import com.zibete.proyecto1.databinding.ActivityPerfilBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
-import com.zibete.proyecto1.ui.base.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
@@ -53,22 +51,15 @@ class ProfileActivity : BaseChatSessionActivity() {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
-    @Inject lateinit var locationRepository: LocationRepository
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-    private val user = userRepository.user
 
     private val profileViewModel: ProfileViewModel by viewModels()
-
-
     private lateinit var binding: ActivityPerfilBinding
 
     // Estado / datos
     private lateinit var idUser: String
-
     private var unknownName: String? = null
-
-
     private val photoList = ArrayList<String>()
     private val receivedPhotos = ArrayList<String>()
     private lateinit var adapterPhotoReceived: AdapterPhotoReceived
@@ -328,84 +319,71 @@ class ProfileActivity : BaseChatSessionActivity() {
 
     // region Menu
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_chat_activity, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         super.onPrepareOptionsMenu(menu)
 
-        val actionSilent = menu.findItem(R.id.action_silent)
-        val actionNotif = menu.findItem(R.id.action_notif)
-        val actionBloq = menu.findItem(R.id.action_bloq)
-        val actionDesbloq = menu.findItem(R.id.action_desbloq)
-        val actionDelete = menu.findItem(R.id.action_delete)
+        val actionSilent     = menu.findItem(R.id.action_notifications_off)
+        val actionNotif      = menu.findItem(R.id.action_notifications_on)
+        val actionBlock      = menu.findItem(R.id.action_block)
+        val actionUnblock    = menu.findItem(R.id.action_unblock)
+        val actionDeleteChat = menu.findItem(R.id.action_delete_chat)
 
-        actionDelete.isVisible = true
+        val state = profileViewModel.uiState.value.chatState
 
-        val userState = profileViewModel.uiState.value.chatState
+        actionDeleteChat.isVisible = true
 
-        if (userState == CHAT_STATE_BLOQ) {
-            // Bloqueado
-            actionSilent.isVisible = false
-            actionNotif.isVisible = false
-            actionDesbloq.isVisible = true
-            actionBloq.isVisible = false
-        } else {
-            // No bloqueado: puede estar silent/chat/delete
-            val isSilent = userState == CHAT_STATE_SILENT
+        when (state) {
+            CHAT_STATE_BLOQ -> {
+                actionSilent.isVisible = false
+                actionNotif.isVisible  = false
+                actionBlock.isVisible  = false
+                actionUnblock.isVisible = true
+            }
 
-            actionSilent.isVisible = !isSilent
-            actionNotif.isVisible = isSilent
-            actionDesbloq.isVisible = false
-            actionBloq.isVisible = true
+            CHAT_STATE_SILENT -> {
+                actionSilent.isVisible = false
+                actionNotif.isVisible  = true
+                actionBlock.isVisible  = true
+                actionUnblock.isVisible = false
+            }
+
+            else -> { // chat, delete, etc.
+                actionSilent.isVisible = true
+                actionNotif.isVisible  = false
+                actionBlock.isVisible  = true
+                actionUnblock.isVisible = false
+            }
         }
 
         return true
     }
 
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val view = findViewById<View>(android.R.id.content)
         val nameUser = profileViewModel.uiState.value.name
 
         return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed()
+
+            R.id.action_notifications_off, R.id.action_notifications_on -> {
+                profileViewModel.toggleNotifications()
                 true
             }
 
-            R.id.action_silent -> {
-                silent(nameUser, idUser, CHAT_STATE_CHATWITH)
-                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
+            R.id.action_block -> {
+                profileViewModel.onBlockClicked()
                 true
             }
 
-            R.id.action_notif -> {
-                silent(nameUser, idUser, CHAT_STATE_CHATWITH)
-                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+            R.id.action_unblock -> {
+                profileViewModel.onUnblockClicked()
                 true
             }
 
-            R.id.action_bloq -> {
-                profileViewModel.onBlockClicked(idUser)
-                true
-            }
-
-            R.id.action_desbloq -> { // Desbloquear
-                profileViewModel.onUnblockClicked(idUser, nameUser)
-                true
-            }
-
-            R.id.action_delete -> { // Eliminar chat
-                profileViewModel.onDeleteChatClicked(idUser, nameUser)
+            R.id.action_delete_chat -> {
+                profileViewModel.onDeleteChatClicked()
                 true
             }
 
             else -> super.onOptionsItemSelected(item)
         }
     }
-
-    // endregion
 }

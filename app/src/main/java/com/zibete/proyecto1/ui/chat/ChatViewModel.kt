@@ -3,7 +3,6 @@ package com.zibete.proyecto1.ui.chat
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
@@ -17,8 +16,18 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatRefs
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
+import com.zibete.proyecto1.ui.constants.Constants.NODE_UNKNOWN
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -32,13 +41,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
-
-private const val CHAT_TYPE_INDIVIDUAL = "CHAT"
-private const val CHAT_TYPE_UNKNOWN = "CHATWITHUNKNOWN"
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -50,7 +55,17 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val myUid = userRepository.myUid
-    private val targetUserId: String? = savedStateHandle["userId"]
+    private val userId: String = savedStateHandle["userId"]?: ""
+    private val nodeType: String = savedStateHandle["nodeType"]?: NODE_CHATWITH // 0 = unknown 1 = normal // DEF = ChatWith
+    private val groupName = userPreferencesRepository.groupName
+
+
+    private val _chatEvents = MutableSharedFlow<ChatUiEvent>()
+    val chatEvents: SharedFlow<ChatUiEvent> = _chatEvents.asSharedFlow()
+
+    private val _events = MutableSharedFlow<ChatSessionUiEvent>()
+    val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
+
 
     // Header (nombre, estado, foto, bloqueo, notifs, etc.)
     private val _headerState = MutableStateFlow<ChatHeaderState>(ChatHeaderState.Loading)
@@ -58,7 +73,7 @@ class ChatViewModel @Inject constructor(
 
     // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = userRepository
-        .observeUserStatus(targetUserId ?: "", "chatWith")
+        .observeUserStatus(userId, "chatWith")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
 
     // Referencias del chat (para mensajes, storage, etc.)
@@ -66,14 +81,21 @@ class ChatViewModel @Inject constructor(
     val chatRefs: StateFlow<ChatRefs?> = _chatRefs.asStateFlow()
 
     // Eventos de UI (snackbar, diálogos, navegación, etc.)
-    private val _events = MutableSharedFlow<ChatUiEvent>()
-    val events: SharedFlow<ChatUiEvent> = _events.asSharedFlow()
 
     init {
         viewModelScope.launch {
+            loadOtherProfile()
             setupChat()
         }
     }
+
+    private val _otherProfile = MutableStateFlow<Users?>(null)
+    val otherProfile: StateFlow<Users?> = _otherProfile
+
+    suspend fun loadOtherProfile() {
+        _otherProfile.value = userRepository.getUserProfile(userId)
+    }
+
 
     // =========================================================================
     //  SETUP INICIAL
@@ -82,16 +104,16 @@ class ChatViewModel @Inject constructor(
     private suspend fun setupChat() = withContext(Dispatchers.IO) {
         _headerState.value = ChatHeaderState.Loading
 
-        if (targetUserId != null) {
+        if (nodeType == NODE_CHATWITH) {
             // Chat 1 a 1
-            loadOneToOneChat(targetUserId)
+            loadOneToOneChat()
 
             // Una vez que tenemos header + refs, traemos estado de notifs/bloqueo
             val chatType = _chatRefs.value?.refChatWith
             if (chatType != null) {
-                val state = userRepository.getChatStateWith(targetUserId, chatType)
-                val notificationsEnabled = (state != "silent")
-                val isBlocked = (state == "bloq")
+                val state = userRepository.getChatStateWith(userId, chatType)
+                val notificationsEnabled = (state != CHAT_STATE_SILENT)
+                val isBlocked = (state == CHAT_STATE_BLOQ)
 
                 _headerState.update { current ->
                     (current as? ChatHeaderState.Loaded)?.copy(
@@ -100,116 +122,82 @@ class ChatViewModel @Inject constructor(
                     ) ?: current
                 }
             }
-        } else {
+
+        } else { //(nodeType == NODE_CHATWITHUNKNOWN) {
             // Chat desconocido (grupo / anonymous)
             loadUnknownChat()
             // Por ahora no manejamos notifs/bloqueo para unknown
         }
     }
 
-    private suspend fun loadOneToOneChat(userId: String) {
-        val snapshot = firebaseRefsContainer.refCuentas.child(userId).get().await()
-        val name = snapshot.child("nombre").getValue(String::class.java) ?: "Usuario"
-        val photo = snapshot.child("foto").getValue(String::class.java).orEmpty()
-        val finalPhoto = photo.ifEmpty {
-            Constants.DEFAULT_PROFILE_PHOTO_URL
-        }
+    private fun loadOneToOneChat() {
+
+        val name = otherProfile.value?.name
+        val profilePhoto = otherProfile.value?.profilePhoto
+        val token = otherProfile.value?.token
 
         _headerState.value = ChatHeaderState.Loaded(
             name = name,
             status = context.getString(R.string.offline),
-            photoUrl = finalPhoto,
+            photoUrl = profilePhoto,
             isConnected = true
         )
 
-        val token = firebaseRefsContainer.refCuentas
-            .child(userId)
-            .child("token")
-            .get()
-            .await()
-            .getValue(String::class.java)
-
         _chatRefs.value = ChatRefs(
             startedByMe = firebaseRefsContainer.refChatsRoot
-                .child(CHAT_TYPE_INDIVIDUAL)
+                .child(NODE_CHATS)
                 .child("$myUid <---> $userId")
-                .child("Mensajes"),
+                .child(NODE_MESSAGES),
             startedByHim = firebaseRefsContainer.refChatsRoot
-                .child(CHAT_TYPE_INDIVIDUAL)
+                .child(NODE_CHATS)
                 .child("$userId <---> $myUid")
-                .child("Mensajes"),
-            refYourReceiverData = Constants.storageReference.child("CHATWITH/$userId/"),
-            refMyReceiverData = Constants.storageReference.child("CHATWITH/$myUid/"),
+                .child(NODE_MESSAGES),
+            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CHATWITH/$userId/"),
+            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CHATWITH/$myUid/"),
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
-                .child("ChatList")
+                .child(NODE_CHATLIST)
                 .child("Actual"),
             token = token,
-            refChat = CHAT_TYPE_INDIVIDUAL,
-            refChatWith = "CHATWITH"
+            refChat = NODE_CHATS,
+            refChatWith = NODE_CHATWITH // Antes estaba como "CHATWITH" (Mayus)
         )
     }
 
-    private suspend fun loadUnknownChat() {
-        val groupName = userPreferencesRepository.groupName
-        val unknownId = userPreferencesRepository.unknownUserId
+    private suspend fun loadUnknownChat() { // No sé quién es, no tendrá ft nunca
 
-        var photoUrl = Constants.DEFAULT_PROFILE_PHOTO_URL
-        val type = firebaseRefsContainer.refGroupUsers
-            .child(groupName)
-            .child(unknownId)
-            .child("type")
-            .get()
-            .await()
-            .getValue(Int::class.java) ?: 0
+        // EL TYPE SIEMPRE SERÁ 0
+        // SIEMPRE VENGO ACA DESDE UN GRUPO
+        // NUNCA TENDRÁ FOTO
 
-        if (type != 0) {
-            photoUrl = firebaseRefsContainer.refCuentas
-                .child(unknownId)
-                .child("foto")
-                .get()
-                .await()
-                .getValue(String::class.java)
-                .orEmpty()
-        }
+        val userGroup = userRepository.getUserGroup(userId, groupName)
 
         _headerState.value = ChatHeaderState.Loaded(
-            name = context.getString(R.string.anonimous),
+            name = userGroup?.userName,
             status = context.getString(R.string.offline),
-            photoUrl = photoUrl.ifEmpty { Constants.DEFAULT_PROFILE_PHOTO_URL },
+            photoUrl = DEFAULT_PROFILE_PHOTO_URL,
             isConnected = true
         )
 
         _chatRefs.value = ChatRefs(
             startedByMe = firebaseRefsContainer.refChatsRoot
-                .child("UNKNOWN")
-                .child("$myUid <---> $unknownId")
-                .child("Mensajes"),
+                .child(NODE_UNKNOWN)
+                .child("$myUid <---> $userId")
+                .child(NODE_MESSAGES),
             startedByHim = firebaseRefsContainer.refChatsRoot
-                .child("UNKNOWN")
-                .child("$unknownId <---> $myUid")
-                .child("Mensajes"),
-            refYourReceiverData = Constants.storageReference.child("$CHAT_TYPE_UNKNOWN/$unknownId/"),
-            refMyReceiverData = Constants.storageReference.child("$CHAT_TYPE_UNKNOWN/$myUid/"),
+                .child(NODE_UNKNOWN)
+                .child("$userId <---> $myUid")
+                .child(NODE_MESSAGES),
+            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_UNKNOWN/$userId/"),
+            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_UNKNOWN/$myUid/"),
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
-                .child("ChatList")
+                .child(NODE_CHATLIST)
                 .child("Actual"),
             token = null,
-            refChat = "UNKNOWN",
-            refChatWith = CHAT_TYPE_UNKNOWN
+            refChat = NODE_UNKNOWN,
+            refChatWith = NODE_CHATWITHUNKNOWN
         )
-    }
-
-    // Si en algún momento necesitás extras de la Intent:
-    fun loadChatDetails(extras: Bundle?) {
-        // Hoy la lógica principal está en setupChat(); esto queda como hook futuro.
-        fetchChatHeaderData()
-    }
-
-    private fun fetchChatHeaderData() = viewModelScope.launch {
-        // En una app real, esto iría a un UseCase o Repository.
-        // Lo dejamos como placeholder.
     }
 
     // =========================================================================
@@ -241,7 +229,7 @@ class ChatViewModel @Inject constructor(
             val resultUri = UCrop.getOutput(data)
             if (resultUri != null) {
                 viewModelScope.launch {
-                    _events.emit(
+                    _chatEvents.emit(
                         ChatUiEvent.ShowSnackbar(
                             "Imagen lista para enviar.",
                             ZibeSnackType.SUCCESS
@@ -251,7 +239,7 @@ class ChatViewModel @Inject constructor(
                 // TODO: subir a Storage y preparar sendMessage con PHOTO.
             } else {
                 viewModelScope.launch {
-                    _events.emit(
+                    _chatEvents.emit(
                         ChatUiEvent.ShowSnackbar(
                             "Error al obtener la imagen recortada.",
                             ZibeSnackType.ERROR
@@ -263,7 +251,7 @@ class ChatViewModel @Inject constructor(
             val error = UCrop.getError(data)
             Log.e("UCrop", "Error al recortar: $error")
             viewModelScope.launch {
-                _events.emit(
+                _chatEvents.emit(
                     ChatUiEvent.ShowSnackbar(
                         "Fallo al recortar la imagen.",
                         ZibeSnackType.ERROR
@@ -275,7 +263,7 @@ class ChatViewModel @Inject constructor(
 
     fun startRecordAudio() {
         viewModelScope.launch {
-            _events.emit(
+            _chatEvents.emit(
                 ChatUiEvent.ShowSnackbar(
                     "Grabando audio... (Lógica en VM)",
                     ZibeSnackType.INFO
@@ -286,14 +274,14 @@ class ChatViewModel @Inject constructor(
 
     fun stopRecordAudio() {
         viewModelScope.launch {
-            _events.emit(ChatUiEvent.AudioUploadSuccess("00:05"))
+            _chatEvents.emit(ChatUiEvent.AudioUploadSuccess("00:05"))
             sendMessage("") // TODO: pasar URL real del audio
         }
     }
 
     fun cancelRecordAudio() {
         viewModelScope.launch {
-            _events.emit(
+            _chatEvents.emit(
                 ChatUiEvent.ShowSnackbar(
                     "Grabación cancelada.",
                     ZibeSnackType.WARNING
@@ -318,118 +306,94 @@ class ChatViewModel @Inject constructor(
         // TODO: actualizar estado "escribiendo" en Firebase
     }
 
-    // =========================================================================
-    //  NOTIFICACIONES / BLOQUEO / ELIMINAR CHAT
-    // =========================================================================
+    // ---------- Acciones de menú ----------
 
-    fun toggleNotifications() {
+    fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
+
         viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
+            val chatWith = userRepository.getChatWith(userId, nodeType)
 
-            val currentState = userRepository.getChatStateWith(ctx.id, ctx.type)
-            val newState = if (currentState == "silent") ctx.type else "silent"
+            val currentState = chatWith?.state
 
-            userRepository.updateNotificationState(ctx.id, ctx.type, ctx.name)
+            val newState = if (currentState == CHAT_STATE_SILENT) {
+                nodeType // Siempre va a ser ChatWith acá x ahora
+            } else {
+                CHAT_STATE_SILENT
+            }
 
-            val enabled = (newState != "silent")
+            userRepository.updateStateChatWith(userId, userName, nodeType, newState)
 
-            // Actualizar UI
+            val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
+
+            // Actualizar header
             _headerState.update { current ->
                 (current as? ChatHeaderState.Loaded)?.copy(
                     notificationsEnabled = enabled
                 ) ?: current
             }
 
-            // Evento de UI
+            // Emitir evento para mostrar snack
+            _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
+        }
+    }
+
+    fun onBlockClicked(userId: String, userName: String, nodeType : String) {
+        viewModelScope.launch {
             _events.emit(
-                ChatUiEvent.ShowToggleNotificationSuccess(
-                    name = ctx.name,
-                    enabled = enabled
+                ChatSessionUiEvent.ConfirmBlock(
+                    name = userName,
+                    onConfirm = {
+                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_BLOQ)
+                        _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
+                        _headerState.update { current ->
+                            (current as? ChatHeaderState.Loaded)?.copy(
+                                isBlocked = true
+                            ) ?: current
+                        }
+                    }
+                )
+            )
+        }
+    }
+
+    fun onUnBlockClicked(userId: String, userName: String, nodeType : String) {
+        viewModelScope.launch {
+            _events.emit(
+                ChatSessionUiEvent.ConfirmUnblock(
+                    name = userName,
+                    onConfirm = {
+                        userRepository.updateStateChatWith(userId, userName, nodeType, nodeType)
+                        _events.emit(ChatSessionUiEvent.ShowUnblockSuccess(userName))
+                        _headerState.update { current ->
+                            (current as? ChatHeaderState.Loaded)?.copy(
+                                isBlocked = false
+                            ) ?: current
+                        }
+                    }
+                )
+            )
+        }
+    }
+
+    fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
+        viewModelScope.launch {
+            val count = userRepository.getMessageCount(userId, nodeType)
+            _events.emit(
+                ChatSessionUiEvent.ConfirmDeleteChat(
+                    name = userName,
+                    countMessages = count,
+                    onConfirm = { deleteMessages ->
+                        viewModelScope.launch {
+                            userRepository.deleteChat(userId, userName, nodeType, deleteMessages)
+                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
+                        }
+                    }
                 )
             )
         }
     }
 
 
-    fun blockUser() {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-            _events.emit(ChatUiEvent.ConfirmBlock(ctx.name))
-        }
-    }
-
-    fun onBlockConfirmed() {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-
-            // TODO: asegurarse de que exista userRepository.blockUser(id, type)
-            userRepository.blockUser(ctx.id, ctx.type, ctx.name)
-
-            _headerState.update { current ->
-                (current as? ChatHeaderState.Loaded)?.copy(
-                    isBlocked = true
-                ) ?: current
-            }
-
-            _events.emit(ChatUiEvent.ShowBlockSuccess(ctx.name))
-        }
-    }
-
-    fun unblockUser() {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-            _events.emit(ChatUiEvent.ConfirmUnblock(ctx.name))
-        }
-    }
-
-    fun onUnblockConfirmed() {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-
-            userRepository.unblockUser(ctx.id, ctx.type)
-
-            _headerState.update { current ->
-                (current as? ChatHeaderState.Loaded)?.copy(
-                    isBlocked = false
-                ) ?: current
-            }
-
-            _events.emit(ChatUiEvent.ShowUnblockSuccess(ctx.name))
-        }
-    }
-
-    fun deleteChat() {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-            _events.emit(ChatUiEvent.ConfirmDeleteChat(ctx.name))
-        }
-    }
-
-    fun onDeleteChatConfirmed(deleteMessages: Boolean) {
-        viewModelScope.launch {
-            val ctx = getChatContextOrNull() ?: return@launch
-            userRepository.deleteChat(ctx.id, ctx.type, deleteMessages)
-            _events.emit(ChatUiEvent.ShowChatDeleted)
-        }
-    }
-
-    private data class ChatContext(
-        val name: String,
-        val id: String,
-        val type: String
-    )
-
-    private fun getChatContextOrNull(): ChatContext? {
-        val header = headerState.value as? ChatHeaderState.Loaded ?: return null
-        val id = targetUserId ?: return null
-        val type = _chatRefs.value?.refChatWith ?: return null
-
-        return ChatContext(
-            name = header.name,
-            id = id,
-            type = type
-        )
-    }
 
     fun triggerProfileView(context: Context) {
         // TODO: navegación a pantalla de perfil

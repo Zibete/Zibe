@@ -40,7 +40,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
@@ -70,13 +69,13 @@ import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.utils.UserMessageUtils
@@ -91,35 +90,37 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity() {
+class ChatActivity : BaseToolbarActivity() {
 
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var userSessionManager: UserSessionManager
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
 
     val myUid  = userRepository.myUid
 
-    val user  = userRepository.user
-
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var binding: ActivityChatBinding
 
     // --------- Estado / datos ---------
-    private var idUser: String? = null
-    private var idUserUnknown: String? = null
-    private var unknownName: String? = null
-    private var idUserFinal: String? = null
-    private var nameUserFinal: String? = null
-    private var refChatWith: String? = null
-    private var refChat: String? = null
-    private var estadoUser: String? = null
-    private var estadoYo: String? = null
-    private var suActual: String? = null
-    private var token: String? = null
-    private var noVisto: Int = 0
-    private var miNoVisto: Int = 0
-    private var myName: String? = null
+//    private var idUser: String? = null
+//    private var idUserUnknown: String? = null
+//    private var unknownName: String? = null
+//    private var idUserFinal: String? = null
+//    private var nameUserFinal: String? = null
+//    private var refChatWith: String? = null
+//    private var refChat: String? = null
+//    private var estadoUser: String? = null
+//    private var estadoYo: String? = null
+//    private var suActual: String? = null
+//    private var token: String? = null
+//    private var noVisto: Int = 0
+//    private var miNoVisto: Int = 0
+//    private var myName: String? = null
+
+
+    private val userId = intent.extras?.getString("userId")?: ""
+    private val nodeType = intent.extras?.getString("nodeType")?: ""
+    private val userName = intent.extras?.getString("userName")?: ""
 
     // --------- listas / adaptador ---------
     private val chatsArrayList = ArrayList<Chats?>()
@@ -166,8 +167,6 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-
 
 
         lifecycleScope.launch {
@@ -223,81 +222,6 @@ class ChatActivity : AppCompatActivity() {
                         }
                     }
                 }
-
-                launch {
-                    chatViewModel.events.collect { event ->
-                        when (event) {
-//                                is ChatUiEvent.ShowSnackbar -> {
-//                                    // Nada aquí por ahora – se verá en Compose cuando migres
-//                                }
-                            is ChatUiEvent.ConfirmBlock -> {
-                                UserMessageUtils.confirm(
-                                    context = this@ChatActivity,
-                                    title = "Bloquear",
-                                    message = "¿Desea bloquear a ${event.name}?",
-                                    onConfirm = { chatViewModel.onBlockConfirmed() }
-                                )
-                            }
-                            is ChatUiEvent.ConfirmUnblock -> {
-                                UserMessageUtils.confirm(
-                                    context = this@ChatActivity,
-                                    title = "Desbloquear",
-                                    message = "¿Desea desbloquear a ${event.name}?",
-                                    onConfirm = { chatViewModel.onUnblockConfirmed() }
-                                )
-                            }
-                            is ChatUiEvent.ShowBlockSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Bloqueaste a ${event.name}, podrás desbloquearlo cuando desees",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    actionText = "OK",
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-                            is ChatUiEvent.ShowToggleNotificationSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message =   if (event.enabled) "Notificaciones de ${event.name} activadas"
-                                                else "Notificaciones de ${event.name} desactivadas",
-                                    duration = Snackbar.LENGTH_INDEFINITE,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-
-                            is ChatUiEvent.ShowUnblockSuccess -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = "Desbloqueaste a ${event.name}",
-                                    duration = Snackbar.LENGTH_SHORT,
-                                    iconRes = R.drawable.ic_info_24
-                                )
-                            }
-                            is ChatUiEvent.ConfirmDeleteChat -> {
-                                var deleteMessages = false
-                                UserMessageUtils.confirm(
-                                    context = this@ChatActivity,
-                                    title = "Eliminar chat con ${event.name}",
-                                    message = "",
-                                    choices = arrayOf("Ocultar chat", "Eliminar mensajes"),
-                                    selectedIndex = 0,
-                                    onChoiceSelected = { index -> deleteMessages = (index == 1) },
-                                    onConfirm = { chatViewModel.onDeleteChatConfirmed(deleteMessages) }
-                                )
-                            }
-
-//                                is ChatUiEvent.ConfirmDeleteChat -> {
-//                                    ChatUtils.showDeleteConfirmation(this@ChatActivity, event.name) { deleteMessages ->
-//                                        event.onConfirm(deleteMessages)
-//                                    }
-//                                }
-//                                is ChatUiEvent.ShowChatDeleted -> {
-//                                    ChatUtils.showChatDeletedSnack(this@ChatActivity, binding.root, count) // count desde VM si necesitas
-//                                }
-                            else -> {}
-                        }
-                    }
-                }
             }
         }
 
@@ -346,9 +270,8 @@ class ChatActivity : AppCompatActivity() {
         // --- extras ---
         chatViewModel.setUserOnline()
 
-        idUser = intent.extras?.getString("id_user")
-        unknownName = intent.extras?.getString("unknownName")
-        idUserUnknown = intent.extras?.getString("idUserUnknown")
+
+
 
         // ===== Config chat =====
         setupChatHeaderAndRefs()
@@ -404,8 +327,7 @@ class ChatActivity : AppCompatActivity() {
             startActivity(intent)
         }
         binding.buttonUnlockUser.setOnClickListener {
-            val view = findViewById<View>(android.R.id.content)
-            userRepository.setUnBlockUser(this@ChatActivity, idUserFinal!!, nameUserFinal!!, view, refChatWith!!)
+            chatViewModel.onUnBlockClicked(userId, userName, nodeType)
         }
 
         linearNameUser.setOnClickListener { v ->
@@ -518,33 +440,17 @@ class ChatActivity : AppCompatActivity() {
     }
 
     // ---------------- Menú ----------------
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_chat_activity, menu)
-        return true
-    }
-
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         super.onPrepareOptionsMenu(menu)
 
-        val actionSilent = menu.findItem(R.id.action_silent)
-        val actionNotif = menu.findItem(R.id.action_notif)
-        val actionBloq = menu.findItem(R.id.action_bloq)
-        val actionDesbloq = menu.findItem(R.id.action_desbloq)
-        val actionDelete = menu.findItem(R.id.action_delete)
+        val state = chatViewModel.headerState.value
 
-        actionDelete.isVisible = true
-
-        val headerState = chatViewModel.headerState.value
-
-        if (headerState is ChatHeaderState.Loaded) {
-
-            // ----- NOTIFICACIONES -----
-            actionSilent.isVisible = headerState.notificationsEnabled
-            actionNotif.isVisible  = !headerState.notificationsEnabled
-
-            // ----- BLOQUEO -----
-            actionBloq.isVisible    = !headerState.isBlocked
-            actionDesbloq.isVisible = headerState.isBlocked
+        if (state is ChatHeaderState.Loaded) {
+            menu.findItem(R.id.action_delete_chat).isVisible = true
+            menu.findItem(R.id.action_notifications_off).isVisible = state.notificationsEnabled
+            menu.findItem(R.id.action_notifications_on).isVisible  = !state.notificationsEnabled
+            menu.findItem(R.id.action_block).isVisible   = !state.isBlocked
+            menu.findItem(R.id.action_unblock).isVisible = state.isBlocked
         }
 
         return true
@@ -552,24 +458,21 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed()
-                return true
-            }
-            R.id.action_silent, R.id.action_notif -> {  // ← mismo método para ambos!
-                chatViewModel.toggleNotifications()
+
+            R.id.action_notifications_off, R.id.action_notifications_on -> {
+                chatViewModel.onToggleNotificationsClicked(userId, userName, nodeType)
                 return true
             }
             R.id.action_bloq -> {
-                chatViewModel.blockUser()
+                chatViewModel.onBlockClicked(userId, userName, nodeType)
                 return true
             }
             R.id.action_desbloq -> {
-                chatViewModel.unblockUser()
+                chatViewModel.onUnBlockClicked(userId, userName, nodeType)
                 return true
             }
-            R.id.action_delete -> {
-                chatViewModel.deleteChat()
+            R.id.action_delete_chat -> {
+                chatViewModel.onDeleteClicked(userId, userName, nodeType)
                 return true
             }
         }
@@ -1077,11 +980,11 @@ class ChatActivity : AppCompatActivity() {
 
     private fun setupChatHeaderAndRefs() {
 
-        if (idUser != null) {
+        if (userId != null) {
             // 1 a 1
             findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
-            idUserFinal = idUser
-            refChat = Constants.NODE_TYPE_CHATS
+            idUserFinal = userId
+            refChat = Constants.NODE_CHATS
             refChatWith = Constants.CHAT_STATE_CHATWITH
             myPhoto = user.photoUrl?.toString() ?: ""
             myName = user.displayName ?: ""
@@ -1118,7 +1021,7 @@ class ChatActivity : AppCompatActivity() {
 
             idUserFinal = idUserUnknown
             nameUserFinal = unknownName
-            refChat = Constants.NODE_TYPE_UNKNOWN
+            refChat = Constants.NODE_UNKNOWN
             refChatWith = Constants.CHAT_STATE_UNKNOWN
             myName = userPreferencesRepository.userNameGroup
             binding.nameUser.text = nameUserFinal
@@ -1181,8 +1084,8 @@ class ChatActivity : AppCompatActivity() {
         }
 
         // Storage refs
-        refYourReceiverData = Constants.storageReference.child("${refChatWith}/${idUserFinal}/")
-        refMyReceiverData = Constants.storageReference.child("${refChatWith}/${myUid}/")
+        refYourReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${idUserFinal}/")
+        refMyReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${myUid}/")
 
         refActual = firebaseRefsContainer.refDatos.child(myUid).child("ChatList").child("Actual")
 

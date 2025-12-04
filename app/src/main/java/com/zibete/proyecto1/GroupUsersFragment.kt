@@ -150,9 +150,9 @@ class GroupUsersFragment : Fragment(), SearchView.OnQueryTextListener {
         super.onPrepareOptionsMenu(menu)
 
         val action_search = menu.findItem(R.id.action_search)
-        val action_desbloqUsers = menu.findItem(R.id.action_unlock)
+        val action_desbloqUsers = menu.findItem(R.id.action_unblock)
         val action_favoritos = menu.findItem(R.id.action_favorites)
-        val action_exit = menu.findItem(R.id.action_exit)
+        val action_exit = menu.findItem(R.id.action_exit_group)
 
         action_exit.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         action_exit.isVisible = true

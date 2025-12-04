@@ -540,9 +540,9 @@ class ChatGroupFragment : Fragment() {
         super.onPrepareOptionsMenu(menu)
 
         val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnlock = menu.findItem(R.id.action_unlock)
+        val actionUnlock = menu.findItem(R.id.action_unblock)
         val actionFavorites = menu.findItem(R.id.action_favorites)
-        val actionExit = menu.findItem(R.id.action_exit)
+        val actionExit = menu.findItem(R.id.action_exit_group)
 
         actionExit.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         actionExit.isVisible = true

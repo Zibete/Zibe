@@ -41,9 +41,16 @@ object Constants {
     const val PUBLIC_GROUP = 1
     const val PRIVATE_GROUP = 2
 
-    const val NODE_TYPE_CHATS = "Chats"
-    const val NODE_TYPE_CHATWITH = "ChatWith"
-    const val NODE_TYPE_UNKNOWN = "Unknown"
+    const val NODE_CHATS = "Chats"
+    const val NODE_CHATWITH = "ChatWith"
+    const val NODE_UNKNOWN = "Unknown"
+
+    const val NODE_CHATLIST = "ChatList"
+    const val NODE_CHATWITHUNKNOWN = "ChatWithUnknown"
+
+
+    const val NODE_MESSAGES = "Mensajes"
+
 
 
 

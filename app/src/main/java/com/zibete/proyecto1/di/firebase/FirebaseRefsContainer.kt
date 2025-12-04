@@ -19,7 +19,7 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseRefsContainer @Inject constructor(
     private val db: FirebaseDatabase,
-    private val storage: FirebaseStorage
+    val storage: FirebaseStorage
 ) {
 
     // === Referencias a Usuarios y Datos ===

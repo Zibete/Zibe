@@ -161,7 +161,7 @@ class AdapterChatGroupsLista(
     // -------- Helpers UI --------
 
     private fun prepareContextMenuLabels(binding: RowChatlistaBinding) {
-        menu2 = if (binding.notifOff.isVisible) context.getString(R.string.mostrar_notif) else context.getString(R.string.silenciar)
+        menu2 = if (binding.notifOff.isVisible) context.getString(R.string.menu_notifications_on) else context.getString(R.string.menu_notifications_off)
         menu1 = if (binding.nuevoMsg.isVisible) context.getString(R.string.leido) else context.getString(R.string.noleido)
     }
 
@@ -266,7 +266,7 @@ class AdapterChatGroupsLista(
     override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
         menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 1, contextMenuPosition, menu1)
         menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 2, contextMenuPosition, menu2)
-        menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 3, contextMenuPosition, R.string.bloquear)
+        menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 3, contextMenuPosition, R.string.menu_block)
         menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 4, contextMenuPosition, R.string.ocultar)
         menu.add(Constants.FRAGMENT_ID_CHATGROUPLIST, 5, contextMenuPosition, R.string.eliminar)
     }

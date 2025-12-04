@@ -7,26 +7,32 @@ import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.adapters.SliderProfileAdapter
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SlideProfileActivity : AppCompatActivity() {
+class SlideProfileActivity : BaseToolbarActivity() {
 
-    @Inject
-    lateinit var profileUiBinder: ProfileUiBinder
+    @Inject lateinit var profileUiBinder: ProfileUiBinder
+    @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-    private val user = FirebaseAuth.getInstance().currentUser
+
+    private val user = userRepository.user
+
     private lateinit var progressbarImage: ProgressBar
     private lateinit var userList: MutableList<Users>
     private lateinit var viewPager: ViewPager2
@@ -57,23 +63,19 @@ class SlideProfileActivity : AppCompatActivity() {
         viewPager.setCurrentItem(position.coerceIn(0, (userList.size - 1).coerceAtLeast(0)), false)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_chat_activity, menu)
-        return true
-    }
-
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val actionSilent = menu.findItem(R.id.action_silent)
-        val actionNotif = menu.findItem(R.id.action_notif)
+        val actionSilent = menu.findItem(R.id.action_notifications_off)
+        val actionNotif = menu.findItem(R.id.action_notifications_on)
         val actionBloq = menu.findItem(R.id.action_bloq)
         val actionDesbloq = menu.findItem(R.id.action_desbloq)
-        val actionDelete = menu.findItem(R.id.action_delete)
+        val actionDelete = menu.findItem(R.id.action_delete_chat)
+
         actionDelete.isVisible = true
 
         val currentIdx = viewPager.currentItem
         val current = userList.getOrNull(currentIdx)
-        if (current != null && user != null) {
-            FirebaseRefs.refDatos.child(user.uid).child(Constants.CHAT_STATE_CHATWITH).child(current.id)
+        if (current != null) {
+            firebaseRefsContainer.refDatos.child(user.uid).child(Constants.CHAT_STATE_CHATWITH).child(current.id)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         val state = ds.child("estado").getValue(String::class.java)
@@ -105,32 +107,32 @@ class SlideProfileActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        val u = userList.getOrNull(viewPager.currentItem) ?: return super.onOptionsItemSelected(item)
-//        val root = findViewById<android.view.View>(android.R.id.content)
-//        when (item.itemId) {
+        val u = userList.getOrNull(viewPager.currentItem) ?: return super.onOptionsItemSelected(item)
+        val root = findViewById<android.view.View>(android.R.id.content)
+        when (item.itemId) {
 //            android.R.id.home -> onBackPressedDispatcher.onBackPressed()
-//            R.id.action_silent -> {
-//                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
-//                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
-//            }
-//            R.id.action_notif -> {
-//                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
-//                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
-//            }
-//            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)
-//            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.CHATWITH)
-//            R.id.action_delete -> ChatUtils.deleteChat(this, u.id, u.name, root, Constants.CHATWITH)
-//        }
+            R.id.action_notifications_off -> {
+                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
+                Toast.makeText(this, "Notificaciones desactivadas", Toast.LENGTH_SHORT).show()
+            }
+            R.id.action_notifications_on -> {
+                UserRepository.silent(u.name, u.id, Constants.CHATWITH)
+                Toast.makeText(this, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+            }
+            R.id.action_bloq -> UserRepository.setBlockUser(this, u.name, u.id, root, Constants.CHATWITH)
+            R.id.action_desbloq -> UserRepository.setUnBlockUser(this, u.id, u.name, root, Constants.CHATWITH)
+            R.id.action_delete_chat -> ChatUtils.deleteChat(this, u.id, u.name, root, Constants.CHATWITH)
+        }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onPause() {
         super.onPause()
-//        user?.uid?.let { UserRepository.setUserOffline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserLastSeen() }
     }
 
     override fun onResume() {
         super.onResume()
-//        user?.uid?.let { UserRepository.setUserOnline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserOnline() }
     }
 }

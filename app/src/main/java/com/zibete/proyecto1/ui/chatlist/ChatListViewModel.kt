@@ -11,6 +11,9 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,7 +83,7 @@ class ChatListViewModel @Inject constructor(
                     val photo = child.child("wUserPhoto").getValue(String::class.java)
 
                     if (photo != Constants.EMPTY &&
-                        (state == Constants.CHAT_STATE_CHATWITH || state == "silent")
+                        (state == Constants.CHAT_STATE_CHATWITH || state == CHAT_STATE_SILENT)
                     ) {
                         visibleCount++
                     }
@@ -141,13 +144,41 @@ class ChatListViewModel @Inject constructor(
 
     // ---------- Acciones de menú ----------
 
-    fun onBlockClicked(idUser: String, userName: String, nodeType : String) {
+    fun onMarkAsReadChatListClicked(userId: String, nodeType: String) {
+        viewModelScope.launch {
+            userRepository.markAsReadChatList(userId, nodeType)
+        }
+    }
+
+    fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
+
+        viewModelScope.launch {
+            val chatWith = userRepository.getChatWith(userId, nodeType)
+
+            val currentState = chatWith?.state
+
+            val newState = if (currentState == CHAT_STATE_SILENT) {
+                nodeType
+            } else {
+                CHAT_STATE_SILENT
+            }
+
+            userRepository.updateStateChatWith(userId, userName, nodeType, newState)
+
+            val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
+
+            _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
+
+        }
+    }
+
+    fun onBlockClicked(userId: String, userName: String, nodeType : String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmBlock(
                     name = userName,
                     onConfirm = {
-                        userRepository.blockUser(idUser, userName, nodeType)
+                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_BLOQ)
                         _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
                     }
                 )
@@ -155,18 +186,31 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun onDeleteClicked(idUser: String, nodeType: String, nameUser: String) {
+    fun onHideClicked(userId: String, userName: String, nodeType : String) {
         viewModelScope.launch {
-            val count = userRepository.getMessageCount(idUser, nodeType)
+            _events.emit(
+                ChatSessionUiEvent.ConfirmHideChat(
+                    name = userName,
+                    onConfirm = {
+                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_HIDE)
+                        _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
+                    }
+                )
+            )
+        }
+    }
 
+    fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
+        viewModelScope.launch {
+            val count = userRepository.getMessageCount(userId, nodeType)
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
-                    name = nameUser,
+                    name = userName,
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(idUser, nameUser, nodeType, deleteMessages)
-                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(nameUser))
+                            userRepository.deleteChat(userId, userName, nodeType, deleteMessages)
+                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
                         }
                     }
                 )
@@ -174,34 +218,7 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-
-
-
-    private fun unblockUser(chatWithId: String, chatType: String, userName: String) {
-        viewModelScope.launch {
-            _events.emit(
-                ChatSessionUiEvent.ConfirmUnblock(userName) {
-                    viewModelScope.launch {
-                        userRepository.unblockUser(chatWithId, chatType)
-                        _events.emit(ChatSessionUiEvent.ShowUnblockSuccess(userName))
-                    }
-                }
-            )
-        }
-    }
-
-    private fun hideChat(chatWithId: String, chatType: String, userName: String) {
-        viewModelScope.launch {
-            _events.emit(
-                ChatSessionUiEvent.ConfirmHideChat(userName) {
-                    viewModelScope.launch {
-                        userRepository.hideChat(chatWithId, chatType)
-                        _events.emit(ChatSessionUiEvent.ShowChatHidden)
-                    }
-                }
-            )
-        }
-    }
+    // ---------------------------------------
 
     private fun filterChats(chats: List<ChatWith>, query: String): List<ChatWith> {
         if (query.isBlank()) return chats
@@ -214,10 +231,3 @@ class ChatListViewModel @Inject constructor(
     }
 }
 
-sealed class ChatMenuAction {
-    object MarkAsReadChat : ChatMenuAction()
-    object SilentUser : ChatMenuAction()
-    object BlockUser : ChatMenuAction()
-    object HideChat : ChatMenuAction()
-    object DeleteChat : ChatMenuAction()
-}
