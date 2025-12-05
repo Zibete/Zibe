@@ -2,8 +2,6 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.location.Location
-import android.view.View
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -14,7 +12,6 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.State
-import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
@@ -25,10 +22,11 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
-import com.zibete.proyecto1.utils.UserMessageUtils
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
 import com.zibete.proyecto1.utils.Utils.today
+import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.utils.Utils.time
 import com.zibete.proyecto1.utils.Utils.yesterday
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -38,9 +36,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -71,11 +66,11 @@ class UserRepository @Inject constructor(
 
         val pathA = firebaseRefsContainer.refChat
             .child("$myUid <---> $otherUid")
-            .child("Mensajes")
+            .child(NODE_MESSAGES)
 
         val pathB = firebaseRefsContainer.refChat
             .child("$otherUid <---> $myUid")
-            .child("Mensajes")
+            .child(NODE_MESSAGES)
 
         val photos = mutableListOf<String>()
 
@@ -141,7 +136,7 @@ class UserRepository @Inject constructor(
     suspend fun getBlockStateWith(otherUid: String): BlockState {
         val meSnap = firebaseRefsContainer.refDatos
             .child(myUid)
-            .child("ChatWith")
+            .child(NODE_CURRENT_CHAT)
             .child(otherUid)
             .child("estado")
             .get()
@@ -149,7 +144,7 @@ class UserRepository @Inject constructor(
 
         val otherSnap = firebaseRefsContainer.refDatos
             .child(otherUid)
-            .child("ChatWith")
+            .child(NODE_CURRENT_CHAT)
             .child(myUid)
             .child("estado")
             .get()
@@ -164,16 +159,28 @@ class UserRepository @Inject constructor(
         )
     }
 
+    fun observeUnreadChats(): Flow<Int> = callbackFlow {
+        val query = firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child(NODE_CURRENT_CHAT)
+            .orderByChild("noVisto")
+            .startAt(1.0)
 
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var count = 0
+                for (child in snapshot.children) {
+                    count += child.child("noVisto").getValue(Int::class.java) ?: 0
+                }
+                trySend(count)
+            }
 
-    suspend fun getUserGroup(userId: String, groupName: String): UserGroup? =
-        firebaseRefsContainer.refGroupUsers
-            .child(groupName)
-            .child(userId)
-            .get()
-            .await()
-            .takeIf { it.exists() }
-            ?.getValue(UserGroup::class.java)
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        query.addValueEventListener(listener)
+        awaitClose { query.removeEventListener(listener) }
+    }
 
     suspend fun getUserProfile(id: String): Users? =
         firebaseRefsContainer.refCuentas
@@ -210,7 +217,7 @@ class UserRepository @Inject constructor(
         // 1) Intentar con userA <---> userB
         val snap1 = firebaseRefsContainer.refChat
             .child(path1)
-            .child("Mensajes")
+            .child(NODE_MESSAGES)
             .limitToLast(noSeen)
             .get()
             .await()
@@ -221,7 +228,7 @@ class UserRepository @Inject constructor(
             // 2) Intentar con userB <---> userA
             val snap2 = firebaseRefsContainer.refChat
                 .child(path2)
-                .child("Mensajes")
+                .child(NODE_MESSAGES)
                 .limitToLast(noSeen)
                 .get()
                 .await()
@@ -238,7 +245,7 @@ class UserRepository @Inject constructor(
     suspend fun markAsReadChatList(userId: String, chatType: String) {
         val chatWithRef = firebaseRefsContainer.refDatos
             .child(myUid)
-            .child(chatType)        // ← "CHATWITH" o "CHATWITHUNKNOWN"
+            .child(chatType)        // ← NODE_CURRENT_CHAT o "CHATWITHUNKNOWN"
             .child(userId)      // ← el ID del otro usuario
         val noSeenRef = chatWithRef
             .child("noVisto")
@@ -313,9 +320,9 @@ class UserRepository @Inject constructor(
 
 
     suspend fun deleteChat(idUser: String, userName: String, nodeType: String, deleteMessages: Boolean) {
-        val ref = if (nodeType == NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_ANONYMOUS_GROUP_CHAT
-        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
-        val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$idUser <---> $myUid").child("Mensajes") // No va más
+        val ref = if (nodeType == NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_GROUP_CHAT
+        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
+        val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$idUser <---> $myUid").child(NODE_MESSAGES) // No va más
 
         val messagesSnap = startedByMe.get().await()
         val messages = messagesSnap.children.mapNotNull { it.getValue(Chats::class.java) }
@@ -354,8 +361,8 @@ class UserRepository @Inject constructor(
     suspend fun getMessageCount(idUser: String, nodeType: String): Int {
         var count = 0
 
-        val ref = if (nodeType == NODE_CURRENT_CHAT) NODE_CHATS else NODE_ANONYMOUS_GROUP_CHAT
-        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
+        val ref = if (nodeType == NODE_CURRENT_CHAT) NODE_CHATS else NODE_GROUP_CHAT
+        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
 
         val messagesSnap = startedByMe.get().await()
 
@@ -398,57 +405,7 @@ class UserRepository @Inject constructor(
         }
     }
 
-    fun setUnBlockUser(context: Context, idUser: String?, nameUser: String?, view: View, type: String?) {
-        if (idUser == null || nameUser == null || type == null) return
 
-        UserMessageUtils.confirm(
-            context = context,
-            title = "Desbloquear",
-            message = "¿Desea desbloquear a $nameUser?",
-            onConfirm = {
-                firebaseRefsContainer.refDatos.child(myUid).child(type).child(idUser)
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            val photo = dataSnapshot.child("wUserPhoto").getValue(String::class.java)
-                            if (photo == Constants.EMPTY) {
-                                dataSnapshot.ref.removeValue()
-                            } else {
-                                dataSnapshot.ref.child("estado").setValue(type)
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
-
-                UserMessageUtils.showSnack(
-                    root = view,
-                    message = "Desbloqueaste a $nameUser",
-                    duration = Snackbar.LENGTH_SHORT,
-                    iconRes = R.drawable.ic_info_24
-                )
-            }
-        )
-    }
-
-//    fun bindBlockStatus(
-//        user_id: String,
-//        profile_bloc: ImageView
-//    ) { // bindBlockStatus = vincular estado de bloqueo
-//
-//        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHATWITH).child(user_id).child("estado")
-//            .addValueEventListener(object : ValueEventListener {
-//                override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                    if (dataSnapshot.getValue<String?>(String::class.java) == USER_STATE_BLOQ) {
-//                        profile_bloc.visibility = View.VISIBLE
-//                    } else {
-//                        profile_bloc.visibility = View.GONE
-//                    }
-//                }
-//
-//                override fun onCancelled(error: DatabaseError) {
-//                }
-//            })
-//    }
 
 
     private fun createDefaultChatWith(chatWithId: String, userName: String): ChatWith {
@@ -517,11 +474,11 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun setUserLastSeen() = withContext(Dispatchers.IO) {
-        val c = Calendar.getInstance()
-        val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(c.time)
-        val date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(c.time)
 
-        val state = State(context.getString(R.string.ultVez), date, time)
+        val state = State(
+            context.getString(R.string.ultVez),
+            today(),
+            time())
 
         firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
         firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(false).await()

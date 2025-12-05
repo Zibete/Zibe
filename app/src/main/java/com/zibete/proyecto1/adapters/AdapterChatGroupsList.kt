@@ -27,14 +27,14 @@ import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-class AdapterChatGroupsLista(
+class AdapterChatGroupsList(
     private val chatList: MutableList<ChatWith>,
     private val context: Context,
     // --- ACCIONES (Callbacks) ---
     private val onChatClicked: (ChatWith) -> Unit,
     private val onChatSeen: (ChatWith) -> Unit,       // Para marcar wVisto = 2
     private val onMarkAsRead: (ChatWith) -> Unit      // Para la lógica de doble check (setMyDoubleCheck)
-) : RecyclerView.Adapter<AdapterChatGroupsLista.ChatGroupViewHolder>(),
+) : RecyclerView.Adapter<AdapterChatGroupsList.ChatGroupViewHolder>(),
     Filterable,
     OnCreateContextMenuListener {
 
@@ -100,7 +100,7 @@ class AdapterChatGroupsLista(
 //        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
-        refDatos.child(chat.userId).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(user.uid)
+        refDatos.child(chat.userId).child(Constants.NODE_GROUP_CHAT).child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -121,7 +121,7 @@ class AdapterChatGroupsLista(
             })
 
         // 4. Listener: No Vistos (Counter Visual)
-        refDatos.child(user.uid).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(chat.userId).child("noVisto")
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT).child(chat.userId).child("noVisto")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val noVistos = snapshot.getValue(Int::class.java) ?: 0
@@ -132,7 +132,7 @@ class AdapterChatGroupsLista(
             })
 
         // 5. Listener: Último Mensaje (Visual + Triggers)
-        refDatos.child(user.uid).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(chat.userId)
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT).child(chat.userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -167,7 +167,7 @@ class AdapterChatGroupsLista(
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
         when (chat.state) {
-            Constants.NODE_ANONYMOUS_GROUP_CHAT -> {
+            Constants.NODE_GROUP_CHAT -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }

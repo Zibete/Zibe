@@ -1,15 +1,12 @@
 package com.zibete.proyecto1.ui.groups
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
@@ -20,10 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
-import com.google.firebase.database.Query
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterGroups
@@ -32,26 +27,27 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.DialogGoGroupBinding
 import com.zibete.proyecto1.databinding.DialogGoNewGroupBinding
 import com.zibete.proyecto1.databinding.FragmentGroupsBinding
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.model.UserGroup
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.main.MainActivity
-import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
+import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
+import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
-import java.text.SimpleDateFormat
 import java.util.ArrayList
-import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.launch
+private var joinGroupDialog: AlertDialog? = null
 
 @AndroidEntryPoint
-class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
+class GroupsFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
     private val user = userRepository.user
+    private val myUid = userRepository.user.uid
 
     private val groupsViewModel: GroupsViewModel by viewModels()
 
@@ -82,7 +78,75 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        collectUiState()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    groupsViewModel.uiState.collect { state ->
+                        val b = _binding ?: return@collect
+
+                        b.progressbar.isVisible = state.isLoading
+
+                        if (state.error != null) {
+                            UserMessageUtils.showSnack(
+                                root = view,
+                                message = state.error,
+                                duration = Snackbar.LENGTH_SHORT,
+                                iconRes = R.drawable.ic_warning_24
+                            )
+                        }
+
+                        adapter.updateDataGroups(ArrayList(state.groups))
+
+                        if (state.groups.isNotEmpty()) {
+                            b.rvGroups.scrollToPosition(0)
+                        }
+                    }
+                }
+            }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                groupsViewModel.events.collect { event ->
+                    when (event) {
+                        is GroupsUiEvent.NickInUse -> {
+                            UserMessageUtils.showSnack(
+                                root = view,
+                                message = "${event.nick} está en uso",
+                                duration = Snackbar.LENGTH_SHORT,
+                                iconRes = R.drawable.ic_warning_24
+                            )
+                        }
+
+                        is GroupsUiEvent.GroupNameInUse -> {
+                            UserMessageUtils.showSnack(
+                                root = view,
+                                message = "El nombre ${event.name} ya está en uso",
+                                duration = Snackbar.LENGTH_SHORT,
+                                iconRes = R.drawable.ic_warning_24
+                            )
+                        }
+
+                        is GroupsUiEvent.JoinGroup -> {
+                            joinGroupDialog?.dismiss()
+                            joinGroupDialog = null
+
+                            groupsViewModel.joinGroupAndNavigate(
+                                event.groupName,
+                                event.nick,
+                                event.type
+                            )
+                        }
+
+                        is GroupsUiEvent.NavigateToGroupPager -> {
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.nav_host_fragment, PageAdapterGroup())
+                                .commit()
+                        }
+                    }
+                }
+            }
+        }
+
         groupsViewModel.loadGroups()
     }
 
@@ -98,7 +162,7 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
             mutableListOf(),
             requireContext()
         ) { groupSelected ->
-            onGroupClicked(groupSelected)
+            showJoinGroupDialog(groupSelected)
         }
 
         rvGroups.layoutManager = layoutManager
@@ -119,33 +183,6 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         }
     }
 
-    private fun collectUiState() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                groupsViewModel.uiState.collect { state ->
-                    val b = _binding ?: return@collect
-
-                    b.progressbar.isVisible = state.isLoading
-
-                    if (state.error != null) {
-                        Toast.makeText(requireContext(), state.error, Toast.LENGTH_SHORT).show()
-                    }
-
-                    adapter.updateDataGroups(ArrayList(state.groups))
-
-                    if (state.groups.isNotEmpty()) {
-                        b.rvGroups.scrollToPosition(0)
-                    }
-                }
-            }
-        }
-    }
-
-    // 1. Click en grupo existente
-    private fun onGroupClicked(group: Groups) {
-        showJoinGroupDialog(group)
-    }
-
     // 2. Diálogo para unirse a grupo público
     private fun showJoinGroupDialog(group: Groups) {
         val dialogBinding = DialogGoGroupBinding.inflate(layoutInflater)
@@ -153,56 +190,38 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         dialogBinding.nameUser.text = user.displayName
         dialogBinding.tvChat.text = group.name
         Glide.with(requireContext()).load(user.photoUrl).into(dialogBinding.userImage)
-        dialogBinding.btnStartChat2.isEnabled = false
+        dialogBinding.btnStartAnonymousChat.isEnabled = false
 
         dialogBinding.edtNick.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                dialogBinding.btnStartChat2.isEnabled =
+                dialogBinding.btnStartAnonymousChat.isEnabled =
                     dialogBinding.edtNick.text?.isNotEmpty() == true
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        val dialog = AlertDialog.Builder(
-            ContextThemeWrapper(
-                requireContext(),
-                R.style.AlertDialogApp
-            )
-        )
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
 
-        dialogBinding.btnStartChat1.setOnClickListener {
-            joinGroupAndNavigate(dialog, group.name, user.displayName ?: "", 1)
+        joinGroupDialog = dialog
+
+        dialogBinding.btnStartChat.setOnClickListener {
+            groupsViewModel.onJoinGroupRequested(
+                groupName = group.name,
+                nick = user.displayName ?: "",
+                type = PUBLIC_USER
+            )
         }
 
-        dialogBinding.btnStartChat2.setOnClickListener {
-            FirebaseRefs.refGroupUsers.child(group.name)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        for (child in snapshot.children) {
-                            val name = child.child("user_name").getValue(String::class.java)
-                            if (name == dialogBinding.edtNick.text.toString()) {
-                                Toast.makeText(
-                                    requireContext(),
-                                    "${dialogBinding.edtNick.text} está en uso",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return
-                            }
-                        }
-                        joinGroupAndNavigate(
-                            dialog,
-                            group.name,
-                            dialogBinding.edtNick.text.toString(),
-                            0
-                        )
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {}
-                })
+        dialogBinding.btnStartAnonymousChat.setOnClickListener {
+            val nick = dialogBinding.edtNick.text.toString()
+            groupsViewModel.onJoinGroupRequested(
+                group.name,
+                nick,
+                ANONYMOUS_USER)
         }
 
         dialogBinding.imgCancelDialog.setOnClickListener { dialog.dismiss() }
@@ -214,7 +233,10 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         val dialogBinding = DialogGoNewGroupBinding.inflate(layoutInflater)
 
         dialogBinding.nameUser.text = user.displayName
-        Glide.with(requireContext()).load(user.photoUrl).into(dialogBinding.userImage)
+        Glide.with(
+            requireContext())
+            .load(user.photoUrl)
+            .into(dialogBinding.userImage)
         dialogBinding.btnCreateNewChat.isEnabled = false
 
         val watcher = object : TextWatcher {
@@ -230,109 +252,22 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         dialogBinding.edtNameNewGroup.addTextChangedListener(watcher)
         dialogBinding.edtDataNewGroup.addTextChangedListener(watcher)
 
-        val dialog = AlertDialog.Builder(
-            ContextThemeWrapper(
-                requireContext(),
-                R.style.AlertDialogApp
-            )
-        )
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
 
+        joinGroupDialog = dialog
+
         dialogBinding.btnCreateNewChat.setOnClickListener {
-            val name = dialogBinding.edtNameNewGroup.text.toString()
-            val data = dialogBinding.edtDataNewGroup.text.toString()
-
-            FirebaseRefs.refGroupData.child(name)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        if (snapshot.exists()) {
-                            Toast.makeText(
-                                requireContext(),
-                                "El nombre ya está en uso",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return
-                        }
-
-                        @SuppressLint("SimpleDateFormat")
-                        val date = SimpleDateFormat("dd/MM/yyyy HH:mm").format(Date())
-                        val group =
-                            Groups(
-                                name,
-                                data,
-                                user.uid,
-                                Constants.PUBLIC_GROUP,
-                                0,
-                                date
-                            )
-
-                        FirebaseRefs.refGroupData.child(name).setValue(group)
-
-                        joinGroupAndNavigate(
-                            dialog,
-                            name,
-                            user.displayName ?: "",
-                            Constants.PUBLIC_GROUP
-                        )
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {}
-                })
+            val groupName = dialogBinding.edtNameNewGroup.text.toString()
+            val groupData = dialogBinding.edtDataNewGroup.text.toString()
+            groupsViewModel.onCreateNewGroupClicked(groupName, groupData)
         }
 
         dialogBinding.imgCancelDialog.setOnClickListener { dialog.dismiss() }
         dialog.show()
-    }
-
-    // 4. Lógica central de navegación y guardado
-    private fun joinGroupAndNavigate(
-        dialog: AlertDialog?,
-        groupName: String,
-        userName: String,
-        type: Int
-    ) {
-
-        @SuppressLint("SimpleDateFormat")
-        val date = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS").format(Date())
-
-        // Repo
-        userPreferencesRepository.userNameGroup = userName
-        userPreferencesRepository.groupName = groupName
-        userPreferencesRepository.inGroup = true
-        userPreferencesRepository.userType = type
-        userPreferencesRepository.userDate = date
-
-        // Firebase chat
-        val chatMsg =
-            ChatsGroup("se unió a la sala", date, userName, user.uid, 0, type)
-        FirebaseRefs.refGroupChat.child(groupName).push().setValue(chatMsg)
-
-        val query: Query = FirebaseRefs.refDatos.child(user.uid)
-            .child(Constants.NODE_ANONYMOUS_GROUP_CHAT)
-            .orderByChild("noVisto")
-            .startAt(1.0)
-
-        // Listeners opcionales (comentados)
-        // MainActivity.listenerGroupBadge?.let { listener ->
-        //     FirebaseRefs.refGroupChat.child(groupName).addValueEventListener(listener)
-        // }
-        // MainActivity.listenerMsgUnreadBadge?.let { listener ->
-        //     query.addValueEventListener(listener)
-        // }
-
-        (activity as? MainActivity)?.invalidateOptionsMenu()
-
-        val newFragment = PageAdapterGroup()
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.nav_host_fragment, newFragment)
-            .commit()
-
-        val userGroup = UserGroup(user.uid, userName, type)
-        FirebaseRefs.refGroupUsers.child(groupName).child(user.uid).setValue(userGroup)
-
-        dialog?.dismiss()
     }
 
     // ---------- SearchView ----------
@@ -345,7 +280,7 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     // ---------- Menú ----------
-
+    @Deprecated("Deprecated in Java")
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
@@ -353,9 +288,7 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         val actionSettings = menu.findItem(R.id.action_settings)
         val actionUnlock = menu.findItem(R.id.action_unblock)
         val actionFavorites = menu.findItem(R.id.action_favorites)
-        val actionExit = menu.findItem(R.id.action_exit_group)
 
-        actionExit.isVisible = false
         actionSearch.isVisible = true
         actionSettings.isVisible = true
         actionUnlock.isVisible = true

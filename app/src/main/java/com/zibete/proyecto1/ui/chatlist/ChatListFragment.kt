@@ -25,7 +25,7 @@ import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATGROUPLIST
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -171,7 +171,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         // Chat unknown / grupos
         if (item.groupId == FRAGMENT_ID_CHATGROUPLIST) {
             val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
-            runItemSelected(item, NODE_ANONYMOUS_GROUP_CHAT, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_GROUP_CHAT, wChat.userId, wChat.userName)
         }
 
         return true
@@ -200,12 +200,10 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         super.onPrepareOptionsMenu(menu)
 
         val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnlock = menu.findItem(R.id.action_unblock)
-        val actionExit = menu.findItem(R.id.action_exit_group)
+        val actionUnblock = menu.findItem(R.id.action_unblock)
 
-        actionExit.isVisible = false
         actionSearch.isVisible = true
-        actionUnlock.isVisible = true
+        actionUnblock.isVisible = true
 
         val searchView = actionSearch.actionView as? SearchView
         searchView?.setOnQueryTextListener(this)
@@ -220,7 +218,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
 
 
     // ---------- Ciclo de vida ----------
-
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()

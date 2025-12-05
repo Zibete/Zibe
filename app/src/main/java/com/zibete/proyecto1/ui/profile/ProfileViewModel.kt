@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.profile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val userRepository: UserRepository,
+    private val groupRepository: GroupRepository,
     private val locationRepository: LocationRepository,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
@@ -123,7 +125,7 @@ class ProfileViewModel @Inject constructor(
 
             val groupName = userPreferencesRepository.groupName
 
-            val userGroup = userRepository.getUserGroup(userId, groupName)
+            val userGroup = groupRepository.getUserGroup(userId, groupName)
 
             if (userGroup == null) {
                 _uiState.value = _uiState.value.copy(isGroupMatch = false)

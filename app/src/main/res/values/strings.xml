@@ -30,7 +30,6 @@
     <string name="atras">Atrás</string>
     <string name="siguiente">Siguiente</string>
     <string name="comenzar">Comenzar</string>
-    <string name="offline">desconectado</string>
     <string name="saltar">Saltar</string>
 
     <string name="facebook_app_id">fb971156603326191</string>
@@ -86,6 +85,10 @@
     <string name="online">en línea</string>
     <string name="escribiendo">escribiendo...</string>
     <string name="online_upercase">En línea</string>
+    <string name="offline">desconectado</string>
+
+
+
     <string name="title_activity_main2">MainActivity</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>

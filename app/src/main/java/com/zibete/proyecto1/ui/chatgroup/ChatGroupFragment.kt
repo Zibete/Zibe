@@ -54,6 +54,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.utils.FirebaseRefs
 import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONException
@@ -137,7 +138,7 @@ class ChatGroupFragment : Fragment() {
                     ) {
                         val count = snapshot.childrenCount.toInt()
                         FirebaseRefs.refDatos.child(user.uid)
-                            .child("ChatList")
+                            .child(NODE_CHATLIST)
                             .child("msgReadGroup")
                             .setValue(count)
                     }
@@ -714,7 +715,7 @@ class ChatGroupFragment : Fragment() {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         currentUserId?.let { uid ->
             FirebaseRefs.refDatos.child(uid)
-                .child(Constants.NODE_ANONYMOUS_GROUP_CHAT)
+                .child(Constants.NODE_GROUP_CHAT)
                 .child(chat.id)
                 .removeValue()
         }

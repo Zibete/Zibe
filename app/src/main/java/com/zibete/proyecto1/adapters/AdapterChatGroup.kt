@@ -32,6 +32,9 @@ import com.zibete.proyecto1.databinding.RowGroupMsgRightBinding
 import com.zibete.proyecto1.databinding.RowNotifBinding
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_RIGHT
 import com.zibete.proyecto1.utils.FirebaseRefs
 
 class AdapterChatGroup(
@@ -260,9 +263,6 @@ class AdapterChatGroup(
         this == Constants.MSG || this == Constants.MSG_RECEIVER_DLT || this == Constants.MSG_SENDER_DLT
 
     companion object {
-        const val MSG_TYPE_LEFT  = 0
-        const val MSG_TYPE_RIGHT = 1
-        const val MSG_TYPE_MID   = 2
 
         private fun String?.safeSub(start: Int, end: Int): String {
             val s = this ?: return ""

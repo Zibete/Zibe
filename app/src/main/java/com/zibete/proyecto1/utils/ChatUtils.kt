@@ -143,7 +143,7 @@ class ChatUtils @Inject constructor(
         view: View,
         type: String
     ) {
-        val ref = if (type == Constants.NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_ANONYMOUS_GROUP_CHAT
+        val ref = if (type == Constants.NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_GROUP_CHAT
 
         val refYourReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/$idUser/")
         val refMyReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/${myUid}/")

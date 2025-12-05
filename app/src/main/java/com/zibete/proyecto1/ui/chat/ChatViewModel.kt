@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -22,10 +23,11 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT_UID
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -50,6 +52,7 @@ class ChatViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val groupRepository: GroupRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -72,7 +75,7 @@ class ChatViewModel @Inject constructor(
 
     // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = userRepository
-        .observeUserStatus(userId, "chatWith")
+        .observeUserStatus(userId, nodeType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
 
     // Referencias del chat (para mensajes, storage, etc.)
@@ -109,6 +112,7 @@ class ChatViewModel @Inject constructor(
 
             // Una vez que tenemos header + refs, traemos estado de notifs/bloqueo
             val chatType = _chatRefs.value?.refChatWith
+
             if (chatType != null) {
                 val state = userRepository.getChatStateWith(userId, chatType)
                 val notificationsEnabled = (state != CHAT_STATE_SILENT)
@@ -138,8 +142,7 @@ class ChatViewModel @Inject constructor(
         _headerState.value = ChatHeaderState.Loaded(
             name = name,
             status = context.getString(R.string.offline),
-            photoUrl = profilePhoto,
-            isConnected = true
+            photoUrl = profilePhoto
         )
 
         _chatRefs.value = ChatRefs(
@@ -156,7 +159,7 @@ class ChatViewModel @Inject constructor(
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
                 .child(NODE_CHATLIST)
-                .child("Actual"),
+                .child(NODE_ACTIVE_CHAT_UID),
             token = token,
             refChat = NODE_CHATS,
             refChatWith = NODE_CURRENT_CHAT // Antes estaba como "CHATWITH" (Mayus)
@@ -169,33 +172,32 @@ class ChatViewModel @Inject constructor(
         // SIEMPRE VENGO ACA DESDE UN GRUPO o profile
         // NUNCA TENDRÁ FOTO
 
-        val userGroup = userRepository.getUserGroup(userId, groupName)
+        val userGroup = groupRepository.getUserGroup(userId, groupName)
 
         _headerState.value = ChatHeaderState.Loaded(
             name = userGroup?.userName,
             status = context.getString(R.string.offline),
-            photoUrl = DEFAULT_PROFILE_PHOTO_URL,
-            isConnected = true
+            photoUrl = DEFAULT_PROFILE_PHOTO_URL
         )
 
         _chatRefs.value = ChatRefs(
             startedByMe = firebaseRefsContainer.refChatsRoot
-                .child(NODE_ANONYMOUS_GROUP_CHAT)
+                .child(NODE_GROUP_CHAT)
                 .child("$myUid <---> $userId")
                 .child(NODE_MESSAGES),
             startedByHim = firebaseRefsContainer.refChatsRoot
-                .child(NODE_ANONYMOUS_GROUP_CHAT)
+                .child(NODE_GROUP_CHAT)
                 .child("$userId <---> $myUid")
                 .child(NODE_MESSAGES),
-            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_ANONYMOUS_GROUP_CHAT/$userId/"),
-            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_ANONYMOUS_GROUP_CHAT/$myUid/"),
+            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_GROUP_CHAT/$userId/"),
+            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_GROUP_CHAT/$myUid/"),
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
                 .child(NODE_CHATLIST)
-                .child("Actual"),
+                .child(NODE_ACTIVE_CHAT_UID),
             token = null,
-            refChat = NODE_ANONYMOUS_GROUP_CHAT,
-            refChatWith = NODE_ANONYMOUS_GROUP_CHAT
+            refChat = NODE_GROUP_CHAT,
+            refChatWith = NODE_GROUP_CHAT
         )
     }
 
@@ -398,7 +400,5 @@ class ChatViewModel @Inject constructor(
         // TODO: navegación a pantalla de perfil
     }
 
-    // Online / Offline
-    fun setUserOnline() = viewModelScope.launch { userRepository.setUserOnline() }
-    fun setUserOffline() = viewModelScope.launch { userRepository.setUserLastSeen() }
+
 }

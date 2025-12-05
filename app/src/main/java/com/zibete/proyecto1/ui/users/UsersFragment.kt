@@ -21,6 +21,7 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FilterLayoutBinding
 import com.zibete.proyecto1.databinding.FragmentUsersBinding
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_OFF
@@ -31,7 +32,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class UsersFragment : Fragment(), SearchView.OnQueryTextListener {
+class UsersFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener {
 
     @Inject lateinit var userPreferencesRepository : UserPreferencesRepository
     @Inject lateinit var userRepository : UserRepository

@@ -36,10 +36,6 @@ class UserPreferencesRepository @Inject constructor(
         get() = userPrefs.getString("groupName", "") ?: ""
         set(value) = userPrefs.edit { putString("groupName", value) }
 
-    var unknownUserId: String
-        get() = userPrefs.getString("unknownUserId", "") ?: ""
-        set(value) = userPrefs.edit { putString("unknownUserId", value) }
-
     var userType: Int
         get() = userPrefs.getInt("userType", 2)
         set(value) = userPrefs.edit { putInt("userType", value) }

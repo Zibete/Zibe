@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.adapters
 
-import android.app.ActionBar
 import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
@@ -35,11 +34,15 @@ import com.zibete.proyecto1.databinding.RowDateChatBinding
 import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.Chats
-import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.heightPx
+import com.zibete.proyecto1.ui.constants.Constants.INFO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_RIGHT
+import com.zibete.proyecto1.utils.Utils.today
+import com.zibete.proyecto1.utils.Utils.yesterday
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.widthPx
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 
 class AdapterChat(
@@ -69,7 +72,7 @@ class AdapterChat(
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         return when {
-            item.type == Constants.INFO -> TYPE_INFO
+            item.type == INFO            -> MSG_TYPE_MID
             item.sender == userId        -> MSG_TYPE_RIGHT
             else                         -> MSG_TYPE_LEFT
         }
@@ -78,7 +81,7 @@ class AdapterChat(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inf = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_INFO -> InfoVH(RowDateChatBinding.inflate(inf, parent, false)).also {
+            MSG_TYPE_MID -> InfoVH(RowDateChatBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
             MSG_TYPE_RIGHT -> RightVH(RowMsgRightBinding.inflate(inf, parent, false)).also {
@@ -224,39 +227,32 @@ class AdapterChat(
 
         // ------- separador de fecha (FIX: "ayer" no muta el calendar de "hoy")
         if (mutableMsgList.isNotEmpty()) {
-            val today = Calendar.getInstance()
-            val yesterday = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
 
-            val last = mutableMsgList.last()
             val thisDate = chats.date.safeSub(0, 10)
-            val lastDate = last.date.safeSub(0, 10)
+            val lastDate = mutableMsgList.last().date.safeSub(0, 10)
 
             if (thisDate != lastDate) {
-                when (thisDate) {
-                    dateFormat.format(today.time) -> mutableMsgList.add(
-                        Chats(
-                            context.getString(R.string.today),
-                            thisDate,
-                            "",
-                            Constants.INFO,
-                            0))
-                    dateFormat.format(yesterday.time) -> mutableMsgList.add(
-                        Chats(
-                            context.getString(R.string.yesterday),
-                            thisDate,
-                            "",
-                            Constants.INFO,
-                            0))
-                    else -> mutableMsgList.add(
-                        Chats(
-                            thisDate,
-                            thisDate,
-                            "",
-                            Constants.INFO,
-                            0))
+                val today = today()
+                val yesterday = yesterday()
+
+                val label = when (thisDate) {
+                    today     -> context.getString(R.string.today)
+                    yesterday -> context.getString(R.string.yesterday)
+                    else      -> thisDate
                 }
+
+                mutableMsgList.add(
+                    Chats(
+                        message = label,
+                        date = thisDate,
+                        sender = "",
+                        type = INFO,
+                        seen = 0
+                    )
+                )
             }
         }
+
 
         mutableMsgList.add(chats)
         if (chats.type.isPhoto()) photoList.add(chats.message)
@@ -292,13 +288,15 @@ class AdapterChat(
     }
 
     fun getDate(position: Int): String {
-        val today = Calendar.getInstance()
-        val ayer = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
-        val fecha = getItemOrNull(position)?.date?.safeSub(0, 10) ?: ""
+        val fecha = getItemOrNull(position)?.date?.safeSub(0, 10) ?: return ""
+
+        val today = today()
+        val yesterday = yesterday()
+
         return when (fecha) {
-            dateFormat.format(today.time) -> context.getString(R.string.today)
-            dateFormat.format(ayer.time)  -> context.getString(R.string.yesterday)
-            else                          -> fecha
+            today     -> context.getString(R.string.today)
+            yesterday -> context.getString(R.string.yesterday)
+            else      -> fecha
         }
     }
 
@@ -612,10 +610,6 @@ class AdapterChat(
     companion object {
         @JvmField
         var mediaPlayer: MediaPlayer? = null
-
-        const val TYPE_INFO: Int = 0
-        const val MSG_TYPE_LEFT: Int = 1
-        const val MSG_TYPE_RIGHT: Int = 2
 
         val DIFF = object : DiffUtil.ItemCallback<Chats>() {
             override fun areItemsTheSame(oldItem: Chats, newItem: Chats): Boolean {

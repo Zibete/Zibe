@@ -10,7 +10,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
@@ -55,20 +55,20 @@ class UserSessionManager @Inject constructor(
         // de estado (repo.inGroup = false) o al recibir un evento.
 
         // 1. Eliminar chats unknown vinculados (Lógica de negocio)
-        firebaseRefsContainer.refDatos.child(myUid).child(NODE_ANONYMOUS_GROUP_CHAT)
+        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
                         firebaseRefsContainer.refChatUnknown.child("$myUid <---> $key").removeValue()
                         firebaseRefsContainer.refChatUnknown.child("$key <---> $myUid").removeValue()
-                        firebaseRefsContainer.refDatos.child(key).child(NODE_ANONYMOUS_GROUP_CHAT).child(myUid).removeValue()
+                        firebaseRefsContainer.refDatos.child(key).child(NODE_GROUP_CHAT).child(myUid).removeValue()
                     }
                 }
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(myUid).child(NODE_ANONYMOUS_GROUP_CHAT).removeValue()
+        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT).removeValue()
 
         // 2. Notificación de Abandono al grupo
         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())

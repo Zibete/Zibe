@@ -24,6 +24,11 @@ object Constants {
 
     const val MAXCHATSIZE = 10000
 
+
+    const val MSG_TYPE_LEFT: Int = 1
+    const val MSG_TYPE_MID: Int = 0
+    const val MSG_TYPE_RIGHT: Int = 2
+
     const val INFO = 111
 
     const val MSG = 100
@@ -41,10 +46,18 @@ object Constants {
     const val PUBLIC_GROUP = 1
     const val PRIVATE_GROUP = 2
 
+
+    const val ANONYMOUS_USER = 0
+    const val PUBLIC_USER = 1
+
+
     const val NODE_CHATS = "Chats"
     const val NODE_CURRENT_CHAT = "ChatWith"
-    const val NODE_ANONYMOUS_GROUP_CHAT = "Unknown"
+    const val NODE_GROUP_CHAT = "Unknown"
     const val NODE_CHATLIST = "ChatList"
+
+    const val NODE_ACTIVE_CHAT_UID = "Actual"
+
 
 
 

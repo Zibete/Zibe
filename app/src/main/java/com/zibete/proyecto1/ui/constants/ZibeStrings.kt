@@ -16,6 +16,9 @@ val stringsSignUpScreen = listOf(
 const val SIGNUP_MSG_SUCCESS = "Registro completado 🎉"
 const val SIGNUP_ERR_EXCEPTION = "El usuario no pudo ser creado."
 
+
+const val MSG_USER_JOINED = "se unió a la sala"
+
 const val NO_INTERNET = "No hay conexión a Internet en este momento"
 
 const val DELETE_ACCOUNT = "La cuenta ha sido eliminada"
@@ -23,9 +26,7 @@ const val DO_NOT_DELETE_ACCOUNT = "La cuenta se mantendrá activa"
 
 const val ERR_ZIBE = "Ocurrió un error inesperado. Intentá nuevamente."
 
-
-
-
+const val MESSAGE_NOT_SENT_USER_BLOCKED = "Mensaje no enviado: Estás bloqueado por el usuario."
 
 
 // Errores de FirebaseAuth
