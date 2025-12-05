@@ -13,14 +13,15 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,48 +31,20 @@ enum class CurrentScreen {
 }
 
 // Eventos de una sola vez (para navegación o diálogos)
-sealed class MainUiEvent {
-    object Logout : MainUiEvent()
-    object SessionConflict : MainUiEvent() // Mostrar diálogo de conflicto
-    data class ShowSnack(val message: String) : MainUiEvent()
-    data class NavigateTo(val screenId: Int) : MainUiEvent()
-}
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val userSessionManager: UserSessionManager,
     private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-
-    private val myUid = userSessionManager.user.uid
+    private val myUid = userRepository.user.uid
 
     private var groupMsgCountListener: ValueEventListener? = null
 
-    // Visibilidad de componentes
-    private val _toolbarVisible = MutableStateFlow(true)
-    val toolbarVisible = _toolbarVisible.asStateFlow()
-
-    private val _layoutSettingsVisible = MutableStateFlow(false)
-    val layoutSettingsVisible = _layoutSettingsVisible.asStateFlow()
-
-    private val _bottomNavVisible = MutableStateFlow(true)
-    val bottomNavVisible = _bottomNavVisible.asStateFlow()
-
-    private val _toolbarTitle = MutableStateFlow("")
-    val toolbarTitle = _toolbarTitle.asStateFlow()
-
-    // Pantalla actual
-    private val _currentScreen = MutableStateFlow(CurrentScreen.OTHER)
-    val currentScreen = _currentScreen.asStateFlow()
-
-    // Badges (Contadores)
-    private val _chatBadgeCount = MutableStateFlow(0)
-    val chatBadgeCount = _chatBadgeCount.asStateFlow()
-
-    private val _groupBadgeCount = MutableStateFlow(0)
-    val groupBadgeCount = _groupBadgeCount.asStateFlow()
+    private val _uiState = MutableStateFlow(MainUiState())
+    val uiState = _uiState.asStateFlow()
 
     private val _navEvents = MutableSharedFlow<MainNavEvent>()
     val navEvents: SharedFlow<MainNavEvent> = _navEvents.asSharedFlow()
@@ -91,24 +64,30 @@ class MainViewModel @Inject constructor(
     // --- FUNCIONES DE UI ---
 
     fun setScreen(screen: CurrentScreen) {
-        _currentScreen.value = screen
+        _uiState.update { it.copy(currentScreen = screen) }
     }
 
-    fun showToolbar(show: Boolean) { _toolbarVisible.value = show }
-    fun showLayoutSettings(show: Boolean) { _layoutSettingsVisible.value = show }
-    fun showBottomNav(show: Boolean) { _bottomNavVisible.value = show }
-    fun setToolbarTitle(title: String) { _toolbarTitle.value = title }
-    fun setToolbarTitle(resId: Int) {
-        // Helper simple, idealmente usar String resources wrapper
-        // Por ahora pasamos el ID y la Activity lo resuelve o pasamos el string.
-        // Dejaremos que la Activity observe esto o lo maneje localmente si es simple.
+    fun showToolbar(show: Boolean) {
+        _uiState.update { it.copy(toolbarVisible = show) }
+    }
+
+    fun showLayoutSettings(show: Boolean) {
+        _uiState.update { it.copy(layoutSettingsVisible = show) }
+    }
+
+    fun showBottomNav(show: Boolean) {
+        _uiState.update { it.copy(bottomNavVisible = show) }
+    }
+
+    fun setToolbarTitle(title: String) {
+        _uiState.update { it.copy(toolbarTitle = title) }
     }
 
     // --- LOGICA DE BADGES ---
 
     private fun listenToChatBadges() {
 
-        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH)
+        firebaseRefsContainer.refDatos.child(myUid).child(NODE_CURRENT_CHAT)
             .orderByChild("noVisto").startAt(1.0)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -116,7 +95,7 @@ class MainViewModel @Inject constructor(
                     for (child in snapshot.children) {
                         count += child.child("noVisto").getValue(Int::class.java) ?: 0
                     }
-                    _chatBadgeCount.value = count
+                    _uiState.update { it.copy(chatBadgeCount = count) }
                 }
                 override fun onCancelled(error: DatabaseError) {}
             })
@@ -145,7 +124,7 @@ class MainViewModel @Inject constructor(
     // Función que ejecuta la lógica de cálculo anidada y actualiza el StateFlow
     private fun calculateGroupBadgeCount(uid: String, snapshot: DataSnapshot) {
         if (!snapshot.exists()) {
-            _groupBadgeCount.value = 0
+            _uiState.update { it.copy(groupBadgeCount = 0) }
             return
         }
 
@@ -156,11 +135,11 @@ class MainViewModel @Inject constructor(
         firebaseRefsContainer.refDatos.child(uid).child("ChatList").child("msgReadGroup") // 👈 firebaseRefs
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot1: DataSnapshot) {
-                    val leidos = dataSnapshot1.getValue(Int::class.java) ?: 0
+                    val seen = dataSnapshot1.getValue(Int::class.java) ?: 0
 
                     // 3. Obtener los mensajes no leídos en chats desconocidos (Asíncrono 2)
                     val queryUnreadUnknown = firebaseRefsContainer.refDatos.child(uid) // 👈 firebaseRefs
-                        .child(CHAT_STATE_UNKNOWN)
+                        .child(NODE_ANONYMOUS_GROUP_CHAT)
                         .orderByChild("noVisto")
                         .startAt(1.0)
 
@@ -174,10 +153,10 @@ class MainViewModel @Inject constructor(
                             }
 
                             // 4. Cálculo final: (Total Grupos - Leídos) + No Leídos Desconocidos
-                            val totalBadge = (totalMsgCount.toInt() - leidos) + countMsgUnread
+                            val totalBadge = (totalMsgCount.toInt() - seen) + countMsgUnread
 
                             // 5. Actualizar StateFlow
-                            _groupBadgeCount.value = if (totalBadge > 0) totalBadge else 0
+                            _uiState.update { it.copy(groupBadgeCount = if (totalBadge > 0) totalBadge else 0) }
                         }
 
                         override fun onCancelled(error: DatabaseError) {}
@@ -222,8 +201,9 @@ class MainViewModel @Inject constructor(
             override fun onDataChange(snapshot: DataSnapshot) {
                 val remoteId = snapshot.getValue(String::class.java)
                 if (myInstallId != null && remoteId != null && remoteId != myInstallId) {
-                    // CONFLICTO DETECTADO -> Avisar a la UI (Activity)
-                    // _uiEvents.emit(MainUiEvent.SessionConflict) // Necesitaremos un SharedFlow para eventos
+                    viewModelScope.launch {
+                        _navEvents.emit(MainNavEvent.ToSplash)
+                    }
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -232,7 +212,6 @@ class MainViewModel @Inject constructor(
     }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
-
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
             userRepository.updateLocation(location)
@@ -266,7 +245,8 @@ class MainViewModel @Inject constructor(
         when (itemId) {
 
             R.id.navBottomUsers -> {
-                if (currentScreen.value == CurrentScreen.USERS) return
+
+                if (_uiState.value.currentScreen == CurrentScreen.USERS) return
 
                 setScreen(CurrentScreen.USERS)
                 showToolbar(true)
@@ -283,7 +263,7 @@ class MainViewModel @Inject constructor(
             }
 
             R.id.navBottomFavorites -> {
-                if (currentScreen.value == CurrentScreen.FAVORITES) return
+                if (_uiState.value.currentScreen == CurrentScreen.FAVORITES) return
 
                 setScreen(CurrentScreen.FAVORITES)
                 showToolbar(true)
@@ -302,7 +282,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onChatTabSelected() {
-        if (currentScreen.value == CurrentScreen.CHAT) return
+        if (_uiState.value.currentScreen == CurrentScreen.CHAT) return
 
         setScreen(CurrentScreen.CHAT)
         showToolbar(true)
@@ -315,7 +295,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onGroupsTabSelected() {
-        if (currentScreen.value == CurrentScreen.GROUPS) return
+        if (_uiState.value.currentScreen == CurrentScreen.GROUPS) return
 
         setScreen(CurrentScreen.GROUPS)
         showBottomNav(true)
@@ -337,7 +317,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onEditProfileSelected() {
-        if (currentScreen.value == CurrentScreen.EDIT_PROFILE) return
+        if (_uiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
 
         setScreen(CurrentScreen.EDIT_PROFILE)
         showToolbar(true)
@@ -350,7 +330,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onBackPressed() {
-        when (currentScreen.value) {
+        when (_uiState.value.currentScreen) {
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
@@ -393,40 +373,4 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-
-
 }
-
-
-
-//    fun exitGroup() {
-//        if (!userPreferencesRepository.inGroup) return
-//        performExitGroupLogic()
-//    }
-
-//    private fun performExitGroupLogic() {
-//        val uid = user?.uid ?: return
-//        val groupName = userPreferencesRepository.groupName
-//
-//        // ... (Toda tu lógica de borrar nodos de firebaseRefs va aquí) ...
-//
-//        // Ejemplo simplificado de lo que tenías:
-//        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())
-//        val chatMsg = ChatsGroup(
-//            "abandonó la sala",
-//            dateFormat.format(Calendar.getInstance().time),
-//            userPreferencesRepository.userName,
-//            uid,
-//            0,
-//            userPreferencesRepository.userType
-//        )
-//        firebaseRefsContainer.refGroupChat.child(groupName).push().setValue(chatMsg)
-//        firebaseRefsContainer.refGroupUsers.child(groupName).child(uid).removeValue()
-//
-//        // Actualizar Repo
-//        userPreferencesRepository.clearAllData() // O solo las keys de grupo
-//
-//        // Actualizar estado UI
-//        _toolbarVisible.value = true // Reset toolbar
-//    }
-

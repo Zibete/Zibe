@@ -3,16 +3,19 @@ package com.zibete.proyecto1
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SlidePhotoActivity : AppCompatActivity() {
 
+    @Inject lateinit var userRepository: UserRepository
     private lateinit var binding: SlideActivityBinding
-    private val user get() = currentUser!!
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -48,12 +51,12 @@ class SlidePhotoActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        user?.uid?.let { UserRepository.setUserOffline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserLastSeen() }
     }
 
     override fun onResume() {
         super.onResume()
-        user?.uid?.let { UserRepository.setUserOnline(applicationContext, it) }
+        lifecycleScope.launch { userRepository.setUserOnline() }
     }
 
     // helpers cortos

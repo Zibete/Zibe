@@ -310,7 +310,7 @@ class GroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         FirebaseRefs.refGroupChat.child(groupName).push().setValue(chatMsg)
 
         val query: Query = FirebaseRefs.refDatos.child(user.uid)
-            .child(Constants.CHAT_STATE_UNKNOWN)
+            .child(Constants.NODE_ANONYMOUS_GROUP_CHAT)
             .orderByChild("noVisto")
             .startAt(1.0)
 

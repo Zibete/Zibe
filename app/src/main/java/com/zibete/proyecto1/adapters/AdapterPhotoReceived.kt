@@ -2,11 +2,9 @@ package com.zibete.proyecto1.adapters
 
 import android.content.Context
 import android.content.Intent
-import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +12,7 @@ import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived.ViewHolderAdapterPhoto
+import com.zibete.proyecto1.utils.ZibeApp
 
 class AdapterPhotoReceived(
     private var photoList: ArrayList<String>,
@@ -44,11 +43,7 @@ class AdapterPhotoReceived(
 
     override fun onBindViewHolder(holder: ViewHolderAdapterPhoto, position: Int) {
 
-        val metrics = DisplayMetrics()
-        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        windowManager.defaultDisplay.getMetrics(metrics)
-
-        val widthPixels = metrics.widthPixels
+        val widthPixels = ZibeApp.ScreenUtils.widthPx
 
         val layoutParams = LinearLayout.LayoutParams(
             widthPixels / 3,

@@ -24,7 +24,7 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import kotlinx.coroutines.CoroutineScope
@@ -140,7 +140,7 @@ class AdapterChatList(
         // Estado online / offline (Flow)
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
-            userRepository.observeUserStatus(chat.userId, Constants.CHAT_STATE_CHATWITH)
+            userRepository.observeUserStatus(chat.userId, Constants.NODE_CURRENT_CHAT)
                 .collectLatest { status ->
                     bindUserStatus(binding, status)
                 }
@@ -275,7 +275,7 @@ class AdapterChatList(
         val photo = chat.userPhoto
 
         when (state) {
-            CHAT_STATE_CHATWITH -> {
+            NODE_CURRENT_CHAT -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
@@ -333,7 +333,7 @@ class AdapterChatList(
         lifecycleScope.launch {
             userRepository.markMessagesAsSeen(
                 otherUserId = chat.userId,
-                chatType = CHAT_STATE_CHATWITH,
+                chatType = NODE_CURRENT_CHAT,
                 noSeen = noSeen
             )
         }

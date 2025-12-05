@@ -37,7 +37,7 @@ class ChatListViewModel @Inject constructor(
     private val chatRef
         get() = firebaseRefsContainer.refDatos
             .child(userRepository.myUid)
-            .child(Constants.CHAT_STATE_CHATWITH)
+            .child(Constants.NODE_CURRENT_CHAT)
 
     private var chatListListener: ValueEventListener? = null
 
@@ -83,7 +83,7 @@ class ChatListViewModel @Inject constructor(
                     val photo = child.child("wUserPhoto").getValue(String::class.java)
 
                     if (photo != Constants.EMPTY &&
-                        (state == Constants.CHAT_STATE_CHATWITH || state == CHAT_STATE_SILENT)
+                        (state == Constants.NODE_CURRENT_CHAT || state == CHAT_STATE_SILENT)
                     ) {
                         visibleCount++
                     }

@@ -135,7 +135,7 @@ class PageAdapterGroup : Fragment() {
     private fun setupUnknownChatBadge() {
 
         val newQuery: Query = refDatos.child(myUid)
-            .child(Constants.CHAT_STATE_UNKNOWN)
+            .child(Constants.NODE_ANONYMOUS_GROUP_CHAT)
             .orderByChild("noVisto")
             .startAt(1.0)
 

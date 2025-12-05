@@ -19,13 +19,13 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.today
@@ -275,7 +275,7 @@ class UserRepository @Inject constructor(
             .get()
             .await()
             .getValue(String::class.java)
-            ?: CHAT_STATE_CHATWITH   // default
+            ?: NODE_CURRENT_CHAT   // default
     }
 
     suspend fun updateStateChatWith(
@@ -313,7 +313,7 @@ class UserRepository @Inject constructor(
 
 
     suspend fun deleteChat(idUser: String, userName: String, nodeType: String, deleteMessages: Boolean) {
-        val ref = if (nodeType == CHAT_STATE_CHATWITH) Constants.NODE_CHATS else Constants.NODE_UNKNOWN
+        val ref = if (nodeType == NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_ANONYMOUS_GROUP_CHAT
         val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
         val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$idUser <---> $myUid").child("Mensajes") // No va más
 
@@ -354,7 +354,7 @@ class UserRepository @Inject constructor(
     suspend fun getMessageCount(idUser: String, nodeType: String): Int {
         var count = 0
 
-        val ref = if (nodeType == CHAT_STATE_CHATWITH) NODE_CHATS else NODE_UNKNOWN
+        val ref = if (nodeType == NODE_CURRENT_CHAT) NODE_CHATS else NODE_ANONYMOUS_GROUP_CHAT
         val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child("Mensajes")
 
         val messagesSnap = startedByMe.get().await()

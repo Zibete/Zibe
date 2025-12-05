@@ -5,7 +5,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
@@ -75,7 +74,7 @@ class SlideProfileActivity : BaseToolbarActivity() {
         val currentIdx = viewPager.currentItem
         val current = userList.getOrNull(currentIdx)
         if (current != null) {
-            firebaseRefsContainer.refDatos.child(user.uid).child(Constants.CHAT_STATE_CHATWITH).child(current.id)
+            firebaseRefsContainer.refDatos.child(user.uid).child(Constants.NODE_CURRENT_CHAT).child(current.id)
                 .addValueEventListener(object : ValueEventListener {
                     override fun onDataChange(ds: DataSnapshot) {
                         val state = ds.child("estado").getValue(String::class.java)
@@ -86,7 +85,7 @@ class SlideProfileActivity : BaseToolbarActivity() {
                                 actionDesbloq.isVisible = false
                                 actionBloq.isVisible = true
                             }
-                            Constants.CHAT_STATE_CHATWITH, "delete", null -> {
+                            Constants.NODE_CURRENT_CHAT, "delete", null -> {
                                 actionSilent.isVisible = true
                                 actionNotif.isVisible = false
                                 actionDesbloq.isVisible = false

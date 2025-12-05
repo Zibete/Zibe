@@ -714,7 +714,7 @@ class ChatGroupFragment : Fragment() {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         currentUserId?.let { uid ->
             FirebaseRefs.refDatos.child(uid)
-                .child(Constants.CHAT_STATE_UNKNOWN)
+                .child(Constants.NODE_ANONYMOUS_GROUP_CHAT)
                 .child(chat.id)
                 .removeValue()
         }

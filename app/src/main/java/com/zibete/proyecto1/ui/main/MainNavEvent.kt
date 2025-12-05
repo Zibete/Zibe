@@ -6,6 +6,7 @@ sealed class MainNavEvent {
     data object ToChat : MainNavEvent()
     data object ToUsers : MainNavEvent()
     data object ToFavorites : MainNavEvent()
+    data object ToSplash : MainNavEvent()
     data object ToGroupsSelect : MainNavEvent()         // No está en grupo → ir a nav_groups
     data class ToGroupsDetail(val groupName: String, val userName: String) : MainNavEvent()
     data object ToEditProfile : MainNavEvent()

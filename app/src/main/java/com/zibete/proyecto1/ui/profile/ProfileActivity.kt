@@ -23,13 +23,10 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.github.clans.fab.FloatingActionButton
-import com.github.clans.fab.FloatingActionMenu
 import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
-import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.ActivityPerfilBinding
@@ -39,12 +36,12 @@ import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_CHATWITH
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class ProfileActivity : BaseChatSessionActivity() {
@@ -53,20 +50,14 @@ class ProfileActivity : BaseChatSessionActivity() {
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-
     private val profileViewModel: ProfileViewModel by viewModels()
     private lateinit var binding: ActivityPerfilBinding
-
     // Estado / datos
-    private lateinit var idUser: String
-    private var unknownName: String? = null
+    private val userId = intent.extras?.getString("userId")?: ""
+    private val userName = intent.extras?.getString("userName")?: ""
     private val photoList = ArrayList<String>()
     private val receivedPhotos = ArrayList<String>()
     private lateinit var adapterPhotoReceived: AdapterPhotoReceived
-
-    private val floatingActionMenu: FloatingActionMenu by lazy { binding.floatingActionMenu }
-    private val subMenuChatWith: FloatingActionButton by lazy { binding.subMenuChatWith }
-    private val subMenuChatWithUnknown: FloatingActionButton by lazy { binding.subMenuChatWithUnknown }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,31 +66,26 @@ class ProfileActivity : BaseChatSessionActivity() {
 
         observeChatSessionEvents(profileViewModel.events)
 
-        // id del perfil a mostrar
-        idUser = intent.extras?.getString("id_user")
-            ?: run {
-                finish()
-                return
-            }
-
         setupToolbar()
+
         setupRecycler()
+
         setupFabMenu()
 
         binding.perfilFavoriteOff.setOnClickListener {
-            profileViewModel.onToggleFavorite(idUser)
+            profileViewModel.onToggleFavorite(userId)
             Toast.makeText(this, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
         }
 
         binding.perfilFavoriteOn.setOnClickListener {
-            profileViewModel.onToggleFavorite(idUser)
+            profileViewModel.onToggleFavorite(userId)
             Toast.makeText(this, "Quitado de favoritos", Toast.LENGTH_SHORT).show()
         }
 
         collectChatPhotos()
 
         collectUiState()
-        profileViewModel.loadProfile(idUser)
+        profileViewModel.loadProfile(userId)
 
         setupImageLayout()
 
@@ -196,16 +182,12 @@ class ProfileActivity : BaseChatSessionActivity() {
                             .into(binding.ftPerfil)
                     }
 
-                    state.error?.let {
-                        Toast.makeText(this@ProfileActivity, it, Toast.LENGTH_SHORT).show()
-                    }
-
-                    if (state.hasGroupAlias) {
-                        binding.subMenuChatWithUnknown.visibility = View.VISIBLE
-                        binding.subMenuChatWithUnknown.labelText =
+                    if (state.isGroupMatch) {
+                        binding.menuGoChatGroup.visibility = View.VISIBLE
+                        binding.menuGoChatGroup.labelText =
                             "Chat privado de: ${userPreferencesRepository.groupName}"
                     } else {
-                        binding.subMenuChatWithUnknown.visibility = View.GONE
+                        binding.menuGoChatGroup.visibility = View.GONE
                     }
 
                     // Favorito
@@ -254,31 +236,24 @@ class ProfileActivity : BaseChatSessionActivity() {
     private fun setupFabMenu() {
         binding.floatingActionMenu.setClosedOnTouchOutside(true)
 
-        binding.subMenuChatWithUnknown.setOnClickListener {
-            val state = profileViewModel.uiState.value
-            if (!state.hasGroupAlias || state.unknownName == null) return@setOnClickListener
-
-            val intent = Intent(this, ChatActivity::class.java).apply {
-                putExtra("unknownName", state.unknownName)
-                putExtra("idUserUnknown", idUser)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            }
-            startActivity(intent)
+        binding.menuGoChatGroup.setOnClickListener {
+            goChat()
         }
 
-        binding.subMenuChatWith.setOnClickListener {
-            val intent = Intent(this, ChatActivity::class.java).apply {
-                putExtra("id_user", idUser)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            }
-            startActivity(intent)
+        binding.menuGoChat.setOnClickListener {
+            goChat()
         }
     }
 
-
-
-
-
+    fun goChat(){
+        val intent = Intent(this, ChatActivity::class.java).apply {
+            putExtra("userId", userId)
+            putExtra("nodeType", NODE_CURRENT_CHAT)
+            putExtra("userName", userName)
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        }
+        startActivity(intent)
+    }
 
     private fun setupImageLayout() {
         val height = ScreenUtils.heightPx
@@ -299,10 +274,7 @@ class ProfileActivity : BaseChatSessionActivity() {
         }
     }
 
-
-
     // endregion
-
     // region Lifecycle
 
     override fun onPause() {
@@ -316,7 +288,6 @@ class ProfileActivity : BaseChatSessionActivity() {
     }
 
     // endregion
-
     // region Menu
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
@@ -359,27 +330,26 @@ class ProfileActivity : BaseChatSessionActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val nameUser = profileViewModel.uiState.value.name
 
         return when (item.itemId) {
 
             R.id.action_notifications_off, R.id.action_notifications_on -> {
-                profileViewModel.toggleNotifications()
+                profileViewModel.onToggleNotificationsClicked(userId, userName, NODE_CURRENT_CHAT)
                 true
             }
 
             R.id.action_block -> {
-                profileViewModel.onBlockClicked()
+                profileViewModel.onBlockClicked(userId, userName, NODE_CURRENT_CHAT)
                 true
             }
 
             R.id.action_unblock -> {
-                profileViewModel.onUnblockClicked()
+                profileViewModel.onUnblockClicked(userId, userName, NODE_CURRENT_CHAT)
                 true
             }
 
             R.id.action_delete_chat -> {
-                profileViewModel.onDeleteChatClicked()
+                profileViewModel.onDeleteClicked(userId, userName, NODE_CURRENT_CHAT)
                 true
             }
 

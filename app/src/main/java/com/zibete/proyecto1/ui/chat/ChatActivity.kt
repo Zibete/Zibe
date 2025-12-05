@@ -34,7 +34,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,8 +51,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.Snackbar
@@ -71,17 +68,13 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.Chats
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -90,7 +83,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ChatActivity : BaseToolbarActivity() {
+class ChatActivity : BaseChatSessionActivity() {
 
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
@@ -168,6 +161,7 @@ class ChatActivity : BaseToolbarActivity() {
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        observeChatSessionEvents(chatViewModel.events)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -326,8 +320,8 @@ class ChatActivity : BaseToolbarActivity() {
             }
             startActivity(intent)
         }
-        binding.buttonUnlockUser.setOnClickListener {
-            chatViewModel.onUnBlockClicked(userId, userName, nodeType)
+        binding.buttonUnblockUser.setOnClickListener {
+            chatViewModel.onUnblockClicked(userId, userName, nodeType)
         }
 
         linearNameUser.setOnClickListener { v ->
@@ -430,7 +424,7 @@ class ChatActivity : BaseToolbarActivity() {
             AdapterChat.Companion.mediaPlayer = null
         }
 
-        if (refChatWith == Constants.CHAT_STATE_UNKNOWN && listenerChatUnknown != null && idUserFinal != null) {
+        if (refChatWith == Constants.NODE_ANONYMOUS_GROUP_CHAT && listenerChatUnknown != null && idUserFinal != null) {
             firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
                 .child(idUserFinal!!)
                 .removeEventListener(listenerChatUnknown!!)
@@ -468,7 +462,7 @@ class ChatActivity : BaseToolbarActivity() {
                 return true
             }
             R.id.action_desbloq -> {
-                chatViewModel.onUnBlockClicked(userId, userName, nodeType)
+                chatViewModel.onUnblockClicked(userId, userName, nodeType)
                 return true
             }
             R.id.action_delete_chat -> {
@@ -844,113 +838,113 @@ class ChatActivity : BaseToolbarActivity() {
     }
 
     // ----------------------------- Envío de mensajes -----------------------------
-    private fun sendMessage(timerText: String?) {
-
-//        val user = user ?: return
-
-        val (textMiChatw, textSuChatw) = when (msgType) {
-            Constants.PHOTO -> {
-                binding.linearPhotoView.visibility = View.GONE
-                binding.msg.visibility = View.VISIBLE
-                binding.btnCamera.visibility = View.VISIBLE
-                binding.btnMic.visibility = View.VISIBLE
-                getString(R.string.photo_send) to getString(R.string.photo_received)
-            }
-            Constants.AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
-            else -> {
-                msgType = Constants.MSG
-                stringMsg = binding.msg.text.toString()
-                stringMsg to stringMsg
-            }
-        }
-
-        if (stringMsg.isNullOrEmpty()) return
-
-        if (estadoUser == "bloq") {
-            snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
-            return
-        }
-
-        val visto = if (suActual != myUid + refChatWith || suActual == null) 1 else 3
-        val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
-        val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
-
-        val chatmsg = Chats(
-            stringMsg!!,
-            finalDate,
-            myUid,
-            msgType,
-            visto
-        )
-
-        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(sbMe: DataSnapshot) {
-                if (!sbMe.exists()) {
-                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(sbHim: DataSnapshot) {
-                            (if (!sbHim.exists()) startedByMe else startedByHim)!!
-                                .push().setValue(chatmsg)
-                        }
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
-                } else {
-                    sbMe.ref.push().setValue(chatmsg)
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-
-        val miChat = ChatWith(
-            textMiChatw!!, finalDate, null, myUid,
-            idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
-        )
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
-
-        if (suActual != myUid + refChatWith || suActual == null) {
-            val count = noVisto + 1
-            val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, myUid,
-                myUid, myName!!, myPhoto, estadoUser!!, count, 1
-            )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
-                .setValue(suChat)
-
-            if (estadoUser != "silent") {
-                val body = JSONObject().apply {
-                    put("novistos", count)
-                    put("user", myName)
-                    put("msg", suChat.msg)
-                    put("id_user", chatmsg.sender)
-                    put("type", refChatWith)
-                }
-                val json = JSONObject().apply {
-                    put("to", token)
-                    put("priority", "high")
-                    put("data", body)
-                }
-                val req = object : JsonObjectRequest(
-                    Method.POST, "https://fcm.googleapis.com/fcm/send", json, null, null
-                ) {
-                    override fun getHeaders(): MutableMap<String, String> = hashMapOf(
-                        "content-type" to "application/json",
-                        "authorization" to "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
-                    )
-                }
-                Volley.newRequestQueue(applicationContext).add(req)
-            }
-        } else {
-            val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, myUid,
-                myUid, myName!!, myPhoto, estadoUser!!, 0, 3
-            )
-            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
-                .setValue(suChat)
-        }
-
-        binding.msg.setText("")
-        stringMsg = null
-        msgType = Constants.MSG
-    }
+//    private fun sendMessage(timerText: String?) {
+//
+////        val user = user ?: return
+//
+//        val (textMiChatw, textSuChatw) = when (msgType) {
+//            Constants.PHOTO -> {
+//                binding.linearPhotoView.visibility = View.GONE
+//                binding.msg.visibility = View.VISIBLE
+//                binding.btnCamera.visibility = View.VISIBLE
+//                binding.btnMic.visibility = View.VISIBLE
+//                getString(R.string.photo_send) to getString(R.string.photo_received)
+//            }
+//            Constants.AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
+//            else -> {
+//                msgType = Constants.MSG
+//                stringMsg = binding.msg.text.toString()
+//                stringMsg to stringMsg
+//            }
+//        }
+//
+//        if (stringMsg.isNullOrEmpty()) return
+//
+//        if (estadoUser == "bloq") {
+//            snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
+//            return
+//        }
+//
+//        val visto = if (suActual != myUid + refChatWith || suActual == null) 1 else 3
+//        val dateNow = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault()).format(Date())
+//        val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
+//
+//        val chatmsg = Chats(
+//            stringMsg!!,
+//            finalDate,
+//            myUid,
+//            msgType,
+//            visto
+//        )
+//
+//        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(sbMe: DataSnapshot) {
+//                if (!sbMe.exists()) {
+//                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
+//                        override fun onDataChange(sbHim: DataSnapshot) {
+//                            (if (!sbHim.exists()) startedByMe else startedByHim)!!
+//                                .push().setValue(chatmsg)
+//                        }
+//                        override fun onCancelled(error: DatabaseError) {}
+//                    })
+//                } else {
+//                    sbMe.ref.push().setValue(chatmsg)
+//                }
+//            }
+//            override fun onCancelled(error: DatabaseError) {}
+//        })
+//
+//        val miChat = ChatWith(
+//            textMiChatw!!, finalDate, null, myUid,
+//            idUserFinal!!, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
+//        )
+//        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).setValue(miChat)
+//
+//        if (suActual != myUid + refChatWith || suActual == null) {
+//            val count = noVisto + 1
+//            val suChat = ChatWith(
+//                textSuChatw!!, finalDate, null, myUid,
+//                myUid, myName!!, myPhoto, estadoUser!!, count, 1
+//            )
+//            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
+//                .setValue(suChat)
+//
+//            if (estadoUser != "silent") {
+//                val body = JSONObject().apply {
+//                    put("novistos", count)
+//                    put("user", myName)
+//                    put("msg", suChat.msg)
+//                    put("id_user", chatmsg.sender)
+//                    put("type", refChatWith)
+//                }
+//                val json = JSONObject().apply {
+//                    put("to", token)
+//                    put("priority", "high")
+//                    put("data", body)
+//                }
+//                val req = object : JsonObjectRequest(
+//                    Method.POST, "https://fcm.googleapis.com/fcm/send", json, null, null
+//                ) {
+//                    override fun getHeaders(): MutableMap<String, String> = hashMapOf(
+//                        "content-type" to "application/json",
+//                        "authorization" to "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
+//                    )
+//                }
+//                Volley.newRequestQueue(applicationContext).add(req)
+//            }
+//        } else {
+//            val suChat = ChatWith(
+//                textSuChatw!!, finalDate, null, myUid,
+//                myUid, myName!!, myPhoto, estadoUser!!, 0, 3
+//            )
+//            firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid)
+//                .setValue(suChat)
+//        }
+//
+//        binding.msg.setText("")
+//        stringMsg = null
+//        msgType = Constants.MSG
+//    }
 
     // ----------------------------- Helpers -----------------------------
     private fun setScrollbar() = binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
@@ -978,121 +972,121 @@ class ChatActivity : BaseToolbarActivity() {
 
     // ========================= Bloques mantenidos =========================
 
-    private fun setupChatHeaderAndRefs() {
-
-        if (userId != null) {
-            // 1 a 1
-            findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
-            idUserFinal = userId
-            refChat = Constants.NODE_CHATS
-            refChatWith = Constants.CHAT_STATE_CHATWITH
-            myPhoto = user.photoUrl?.toString() ?: ""
-            myName = user.displayName ?: ""
-
-            firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object :
-                ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    if (ds.exists()) {
-                        val thisUser = ds.getValue(Users::class.java)
-                        extraUserList.add(thisUser)
-                        yourPhoto = ds.child("foto").getValue(String::class.java).orEmpty()
-                        nameUserFinal = ds.child("nombre").getValue(String::class.java)
-                        binding.nameUser.text = nameUserFinal
-                        Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
-                    } else {
-                        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
-                            ValueEventListener {
-                            override fun onDataChange(snap: DataSnapshot) {
-                                yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
-                                nameUserFinal = snap.child("wUserName").getValue(String::class.java)
-                                binding.nameUser.text = nameUserFinal
-                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
-                            }
-                            override fun onCancelled(error: DatabaseError) {}
-                        })
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-        } else {
-            // Chat UNKNOWN
-            findViewById<View>(R.id.cardview_title)?.visibility = View.VISIBLE
-            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${userPreferencesRepository.groupName}"
-
-            idUserFinal = idUserUnknown
-            nameUserFinal = unknownName
-            refChat = Constants.NODE_UNKNOWN
-            refChatWith = Constants.CHAT_STATE_UNKNOWN
-            myName = userPreferencesRepository.userNameGroup
-            binding.nameUser.text = nameUserFinal
-
-            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserUnknown!!).child("type")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(ds: DataSnapshot) {
-                        if (ds.exists()) {
-                            val type = ds.getValue(Int::class.java)
-                            if (type == 0) {
-                                yourPhoto = getString(R.string.URL_PHOTO_DEF)
-                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
-                            } else {
-                                firebaseRefsContainer.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object :
-                                    ValueEventListener {
-                                    override fun onDataChange(d2: DataSnapshot) {
-                                        if (d2.exists()) {
-                                            yourPhoto = d2.child("foto").getValue(String::class.java).orEmpty()
-                                            Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
-                                        }
-                                    }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                            }
-                        }
-                    }
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-
-            myPhoto = if (userPreferencesRepository.userType == 0) {
-                getString(R.string.URL_PHOTO_DEF)
-            } else {
-                user.photoUrl?.toString() ?: ""
-            }
-
-            listenerChatUnknown = object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    val userName = ds.child("user_name").getValue(String::class.java)
-                    if (!ds.exists() || userName != nameUserFinal) {
-                        AlertDialog.Builder(this@ChatActivity, R.style.AlertDialogApp)
-                            .setMessage("Lo sentimos, $nameUserFinal ya no está disponible")
-                            .setCancelable(false)
-                            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> finish() }
-                            .show()
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            }
-            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserFinal!!)
-                .addValueEventListener(listenerChatUnknown!!)
-        }
-
-        // Token del receptor
-        if (idUserFinal != null) {
-            firebaseRefsContainer.refCuentas.child(idUserFinal!!).child("token")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(ds: DataSnapshot) { token = ds.getValue(String::class.java) }
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-        }
-
-        // Storage refs
-        refYourReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${idUserFinal}/")
-        refMyReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${myUid}/")
-
-        refActual = firebaseRefsContainer.refDatos.child(myUid).child("ChatList").child("Actual")
-
-        // Ramas de mensajes
-        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${myUid} <---> $idUserFinal").child("Mensajes")
-        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${myUid}").child("Mensajes")
-    }
+//    private fun setupChatHeaderAndRefs() {
+//
+//        if (userId != null) {
+//            // 1 a 1
+//            findViewById<View>(R.id.cardview_title)?.visibility = View.GONE
+//            idUserFinal = userId
+//            refChat = Constants.NODE_CHATS
+//            refChatWith = Constants.CHAT_STATE_CHATWITH
+//            myPhoto = user.photoUrl?.toString() ?: ""
+//            myName = user.displayName ?: ""
+//
+//            firebaseRefsContainer.refCuentas.child(idUserFinal!!).addListenerForSingleValueEvent(object :
+//                ValueEventListener {
+//                override fun onDataChange(ds: DataSnapshot) {
+//                    if (ds.exists()) {
+//                        val thisUser = ds.getValue(Users::class.java)
+//                        extraUserList.add(thisUser)
+//                        yourPhoto = ds.child("foto").getValue(String::class.java).orEmpty()
+//                        nameUserFinal = ds.child("nombre").getValue(String::class.java)
+//                        binding.nameUser.text = nameUserFinal
+//                        Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
+//                    } else {
+//                        firebaseRefsContainer.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH).child(idUserFinal!!).addListenerForSingleValueEvent(object :
+//                            ValueEventListener {
+//                            override fun onDataChange(snap: DataSnapshot) {
+//                                yourPhoto = snap.child("wUserPhoto").getValue(String::class.java).orEmpty()
+//                                nameUserFinal = snap.child("wUserName").getValue(String::class.java)
+//                                binding.nameUser.text = nameUserFinal
+//                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
+//                            }
+//                            override fun onCancelled(error: DatabaseError) {}
+//                        })
+//                    }
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//        } else {
+//            // Chat UNKNOWN
+//            findViewById<View>(R.id.cardview_title)?.visibility = View.VISIBLE
+//            findViewById<TextView>(R.id.tv_chat_title)?.text = "Chat privado en ${userPreferencesRepository.groupName}"
+//
+//            idUserFinal = idUserUnknown
+//            nameUserFinal = unknownName
+//            refChat = Constants.NODE_UNKNOWN
+//            refChatWith = Constants.CHAT_STATE_UNKNOWN
+//            myName = userPreferencesRepository.userNameGroup
+//            binding.nameUser.text = nameUserFinal
+//
+//            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserUnknown!!).child("type")
+//                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(ds: DataSnapshot) {
+//                        if (ds.exists()) {
+//                            val type = ds.getValue(Int::class.java)
+//                            if (type == 0) {
+//                                yourPhoto = getString(R.string.URL_PHOTO_DEF)
+//                                Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
+//                            } else {
+//                                firebaseRefsContainer.refCuentas.child(idUserUnknown!!).addListenerForSingleValueEvent(object :
+//                                    ValueEventListener {
+//                                    override fun onDataChange(d2: DataSnapshot) {
+//                                        if (d2.exists()) {
+//                                            yourPhoto = d2.child("foto").getValue(String::class.java).orEmpty()
+//                                            Glide.with(this@ChatActivity).load(yourPhoto).into(binding.userImage)
+//                                        }
+//                                    }
+//                                    override fun onCancelled(error: DatabaseError) {}
+//                                })
+//                            }
+//                        }
+//                    }
+//                    override fun onCancelled(error: DatabaseError) {}
+//                })
+//
+//            myPhoto = if (userPreferencesRepository.userType == 0) {
+//                getString(R.string.URL_PHOTO_DEF)
+//            } else {
+//                user.photoUrl?.toString() ?: ""
+//            }
+//
+//            listenerChatUnknown = object : ValueEventListener {
+//                override fun onDataChange(ds: DataSnapshot) {
+//                    val userName = ds.child("user_name").getValue(String::class.java)
+//                    if (!ds.exists() || userName != nameUserFinal) {
+//                        AlertDialog.Builder(this@ChatActivity, R.style.AlertDialogApp)
+//                            .setMessage("Lo sentimos, $nameUserFinal ya no está disponible")
+//                            .setCancelable(false)
+//                            .setPositiveButton(DIALOG_ACCEPT) { _, _ -> finish() }
+//                            .show()
+//                    }
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            }
+//            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName).child(idUserFinal!!)
+//                .addValueEventListener(listenerChatUnknown!!)
+//        }
+//
+//        // Token del receptor
+//        if (idUserFinal != null) {
+//            firebaseRefsContainer.refCuentas.child(idUserFinal!!).child("token")
+//                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(ds: DataSnapshot) { token = ds.getValue(String::class.java) }
+//                    override fun onCancelled(error: DatabaseError) {}
+//                })
+//        }
+//
+//        // Storage refs
+//        refYourReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${idUserFinal}/")
+//        refMyReceiverData = firebaseRefsContainer.storage.reference.child("${refChatWith}/${myUid}/")
+//
+//        refActual = firebaseRefsContainer.refDatos.child(myUid).child("ChatList").child("Actual")
+//
+//        // Ramas de mensajes
+//        startedByMe  = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("${myUid} <---> $idUserFinal").child("Mensajes")
+//        startedByHim = firebaseRefsContainer.refChatsRoot.child(refChat!!).child("$idUserFinal <---> ${myUid}").child("Mensajes")
+//    }
 
     private fun hookChatListeners() {
         val childListener = object : ChildEventListener {
@@ -1110,48 +1104,48 @@ class ChatActivity : BaseToolbarActivity() {
         })
     }
 
-    private fun hookBlockAndPresence() {
-
-        firebaseRefsContainer.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) { suActual = ds.getValue(String::class.java) ?: "" }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val state = snapshot.getValue(String::class.java)
-                    if (state == "bloq") {
-                        binding.layoutBloq.visibility = View.VISIBLE
-                        binding.layoutChat.visibility = View.GONE
-                        binding.linearLottie.visibility = View.GONE
-                    } else {
-                        binding.layoutBloq.visibility = View.GONE
-                        binding.layoutChat.visibility = View.VISIBLE
-                        binding.linearLottie.visibility = View.VISIBLE
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    estadoUser = ds.getValue(String::class.java) ?: refChatWith
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    estadoYo = ds.getValue(String::class.java) ?: refChatWith
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
+//    private fun hookBlockAndPresence() {
+//
+//        firebaseRefsContainer.refDatos.child(idUserFinal!!).child("ChatList").child("Actual")
+//            .addValueEventListener(object : ValueEventListener {
+//                override fun onDataChange(ds: DataSnapshot) { suActual = ds.getValue(String::class.java) ?: "" }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//
+//
+//        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+//            .addValueEventListener(object : ValueEventListener {
+//                override fun onDataChange(snapshot: DataSnapshot) {
+//                    val state = snapshot.getValue(String::class.java)
+//                    if (state == "bloq") {
+//                        binding.layoutBloq.visibility = View.VISIBLE
+//                        binding.layoutChat.visibility = View.GONE
+//                        binding.linearLottie.visibility = View.GONE
+//                    } else {
+//                        binding.layoutBloq.visibility = View.GONE
+//                        binding.layoutChat.visibility = View.VISIBLE
+//                        binding.linearLottie.visibility = View.VISIBLE
+//                    }
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//
+//        firebaseRefsContainer.refDatos.child(idUserFinal!!).child(refChatWith!!).child(myUid).child("estado")
+//            .addValueEventListener(object : ValueEventListener {
+//                override fun onDataChange(ds: DataSnapshot) {
+//                    estadoUser = ds.getValue(String::class.java) ?: refChatWith
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//
+//        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).child("estado")
+//            .addValueEventListener(object : ValueEventListener {
+//                override fun onDataChange(ds: DataSnapshot) {
+//                    estadoYo = ds.getValue(String::class.java) ?: refChatWith
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//    }
 
     private fun setMicAnimated() {
         val scale = resources.displayMetrics.density
@@ -1193,154 +1187,154 @@ class ChatActivity : BaseToolbarActivity() {
         binding.btnMic.setPadding(dp13, dp13, dp13, dp13)
     }
 
-    private fun visto() {
-//        val me = user ?: return
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(dsMain: DataSnapshot) {
-                    miNoVisto = 0
-                    if (dsMain.exists()) {
-                        val msgDescontar = dsMain.child("noVisto").getValue(Int::class.java) ?: 0
-                        if (msgDescontar > 0) {
-                            startedByMe!!.orderByChild("date").limitToLast(msgDescontar)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(d1: DataSnapshot) { setDoubleCheck(d1) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                            startedByHim!!.orderByChild("date").limitToLast(msgDescontar)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(d2: DataSnapshot) { setDoubleCheck(d2) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                        }
-                        dsMain.ref.child("wVisto").setValue(3)
-                        dsMain.ref.child("noVisto").setValue(0)
-                    }
-                }
-                private fun setDoubleCheck(ds: DataSnapshot) {
-                    if (ds.exists()) {
-                        for (snap in ds.children) {
-                            if (snap.hasChild("visto")) {
-                                snap.ref.child("visto").setValue(3)
-                            }
-                        }
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
+//    private fun visto() {
+////        val me = user ?: return
+//        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!)
+//            .addListenerForSingleValueEvent(object : ValueEventListener {
+//                override fun onDataChange(dsMain: DataSnapshot) {
+//                    miNoVisto = 0
+//                    if (dsMain.exists()) {
+//                        val msgDescontar = dsMain.child("noVisto").getValue(Int::class.java) ?: 0
+//                        if (msgDescontar > 0) {
+//                            startedByMe!!.orderByChild("date").limitToLast(msgDescontar)
+//                                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                                    override fun onDataChange(d1: DataSnapshot) { setDoubleCheck(d1) }
+//                                    override fun onCancelled(error: DatabaseError) {}
+//                                })
+//                            startedByHim!!.orderByChild("date").limitToLast(msgDescontar)
+//                                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                                    override fun onDataChange(d2: DataSnapshot) { setDoubleCheck(d2) }
+//                                    override fun onCancelled(error: DatabaseError) {}
+//                                })
+//                        }
+//                        dsMain.ref.child("wVisto").setValue(3)
+//                        dsMain.ref.child("noVisto").setValue(0)
+//                    }
+//                }
+//                private fun setDoubleCheck(ds: DataSnapshot) {
+//                    if (ds.exists()) {
+//                        for (snap in ds.children) {
+//                            if (snap.hasChild("visto")) {
+//                                snap.ref.child("visto").setValue(3)
+//                            }
+//                        }
+//                    }
+//                }
+//                override fun onCancelled(error: DatabaseError) {}
+//            })
+//    }
 
-    fun DeleteMsgs() {
-        for (chat in msgSelected) {
-            startedByMe!!.orderByChild("date").equalTo(chat.date)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(ds: DataSnapshot) {
-                        if (ds.exists()) iterateDelete(ds, chat) else {
-                            startedByHim!!.orderByChild("date").equalTo(chat.date)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) iterateDelete(ds2, chat) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                        }
-                    }
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-        }
+//    fun DeleteMsgs() {
+//        for (chat in msgSelected) {
+//            startedByMe!!.orderByChild("date").equalTo(chat.date)
+//                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(ds: DataSnapshot) {
+//                        if (ds.exists()) iterateDelete(ds, chat) else {
+//                            startedByHim!!.orderByChild("date").equalTo(chat.date)
+//                                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                                    override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) iterateDelete(ds2, chat) }
+//                                    override fun onCancelled(error: DatabaseError) {}
+//                                })
+//                        }
+//                    }
+//                    override fun onCancelled(error: DatabaseError) {}
+//                })
+//        }
+//
+//        val count = msgSelected.size
+//        Toast.makeText(this, if (count > 1) "$count mensajes eliminados" else "mensaje eliminado", Toast.LENGTH_SHORT).show()
+//        removeChatWith(count)
+//        msgSelected.clear()
+//        countDeleteMsg.text = msgSelected.size.toString()
+//    }
 
-        val count = msgSelected.size
-        Toast.makeText(this, if (count > 1) "$count mensajes eliminados" else "mensaje eliminado", Toast.LENGTH_SHORT).show()
-        removeChatWith(count)
-        msgSelected.clear()
-        countDeleteMsg.text = msgSelected.size.toString()
-    }
+//    private fun iterateDelete(ds: DataSnapshot, chat: Chats) {
+//        for (snap in ds.children) {
+//            val type = snap.child("type").getValue(Int::class.java)
+//            val sender = snap.child("envia").getValue(String::class.java)
+//
+//            if (sender == myUid) {
+//                when (type) {
+//                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
+//                    Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
+//                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_SENDER_DLT)
+//                    Constants.PHOTO_RECEIVER_DLT -> {
+//                        val start = chat.message.indexOf(idUserFinal!!) + idUserFinal!!.length + 3
+//                        val end = chat.message.indexOf(".jpg") + 4
+//                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
+//                        snap.ref.removeValue()
+//                    }
+//                    Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_SENDER_DLT)
+//                    Constants.AUDIO_RECEIVER_DLT -> {
+//                        val start = chat.message.indexOf(idUserFinal!!) + idUserFinal!!.length + 3
+//                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
+//                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
+//                        snap.ref.removeValue()
+//                    }
+//                }
+//            } else {
+//                when (type) {
+//                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_RECEIVER_DLT)
+//                    Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
+//                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
+//                    Constants.PHOTO_SENDER_DLT -> {
+//                        val start = chat.message.indexOf(myUid) + myUid.length + 3
+//                        val end = chat.message.indexOf(".jpg") + 4
+//                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
+//                        snap.ref.removeValue()
+//                    }
+//                    Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
+//                    Constants.AUDIO_SENDER_DLT -> {
+//                        val start = chat.message.indexOf(myUid) + myUid.length + 3
+//                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
+//                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
+//                        snap.ref.removeValue()
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-    private fun iterateDelete(ds: DataSnapshot, chat: Chats) {
-        for (snap in ds.children) {
-            val type = snap.child("type").getValue(Int::class.java)
-            val sender = snap.child("envia").getValue(String::class.java)
-
-            if (sender == myUid) {
-                when (type) {
-                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
-                    Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
-                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_SENDER_DLT)
-                    Constants.PHOTO_RECEIVER_DLT -> {
-                        val start = chat.message.indexOf(idUserFinal!!) + idUserFinal!!.length + 3
-                        val end = chat.message.indexOf(".jpg") + 4
-                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                    Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_SENDER_DLT)
-                    Constants.AUDIO_RECEIVER_DLT -> {
-                        val start = chat.message.indexOf(idUserFinal!!) + idUserFinal!!.length + 3
-                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
-                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                }
-            } else {
-                when (type) {
-                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_RECEIVER_DLT)
-                    Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
-                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
-                    Constants.PHOTO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(myUid) + myUid.length + 3
-                        val end = chat.message.indexOf(".jpg") + 4
-                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                    Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
-                    Constants.AUDIO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(myUid) + myUid.length + 3
-                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
-                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                }
-            }
-        }
-    }
-
-    fun removeChatWith(countList: Int) {
-
-//        val user = user ?: return
-
-        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(ds: DataSnapshot) {
-                if (ds.exists()) deleteChatWith(ds) else {
-                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) deleteChatWith(ds2) }
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
-                }
-            }
-            private fun deleteChatWith(data: DataSnapshot) {
-                val messages = data.childrenCount
-                val senderDelete = ArrayList<String>()
-                val receiverDelete = ArrayList<String>()
-
-                for (snap in data.children) {
-                    val chat = snap.getValue(Chats::class.java) ?: continue
-                    val key = snap.key ?: continue
-                    if (chat.sender == myUid) {
-                        when (chat.type) {
-                            Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
-                        }
-                    } else {
-                        when (chat.type) {
-                            Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
-                        }
-                    }
-                }
-                val count = messages - (senderDelete.size + receiverDelete.size + countList)
-                if (count == 0L) {
-                    firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).removeValue()
-                    onBackPressedDispatcher.onBackPressed()
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
+//    fun removeChatWith(countList: Int) {
+//
+////        val user = user ?: return
+//
+//        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(ds: DataSnapshot) {
+//                if (ds.exists()) deleteChatWith(ds) else {
+//                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
+//                        override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) deleteChatWith(ds2) }
+//                        override fun onCancelled(error: DatabaseError) {}
+//                    })
+//                }
+//            }
+//            private fun deleteChatWith(data: DataSnapshot) {
+//                val messages = data.childrenCount
+//                val senderDelete = ArrayList<String>()
+//                val receiverDelete = ArrayList<String>()
+//
+//                for (snap in data.children) {
+//                    val chat = snap.getValue(Chats::class.java) ?: continue
+//                    val key = snap.key ?: continue
+//                    if (chat.sender == myUid) {
+//                        when (chat.type) {
+//                            Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
+//                        }
+//                    } else {
+//                        when (chat.type) {
+//                            Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
+//                        }
+//                    }
+//                }
+//                val count = messages - (senderDelete.size + receiverDelete.size + countList)
+//                if (count == 0L) {
+//                    firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(idUserFinal!!).removeValue()
+//                    onBackPressedDispatcher.onBackPressed()
+//                }
+//            }
+//            override fun onCancelled(error: DatabaseError) {}
+//        })
+//    }
 
     private fun addChat(ds: DataSnapshot) {
         val chat = ds.getValue(Chats::class.java) ?: return

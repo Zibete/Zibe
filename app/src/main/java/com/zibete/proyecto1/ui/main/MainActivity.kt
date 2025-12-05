@@ -103,9 +103,14 @@ class MainActivity : BaseToolbarActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        ZibeApp.ScreenUtils.init(this)
+
         setupUI()
+
         setupNavigation()
-        setupObservers() // <--- Aquí conectamos el ViewModel
+
+        setupObservers() // <--- Acá ViewModel
+
         setupLocation()
 
         mainViewModel.checkIfMustOpenEditProfile()
@@ -143,7 +148,6 @@ class MainActivity : BaseToolbarActivity() {
             PorterDuff.Mode.SRC_IN
         )
 
-
         // Transiciones suaves
         appBarMain.materialToolbar.layoutTransition = LayoutTransition().apply {
             enableTransitionType(LayoutTransition.CHANGING)
@@ -157,13 +161,14 @@ class MainActivity : BaseToolbarActivity() {
 
         // Header Info
         val headerView = navigationView?.getHeaderView(0)
+
         setupHeader(headerView)
 
         // Bottom Nav
         bottomNavigationView = appBarMain.contentMain.navView3
+
         setupBadges()
 
-        ZibeApp.ScreenUtils.init(this)
     }
 
     private fun setupHeader(headerView: View?) {
@@ -226,33 +231,27 @@ class MainActivity : BaseToolbarActivity() {
         chatNavigation()
     }
 
-    // ==========================================
-    // 2. VIEWMODEL OBSERVERS (El Cerebro)
-    // ==========================================
-
     private fun setupObservers() {
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // Visibilidad
-                launch { mainViewModel.toolbarVisible.collect { materialToolbar?.isVisible = it } }
-                launch { mainViewModel.layoutSettingsVisible.collect { layoutSettings?.isVisible = it } }
-                launch { mainViewModel.bottomNavVisible.collect { bottomNavigationView?.isVisible = it } }
-
-                // Badges
-                launch {
-                    mainViewModel.chatBadgeCount.collect { count ->
-                        badgeDrawableChat?.isVisible = count > 0
-                        badgeDrawableChat?.number = count
-                    }
+                mainViewModel.uiState.collect { state ->
+                    // Visibilidad
+                    materialToolbar?.isVisible = state.toolbarVisible
+                    layoutSettings?.isVisible = state.layoutSettingsVisible
+                    bottomNavigationView?.isVisible = state.bottomNavVisible
+                    // Badges
+                    badgeDrawableChat?.isVisible = state.chatBadgeCount > 0
+                    badgeDrawableChat?.number = state.chatBadgeCount
+                    badgeDrawableGroup?.isVisible = state.groupBadgeCount > 0
+                    badgeDrawableGroup?.number = state.groupBadgeCount
                 }
-                launch {
-                    mainViewModel.groupBadgeCount.collect { count ->
-                        badgeDrawableGroup?.isVisible = count > 0
-                        badgeDrawableGroup?.number = count
-                    }
-                }
+            }
+        }
 
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Navegación
                 launch {
                     mainViewModel.navEvents.collect { event ->
@@ -325,6 +324,12 @@ class MainActivity : BaseToolbarActivity() {
                                 startActivity(Intent(this@MainActivity, SplashActivity::class.java))
                             }
 
+                            is MainNavEvent.ToSplash -> {
+                                stopLocationUpdates()
+                                finish()
+                                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
+                            }
+
                             is MainNavEvent.ToGroupsAfterExit -> {
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, GroupsFragment())
@@ -374,10 +379,6 @@ class MainActivity : BaseToolbarActivity() {
         }
     }
 
-    // ==========================================
-    // 3. NAVEGACIÓN (BottomNav & Menu)
-    // ==========================================
-
     private fun setupBottomNavListeners() {
         bottomNavigationView?.setOnItemSelectedListener { item ->
             mainViewModel.onBottomItemSelected(item.itemId)
@@ -411,10 +412,6 @@ class MainActivity : BaseToolbarActivity() {
         mainViewModel.onChatTabSelected()
     }
 
-    // ==========================================
-    // 4. LOGIC (Logout, Exit, Etc)
-    // ==========================================
-
     fun logout() {
         UserMessageUtils.confirm(
             context = this,
@@ -427,10 +424,6 @@ class MainActivity : BaseToolbarActivity() {
             }
         )
     }
-
-    // ==========================================
-    // 5. LOCATION (Mantenido en Activity)
-    // ==========================================
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -473,10 +466,6 @@ class MainActivity : BaseToolbarActivity() {
     private fun stopLocationUpdates() {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
     }
-
-    // ==========================================
-    // 6. OVERRIDES & HELPERS
-    // ==========================================
 
     private fun setupOnBackPressedDispatcher() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

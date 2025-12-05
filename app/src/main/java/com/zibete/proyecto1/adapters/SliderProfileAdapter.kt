@@ -44,8 +44,8 @@ class SliderProfileAdapter @Inject constructor(
     // --- ViewHolder ---
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val floatingActionMenu: FloatingActionMenu = itemView.findViewById(R.id.floatingActionMenu)
-        val subMenuChatWith: FloatingActionButton = itemView.findViewById(R.id.subMenu_chatWith)
-        val subMenuChatWithUnknown: FloatingActionButton = itemView.findViewById(R.id.subMenu_chatWithUnknown)
+        val subMenuChatWith: FloatingActionButton = itemView.findViewById(R.id.menu_go_chat)
+        val subMenuChatWithUnknown: FloatingActionButton = itemView.findViewById(R.id.menu_go_chat_group)
 
         val recyclerPhotos: RecyclerView = itemView.findViewById(R.id.recyclerPhotos)
         val linearImageActivity: LinearLayout = itemView.findViewById(R.id.linearImageActivity)
@@ -181,7 +181,7 @@ class SliderProfileAdapter @Inject constructor(
             holder.iconConectado,
             holder.iconDesconectado,
             holder.tvEstado,
-            Constants.CHAT_STATE_CHATWITH
+            Constants.NODE_CURRENT_CHAT
         )
         userRepository.setUserOnline(context, user.id)
 

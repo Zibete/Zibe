@@ -202,7 +202,7 @@
             android:visibility="gone">
 
             <Button
-                android:id="@+id/button_unlock_user"
+                android:id="@+id/button_unblock_user"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/marco_color_b_round"

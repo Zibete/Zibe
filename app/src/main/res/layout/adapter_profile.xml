@@ -236,7 +236,7 @@
         android:layout_marginLeft="10dp">
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/subMenu_chatWithUnknown"
+            android:id="@+id/menu_go_chat_group"
             app:maxImageSize="28dp"
             app:fab_colorNormal="@color/accent"
             app:fab_colorPressed="@color/accent_transparent"
@@ -247,7 +247,7 @@
             app:fab_label="Chat privado de la sala"/>
 
         <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/subMenu_chatWith"
+            android:id="@+id/menu_go_chat"
             app:maxImageSize="28dp"
             app:fab_colorNormal="@color/accent"
             app:fab_colorPressed="@color/accent_transparent"

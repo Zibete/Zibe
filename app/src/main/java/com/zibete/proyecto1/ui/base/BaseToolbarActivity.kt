@@ -32,6 +32,17 @@ abstract class BaseToolbarActivity : AppCompatActivity() {
         // override en Activities que usen búsqueda
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        super.onPrepareOptionsMenu(menu)
+
+        for (i in 0 until menu.size()) {
+            menu.getItem(i).isVisible = false
+        }
+
+        return true
+    }
+
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
 

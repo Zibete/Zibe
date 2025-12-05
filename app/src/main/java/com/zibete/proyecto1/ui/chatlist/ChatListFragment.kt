@@ -24,8 +24,8 @@ import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATGROUPLIST
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITH
-import com.zibete.proyecto1.ui.constants.Constants.NODE_UNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -166,12 +166,12 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         // Chat individual
         if (item.groupId == FRAGMENT_ID_CHATLIST) {
             val wChat = adapterChatList.currentList[item.order]
-            runItemSelected(item, NODE_CHATWITH, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_CURRENT_CHAT, wChat.userId, wChat.userName)
         }
         // Chat unknown / grupos
         if (item.groupId == FRAGMENT_ID_CHATGROUPLIST) {
             val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
-            runItemSelected(item, NODE_UNKNOWN, wChat.userId, wChat.userName)
+            runItemSelected(item, NODE_ANONYMOUS_GROUP_CHAT, wChat.userId, wChat.userName)
         }
 
         return true

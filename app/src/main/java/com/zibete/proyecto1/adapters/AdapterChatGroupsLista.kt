@@ -100,7 +100,7 @@ class AdapterChatGroupsLista(
 //        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
-        refDatos.child(chat.userId).child(Constants.CHAT_STATE_UNKNOWN).child(user.uid)
+        refDatos.child(chat.userId).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -121,7 +121,7 @@ class AdapterChatGroupsLista(
             })
 
         // 4. Listener: No Vistos (Counter Visual)
-        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN).child(chat.userId).child("noVisto")
+        refDatos.child(user.uid).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(chat.userId).child("noVisto")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val noVistos = snapshot.getValue(Int::class.java) ?: 0
@@ -132,7 +132,7 @@ class AdapterChatGroupsLista(
             })
 
         // 5. Listener: Último Mensaje (Visual + Triggers)
-        refDatos.child(user.uid).child(Constants.CHAT_STATE_UNKNOWN).child(chat.userId)
+        refDatos.child(user.uid).child(Constants.NODE_ANONYMOUS_GROUP_CHAT).child(chat.userId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -167,7 +167,7 @@ class AdapterChatGroupsLista(
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
         when (chat.state) {
-            Constants.CHAT_STATE_UNKNOWN -> {
+            Constants.NODE_ANONYMOUS_GROUP_CHAT -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }

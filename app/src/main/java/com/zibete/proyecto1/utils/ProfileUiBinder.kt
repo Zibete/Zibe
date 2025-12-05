@@ -117,7 +117,7 @@ class ProfileUiBinder @Inject constructor(
         userId: String,
         blockIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(myUid).child(Constants.CHAT_STATE_CHATWITH).child(userId).child("estado")
+        FirebaseRefs.refDatos.child(myUid).child(Constants.NODE_CURRENT_CHAT).child(userId).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val isBlocked = snapshot.getValue(String::class.java) == "bloq"
@@ -133,7 +133,7 @@ class ProfileUiBinder @Inject constructor(
         userId: String,
         blockMeIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(userId).child(Constants.CHAT_STATE_CHATWITH).child(myUid).child("estado")
+        FirebaseRefs.refDatos.child(userId).child(Constants.NODE_CURRENT_CHAT).child(myUid).child("estado")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val blocked = snapshot.getValue(String::class.java) == "bloq"

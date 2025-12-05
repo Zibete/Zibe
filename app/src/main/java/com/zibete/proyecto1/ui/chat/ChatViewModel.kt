@@ -24,10 +24,9 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITH
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATWITHUNKNOWN
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ANONYMOUS_GROUP_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
-import com.zibete.proyecto1.ui.constants.Constants.NODE_UNKNOWN
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +55,7 @@ class ChatViewModel @Inject constructor(
 
     private val myUid = userRepository.myUid
     private val userId: String = savedStateHandle["userId"]?: ""
-    private val nodeType: String = savedStateHandle["nodeType"]?: NODE_CHATWITH // 0 = unknown 1 = normal // DEF = ChatWith
+    private val nodeType: String = savedStateHandle["nodeType"]?: NODE_CURRENT_CHAT // 0 = unknown 1 = normal // DEF = ChatWith
     private val groupName = userPreferencesRepository.groupName
 
 
@@ -104,7 +103,7 @@ class ChatViewModel @Inject constructor(
     private suspend fun setupChat() = withContext(Dispatchers.IO) {
         _headerState.value = ChatHeaderState.Loading
 
-        if (nodeType == NODE_CHATWITH) {
+        if (nodeType == NODE_CURRENT_CHAT) {
             // Chat 1 a 1
             loadOneToOneChat()
 
@@ -152,22 +151,22 @@ class ChatViewModel @Inject constructor(
                 .child(NODE_CHATS)
                 .child("$userId <---> $myUid")
                 .child(NODE_MESSAGES),
-            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CHATWITH/$userId/"),
-            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CHATWITH/$myUid/"),
+            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CURRENT_CHAT/$userId/"),
+            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CURRENT_CHAT/$myUid/"),
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
                 .child(NODE_CHATLIST)
                 .child("Actual"),
             token = token,
             refChat = NODE_CHATS,
-            refChatWith = NODE_CHATWITH // Antes estaba como "CHATWITH" (Mayus)
+            refChatWith = NODE_CURRENT_CHAT // Antes estaba como "CHATWITH" (Mayus)
         )
     }
 
     private suspend fun loadUnknownChat() { // No sé quién es, no tendrá ft nunca
 
         // EL TYPE SIEMPRE SERÁ 0
-        // SIEMPRE VENGO ACA DESDE UN GRUPO
+        // SIEMPRE VENGO ACA DESDE UN GRUPO o profile
         // NUNCA TENDRÁ FOTO
 
         val userGroup = userRepository.getUserGroup(userId, groupName)
@@ -181,22 +180,22 @@ class ChatViewModel @Inject constructor(
 
         _chatRefs.value = ChatRefs(
             startedByMe = firebaseRefsContainer.refChatsRoot
-                .child(NODE_UNKNOWN)
+                .child(NODE_ANONYMOUS_GROUP_CHAT)
                 .child("$myUid <---> $userId")
                 .child(NODE_MESSAGES),
             startedByHim = firebaseRefsContainer.refChatsRoot
-                .child(NODE_UNKNOWN)
+                .child(NODE_ANONYMOUS_GROUP_CHAT)
                 .child("$userId <---> $myUid")
                 .child(NODE_MESSAGES),
-            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_UNKNOWN/$userId/"),
-            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_UNKNOWN/$myUid/"),
+            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_ANONYMOUS_GROUP_CHAT/$userId/"),
+            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_ANONYMOUS_GROUP_CHAT/$myUid/"),
             refActual = firebaseRefsContainer.refDatos
                 .child(myUid)
                 .child(NODE_CHATLIST)
                 .child("Actual"),
             token = null,
-            refChat = NODE_UNKNOWN,
-            refChatWith = NODE_CHATWITHUNKNOWN
+            refChat = NODE_ANONYMOUS_GROUP_CHAT,
+            refChatWith = NODE_ANONYMOUS_GROUP_CHAT
         )
     }
 
@@ -356,7 +355,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onUnBlockClicked(userId: String, userName: String, nodeType : String) {
+    fun onUnblockClicked(userId: String, userName: String, nodeType : String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmUnblock(
