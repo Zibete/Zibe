@@ -147,7 +147,30 @@ object UserMessageUtils {
         builder.show()
     }
 
+    @JvmStatic
+    fun alert(
+        context: Context,
+        message: String,
+        title: String? = null,
+        positiveText: String = DIALOG_ACCEPT,
+        onConfirm: (() -> Unit)? = null
+    ) {
+        val builder = AlertDialog.Builder(
+            ContextThemeWrapper(context, R.style.AlertDialogApp)
+        )
+            .setCancelable(false)
+            .setPositiveButton(positiveText) { dialog, _ ->
+                dialog.dismiss()
+                onConfirm?.invoke()
+            }
 
+        if (!title.isNullOrBlank()) {
+            builder.setTitle(title)
+        }
+
+        builder.setMessage(message)
+        builder.show()
+    }
     // ========= PROGRESS DIALOG =========
 
     /**

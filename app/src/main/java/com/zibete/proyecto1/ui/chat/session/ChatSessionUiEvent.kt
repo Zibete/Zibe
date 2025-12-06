@@ -1,5 +1,4 @@
 package com.zibete.proyecto1.ui.chat.session
-import com.zibete.proyecto1.ui.components.ZibeSnackType
 
 sealed class ChatSessionUiEvent {
 
@@ -36,6 +35,10 @@ sealed class ChatSessionUiEvent {
         val enabled: Boolean
     ) : ChatSessionUiEvent()
 
+    data class OtherUserNoLongerAvailable(
+        val userName: String,
+        val onConfirm: () -> Unit
+    ) : ChatSessionUiEvent()
 
 }
 

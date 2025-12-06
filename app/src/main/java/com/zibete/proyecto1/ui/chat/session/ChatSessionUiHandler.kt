@@ -121,6 +121,14 @@ object ChatSessionUiHandler {
                 )
             }
 
+            is ChatSessionUiEvent.OtherUserNoLongerAvailable -> {
+                UserMessageUtils.alert(
+                    context = context,
+                    message = "Lo sentimos, ${event.userName} ya no está disponible",
+                    onConfirm = { scope.launch { event.onConfirm() }
+                    }
+                )
+            }
         }
     }
 }

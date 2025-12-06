@@ -11,11 +11,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.ChatRefs
+import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatRefs
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
@@ -23,15 +24,9 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT_UID
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -42,7 +37,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -53,157 +47,139 @@ class ChatViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val groupRepository: GroupRepository,
-    private val userRepository: UserRepository
-) : ViewModel() {
+    private val userRepository: UserRepository,
+    private val chatRepository: ChatRepository
+    ) : ViewModel() {
 
     private val myUid = userRepository.myUid
-    private val userId: String = savedStateHandle["userId"]?: ""
-    private val nodeType: String = savedStateHandle["nodeType"]?: NODE_CURRENT_CHAT // 0 = unknown 1 = normal // DEF = ChatWith
+
+    private val userId: String = savedStateHandle["userId"] ?: ""
+    private val nodeType: String = savedStateHandle["nodeType"] ?: NODE_CURRENT_CHAT// 0 = unknown 1 = normal // DEF = ChatWith
+    private val userName: String = savedStateHandle["userName"] ?: ""
     private val groupName = userPreferencesRepository.groupName
-
-
+    // ------------------------------------------------------------------------------------------------------------------------
     private val _chatEvents = MutableSharedFlow<ChatUiEvent>()
     val chatEvents: SharedFlow<ChatUiEvent> = _chatEvents.asSharedFlow()
-
+    // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
-
-
-    // Header (nombre, estado, foto, bloqueo, notifs, etc.)
+    // ------------------------------------------------------------------------------------------------------------------------
     private val _headerState = MutableStateFlow<ChatHeaderState>(ChatHeaderState.Loading)
     val headerState: StateFlow<ChatHeaderState> = _headerState.asStateFlow()
-
+    // ------------------------------------------------------------------------------------------------------------------------
+    private val _otherProfile = MutableStateFlow<Users?>(null)
+    val otherProfile: StateFlow<Users?> = _otherProfile
+    // ------------------------------------------------------------------------------------------------------------------------
     // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = userRepository
         .observeUserStatus(userId, nodeType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
-
+    // ------------------------------------------------------------------------------------------------------------------------
     // Referencias del chat (para mensajes, storage, etc.)
     private val _chatRefs = MutableStateFlow<ChatRefs?>(null)
     val chatRefs: StateFlow<ChatRefs?> = _chatRefs.asStateFlow()
-
-    // Eventos de UI (snackbar, diálogos, navegación, etc.)
-
+    // ------------------------------------------------------------------------------------------------------------------------
     init {
         viewModelScope.launch {
-            loadOtherProfile()
+            _headerState.value = ChatHeaderState.Loading
+
             setupChat()
+
+            // Opcional: si querés que el header.status se actualice con userStatus
+            launch {
+                userStatus.collect { status ->
+                    _headerState.update { current ->
+                        val loaded = current as? ChatHeaderState.Loaded ?: return@update current
+                        loaded.copy(status = mapStatusToText(status))
+                    }
+                }
+            }
+            // Listener de "ya no está disponible" solo en grupo
+            if (nodeType != NODE_CURRENT_CHAT) {
+
+                chatRepository
+                    .observeGroupUserAvailability(groupName, userId)
+                    .collect { isAvailable ->
+                        if (!isAvailable) {
+                            _events.emit(
+                                ChatSessionUiEvent.OtherUserNoLongerAvailable(
+                                    userName = userName,
+                                    onConfirm = {
+                                        _headerState.update { current ->
+                                            (current as? ChatHeaderState.Loaded)?.copy(
+                                                shouldCloseChat = true
+                                            ) ?: current
+                                        }
+                                    }
+                                )
+                            )
+                        }
+                    }
+
+            }
         }
     }
 
-    private val _otherProfile = MutableStateFlow<Users?>(null)
-    val otherProfile: StateFlow<Users?> = _otherProfile
-
-    suspend fun loadOtherProfile() {
-        _otherProfile.value = userRepository.getUserProfile(userId)
-    }
-
-
-    // =========================================================================
-    //  SETUP INICIAL
-    // =========================================================================
-
-    private suspend fun setupChat() = withContext(Dispatchers.IO) {
+    private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
+
+        _otherProfile.value = userRepository.getUserProfile(userId)
+
+        _chatRefs.value = chatRepository.buildChatRefs(userId, nodeType)
 
         if (nodeType == NODE_CURRENT_CHAT) {
             // Chat 1 a 1
-            loadOneToOneChat()
-
-            // Una vez que tenemos header + refs, traemos estado de notifs/bloqueo
-            val chatType = _chatRefs.value?.refChatWith
-
-            if (chatType != null) {
-                val state = userRepository.getChatStateWith(userId, chatType)
-                val notificationsEnabled = (state != CHAT_STATE_SILENT)
-                val isBlocked = (state == CHAT_STATE_BLOQ)
-
-                _headerState.update { current ->
-                    (current as? ChatHeaderState.Loaded)?.copy(
-                        notificationsEnabled = notificationsEnabled,
-                        isBlocked = isBlocked
-                    ) ?: current
-                }
-            }
-
-        } else { //(nodeType == NODE_CHATWITHUNKNOWN) {
-            // Chat desconocido (grupo / anonymous)
-            loadUnknownChat()
-            // Por ahora no manejamos notifs/bloqueo para unknown
+            loadChatPublicProfiles()
+            applyChatStateForOneToOne()
+        } else {
+            // Chat desde grupo / anonymous
+            loadChatFromGroup()
+            // Por ahora no manejamos notifs/bloqueo para chatList_group
         }
     }
 
-    private fun loadOneToOneChat() {
+    // Aplica notificaciones / bloqueo solo para chats 1 a 1
+    private suspend fun applyChatStateForOneToOne() {
 
-        val name = otherProfile.value?.name
-        val profilePhoto = otherProfile.value?.profilePhoto
-        val token = otherProfile.value?.token
+        val state = userRepository.getChatStateWith(userId, nodeType)
+        val notificationsEnabled = (state != CHAT_STATE_SILENT)
+        val isBlocked = (state == CHAT_STATE_BLOQ)
+
+        _headerState.update { current ->
+            (current as? ChatHeaderState.Loaded)?.copy(
+                notificationsEnabled = notificationsEnabled,
+                isBlocked = isBlocked
+            ) ?: current
+        }
+    }
+
+    private fun loadChatPublicProfiles() {
 
         _headerState.value = ChatHeaderState.Loaded(
-            name = name,
-            status = context.getString(R.string.offline),
-            photoUrl = profilePhoto
-        )
-
-        _chatRefs.value = ChatRefs(
-            startedByMe = firebaseRefsContainer.refChatsRoot
-                .child(NODE_CHATS)
-                .child("$myUid <---> $userId")
-                .child(NODE_MESSAGES),
-            startedByHim = firebaseRefsContainer.refChatsRoot
-                .child(NODE_CHATS)
-                .child("$userId <---> $myUid")
-                .child(NODE_MESSAGES),
-            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CURRENT_CHAT/$userId/"),
-            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_CURRENT_CHAT/$myUid/"),
-            refActual = firebaseRefsContainer.refDatos
-                .child(myUid)
-                .child(NODE_CHATLIST)
-                .child(NODE_ACTIVE_CHAT_UID),
-            token = token,
-            refChat = NODE_CHATS,
-            refChatWith = NODE_CURRENT_CHAT // Antes estaba como "CHATWITH" (Mayus)
+            name = otherProfile.value?.name,
+            status = context.getString(R.string.cargando),
+            photoUrl = otherProfile.value?.profilePhoto
         )
     }
 
-    private suspend fun loadUnknownChat() { // No sé quién es, no tendrá ft nunca
-
-        // EL TYPE SIEMPRE SERÁ 0
-        // SIEMPRE VENGO ACA DESDE UN GRUPO o profile
-        // NUNCA TENDRÁ FOTO
-
+    private suspend fun loadChatFromGroup() {
         val userGroup = groupRepository.getUserGroup(userId, groupName)
 
         _headerState.value = ChatHeaderState.Loaded(
             name = userGroup?.userName,
-            status = context.getString(R.string.offline),
+            status = context.getString(R.string.cargando),
             photoUrl = DEFAULT_PROFILE_PHOTO_URL
-        )
-
-        _chatRefs.value = ChatRefs(
-            startedByMe = firebaseRefsContainer.refChatsRoot
-                .child(NODE_GROUP_CHAT)
-                .child("$myUid <---> $userId")
-                .child(NODE_MESSAGES),
-            startedByHim = firebaseRefsContainer.refChatsRoot
-                .child(NODE_GROUP_CHAT)
-                .child("$userId <---> $myUid")
-                .child(NODE_MESSAGES),
-            refYourReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_GROUP_CHAT/$userId/"),
-            refMyReceiverData = firebaseRefsContainer.storage.reference.child("$NODE_GROUP_CHAT/$myUid/"),
-            refActual = firebaseRefsContainer.refDatos
-                .child(myUid)
-                .child(NODE_CHATLIST)
-                .child(NODE_ACTIVE_CHAT_UID),
-            token = null,
-            refChat = NODE_GROUP_CHAT,
-            refChatWith = NODE_GROUP_CHAT
         )
     }
 
-    // =========================================================================
-    //  MEDIA: Imágenes (uCrop) y Audio (placeholders)
-    // =========================================================================
+    private fun mapStatusToText(status: UserStatus): String =
+        when (status) {
+            is UserStatus.Online -> context.getString(R.string.online)
+            is UserStatus.TypingOrRecording -> status.text   // ya viene formateado
+            is UserStatus.LastSeen -> status.text            // ya viene formateado
+            is UserStatus.Offline -> context.getString(R.string.offline)
+        }
+
 
     fun startUCropFlow(
         sourceUri: Uri,
