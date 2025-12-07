@@ -3,7 +3,7 @@ package com.zibete.proyecto1.model
 import com.google.firebase.database.PropertyName
 import java.io.Serializable
 
-data class Chats(
+data class ChatMessage(
     @get:PropertyName("mensaje") @set:PropertyName("mensaje")
     var message: String = "",
     var date: String = "",
@@ -15,7 +15,7 @@ data class Chats(
 ) : Serializable {
 
     override fun equals(other: Any?): Boolean =
-        other is Chats &&
+        other is ChatMessage &&
                 message == other.message &&
                 date == other.date &&
                 sender == other.sender

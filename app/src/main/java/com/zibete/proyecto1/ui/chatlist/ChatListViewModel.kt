@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
@@ -29,10 +30,13 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val chatRepository: ChatRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
 ) : ViewModel() {
 
     // ---------- Firebase ref ----------
+
+    private val myUid = userRepository.myUid
 
     private val chatRef
         get() = firebaseRefsContainer.refDatos
@@ -153,7 +157,7 @@ class ChatListViewModel @Inject constructor(
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
 
         viewModelScope.launch {
-            val chatWith = userRepository.getChatWith(userId, nodeType)
+            val chatWith = chatRepository.getChatWith(myUid, userId, nodeType)
 
             val currentState = chatWith?.state
 

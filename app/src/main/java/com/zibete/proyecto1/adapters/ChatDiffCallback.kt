@@ -27,7 +27,7 @@ class ChatDiffCallback(
             if (oldItem.userId != newItem.userId)
                 putString("id", newItem.userId)
 
-            if (oldItem.noSeen != newItem.noSeen)
+            if (oldItem.msgReceivedUnread != newItem.msgReceivedUnread)
                 putString("date", newItem.date.toString())
         }.takeIf { !it.isEmpty }
     }

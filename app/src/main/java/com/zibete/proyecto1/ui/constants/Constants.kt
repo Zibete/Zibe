@@ -31,17 +31,17 @@ object Constants {
 
     const val INFO = 111
 
-    const val MSG = 100
-    const val MSG_SENDER_DLT = 101
-    const val MSG_RECEIVER_DLT = 102
+    const val MSG_TEXT = 100
+    const val MSG_TEXT_SENDER_DLT = 101
+    const val MSG_TEXT_RECEIVER_DLT = 102
 
-    const val PHOTO = 200
-    const val PHOTO_SENDER_DLT = 201
-    const val PHOTO_RECEIVER_DLT = 202
+    const val MSG_PHOTO = 200
+    const val MSG_PHOTO_SENDER_DLT = 201
+    const val MSG_PHOTO_RECEIVER_DLT = 202
 
-    const val AUDIO = 300
-    const val AUDIO_SENDER_DLT = 301
-    const val AUDIO_RECEIVER_DLT = 302
+    const val MSG_AUDIO = 300
+    const val MSG_AUDIO_SENDER_DLT = 301
+    const val MSG_AUDIO_RECEIVER_DLT = 302
 
     const val PUBLIC_GROUP = 1
     const val PRIVATE_GROUP = 2
@@ -51,12 +51,12 @@ object Constants {
     const val PUBLIC_USER = 1
 
 
-    const val NODE_CHATS = "Chats"
+    const val NODE_ChatMessage = "ChatMessage"
     const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
     const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
     const val NODE_CHATLIST = "ChatList"
 
-    const val NODE_ACTIVE_CHAT_UID = "Actual"
+    const val NODE_ACTIVE_CHAT = "Actual"
 
 
 
@@ -66,10 +66,23 @@ object Constants {
 
     const val NODE_MESSAGES = "Mensajes"
 
+    const val AUTH = "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
+
 
     const val CHAT_STATE_BLOQ = "bloq"
     const val CHAT_STATE_SILENT = "silent"
     const val CHAT_STATE_HIDE = "delete"
+
+
+    const val MSG_DELIVERY_STATUS = "wVisto"
+    const val MSG_RECEIVED_UNREAD = "noVisto"
+    const val MSG_SEEN_STATUS = "visto"
+
+
+    const val MSG_DELIVERED = 1
+    const val MSG_RECEIVED = 2
+    const val MSG_SEEN = 3
+
 
 
     const val EMPTY = "Empty"

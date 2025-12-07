@@ -84,7 +84,7 @@ class ChatGroupFragment : Fragment() {
     private var mLayoutManager: LinearLayoutManager? = null
 
     private var progress: ProgressDialog? = null
-    private var msgType: Int = Constants.MSG
+    private var msgType: Int = Constants.MSG_TEXT
     private var stringMsg: String? = null
 
     private var values: ContentValues? = null
@@ -105,7 +105,7 @@ class ChatGroupFragment : Fragment() {
     private val user get() = FirebaseRefs.currentUser!!
 
     private val refSendImages: StorageReference by lazy {
-        storageReference.child("Chats/${user.uid}/")
+        storageReference.child("ChatMessage/${user.uid}/")
     }
 
     // Launcher CropActivity
@@ -409,7 +409,7 @@ class ChatGroupFragment : Fragment() {
         frameSendMsg.isVisible = false
         loadingPhoto.isVisible = false
         loadingButton.isVisible = false
-        msgType = Constants.MSG
+        msgType = Constants.MSG_TEXT
         stringMsg = null
     }
 
@@ -419,12 +419,12 @@ class ChatGroupFragment : Fragment() {
     fun sendMessage() = with(binding) {
         val textForNotification: String
 
-        if (msgType == Constants.PHOTO) {
+        if (msgType == Constants.MSG_PHOTO) {
             // Para el receptor mostramos "Foto recibida"
             textForNotification = getString(R.string.photo_received)
             // La URL real ya la puso CropHelper/stringMsg
         } else {
-            msgType = Constants.MSG
+            msgType = Constants.MSG_TEXT
             stringMsg = msg.text.toString().trim()
             textForNotification = stringMsg.orEmpty()
         }
@@ -454,7 +454,7 @@ class ChatGroupFragment : Fragment() {
             .addOnCompleteListener {
                 // Reset UI siempre
                 msg.setText("")
-                msgType = Constants.MSG
+                msgType = Constants.MSG_TEXT
                 stringMsg = null
                 cancelPreviewPhoto()
                 loadingButton.isVisible = false

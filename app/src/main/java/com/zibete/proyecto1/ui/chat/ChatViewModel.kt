@@ -9,22 +9,34 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.ChatChildEvent
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.chat.ChatActivity.Companion.yourPhoto
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.Constants.AUTH
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
+import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,9 +46,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
 
@@ -48,10 +62,12 @@ class ChatViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
     ) : ViewModel() {
 
     private val myUid = userRepository.myUid
+    private val user = userRepository.user
+
 
     private val userId: String = savedStateHandle["userId"] ?: ""
     private val nodeType: String = savedStateHandle["nodeType"] ?: NODE_CURRENT_CHAT// 0 = unknown 1 = normal // DEF = ChatWith
@@ -70,6 +86,9 @@ class ChatViewModel @Inject constructor(
     private val _otherProfile = MutableStateFlow<Users?>(null)
     val otherProfile: StateFlow<Users?> = _otherProfile
     // ------------------------------------------------------------------------------------------------------------------------
+    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val messages: StateFlow<List<ChatMessage>> = _messages
+    // ------------------------------------------------------------------------------------------------------------------------
     // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = userRepository
         .observeUserStatus(userId, nodeType)
@@ -85,6 +104,12 @@ class ChatViewModel @Inject constructor(
 
             setupChat()
 
+            startGroupUserAvailability()
+
+            startChatListeners()
+
+            markMessagesAsSeenOnOpen()
+
             // Opcional: si querés que el header.status se actualice con userStatus
             launch {
                 userStatus.collect { status ->
@@ -94,31 +119,64 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
-            // Listener de "ya no está disponible" solo en grupo
-            if (nodeType != NODE_CURRENT_CHAT) {
 
-                chatRepository
-                    .observeGroupUserAvailability(groupName, userId)
-                    .collect { isAvailable ->
-                        if (!isAvailable) {
-                            _events.emit(
-                                ChatSessionUiEvent.OtherUserNoLongerAvailable(
-                                    userName = userName,
-                                    onConfirm = {
-                                        _headerState.update { current ->
-                                            (current as? ChatHeaderState.Loaded)?.copy(
-                                                shouldCloseChat = true
-                                            ) ?: current
-                                        }
-                                    }
-                                )
-                            )
-                        }
-                    }
 
-            }
+
         }
     }
+
+    private suspend fun startGroupUserAvailability() {
+        if (nodeType != NODE_CURRENT_CHAT) {
+            chatRepository
+                .observeGroupUserAvailability(groupName, userId)
+                .collect { isAvailable ->
+                    if (!isAvailable) {
+                        _events.emit(
+                            ChatSessionUiEvent.OtherUserNoLongerAvailable(
+                                userName = userName,
+                                onConfirm = {
+                                    _headerState.update { current ->
+                                        (current as? ChatHeaderState.Loaded)?.copy(
+                                            shouldCloseChat = true
+                                        ) ?: current
+                                    }
+                                }
+                            )
+                        )
+                    }
+                }
+        }
+    }
+
+    private fun startChatListeners() {
+        viewModelScope.launch {
+            // Esperamos a tener refs listos
+            val refs = chatRefs.first { it != null }!!
+
+            chatRepository
+                .observeChatMessages(refs.refChatId)
+                .collect { event ->
+                    when (event) {
+                        is ChatChildEvent.Added   -> addChat(event.snapshot)
+                        is ChatChildEvent.Changed -> updateChat(event.snapshot)
+                        is ChatChildEvent.Removed -> deleteChat(event.snapshot)
+                    }
+                }
+        }
+    }
+
+    private fun markMessagesAsSeenOnOpen() {
+        viewModelScope.launch {
+            val chatRefs = chatRefs.first { it != null }!!
+
+            chatRepository.markChatAsSeen(
+                userId = userId,
+                nodeType = nodeType,
+                refChatId = chatRefs.refChatId
+            )
+        }
+    }
+
 
     private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
@@ -153,6 +211,14 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    data class MyChatIdentity(
+        val name: String?,
+        val type: Int,
+        val photoUrl: String?
+    )
+
+    private lateinit var myIdentity: MyChatIdentity
+
     private fun loadChatPublicProfiles() {
 
         _headerState.value = ChatHeaderState.Loaded(
@@ -160,17 +226,43 @@ class ChatViewModel @Inject constructor(
             status = context.getString(R.string.cargando),
             photoUrl = otherProfile.value?.profilePhoto
         )
+
+        myIdentity = MyChatIdentity(
+            name = user.displayName,
+            type = 1,
+            photoUrl = user.photoUrl.toString()
+        )
     }
 
     private suspend fun loadChatFromGroup() {
-        val userGroup = groupRepository.getUserGroup(userId, groupName)
+
+        val otherUserGroup = groupRepository.getUserGroup(userId, groupName)
 
         _headerState.value = ChatHeaderState.Loaded(
-            name = userGroup?.userName,
+            name = otherUserGroup?.userName,
             status = context.getString(R.string.cargando),
             photoUrl = DEFAULT_PROFILE_PHOTO_URL
         )
+
+        val myUserGroup = groupRepository.getUserGroup(myUid, groupName)
+        val myType = myUserGroup?.type
+
+
+        myIdentity = if (myType == 0) {
+            MyChatIdentity(
+                name = myUserGroup.userName,
+                type = 0,
+                photoUrl = DEFAULT_PROFILE_PHOTO_URL
+            )
+        } else {
+            MyChatIdentity(
+                name = user.displayName,
+                type = 1,
+                photoUrl = user.photoUrl.toString()
+            )
+        }
     }
+
 
     private fun mapStatusToText(status: UserStatus): String =
         when (status) {
@@ -271,9 +363,120 @@ class ChatViewModel @Inject constructor(
     //  MENSAJES
     // =========================================================================
 
-    fun sendMessage(text: String) = viewModelScope.launch {
-        // TODO: implementar lógica real de envío
+    suspend fun sendMessage(timerText: String, msgType: Int, stringMsg: String) {
+
+        if (stringMsg.isEmpty()) return
+
+
+        val myChatWith = chatRepository.getChatWith(myUid, userId, nodeType)
+        val myState = myChatWith?.state?: nodeType
+
+
+        val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
+        val otherState = otherChatWith?.state?: nodeType
+        val otherCountMsgReceivedUnread = otherChatWith?.msgReceivedUnread?: 0
+
+        if (otherState == CHAT_STATE_BLOQ) {
+            //snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
+            return
+        }
+
+        val otherActiveChat = chatRepository.getActiveChat(userId, nodeType)
+
+        val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
+
+        val now = now()
+
+        val date = if (timerText == "") now else "$now $timerText"
+
+        val chatMessage = ChatMessage(
+            stringMsg,
+            date,
+            myUid,
+            msgType,
+            seen
+        )
+
+        val refs = chatRefs.first { it != null }!!
+        chatRepository.pushMessageToChat(refs.refChatId, chatMessage)
+
+        //CHATWITH
+
+        val (myMsg, otherMsg) = when (msgType) {
+            MSG_PHOTO -> {
+                context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
+            }
+            MSG_AUDIO -> context.getString(R.string.audio_send) to context.getString(R.string.audio_received)
+            else -> {
+                stringMsg to stringMsg
+            }
+        }
+
+        val myNewChatWith = ChatWith(
+            myMsg,
+            date,
+            null,
+            myUid,
+            userId,
+            userName,
+            yourPhoto,
+            myState,
+            0,
+            0
+        )
+
+        chatRepository.saveChatWith(myUid,nodeType, userId, myNewChatWith)
+
+        if (otherActiveChat != myUid + nodeType) {
+
+            val countOtherMsgUnread = otherCountMsgReceivedUnread + 1
+
+            val me = myIdentity
+
+            val otherNewChatWith = ChatWith(
+                otherMsg,
+                date,
+                null,
+                myUid,
+                myUid,
+                me.name,
+                me.photoUrl,
+                otherState,
+                countOtherMsgUnread,
+                1
+            )
+
+            chatRepository.saveChatWith(userId,nodeType, myUid, myNewChatWith)
+
+            if (otherState != CHAT_STATE_SILENT) {
+                val body = JSONObject().apply {
+                    put("novistos", countOtherMsgUnread)
+                    put("user", me.name)
+                    put("msg", otherMsg)
+                    put("id_user", chatMessage.sender)
+                    put("type", nodeType)
+                }
+                val json = JSONObject().apply {
+                    put("to", otherProfile.value?.token)
+                    put("priority", "high")
+                    put("data", body)
+                }
+                val req = object : JsonObjectRequest(
+                    Method.POST, "https://fcm.googleapis.com/fcm/send", json, null, null
+                ) {
+                    override fun getHeaders(): MutableMap<String, String> = hashMapOf(
+                        "content-type" to "application/json",
+                        "authorization" to AUTH
+                    )
+                }
+                Volley.newRequestQueue(context).add(req)
+            }
+        }
+
     }
+
+
+
 
     fun deleteSelectedMsgs() = viewModelScope.launch {
         // TODO: implementar delete de mensajes

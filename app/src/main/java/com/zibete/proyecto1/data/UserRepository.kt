@@ -10,7 +10,7 @@ import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.State
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
@@ -21,7 +21,7 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_ChatMessage
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
 import com.zibete.proyecto1.utils.Utils.today
@@ -81,7 +81,7 @@ class UserRepository @Inject constructor(
                 val message = msgSnap.child("mensaje").getValue(String::class.java)
 
                 if (sender != null && sender != myUid) {
-                    if (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT) {
+                    if (type == Constants.MSG_PHOTO || type == Constants.MSG_PHOTO_SENDER_DLT) {
                         if (!message.isNullOrEmpty()) {
                             photos.add(message)
                         }
@@ -190,16 +190,8 @@ class UserRepository @Inject constructor(
             .takeIf { it.exists() }
             ?.getValue(Users::class.java)
 
-    suspend fun getChatWith(userId: String, nodeType: String): ChatWith? {
-        val snapshot = firebaseRefsContainer.refDatos
-            .child(myUid)
-            .child(nodeType)
-            .child(userId)
-            .get()
-            .await()
 
-        return snapshot.getValue(ChatWith::class.java)
-    }
+
 
 
     suspend fun markMessagesAsSeen(otherUserId: String, chatType: String, noSeen: Int ) {
@@ -320,12 +312,12 @@ class UserRepository @Inject constructor(
 
 
     suspend fun deleteChat(idUser: String, userName: String, nodeType: String, deleteMessages: Boolean) {
-        val ref = if (nodeType == NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_GROUP_CHAT
-        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
-        val startedByHim = firebaseRefsContainer.refChatsRoot.child(ref).child("$idUser <---> $myUid").child(NODE_MESSAGES) // No va más
+        val ref = if (nodeType == NODE_CURRENT_CHAT) Constants.NODE_ChatMessage else Constants.NODE_GROUP_CHAT
+        val startedByMe = firebaseRefsContainer.refChatMessageRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
+        val startedByHim = firebaseRefsContainer.refChatMessageRoot.child(ref).child("$idUser <---> $myUid").child(NODE_MESSAGES) // No va más
 
         val messagesSnap = startedByMe.get().await()
-        val messages = messagesSnap.children.mapNotNull { it.getValue(Chats::class.java) }
+        val messages = messagesSnap.children.mapNotNull { it.getValue(ChatMessage::class.java) }
 
         if (messages.isEmpty()) return
 
@@ -333,22 +325,22 @@ class UserRepository @Inject constructor(
             messages.forEach { message ->
                 val isMine = message.sender == myUid
                 val newType = when {
-                    isMine && message.type == Constants.MSG -> Constants.MSG_SENDER_DLT
-                    !isMine && message.type == Constants.MSG -> Constants.MSG_RECEIVER_DLT
-                    isMine && message.type == Constants.PHOTO -> Constants.PHOTO_SENDER_DLT
-                    !isMine && message.type == Constants.PHOTO -> Constants.PHOTO_RECEIVER_DLT
-                    isMine && message.type == Constants.AUDIO -> Constants.AUDIO_SENDER_DLT
-                    !isMine && message.type == Constants.AUDIO -> Constants.AUDIO_RECEIVER_DLT
+                    isMine && message.type == Constants.MSG_TEXT -> Constants.MSG_TEXT_SENDER_DLT
+                    !isMine && message.type == Constants.MSG_TEXT -> Constants.MSG_TEXT_RECEIVER_DLT
+                    isMine && message.type == Constants.MSG_PHOTO -> Constants.MSG_PHOTO_SENDER_DLT
+                    !isMine && message.type == Constants.MSG_PHOTO -> Constants.MSG_PHOTO_RECEIVER_DLT
+                    isMine && message.type == Constants.MSG_AUDIO -> Constants.MSG_AUDIO_SENDER_DLT
+                    !isMine && message.type == Constants.MSG_AUDIO -> Constants.MSG_AUDIO_RECEIVER_DLT
                     else -> return@forEach
                 }
 
                 val messageRef = startedByMe.child(message.date)
                 messageRef.child("type").setValue(newType).await()
 
-                if (!isMine && newType in listOf(Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT)) {
+                if (!isMine && newType in listOf(Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT)) {
                     deleteRemoteFile(firebaseRefsContainer.storage.reference.child("$nodeType/$myUid/"), message)
                     messageRef.removeValue().await()
-                } else if (isMine && newType in listOf(Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT)) {
+                } else if (isMine && newType in listOf(Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT)) {
                     deleteRemoteFile(firebaseRefsContainer.storage.reference.child("$nodeType/$idUser/"), message)
                     messageRef.removeValue().await()
                 }
@@ -361,31 +353,31 @@ class UserRepository @Inject constructor(
     suspend fun getMessageCount(idUser: String, nodeType: String): Int {
         var count = 0
 
-        val ref = if (nodeType == NODE_CURRENT_CHAT) NODE_CHATS else NODE_GROUP_CHAT
-        val startedByMe = firebaseRefsContainer.refChatsRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
+        val ref = if (nodeType == NODE_CURRENT_CHAT) NODE_ChatMessage else NODE_GROUP_CHAT
+        val startedByMe = firebaseRefsContainer.refChatMessageRoot.child(ref).child("$myUid <---> $idUser").child(NODE_MESSAGES)
 
         val messagesSnap = startedByMe.get().await()
 
         for (snap in messagesSnap.children) {
-            val chat = snap.getValue(Chats::class.java) ?: continue
+            val chat = snap.getValue(ChatMessage::class.java) ?: continue
             val isMine = chat.sender == myUid
 
             val validTypesMine = listOf(
-                Constants.MSG,
-                Constants.PHOTO,
-                Constants.AUDIO,
-                Constants.MSG_RECEIVER_DLT,
-                Constants.PHOTO_RECEIVER_DLT,
-                Constants.AUDIO_RECEIVER_DLT
+                Constants.MSG_TEXT,
+                Constants.MSG_PHOTO,
+                Constants.MSG_AUDIO,
+                Constants.MSG_TEXT_RECEIVER_DLT,
+                Constants.MSG_PHOTO_RECEIVER_DLT,
+                Constants.MSG_AUDIO_RECEIVER_DLT
             )
 
             val validTypesOther = listOf(
-                Constants.MSG,
-                Constants.PHOTO,
-                Constants.AUDIO,
-                Constants.MSG_SENDER_DLT,
-                Constants.PHOTO_SENDER_DLT,
-                Constants.AUDIO_SENDER_DLT
+                Constants.MSG_TEXT,
+                Constants.MSG_PHOTO,
+                Constants.MSG_AUDIO,
+                Constants.MSG_TEXT_SENDER_DLT,
+                Constants.MSG_PHOTO_SENDER_DLT,
+                Constants.MSG_AUDIO_SENDER_DLT
             )
 
             if (isMine && chat.type in validTypesMine) count++
@@ -394,7 +386,7 @@ class UserRepository @Inject constructor(
 
         return count
     }
-    private suspend fun deleteRemoteFile(ref: StorageReference, chat: Chats) {
+    private suspend fun deleteRemoteFile(ref: StorageReference, chat: ChatMessage) {
         val msg = chat.message
         val start = msg.indexOf(myUid) + myUid.length + 3
         val ext = if (msg.contains(".jpg")) ".jpg" else ".mp3"

@@ -190,7 +190,7 @@ class ProfileUiBinder @Inject constructor(
         val sender = snapshot.child("envia").getValue(String::class.java)
         val url = snapshot.child("mensaje").getValue(String::class.java)
 
-        if (sender != myUid && url != null && (type == Constants.PHOTO || type == Constants.PHOTO_SENDER_DLT)) {
+        if (sender != myUid && url != null && (type == Constants.MSG_PHOTO || type == Constants.MSG_PHOTO_SENDER_DLT)) {
             adapter.addString(url)
             linearPhotos.visibility = View.VISIBLE
         }

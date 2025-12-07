@@ -1,13 +1,7 @@
 package com.zibete.proyecto1.utils
 
-import android.app.Activity
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.AndroidViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.storage.FirebaseStorage
 
 object FirebaseRefs {
 
@@ -37,10 +31,10 @@ object FirebaseRefs {
     @JvmField val refDatos: DatabaseReference = refUsuarios.child("Datos")
     @JvmField val refCuentas: DatabaseReference = refUsuarios.child("Cuentas")
 
-    // Chats
-    @JvmField val refChats: DatabaseReference = db.getReference("Chats")
-    @JvmField val refChat: DatabaseReference = refChats.child("Chats")
-    @JvmField val refChatUnknown: DatabaseReference = refChats.child("Unknown")
+    // ChatMessage
+    @JvmField val refChatMessage: DatabaseReference = db.getReference("ChatMessage")
+    @JvmField val refChat: DatabaseReference = refChatMessage.child("ChatMessage")
+    @JvmField val refChatUnknown: DatabaseReference = refChatMessage.child("Unknown")
 
     // Groups
     @JvmField val refGroups: DatabaseReference = db.getReference("Groups")

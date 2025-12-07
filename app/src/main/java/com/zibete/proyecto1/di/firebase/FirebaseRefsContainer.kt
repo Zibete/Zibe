@@ -3,7 +3,6 @@ package com.zibete.proyecto1.di.firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.utils.FirebaseRefs
 
 import javax.inject.Inject
 import javax.inject.Named
@@ -27,10 +26,10 @@ class FirebaseRefsContainer @Inject constructor(
     @Named("refDatos")        val refDatos: DatabaseReference = refUsuarios.child("Datos")
     @Named("refCuentas")      val refCuentas: DatabaseReference = refUsuarios.child("Cuentas")
 
-    // === Referencias a Chats ===
-    @Named("refChatsRoot")    val refChatsRoot: DatabaseReference = db.getReference("Chats")
-    @Named("refChat")         val refChat: DatabaseReference = refChatsRoot.child("Chats")
-    @Named("refChatUnknown")  val refChatUnknown: DatabaseReference = refChatsRoot.child("Unknown")
+    // === Referencias a ChatMessage ===
+    @Named("refChatMessageRoot")    val refChatMessageRoot: DatabaseReference = db.getReference("ChatMessage")
+    @Named("refChat")         val refChat: DatabaseReference = refChatMessageRoot.child("ChatMessage")
+    @Named("refChatUnknown")  val refChatUnknown: DatabaseReference = refChatMessageRoot.child("Unknown")
 
     // === Referencias a Grupos ===
     @Named("refGroupsRoot")   val refGroupsRoot: DatabaseReference = db.getReference("Groups")

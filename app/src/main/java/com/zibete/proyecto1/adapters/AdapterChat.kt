@@ -33,7 +33,7 @@ import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.databinding.RowDateChatBinding
 import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
-import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.ui.constants.Constants.INFO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
@@ -46,10 +46,10 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class AdapterChat(
-    msgList: ArrayList<Chats>,
+    msgList: ArrayList<ChatMessage>,
     private val maxSize: Int,
     private val context: Context
-) : ListAdapter<Chats, RecyclerView.ViewHolder>(DIFF),
+) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF),
     View.OnCreateContextMenuListener {
 
     private val mutableMsgList = msgList.toMutableList()
@@ -102,35 +102,35 @@ class AdapterChat(
         }
     }
 
-    private fun bindInteractive(h: BaseMsgVH, chats: Chats) {
+    private fun bindInteractive(h: BaseMsgVH, chatMessage: ChatMessage) {
         val selectedColor = ContextCompat.getColor(context, R.color.accent_transparent)
         val transparent = ContextCompat.getColor(context, R.color.transparent)
-        val isSelected = ChatActivity.msgSelected.indexOf(chats) != -1
+        val isSelected = ChatActivity.msgSelected.indexOf(chatMessage) != -1
         h.bindingRoot.selectedItem.setBackgroundColor(if (isSelected) selectedColor else transparent)
 
         h.bindingRoot.imgPic?.setOnClickListener { v ->
             if (ChatActivity.msgSelected.isEmpty()) {
                 val i = Intent(context, SlidePhotoActivity::class.java)
                     .putExtra("photoList", photoList)
-                    .putExtra("position", photoList.indexOf(chats.message))
+                    .putExtra("position", photoList.indexOf(chatMessage.message))
                     .putExtra("rotation", 0)
                 v.context.startActivity(i)
             } else {
-                onClickToggleSelect(h, chats)
+                onClickToggleSelect(h, chatMessage)
             }
         }
 
         h.bindingRoot.linearCardMsg.setOnClickListener {
-            onClickToggleSelect(h, chats)
+            onClickToggleSelect(h, chatMessage)
         }
 
         val longClick: (View) -> Boolean = {
             vibrateShort()
             if (ChatActivity.msgSelected.isEmpty()) {
-                select(h, chats)
+                select(h, chatMessage)
             } else {
-                val idx = ChatActivity.msgSelected.indexOf(chats)
-                if (idx == -1) select(h, chats) else unselect(h, chats)
+                val idx = ChatActivity.msgSelected.indexOf(chatMessage)
+                if (idx == -1) select(h, chatMessage) else unselect(h, chatMessage)
             }
             val pos = h.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) setPosition(pos)
@@ -139,8 +139,8 @@ class AdapterChat(
         h.bindingRoot.linearCardMsg.setOnLongClickListener(longClick)
         h.bindingRoot.imgPic?.setOnLongClickListener(longClick)
 
-        if (chats.sender == userId) {
-            when (chats.seen) {
+        if (chatMessage.sender == userId) {
+            when (chatMessage.seen) {
                 1 -> {
                     h.bindingRoot.checked?.visibility = View.VISIBLE
                     h.bindingRoot.checked?.setColorFilter(ContextCompat.getColor(context, R.color.blanco), PorterDuff.Mode.SRC_IN)
@@ -170,11 +170,11 @@ class AdapterChat(
             h.bindingRoot.checked2?.visibility = View.GONE
         }
 
-        if (chats.type.isAudio()) {
+        if (chatMessage.type.isAudio()) {
             h.bindingRoot.icPlayPause?.setOnClickListener {
                 when (h.stateMediaPlayer) {
-                    MediaState.NOT_STARTED -> playAudio(h, chats)
-                    MediaState.PLAY        -> pauseAudio(h, chats)
+                    MediaState.NOT_STARTED -> playAudio(h, chatMessage)
+                    MediaState.PLAY        -> pauseAudio(h, chatMessage)
                     MediaState.PAUSE       -> continueAudio(h)
                 }
             }
@@ -193,25 +193,25 @@ class AdapterChat(
         }
     }
 
-    private fun onClickToggleSelect(holder: BaseMsgVH, chats: Chats) {
+    private fun onClickToggleSelect(holder: BaseMsgVH, chatMessage: ChatMessage) {
         if (ChatActivity.msgSelected.isEmpty()) return
         vibrateShort()
-        val idx = ChatActivity.msgSelected.indexOf(chats)
-        if (idx == -1) select(holder, chats) else unselect(holder, chats)
+        val idx = ChatActivity.msgSelected.indexOf(chatMessage)
+        if (idx == -1) select(holder, chatMessage) else unselect(holder, chatMessage)
     }
 
-    private fun select(holder: BaseMsgVH, chats: Chats) {
+    private fun select(holder: BaseMsgVH, chatMessage: ChatMessage) {
         holder.bindingRoot.selectedItem.setBackgroundColor(
             ContextCompat.getColor(context, R.color.accent_transparent)
         )
-        ChatActivity.selectedDeleteMsg(chats)
+        ChatActivity.selectedDeleteMsg(chatMessage)
     }
 
-    private fun unselect(holder: BaseMsgVH, chats: Chats) {
+    private fun unselect(holder: BaseMsgVH, chatMessage: ChatMessage) {
         holder.bindingRoot.selectedItem.setBackgroundColor(
             ContextCompat.getColor(context, R.color.transparent)
         )
-        ChatActivity.notSelectedDeleteMsg(chats)
+        ChatActivity.notSelectedDeleteMsg(chatMessage)
     }
 
     private fun vibrateShort() {
@@ -220,7 +220,7 @@ class AdapterChat(
 
     // ==== API pública compatible ====
 
-    fun addChat(chats: Chats) {
+    fun addChat(chatMessage: ChatMessage) {
         if (mutableMsgList.size > maxSize) {
             mutableMsgList.removeAt(0)
         }
@@ -228,7 +228,7 @@ class AdapterChat(
         // ------- separador de fecha (FIX: "ayer" no muta el calendar de "hoy")
         if (mutableMsgList.isNotEmpty()) {
 
-            val thisDate = chats.date.safeSub(0, 10)
+            val thisDate = chatMessage.date.safeSub(0, 10)
             val lastDate = mutableMsgList.last().date.safeSub(0, 10)
 
             if (thisDate != lastDate) {
@@ -242,7 +242,7 @@ class AdapterChat(
                 }
 
                 mutableMsgList.add(
-                    Chats(
+                    ChatMessage(
                         message = label,
                         date = thisDate,
                         sender = "",
@@ -254,33 +254,33 @@ class AdapterChat(
         }
 
 
-        mutableMsgList.add(chats)
-        if (chats.type.isPhoto()) photoList.add(chats.message)
+        mutableMsgList.add(chatMessage)
+        if (chatMessage.type.isPhoto()) photoList.add(chatMessage.message)
         submitList(mutableMsgList.toList())
     }
 
-    fun actualizeMsg(chats: Chats) {
-        val idx = mutableMsgList.indexOf(chats)
+    fun actualizeMsg(chatMessage: ChatMessage) {
+        val idx = mutableMsgList.indexOf(chatMessage)
         if (idx != -1) {
-            mutableMsgList[idx] = chats
-            val iAmSender = chats.sender == userId
+            mutableMsgList[idx] = chatMessage
+            val iAmSender = chatMessage.sender == userId
             val deleteType = if (iAmSender)
-                listOf(Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT)
+                listOf(Constants.MSG_TEXT_SENDER_DLT, Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT)
             else
-                listOf(Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT)
+                listOf(Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT)
 
-            if (deleteType.contains(chats.type)) {
+            if (deleteType.contains(chatMessage.type)) {
                 mutableMsgList.removeAt(idx)
             }
             submitList(mutableMsgList.toList())
         } else {
-            addChat(chats)
+            addChat(chatMessage)
         }
     }
 
-    fun deleteMsg(chats: Chats?) {
-        chats ?: return
-        val idx = mutableMsgList.indexOf(chats)
+    fun deleteMsg(chatMessage: ChatMessage?) {
+        chatMessage ?: return
+        val idx = mutableMsgList.indexOf(chatMessage)
         if (idx != -1) {
             mutableMsgList.removeAt(idx)
             submitList(mutableMsgList.toList())
@@ -313,7 +313,7 @@ class AdapterChat(
     // ==== ViewHolders ====
 
     private class InfoVH(private val b: RowDateChatBinding) : RecyclerView.ViewHolder(b.root) {
-        fun bind(model: Chats) {
+        fun bind(model: ChatMessage) {
             b.tvInfo.text = model.message.orEmpty()
         }
     }
@@ -325,20 +325,20 @@ class AdapterChat(
 
     private inner class RightVH(val b: RowMsgRightBinding) : BaseMsgVH(b.root) {
         override val bindingRoot: CommonBindingAccessor = CommonBindingAccessor.from(b)
-        fun bindCommon(model: Chats, attach: (BaseMsgVH) -> Unit) {
+        fun bindCommon(model: ChatMessage, attach: (BaseMsgVH) -> Unit) {
             bindModel(model)
             attach(this)
         }
-        private fun bindModel(model: Chats) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = true)
+        private fun bindModel(model: ChatMessage) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = true)
     }
 
     private inner class LeftVH(val b: RowMsgLeftBinding) : BaseMsgVH(b.root) {
         override val bindingRoot: CommonBindingAccessor = CommonBindingAccessor.from(b)
-        fun bindCommon(model: Chats, attach: (BaseMsgVH) -> Unit) {
+        fun bindCommon(model: ChatMessage, attach: (BaseMsgVH) -> Unit) {
             bindModel(model)
             attach(this)
         }
-        private fun bindModel(model: Chats) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = false)
+        private fun bindModel(model: ChatMessage) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = false)
     }
 
     private data class CommonBindingAccessor(
@@ -406,7 +406,7 @@ class AdapterChat(
     }
 
     // Lógica común
-    private fun bindCommonFields(bCommon: CommonBindingAccessor, model: Chats, isMe: Boolean) {
+    private fun bindCommonFields(bCommon: CommonBindingAccessor, model: ChatMessage, isMe: Boolean) {
         bCommon.hora?.text = model.date.safeSub(11, 16)
 
         val paramsBubble = bCommon.linearBubble.layoutParams as ViewGroup.MarginLayoutParams
@@ -488,7 +488,7 @@ class AdapterChat(
     }
 
     // ==== Media ====
-    private fun playAudio(h: BaseMsgVH, chats: Chats) {
+    private fun playAudio(h: BaseMsgVH, chatMessage: ChatMessage) {
         mediaPlayer?.let { onCompletion(h) }
         h.stateMediaPlayer = MediaState.PLAY
         handler = Handler(context.mainLooper)
@@ -518,7 +518,7 @@ class AdapterChat(
                 moveSeekBarThread?.run()
             }
             try {
-                setDataSource(chats.message.orEmpty())
+                setDataSource(chatMessage.message.orEmpty())
                 prepare()
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -543,13 +543,13 @@ class AdapterChat(
         )
     }
 
-    private fun pauseAudio(h: BaseMsgVH, chats: Chats) {
+    private fun pauseAudio(h: BaseMsgVH, chatMessage: ChatMessage) {
         h.stateMediaPlayer = MediaState.PAUSE
         mediaSelectedMs = 0
         chronStateSave = SystemClock.elapsedRealtime()
 
         h.bindingRoot.tvTimer?.stop()
-        h.bindingRoot.tvTimer?.text = chats.date.safeSub(23, 28)
+        h.bindingRoot.tvTimer?.text = chatMessage.date.safeSub(23, 28)
         mediaPlayer?.pause()
 
         val pos = mediaPlayer?.currentPosition ?: 0
@@ -581,17 +581,17 @@ class AdapterChat(
 
     // ==== Utils ====
     private fun Int?.isPhoto(): Boolean = when (this) {
-        Constants.PHOTO, Constants.PHOTO_RECEIVER_DLT, Constants.PHOTO_SENDER_DLT -> true
+        Constants.MSG_PHOTO, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_PHOTO_SENDER_DLT -> true
         else -> false
     }
 
     private fun Int?.isText(): Boolean = when (this) {
-        Constants.MSG, Constants.MSG_RECEIVER_DLT, Constants.MSG_SENDER_DLT -> true
+        Constants.MSG_TEXT, Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_TEXT_SENDER_DLT -> true
         else -> false
     }
 
     private fun Int?.isAudio(): Boolean = when (this) {
-        Constants.AUDIO, Constants.AUDIO_RECEIVER_DLT, Constants.AUDIO_SENDER_DLT -> true
+        Constants.MSG_AUDIO, Constants.MSG_AUDIO_RECEIVER_DLT, Constants.MSG_AUDIO_SENDER_DLT -> true
         else -> false
     }
 
@@ -602,7 +602,7 @@ class AdapterChat(
         return try { s.substring(start, e) } catch (_: Exception) { "" }
     }
 
-    private fun getItemOrNull(position: Int): Chats? =
+    private fun getItemOrNull(position: Int): ChatMessage? =
         if (position in 0 until itemCount) getItem(position) else null
 
     override fun getItemId(position: Int): Long = super.getItemId(position)
@@ -611,15 +611,15 @@ class AdapterChat(
         @JvmField
         var mediaPlayer: MediaPlayer? = null
 
-        val DIFF = object : DiffUtil.ItemCallback<Chats>() {
-            override fun areItemsTheSame(oldItem: Chats, newItem: Chats): Boolean {
+        val DIFF = object : DiffUtil.ItemCallback<ChatMessage>() {
+            override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
                 return oldItem === newItem ||
                         (oldItem.date == newItem.date &&
                                 oldItem.sender == newItem.sender &&
                                 oldItem.type == newItem.type &&
                                 oldItem.message == newItem.message)
             }
-            override fun areContentsTheSame(oldItem: Chats, newItem: Chats): Boolean = oldItem == newItem
+            override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean = oldItem == newItem
         }
     }
 

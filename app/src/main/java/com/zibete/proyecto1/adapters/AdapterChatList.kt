@@ -182,7 +182,7 @@ class AdapterChatList(
         }
 
         // No vistos (desde el modelo)
-        val noSeen = chat.noSeen
+        val noSeen = chat.msgReceivedUnread
         if (noSeen > 0) {
             binding.nuevoMsg.isVisible = true
             binding.nuevoMsg.text = noSeen.toString()
@@ -327,7 +327,7 @@ class AdapterChatList(
     // ---------- Double check / marcar mensajes vistos ----------
 
     private fun setMyDoubleCheck(chat: ChatWith) {
-        val noSeen = chat.noSeen
+        val noSeen = chat.msgReceivedUnread
         if (noSeen <= 0) return
 
         lifecycleScope.launch {

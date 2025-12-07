@@ -12,6 +12,7 @@ data class ChatWith(
     var dateTime: String = "",
 
     var date: Date? = null,
+
     @get:PropertyName("wEnvia") @set:PropertyName("wEnvia")
     var senderId: String = "",
 
@@ -19,16 +20,16 @@ data class ChatWith(
     var userId: String = "",
 
     @get:PropertyName("wUserName") @set:PropertyName("wUserName")
-    var userName: String = "",
+    var userName: String? = "",
 
     @get:PropertyName("wUserPhoto") @set:PropertyName("wUserPhoto")
-    var userPhoto: String = "",
+    var userPhoto: String? = "",
 
     @get:PropertyName("estado") @set:PropertyName("estado")
     var state: String = "",
 
     @get:PropertyName("noVisto") @set:PropertyName("noVisto")
-    var noSeen: Int = 0,
+    var msgReceivedUnread: Int = 0,
 
     @get:PropertyName("wVisto") @set:PropertyName("wVisto")
     var seen: Int = 0

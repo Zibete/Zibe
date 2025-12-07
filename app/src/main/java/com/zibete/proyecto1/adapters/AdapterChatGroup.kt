@@ -257,10 +257,10 @@ class AdapterChatGroup(
     // ==== Extensions Helpers ====
 
     private fun Int?.isPhoto(): Boolean =
-        this == Constants.PHOTO || this == Constants.PHOTO_RECEIVER_DLT || this == Constants.PHOTO_SENDER_DLT
+        this == Constants.MSG_PHOTO || this == Constants.MSG_PHOTO_RECEIVER_DLT || this == Constants.MSG_PHOTO_SENDER_DLT
 
     private fun Int?.isText(): Boolean =
-        this == Constants.MSG || this == Constants.MSG_RECEIVER_DLT || this == Constants.MSG_SENDER_DLT
+        this == Constants.MSG_TEXT || this == Constants.MSG_TEXT_RECEIVER_DLT || this == Constants.MSG_TEXT_SENDER_DLT
 
     companion object {
 

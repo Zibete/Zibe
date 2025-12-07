@@ -53,13 +53,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.SlideProfileActivity
@@ -69,20 +65,17 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.model.Chats
+import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
-import com.zibete.proyecto1.ui.constants.Constants.AUDIO
-import com.zibete.proyecto1.ui.constants.Constants.AUDIO_RECEIVER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT_UID
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.MESSAGE_NOT_SENT_USER_BLOCKED
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.AndroidEntryPoint
@@ -127,7 +120,7 @@ class ChatActivity : BaseChatSessionActivity() {
     private val userName = intent.extras?.getString("userName")?: ""
 
     // --------- listas / adaptador ---------
-    private val chatsArrayList = ArrayList<Chats?>()
+    private val chatMessageArrayList = ArrayList<ChatMessage?>()
     private val extraUserList = ArrayList<Users?>()
     private lateinit var adapter: AdapterChat
     private lateinit var mLayoutManager: LinearLayoutManager
@@ -135,9 +128,8 @@ class ChatActivity : BaseChatSessionActivity() {
 
     // --------- media / storage ---------
     private var imageUriCamera: Uri? = null
-    private var msgType = Constants.MSG
-    private var stringMsg: String? = null
-
+    private var msgType = MSG_TEXT
+    private var stringMsg: String = ""
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioUri: Uri? = null
     private var currentPfd: ParcelFileDescriptor? = null
@@ -186,12 +178,17 @@ class ChatActivity : BaseChatSessionActivity() {
                                 Glide.with(this@ChatActivity)
                                     .load(state.photoUrl)
                                     .into(binding.userImage)
-                                if (state.shouldCloseChat) finish()
 
+                                if (state.shouldCloseChat) finish()
 
                                 if (state.isBlocked) {
                                     binding.layoutChat.isVisible = false
                                     binding.layoutBloq.isVisible = true
+                                    binding.linearLottie.isVisible = false
+                                } else {
+                                    binding.layoutChat.isVisible = true
+                                    binding.layoutBloq.isVisible = false
+                                    binding.linearLottie.isVisible = true
                                 }
 
 
@@ -229,6 +226,18 @@ class ChatActivity : BaseChatSessionActivity() {
                         }
                     }
                 }
+
+
+                launch{
+                    chatViewModel.messages.collect { list ->
+                        adapter.submitList(list)
+                        if (list.isNotEmpty()) {
+                            binding.rvMsg.scrollToPosition(list.lastIndex)
+                        }
+                    }
+                }
+
+
             }
         }
 
@@ -255,7 +264,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
         binding.rvMsg.layoutManager = mLayoutManager
         adapter = AdapterChat(
-            chatsArrayList as ArrayList<Chats>,
+            chatMessageArrayList as ArrayList<ChatMessage>,
             Constants.MAXCHATSIZE,
             applicationContext
         )
@@ -280,20 +289,13 @@ class ChatActivity : BaseChatSessionActivity() {
         lifecycleScope.launch { userRepository.setUserOnline() }
 
         // ===== Config chat =====
-//        setupChatHeaderAndRefs()
-
+        // setupChatHeaderAndRefs: Lo que quedó acá:
         if (nodeType == NODE_CURRENT_CHAT) {
             binding.cardviewTitle.isVisible = false
-//            myName = user.displayName
+
         } else { //en grupo
             binding.tvChatTitle.text = "Chat privado en ${userPreferencesRepository.groupName}"
             binding.cardviewTitle.isVisible = true
-//            myName = userPreferencesRepository.userNameGroup
-//            myPhoto = if (userPreferencesRepository.userType == ANONYMOUS_USER) {
-//                getString(R.string.URL_PHOTO_DEF)
-//            } else {
-//                user.photoUrl?.toString() ?: ""
-//            }
         }
 
         // ===== CropHelper ===== comentado porque lo cambiamos por --> uCrop ??
@@ -328,8 +330,25 @@ class ChatActivity : BaseChatSessionActivity() {
             sendPhoto()
         }
         binding.btnSendMsg.setOnClickListener {
-            sendMessage(null)
+
+            if (msgType == MSG_PHOTO) {
+                binding.linearPhotoView.isVisible = false
+                binding.msg.isVisible = true
+                binding.btnCamera.isVisible = true
+                binding.btnMic.isVisible = true
+            } else {
+                stringMsg = binding.msg.text.toString()
+            }
+
+            lifecycleScope.launch {
+                chatViewModel.sendMessage("", msgType, stringMsg)
+                binding.msg.setText("")
+                stringMsg = ""
+                msgType = MSG_TEXT
+            }
         }
+
+
         linearDeleteMsg.setOnClickListener {
             binding.trashAnimated.playAnimation()
             DeleteMsgs()
@@ -360,8 +379,6 @@ class ChatActivity : BaseChatSessionActivity() {
                 v.context.startActivity(intent)
             }
         }
-
-
 
         binding.msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -405,29 +422,29 @@ class ChatActivity : BaseChatSessionActivity() {
                 val first = mLayoutManager.findFirstVisibleItemPosition()
                 val atEnd = last + 1 >= total
                 if (total > 0 && !atEnd) {
-                    findViewById<View>(R.id.linearBack).visibility = View.VISIBLE
-                    findViewById<View>(R.id.linearDate).visibility = View.VISIBLE
+                    binding.linearBack.isVisible =true
+                    binding.linearDate.isVisible = true
                     Handler(Looper.getMainLooper()).postDelayed({
-                        findViewById<View>(R.id.linearDate).visibility = View.GONE
+                        binding.linearDate.isVisible = false
                     }, 2000)
                     val date = adapter.getDate(first)
                     binding.tvDate.text = date
                 } else {
-                    findViewById<View>(R.id.linearBack).visibility = View.GONE
-                    findViewById<View>(R.id.linearDate).visibility = View.GONE
+                    binding.linearBack.isVisible =false
+                    binding.linearDate.isVisible = false
                 }
             }
         })
         binding.buttonScrollBack.setOnClickListener { setScrollbar() }
 
-        // ===== Observadores =====
-        hookChatListeners()
-        // ===== Estados / block =====
-        hookBlockAndPresence()
+//        // ===== Observadores =====
+//        hookChatListeners()
+//        // ===== Estados / block =====
+//        hookBlockAndPresence()
 
         setMicButton()
 
-        visto()
+//        visto()
     }
 
     // ---------------- Ciclo de vida ----------------
@@ -435,13 +452,13 @@ class ChatActivity : BaseChatSessionActivity() {
         super.onPause()
         lifecycleScope.launch { userRepository.setUserLastSeen() }
 
-        refActual.setValue("") // Limpia referencia de chat activo
+//        refActual.setValue("") // Limpia referencia de chat activo
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { userRepository.setUserOnline() }
-        refActual.setValue(myUid + (refChatWith ?: ""))
+//        refActual.setValue(myUid + (refChatWith ?: ""))
     }
 
     override fun onDestroy() {
@@ -451,13 +468,7 @@ class ChatActivity : BaseChatSessionActivity() {
             AdapterChat.mediaPlayer = null
         }
 
-        if (refChatWith == NODE_GROUP_CHAT && listenerChatUnknown != null) {
-            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
-                .child(userId)
-                .removeEventListener(listenerChatUnknown!!)
-        }
-
-        refActual.setValue("")
+//        refActual.setValue("")
     }
 
     // ---------------- Menú ----------------
@@ -732,6 +743,8 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
+
+
         // ---------- Subir a Firebase con putFile(uri) (robusto para content://) ----------
         val name = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
         val localUri = currentAudioUri!!
@@ -741,7 +754,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 task.storage.downloadUrl
                     .addOnSuccessListener { uri ->
                         stringMsg = uri.toString()
-                        msgType = Constants.AUDIO
+                        msgType = Constants.MSG_AUDIO
                         val mm = (elapsedMs / 1000 / 60).toInt().toString().padStart(2, '0')
                         val ss = ((elapsedMs / 1000) % 60).toInt().toString().padStart(2, '0')
                         val elapsedText = "$mm:$ss"
@@ -865,21 +878,21 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     // ----------------------------- Envío de mensajes -----------------------------
-    private fun sendMessage(timerText: String?) {
 
-//        val user = user ?: return
+
+    private fun sendMessageOld(timerText: String?) {
 
         val (textMiChatw, textSuChatw) = when (msgType) {
-            Constants.PHOTO -> {
+            Constants.MSG_PHOTO -> {
                 binding.linearPhotoView.visibility = View.GONE
                 binding.msg.visibility = View.VISIBLE
                 binding.btnCamera.visibility = View.VISIBLE
                 binding.btnMic.visibility = View.VISIBLE
                 getString(R.string.photo_send) to getString(R.string.photo_received)
             }
-            Constants.AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
+            Constants.MSG_AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
             else -> {
-                msgType = Constants.MSG
+                msgType = Constants.MSG_TEXT
                 stringMsg = binding.msg.text.toString()
                 stringMsg to stringMsg
             }
@@ -896,7 +909,7 @@ class ChatActivity : BaseChatSessionActivity() {
         val dateNow = now()
         val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
 
-        val chatmsg = Chats(
+        val chatmsg = ChatMessage(
             stringMsg!!,
             finalDate,
             myUid,
@@ -970,7 +983,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         binding.msg.setText("")
         stringMsg = null
-        msgType = Constants.MSG
+        msgType = Constants.MSG_TEXT
     }
 
     // ----------------------------- Helpers -----------------------------
@@ -988,71 +1001,6 @@ class ChatActivity : BaseChatSessionActivity() {
         } else {
             onGranted()
         }
-    }
-
-    // ========================= Bloques mantenidos =========================
-
-
-
-    private fun hookChatListeners() {
-        val childListener = object : ChildEventListener {
-            override fun onChildAdded(ds: DataSnapshot, prev: String?)    { addChat(ds) }
-            override fun onChildChanged(ds: DataSnapshot, prev: String?)  { actualizeChat(ds) }
-            override fun onChildRemoved(ds: DataSnapshot)                 { deleteChat(ds) }
-            override fun onChildMoved(ds: DataSnapshot, prev: String?)    {}
-            override fun onCancelled(error: DatabaseError)                {}
-        }
-        startedByMe?.addChildEventListener(childListener)
-        startedByHim?.addChildEventListener(childListener)
-
-        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) { setScrollbar() }
-        })
-    }
-
-    private fun hookBlockAndPresence() {
-
-        firebaseRefsContainer.refDatos.child(userId).child(NODE_CHATLIST).child(NODE_ACTIVE_CHAT_UID)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    suActual = ds.getValue(String::class.java) ?: ""
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(userId).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val state = snapshot.getValue(String::class.java)
-                    if (state == "bloq") {
-                        binding.layoutBloq.visibility = View.VISIBLE
-                        binding.layoutChat.visibility = View.GONE
-                        binding.linearLottie.visibility = View.GONE
-                    } else {
-                        binding.layoutBloq.visibility = View.GONE
-                        binding.layoutChat.visibility = View.VISIBLE
-                        binding.linearLottie.visibility = View.VISIBLE
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        firebaseRefsContainer.refDatos.child(userId).child(refChatWith!!).child(myUid).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    estadoUser = ds.getValue(String::class.java) ?: refChatWith
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(userId).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(ds: DataSnapshot) {
-                    estadoYo = ds.getValue(String::class.java) ?: refChatWith
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
     }
 
     private fun setMicAnimated() {
@@ -1095,42 +1043,7 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.btnMic.setPadding(dp13, dp13, dp13, dp13)
     }
 
-    private fun visto() {
-//        val me = user ?: return
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(dsMain: DataSnapshot) {
-                    miNoVisto = 0
-                    if (dsMain.exists()) {
-                        val msgDescontar = dsMain.child("noVisto").getValue(Int::class.java) ?: 0
-                        if (msgDescontar > 0) {
-                            startedByMe!!.orderByChild("date").limitToLast(msgDescontar)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(d1: DataSnapshot) { setDoubleCheck(d1) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                            startedByHim!!.orderByChild("date").limitToLast(msgDescontar)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(d2: DataSnapshot) { setDoubleCheck(d2) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                        }
-                        dsMain.ref.child("wVisto").setValue(3)
-                        dsMain.ref.child("noVisto").setValue(0)
-                    }
-                }
-                private fun setDoubleCheck(ds: DataSnapshot) {
-                    if (ds.exists()) {
-                        for (snap in ds.children) {
-                            if (snap.hasChild("visto")) {
-                                snap.ref.child("visto").setValue(3)
-                            }
-                        }
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
+
 
     fun DeleteMsgs() {
         for (chat in msgSelected) {
@@ -1156,24 +1069,24 @@ class ChatActivity : BaseChatSessionActivity() {
         countDeleteMsg.text = msgSelected.size.toString()
     }
 
-    private fun iterateDelete(ds: DataSnapshot, chat: Chats) {
+    private fun iterateDelete(ds: DataSnapshot, chat: ChatMessage) {
         for (snap in ds.children) {
             val type = snap.child("type").getValue(Int::class.java)
             val sender = snap.child("envia").getValue(String::class.java)
 
             if (sender == myUid) {
                 when (type) {
-                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_SENDER_DLT)
-                    Constants.MSG_RECEIVER_DLT -> snap.ref.removeValue()
-                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_SENDER_DLT)
-                    Constants.PHOTO_RECEIVER_DLT -> {
+                    Constants.MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_SENDER_DLT)
+                    Constants.MSG_TEXT_RECEIVER_DLT -> snap.ref.removeValue()
+                    Constants.MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_SENDER_DLT)
+                    Constants.MSG_PHOTO_RECEIVER_DLT -> {
                         val start = chat.message.indexOf(userId) + userId.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
-                    AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_SENDER_DLT)
-                    AUDIO_RECEIVER_DLT -> {
+                    MSG_AUDIO -> snap.child("type").ref.setValue(Constants.MSG_AUDIO_SENDER_DLT)
+                    MSG_AUDIO_RECEIVER_DLT -> {
                         val start = chat.message.indexOf(userId) + userId.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
@@ -1182,17 +1095,17 @@ class ChatActivity : BaseChatSessionActivity() {
                 }
             } else {
                 when (type) {
-                    Constants.MSG -> snap.child("type").ref.setValue(Constants.MSG_RECEIVER_DLT)
-                    Constants.MSG_SENDER_DLT -> snap.ref.removeValue()
-                    Constants.PHOTO -> snap.child("type").ref.setValue(Constants.PHOTO_RECEIVER_DLT)
-                    Constants.PHOTO_SENDER_DLT -> {
+                    Constants.MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_RECEIVER_DLT)
+                    Constants.MSG_TEXT_SENDER_DLT -> snap.ref.removeValue()
+                    Constants.MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_RECEIVER_DLT)
+                    Constants.MSG_PHOTO_SENDER_DLT -> {
                         val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
-                    Constants.AUDIO -> snap.child("type").ref.setValue(Constants.AUDIO_RECEIVER_DLT)
-                    Constants.AUDIO_SENDER_DLT -> {
+                    Constants.MSG_AUDIO -> snap.child("type").ref.setValue(Constants.MSG_AUDIO_RECEIVER_DLT)
+                    Constants.MSG_AUDIO_SENDER_DLT -> {
                         val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
@@ -1220,15 +1133,15 @@ class ChatActivity : BaseChatSessionActivity() {
                 val receiverDelete = ArrayList<String>()
 
                 for (snap in data.children) {
-                    val chat = snap.getValue(Chats::class.java) ?: continue
+                    val chat = snap.getValue(ChatMessage::class.java) ?: continue
                     val key = snap.key ?: continue
                     if (chat.sender == myUid) {
                         when (chat.type) {
-                            Constants.MSG_SENDER_DLT, Constants.PHOTO_SENDER_DLT, Constants.AUDIO_SENDER_DLT -> senderDelete.add(key)
+                            Constants.MSG_TEXT_SENDER_DLT, Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT -> senderDelete.add(key)
                         }
                     } else {
                         when (chat.type) {
-                            Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
+                            Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
                         }
                     }
                 }
@@ -1243,17 +1156,17 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun addChat(ds: DataSnapshot) {
-        val chat = ds.getValue(Chats::class.java) ?: return
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
         adapter.addChat(chat)
     }
 
     private fun actualizeChat(ds: DataSnapshot) {
-        val chat = ds.getValue(Chats::class.java) ?: return
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
         adapter.actualizeMsg(chat)
     }
 
     private fun deleteChat(ds: DataSnapshot) {
-        val chat = ds.getValue(Chats::class.java) ?: return
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
         adapter.deleteMsg(chat)
     }
 
@@ -1265,31 +1178,31 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.btnSendMsg.isVisible = false
         binding.frameSendMsg.isVisible = false
 
-        msgType = Constants.MSG
+        msgType = Constants.MSG_TEXT
 
     }
 
     // ---------------- Companion ----------------
     companion object {
-        var msgSelected: ArrayList<Chats> = ArrayList()
+        var msgSelected: ArrayList<ChatMessage> = ArrayList()
         lateinit var linearTimer: LinearLayout
         lateinit var linearDeleteMsg: LinearLayout
         lateinit var countDeleteMsg: TextView
         lateinit var myPhoto: String
         lateinit var yourPhoto: String
 
-        fun selectedDeleteMsg(chats: Chats?) {
-            if (chats == null) return
-            msgSelected.add(chats)
+        fun selectedDeleteMsg(chatMessage: ChatMessage?) {
+            if (chatMessage == null) return
+            msgSelected.add(chatMessage)
             if (msgSelected.size > 1) {
                 linearDeleteMsg.visibility = View.VISIBLE
                 countDeleteMsg.text = msgSelected.size.toString()
             }
         }
 
-        fun notSelectedDeleteMsg(chats: Chats?) {
-            if (chats == null) return
-            val idx = msgSelected.indexOf(chats)
+        fun notSelectedDeleteMsg(chatMessage: ChatMessage?) {
+            if (chatMessage == null) return
+            val idx = msgSelected.indexOf(chatMessage)
             if (idx != -1) {
                 msgSelected.removeAt(idx)
                 if (msgSelected.isEmpty()) {

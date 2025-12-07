@@ -14,11 +14,11 @@
 //import com.zibete.proyecto1.R
 //import com.zibete.proyecto1.data.UserSessionManager
 //import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-//import com.zibete.proyecto1.model.Chats
+//import com.zibete.proyecto1.model.ChatMessage
 //import com.zibete.proyecto1.ui.constants.Constants
 //import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 //import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-//import com.zibete.proyecto1.utils.FirebaseRefs.refChats
+//import com.zibete.proyecto1.utils.FirebaseRefs.refChatMessage
 //import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 //import dagger.hilt.android.qualifiers.ApplicationContext
 //import javax.inject.Inject
@@ -143,13 +143,13 @@
 //        view: View,
 //        type: String
 //    ) {
-//        val ref = if (type == Constants.NODE_CURRENT_CHAT) Constants.NODE_CHATS else Constants.NODE_GROUP_CHAT
+//        val ref = if (type == Constants.NODE_CURRENT_CHAT) Constants.NODE_ChatMessage else Constants.NODE_GROUP_CHAT
 //
 //        val refYourReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/$idUser/")
 //        val refMyReceiverData: StorageReference = firebaseRefsContainer.storage.reference.child("$type/${myUid}/")
 //
-//        val startedByMe = refChats.child(ref).child("${myUid} <---> $idUser").child("Mensajes")
-//        val startedByHim = refChats.child(ref).child("$idUser <---> ${myUid}").child("Mensajes")
+//        val startedByMe = refChatMessage.child(ref).child("${myUid} <---> $idUser").child("Mensajes")
+//        val startedByHim = refChatMessage.child(ref).child("$idUser <---> ${myUid}").child("Mensajes")
 //
 //        startedByMe.addListenerForSingleValueEvent(object : ValueEventListener {
 //            override fun onDataChange(snapshot: DataSnapshot) {
@@ -184,10 +184,10 @@
 //        refYourReceiverData: StorageReference,
 //        refMyReceiverData: StorageReference
 //    ) {
-//        val messages = mutableListOf<Chats>()
+//        val messages = mutableListOf<ChatMessage>()
 //
 //        for (snap in dataSnapshot.children) {
-//            val chat = snap.getValue(Chats::class.java) ?: continue
+//            val chat = snap.getValue(ChatMessage::class.java) ?: continue
 //            val isMine = chat.sender == myUid
 //
 //            if (isMine && chat.type in listOf(Constants.MSG, Constants.PHOTO, Constants.AUDIO, Constants.MSG_RECEIVER_DLT, Constants.PHOTO_RECEIVER_DLT, Constants.AUDIO_RECEIVER_DLT))
@@ -242,7 +242,7 @@
 //
 //    private fun deleteMessages(
 //        dataSnapshot: DataSnapshot,
-//        messages: List<Chats>,
+//        messages: List<ChatMessage>,
 //        refYourReceiverData: StorageReference,
 //        refMyReceiverData: StorageReference
 //    ) {
@@ -287,7 +287,7 @@
 //        }
 //    }
 //
-//    private fun deleteRemoteFile(ref: StorageReference, chat: Chats) {
+//    private fun deleteRemoteFile(ref: StorageReference, chat: ChatMessage) {
 //        val msg = chat.message
 //        val start = msg.indexOf(myUid) + myUid.length + 3
 //        val ext = if (msg.contains(".jpg")) ".jpg" else ".mp3"
