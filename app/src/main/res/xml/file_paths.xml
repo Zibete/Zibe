@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Archivos propios de la app: audio -->
+    <external-files-path
+        name="audio"
+        path="Music/" />
+
+    <!-- Archivos propios de la app: imágenes (fotos, fotos de perfil, etc.) -->
+    <external-files-path
+        name="images"
+        path="Pictures/" />
+
+    <!-- Archivos propios de la app: videos -->
+    <external-files-path
+        name="videos"
+        path="Movies/" />
+
+    <!-- Si querés algo más genérico dentro de external-files -->
+    <!-- <external-files-path
+        name="app_files"
+        path="." /> -->
+</paths>

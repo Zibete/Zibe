@@ -60,11 +60,11 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterChat
+import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
@@ -72,13 +72,12 @@ import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.MESSAGE_NOT_SENT_USER_BLOCKED
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -93,6 +92,7 @@ class ChatActivity : BaseChatSessionActivity() {
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var chatRepository: ChatRepository
 
     val myUid  = userRepository.myUid
     val user  = userRepository.user
@@ -197,6 +197,18 @@ class ChatActivity : BaseChatSessionActivity() {
                     }
                 }
 
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        chatViewModel.chatState.collect { state ->
+                            if (state.showPhotoPicker) {
+                                openMediaSourcePicker()                 // tu función actual con dialog/cámara/galería
+                                chatViewModel.onPhotoPickerHandled()
+                            }
+                        }
+                    }
+                }
+
+
                 // Estado online/escribiendo (mismo repeatOnLifecycle)
                 launch {
                     chatViewModel.userStatus.collect { status ->
@@ -227,15 +239,9 @@ class ChatActivity : BaseChatSessionActivity() {
                     }
                 }
 
+                setScrollbar()
 
-                launch{
-                    chatViewModel.messages.collect { list ->
-                        adapter.submitList(list)
-                        if (list.isNotEmpty()) {
-                            binding.rvMsg.scrollToPosition(list.lastIndex)
-                        }
-                    }
-                }
+
 
 
             }
@@ -327,7 +333,7 @@ class ChatActivity : BaseChatSessionActivity() {
         // ===== UI listeners =====
         val photoList = ArrayList<String>()
         binding.btnCamera.setOnClickListener {
-            sendPhoto()
+            chatViewModel.onSendPhotoClicked()
         }
         binding.btnSendMsg.setOnClickListener {
 
@@ -357,7 +363,7 @@ class ChatActivity : BaseChatSessionActivity() {
             cancelSendPhoto()
         }
         binding.photo.setOnClickListener {
-            photoList.add(stringMsg!!) // <-- porque stringMsg?
+            photoList.add(stringMsg) // <-- porque stringMsg?
             val intent = Intent(this@ChatActivity, SlidePhotoActivity::class.java).apply {
                 putExtra("photoList", photoList)
                 putExtra("position", 0)
@@ -554,12 +560,7 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     // ----------------------------- Cámara / Galería / Crop -----------------------------
-    private fun sendPhoto() {
-
-        if (estadoUser == CHAT_STATE_BLOQ) {
-            snackCenter(MESSAGE_NOT_SENT_USER_BLOCKED)
-            return
-        }
+    private fun openMediaSourcePicker() {
 
         val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
         val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
@@ -576,7 +577,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         cameraSelection.setOnClickListener {
             ensurePermissions(arrayOf(Manifest.permission.CAMERA)) {
-                startCameraModern()
+                lifecycleScope.launch { startCameraModern() }
             }
             dialog.dismiss()
         }
@@ -593,7 +594,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
     }
 
-    private fun startCameraModern() {
+    private suspend fun startCameraModern() {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
@@ -601,28 +602,33 @@ class ChatActivity : BaseChatSessionActivity() {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Zibe")
             }
         }
-        imageUriCamera = contentResolver.insert(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-        )
+
+        imageUriCamera = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
         if (imageUriCamera == null) {
-            snackCenter("No se pudo abrir la cámara")
+            chatViewModel.onError("No se pudo abrir la cámara")
             return
         }
+
         takePictureLauncher.launch(imageUriCamera!!)
     }
 
     // ----------------------------- Audio (MediaStore, sin rutas directas) -----------------------------
-    private fun startRecordAudio() {
-        // 1) Permisos
-        val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
-        val needsLegacyWrite = Build.VERSION.SDK_INT <= 28
-//        if (needsLegacyWrite) perms plusAssign Manifest.permission.WRITE_EXTERNAL_STORAGE
 
-        val anyDenied = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+    private suspend fun startRecordAudio() {
+        // 1) Permisos
+        val perms = arrayOf(Manifest.permission.RECORD_AUDIO)
+
+        val anyDenied = perms.any {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
         if (anyDenied) {
-            ensurePermissions(perms.toTypedArray()) { startRecordAudio() }
+            ensurePermissions(perms) { lifecycleScope.launch { startRecordAudio() } }
             return
         }
+
+        // Si ya hay una grabación en curso, no hacemos nada
         if (mediaRecorder != null) return
 
         // 2) Preparar destino
@@ -641,30 +647,41 @@ class ChatActivity : BaseChatSessionActivity() {
                     put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Zibe")
                     put(MediaStore.Audio.Media.IS_PENDING, 1)
                 }
-                currentAudioUri = contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
-                    ?: throw IllegalStateException("No se pudo crear el URI de audio")
+
+                currentAudioUri = contentResolver.insert(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    values
+                ) ?: return chatViewModel.onError("No se pudo crear el archivo de audio")
+
+
                 currentPfd = contentResolver.openFileDescriptor(currentAudioUri!!, "w")
-                    ?: throw IllegalStateException("No se pudo abrir el archivo de audio")
+                    ?: return chatViewModel.onError("No se pudo abrir el archivo de audio")
             } else {
                 // ≤28: archivo app-specific + FileProvider
                 val dir = getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-                    ?: throw IllegalStateException("No hay directorio de música disponible")
+                    ?: return chatViewModel.onError("No hay directorio de música disponible")
+
                 val outFile = File(dir, nameAudio!!)
-                currentAudioUri = FileProvider.getUriForFile(this, "$packageName.provider", outFile)
+                currentAudioUri = FileProvider.getUriForFile(
+                    this,
+                    "$packageName.provider",
+                    outFile
+                )
+
                 currentPfd = ParcelFileDescriptor.open(
                     outFile,
                     ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE
                 )
             }
         } catch (e: Exception) {
-            snackCenter("No se pudo iniciar la grabación")
+            chatViewModel.onError(e.message ?: ERR_ZIBE)
             currentPfd?.closeQuietly()
             currentPfd = null
             currentAudioUri = null
             return
         }
 
-        // 3) Grabar
+        // 3) Iniciar grabación
         try {
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -679,44 +696,50 @@ class ChatActivity : BaseChatSessionActivity() {
         } catch (e: Exception) {
             currentPfd?.closeQuietly()
             currentPfd = null
-            // Si quedó pendiente en ≥29, cerramos el pending para que el sistema lo limpie
+
+            // Limpiar entry en MediaStore si quedó pendiente (API 29+)
             if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
                 runCatching {
-                    val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                    val cv = ContentValues().apply {
+                        put(MediaStore.Audio.Media.IS_PENDING, 0)
+                    }
                     contentResolver.update(currentAudioUri!!, cv, null, null)
                     contentResolver.delete(currentAudioUri!!, null, null)
                 }
             }
+
             currentAudioUri = null
             mediaRecorder = null
-            snackCenter("Error al grabar audio")
+            chatViewModel.onError(e.message ?: ERR_ZIBE)
             return
         }
 
-        // 4) UI grabando
+        // 4) UI "grabando"
         recordStartElapsed = SystemClock.elapsedRealtime()
         setMicAnimated()
+
         binding.msg.visibility = View.GONE
         binding.btnCamera.visibility = View.GONE
-        linearTimer.visibility = View.VISIBLE
+        binding.linearTimer.visibility = View.VISIBLE
         binding.timer.base = recordStartElapsed
         binding.timer.start()
 
-        firebaseRefsContainer.refDatos.child(myUid).child("Estado").child("estado")
-            .setValue(getString(R.string.grabando))
-        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true)
+        userRepository.setUserRecording()
+
     }
 
     private fun stopRecordAudio() {
-        // Si no hay recorder, normalizar UI
+        // Si no hay recorder, normalizamos UI y salimos
         if (mediaRecorder == null) {
             cancelRecordAudio()
             return
         }
 
+        // Duración de la grabación
         val elapsedMs = SystemClock.elapsedRealtime() - recordStartElapsed
-        val tooShort = elapsedMs < 1000L // < 1s lo consideramos demasiado corto
+        val tooShort = elapsedMs < 1000L // <1s lo consideramos demasiado corto
 
+        // Parar y liberar el recorder
         try {
             mediaRecorder?.apply {
                 try { stop() } catch (_: Exception) {}
@@ -731,48 +754,60 @@ class ChatActivity : BaseChatSessionActivity() {
         // Cerrar pending en ≥29
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
             runCatching {
-                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                val cv = ContentValues().apply {
+                    put(MediaStore.Audio.Media.IS_PENDING, 0)
+                }
                 contentResolver.update(currentAudioUri!!, cv, null, null)
             }
         }
 
+        // Si fue muy corto o no hay URI válido, cancelamos
         if (tooShort || currentAudioUri == null) {
-            // Borramos el archivo si existe
-            runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
+            runCatching {
+                if (currentAudioUri != null) {
+                    contentResolver.delete(currentAudioUri!!, null, null)
+                }
+            }
             cancelRecordAudio()
             return
         }
 
-
-
-        // ---------- Subir a Firebase con putFile(uri) (robusto para content://) ----------
-        val name = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
+        // ---------- Subir a Firebase con putFile(uri) ----------
+        val fileName = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
         val localUri = currentAudioUri!!
 
-        refYourReceiverData!!.child(name).putFile(localUri)
-            .addOnSuccessListener { task ->
-                task.storage.downloadUrl
-                    .addOnSuccessListener { uri ->
-                        stringMsg = uri.toString()
-                        msgType = Constants.MSG_AUDIO
-                        val mm = (elapsedMs / 1000 / 60).toInt().toString().padStart(2, '0')
-                        val ss = ((elapsedMs / 1000) % 60).toInt().toString().padStart(2, '0')
-                        val elapsedText = "$mm:$ss"
-                        sendMessage(elapsedText)
-                        // Limpieza local: opcional (si querés conservarlo, comentá la línea de abajo)
-                        runCatching { contentResolver.delete(localUri, null, null) }
-                    }
-                    .addOnFailureListener {
-                        snackCenter("No se pudo obtener URL del audio")
-                    }
-            }
-            .addOnFailureListener {
-                snackCenter("Fallo al subir el audio")
+        lifecycleScope.launch {
+            val url = chatViewModel.uploadAudio(
+                fileName = fileName,
+                localUri = localUri
+            )
+
+            if (url == null) {
+                chatViewModel.onError("No se pudo subir el audio")
+                return@launch
             }
 
+            val totalSeconds = elapsedMs / 1000
+            val mm = (totalSeconds / 60).toInt().toString().padStart(2, '0')
+            val ss = (totalSeconds % 60).toInt().toString().padStart(2, '0')
+            val duration = "$mm:$ss"
+
+            stringMsg = localUri.toString()
+            msgType = MSG_AUDIO
+
+            chatViewModel.sendMessage(
+                timerText = duration,
+                msgType = msgType,
+                stringMsg = stringMsg
+            )
+
+            // Limpieza local
+            runCatching { contentResolver.delete(localUri, null, null) }
+        }
+
         normalizeUiCancelRecordAudio()
+
         lifecycleScope.launch { userRepository.setUserOnline() }
-        // No anulamos immediately el URI por si falla la subida; si preferís, podés setearlo en null acá.
     }
 
     private fun cancelRecordAudio() {
@@ -785,10 +820,12 @@ class ChatActivity : BaseChatSessionActivity() {
         currentPfd?.closeQuietly()
         currentPfd = null
 
-        // Si fue ≥29 y quedó pendiente, cerramos y borramos
+        // Si fue ≥29 y quedó pendiente, cerramos flag
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
             runCatching {
-                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
+                val cv = ContentValues().apply {
+                    put(MediaStore.Audio.Media.IS_PENDING, 0)
+                }
                 contentResolver.update(currentAudioUri!!, cv, null, null)
             }
         }
@@ -798,7 +835,10 @@ class ChatActivity : BaseChatSessionActivity() {
             visibility = View.VISIBLE
             playAnimation()
             addAnimatorListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(a: Animator) { visibility = View.GONE }
+                override fun onAnimationEnd(a: Animator) {
+                    visibility = View.GONE
+                    removeAnimatorListener(this)
+                }
             })
         }
 
@@ -806,23 +846,29 @@ class ChatActivity : BaseChatSessionActivity() {
         lifecycleScope.launch { userRepository.setUserOnline() }
 
         // Borrado del archivo (si existe)
-        runCatching { if (currentAudioUri != null) contentResolver.delete(currentAudioUri!!, null, null) }
+        runCatching {
+            if (currentAudioUri != null) {
+                contentResolver.delete(currentAudioUri!!, null, null)
+            }
+        }
+
         currentAudioUri = null
         nameAudio = null
     }
 
     private fun normalizeUiCancelRecordAudio() {
         vibrate(80)
+
         binding.btnMic.cancelAnimation()
         binding.btnMic.clearAnimation()
         binding.timer.stop()
-        linearTimer.visibility = View.GONE
+        binding.linearTimer.visibility = View.GONE
         binding.msg.visibility = View.VISIBLE
         binding.btnCamera.visibility = View.VISIBLE
     }
 
-    private fun ParcelFileDescriptor.closeQuietly() {
-        try { close() } catch (_: Exception) {}
+    private fun ParcelFileDescriptor?.closeQuietly() {
+        runCatching { this?.close() }
     }
 
     // ----------------------------- Mic Gesture -----------------------------
@@ -847,7 +893,7 @@ class ChatActivity : BaseChatSessionActivity() {
             val halfWidth = resources.displayMetrics.widthPixels / 2
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    startRecordAudio()
+                    lifecycleScope.launch { startRecordAudio() }
                     xAnim.cancel()
                     vibrate(80)
                     dX = v.x - event.rawX - (75 * scale + 0.5f).toInt()
@@ -877,117 +923,19 @@ class ChatActivity : BaseChatSessionActivity() {
         }
     }
 
-    // ----------------------------- Envío de mensajes -----------------------------
-
-
-    private fun sendMessageOld(timerText: String?) {
-
-        val (textMiChatw, textSuChatw) = when (msgType) {
-            Constants.MSG_PHOTO -> {
-                binding.linearPhotoView.visibility = View.GONE
-                binding.msg.visibility = View.VISIBLE
-                binding.btnCamera.visibility = View.VISIBLE
-                binding.btnMic.visibility = View.VISIBLE
-                getString(R.string.photo_send) to getString(R.string.photo_received)
-            }
-            Constants.MSG_AUDIO -> getString(R.string.audio_send) to getString(R.string.audio_received)
-            else -> {
-                msgType = Constants.MSG_TEXT
-                stringMsg = binding.msg.text.toString()
-                stringMsg to stringMsg
-            }
-        }
-
-        if (stringMsg.isNullOrEmpty()) return
-
-        if (estadoUser == "bloq") {
-            snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
-            return
-        }
-
-        val visto = if (suActual != myUid + refChatWith || suActual == null) 1 else 3
-        val dateNow = now()
-        val finalDate = if (timerText == null) dateNow else "$dateNow $timerText"
-
-        val chatmsg = ChatMessage(
-            stringMsg!!,
-            finalDate,
-            myUid,
-            msgType,
-            visto
-        )
-
-        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(sbMe: DataSnapshot) {
-                if (!sbMe.exists()) {
-                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(sbHim: DataSnapshot) {
-                            (if (!sbHim.exists()) startedByMe else startedByHim)!!
-                                .push().setValue(chatmsg)
-                        }
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
-                } else {
-                    sbMe.ref.push().setValue(chatmsg)
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-
-        val miChat = ChatWith(
-            textMiChatw!!, finalDate, null, myUid,
-            userId, nameUserFinal!!, yourPhoto, estadoYo!!, miNoVisto, 0
-        )
-        firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(userId).setValue(miChat)
-
-        if (suActual != myUid + refChatWith || suActual == null) {
-            val count = noVisto + 1
-            val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, myUid,
-                myUid, myName!!, myPhoto, estadoUser!!, count, 1
-            )
-            firebaseRefsContainer.refDatos.child(userId!!).child(refChatWith!!).child(myUid)
-                .setValue(suChat)
-
-            if (estadoUser != "silent") {
-                val body = JSONObject().apply {
-                    put("novistos", count)
-                    put("user", myName)
-                    put("msg", suChat.msg)
-                    put("id_user", chatmsg.sender)
-                    put("type", refChatWith)
-                }
-                val json = JSONObject().apply {
-                    put("to", token)
-                    put("priority", "high")
-                    put("data", body)
-                }
-                val req = object : JsonObjectRequest(
-                    Method.POST, "https://fcm.googleapis.com/fcm/send", json, null, null
-                ) {
-                    override fun getHeaders(): MutableMap<String, String> = hashMapOf(
-                        "content-type" to "application/json",
-                        "authorization" to "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
-                    )
-                }
-                Volley.newRequestQueue(applicationContext).add(req)
-            }
-        } else {
-            val suChat = ChatWith(
-                textSuChatw!!, finalDate, null, myUid,
-                myUid, myName!!, myPhoto, estadoUser!!, 0, 3
-            )
-            firebaseRefsContainer.refDatos.child(userId).child(refChatWith!!).child(myUid)
-                .setValue(suChat)
-        }
-
-        binding.msg.setText("")
-        stringMsg = null
-        msgType = Constants.MSG_TEXT
-    }
-
     // ----------------------------- Helpers -----------------------------
-    private fun setScrollbar() = binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
+    private fun setScrollbar() {
+
+        lifecycleScope.launch{
+            chatViewModel.messages.collect { list ->
+                adapter.submitList(list)
+                if (list.isNotEmpty()) {
+                    binding.rvMsg.scrollToPosition(list.lastIndex)
+                }
+            }
+        }
+
+    }
 
     private fun vibrate(ms: Long) {
         iconVibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))

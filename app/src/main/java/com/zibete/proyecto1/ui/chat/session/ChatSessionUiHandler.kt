@@ -129,6 +129,23 @@ object ChatSessionUiHandler {
                     }
                 )
             }
+
+            is ChatSessionUiEvent.ShowBlockedByOther -> {
+                UserMessageUtils.alert(
+                    context = context,
+                    message = "Lo sentimos, ${event.userName} ha bloqueado tus mensajes"
+                )
+            }
+
+            is ChatSessionUiEvent.Error -> {
+                UserMessageUtils.alert(
+                    context = context,
+                    title = "Error",
+                    message = event.message
+                )
+            }
+
+
         }
     }
 }

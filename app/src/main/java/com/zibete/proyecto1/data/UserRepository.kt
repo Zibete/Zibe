@@ -451,18 +451,48 @@ class UserRepository @Inject constructor(
             ).await()
     }
 
+    suspend fun setUserRecording() {
+        val state = State(context.getString(R.string.recording), "", "")
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("Estado")
+            .setValue(state)
+            .await()
+        firebaseRefsContainer.refCuentas
+            .child(myUid)
+            .child("estado")
+            .setValue(true)
+            .await()
+    }
+
     suspend fun setUserOnline() = withContext(Dispatchers.IO) {
         val state = State(context.getString(R.string.online), "", "")
 
-        firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
-        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true).await()
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("Estado")
+            .setValue(state)
+            .await()
+        firebaseRefsContainer.refCuentas
+            .child(myUid)
+            .child("estado")
+            .setValue(true)
+            .await()
     }
 
     suspend fun setUserOffline() = withContext(Dispatchers.IO) {
         val state = State(context.getString(R.string.offline), "", "")
 
-        firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
-        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true).await()
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("Estado")
+            .setValue(state)
+            .await()
+        firebaseRefsContainer.refCuentas
+            .child(myUid)
+            .child("estado")
+            .setValue(false) // <---------------FALSE?
+            .await()
     }
 
     suspend fun setUserLastSeen() = withContext(Dispatchers.IO) {
@@ -472,8 +502,16 @@ class UserRepository @Inject constructor(
             today(),
             time())
 
-        firebaseRefsContainer.refDatos.child(myUid).child("Estado").setValue(state).await()
-        firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(false).await()
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child("Estado")
+            .setValue(state)
+            .await()
+        firebaseRefsContainer.refCuentas
+            .child(myUid)
+            .child("estado")
+            .setValue(false)
+            .await()
     }
 
     // Convierte un DataSnapshot de Firebase en un UserStatus
@@ -490,7 +528,7 @@ class UserRepository @Inject constructor(
 
         // Escribiendo / Grabando (y solo si es conmigo)
         if (estado == context.getString(R.string.escribiendo) ||
-            estado == context.getString(R.string.grabando)) {
+            estado == context.getString(R.string.recording)) {
 
             val currentChat = child(key!!).child("ChatList/Actual").getValue(String::class.java)
 

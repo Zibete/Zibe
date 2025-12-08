@@ -27,6 +27,7 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.ChatActivity.Companion.yourPhoto
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.AUTH
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
@@ -50,6 +51,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
@@ -98,6 +100,10 @@ class ChatViewModel @Inject constructor(
     private val _chatRefs = MutableStateFlow<ChatRefs?>(null)
     val chatRefs: StateFlow<ChatRefs?> = _chatRefs.asStateFlow()
     // ------------------------------------------------------------------------------------------------------------------------
+    private val _chatState = MutableStateFlow(ChatState())
+    val chatState: StateFlow<ChatState> = _chatState
+    // ------------------------------------------------------------------------------------------------------------------------
+
     init {
         viewModelScope.launch {
             _headerState.value = ChatHeaderState.Loading
@@ -363,15 +369,25 @@ class ChatViewModel @Inject constructor(
     //  MENSAJES
     // =========================================================================
 
+    suspend fun uploadAudio(fileName: String, localUri: Uri): String? {
+        return try {
+            val refs = chatRefs.first { it != null }!!
+
+            chatRepository.uploadAudio(
+                localUri,
+                fileName,
+                refs.refOtherReceiverData)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     suspend fun sendMessage(timerText: String, msgType: Int, stringMsg: String) {
 
         if (stringMsg.isEmpty()) return
 
-
         val myChatWith = chatRepository.getChatWith(myUid, userId, nodeType)
         val myState = myChatWith?.state?: nodeType
-
-
         val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
         val otherState = otherChatWith?.state?: nodeType
         val otherCountMsgReceivedUnread = otherChatWith?.msgReceivedUnread?: 0
@@ -382,11 +398,8 @@ class ChatViewModel @Inject constructor(
         }
 
         val otherActiveChat = chatRepository.getActiveChat(userId, nodeType)
-
         val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
-
         val now = now()
-
         val date = if (timerText == "") now else "$now $timerText"
 
         val chatMessage = ChatMessage(
@@ -475,7 +488,33 @@ class ChatViewModel @Inject constructor(
 
     }
 
+    suspend fun onError(message: String) {
+        _events.emit(ChatSessionUiEvent.Error(
+            message = message
+        ))
+    }
 
+    fun onPhotoPickerHandled() {
+        _chatState.update { it.copy(showPhotoPicker = false) }
+    }
+
+    fun onSendPhotoClicked() {
+        viewModelScope.launch {
+            val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
+            val otherState = otherChatWith?.state ?: nodeType
+            val otherName = otherProfile.value?.name ?: ""
+
+            if (otherState == CHAT_STATE_BLOQ) {
+                _events.emit(
+                    ChatSessionUiEvent.ShowBlockedByOther(
+                        userName = otherName
+                    )
+                )
+            } else {
+                _chatState.update { it.copy(showPhotoPicker = true) }
+            }
+        }
+    }
 
 
     fun deleteSelectedMsgs() = viewModelScope.launch {

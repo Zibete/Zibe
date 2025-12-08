@@ -40,6 +40,22 @@ sealed class ChatSessionUiEvent {
         val onConfirm: () -> Unit
     ) : ChatSessionUiEvent()
 
+    data class ShowBlockedByOther(
+        val userName: String,
+    ) : ChatSessionUiEvent()
+
+    data class OpenPhotoSourcePicker(
+        val onPickCamera: (() -> Unit)? = null,
+        val onPickGallery: (() -> Unit)? = null
+    ) : ChatSessionUiEvent()
+
+    data class Error(
+        val message: String
+    ): ChatSessionUiEvent()
+
+
+
+
 }
 
 

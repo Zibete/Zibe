@@ -10,12 +10,8 @@ sealed class ChatUiEvent {
 
     //--------------------------------------------------
 
-//    data class ConfirmDeleteChat(val name: String) : ChatUiEvent()
-
-
     data class OnDeleteChatConfirmed(val deleteMessages: Boolean) : ChatUiEvent()
 
-//    data class ConfirmDeleteChat(val name: String, val onConfirm: (deleteMessages: Boolean) -> Unit) : ChatUiEvent()
 
 
     data object ShowChatDeleted : ChatUiEvent()

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.data
 
+import android.net.Uri
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -187,44 +188,26 @@ class ChatRepository @Inject constructor(
 
 
 
-//    suspend fun getChatWith(
-//        firstUid: String,
-//        secondUid: String,
-//        nodeType: String
-//    ): ChatWith? {
-//
-//        val ref = firebaseRefsContainer.refDatos
-//            .child(firstUid)
-//            .child(nodeType)
-//            .child(secondUid)
-//
-//        val snapshot = ref.get().await()
-//
-//        // Caso 1 → existe el ChatWith
-//        snapshot.getValue(ChatWith::class.java)?.let { return it }
-//
-//        // Caso 2 → NO existe → creamos uno por defecto
-//        val default = ChatWith(
-//            msg = "",
-//            dateTime = "",
-//            date = null,
-//            senderId = "",
-//            userId = secondUid,
-//            userName = "",
-//            userPhoto = "",
-//            state = nodeType,      // estado por defecto
-//            msgReceivedUnread = 0,
-//            seen = 0
-//        )
-//
-//        // Guardar en Firebase
-//        ref.setValue(default).await()
-//
-//        return default
-//    }
 
 
 
+
+    suspend fun uploadAudio(
+        uri: Uri,
+        fileName: String,
+        refOtherReceiverData: StorageReference): String? {
+        return try {
+            val ref = refOtherReceiverData
+                .child(myUid)
+                .child("audios")
+                .child(fileName)
+
+            ref.putFile(uri).await()
+            ref.downloadUrl.await().toString()
+        } catch (_: Exception) {
+            null
+        }
+    }
 
 
 
