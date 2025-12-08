@@ -130,7 +130,7 @@ class AdapterChatList(
 
         // Nombre (desde el modelo)
         binding.tvUsuario1.text =
-            chat.userName.ifBlank { context.getString(R.string.deleted_profile_fallback) }
+            chat.userName?.ifBlank { context.getString(R.string.deleted_profile_fallback) }
 
         // Foto (desde el modelo)
         Glide.with(context.applicationContext)
@@ -332,8 +332,8 @@ class AdapterChatList(
 
         lifecycleScope.launch {
             userRepository.markMessagesAsSeen(
-                otherUserId = chat.userId,
-                chatType = NODE_CURRENT_CHAT,
+                userId = chat.userId,
+                nodeType = NODE_CURRENT_CHAT,
                 noSeen = noSeen
             )
         }

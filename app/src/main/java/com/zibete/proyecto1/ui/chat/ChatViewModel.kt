@@ -12,8 +12,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.google.firebase.database.DataSnapshot
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.ChatChildEvent
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
@@ -153,7 +155,6 @@ class ChatViewModel @Inject constructor(
 
     private fun startChatListeners() {
         viewModelScope.launch {
-            // Esperamos a tener refs listos
             val refs = chatRefs.first { it != null }!!
 
             chatRepository
@@ -168,6 +169,23 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private lateinit var adapter: AdapterChat
+
+    private fun addChat(ds: DataSnapshot) {
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
+        adapter.addChat(chat)
+    }
+
+    private fun updateChat(ds: DataSnapshot) {
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
+        adapter.actualizeMsg(chat)
+    }
+
+    private fun deleteChat(ds: DataSnapshot) {
+        val chat = ds.getValue(ChatMessage::class.java) ?: return
+        adapter.deleteMsg(chat)
+    }
+
     private fun markMessagesAsSeenOnOpen() {
         viewModelScope.launch {
             val chatRefs = chatRefs.first { it != null }!!
@@ -179,7 +197,6 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-
 
     private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
@@ -439,7 +456,7 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val otherActiveChat = chatRepository.getActiveChat(userId, nodeType)
+        val otherActiveChat = chatRepository.getActiveChat(userId)
         val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
         val now = now()
         val date = if (timerText == "") now else "$now $timerText"
@@ -531,9 +548,8 @@ class ChatViewModel @Inject constructor(
         _chatState.update {
             it.copy(
                 photoReady = false,
-                pendingFileUrl = null,
                 textReady = false,
-                pendingTextMessage = null
+                pendingFileUrl = null
             )
         }
 
@@ -581,7 +597,7 @@ class ChatViewModel @Inject constructor(
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
 
         viewModelScope.launch {
-            val chatWith = userRepository.getChatWith(userId, nodeType)
+            val chatWith = chatRepository.getChatWith(myUid,userId, nodeType)
 
             val currentState = chatWith?.state
 
@@ -654,7 +670,7 @@ class ChatViewModel @Inject constructor(
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(userId, userName, nodeType, deleteMessages)
+                            userRepository.deleteChat(userId, nodeType, deleteMessages)
                             _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
                         }
                     }

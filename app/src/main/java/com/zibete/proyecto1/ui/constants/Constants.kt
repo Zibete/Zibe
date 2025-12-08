@@ -58,6 +58,11 @@ object Constants {
 
     const val NODE_ACTIVE_CHAT = "Actual"
 
+    const val PATH_AUDIO = "audio"
+    const val PATH_IMAGE = "image"
+
+    const val EXTENSION_AUDIO = ".m4a"
+    const val EXTENSION_IMAGE = ".jpg"
 
 
 

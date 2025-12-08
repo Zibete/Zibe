@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.profile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val userRepository: UserRepository,
+    private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
     private val locationRepository: LocationRepository,
     private val userPreferencesRepository: UserPreferencesRepository
@@ -88,7 +90,7 @@ class ProfileViewModel @Inject constructor(
                 chatState = userState
             )
 
-            val photos = userRepository.getChatPhotosWithUser(userId)
+            val photos = userRepository.getChatPhotosWithUser(userId, NODE_CURRENT_CHAT)
             _photosFromChat.value = photos
 
             loadFavoriteAndBlockState(userId)
@@ -146,7 +148,7 @@ class ProfileViewModel @Inject constructor(
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
 
         viewModelScope.launch {
-            val chatWith = userRepository.getChatWith(userId, nodeType)
+            val chatWith = chatRepository.getChatWith(myUid,userId, nodeType)
 
             val currentState = chatWith?.state
 
@@ -207,7 +209,7 @@ class ProfileViewModel @Inject constructor(
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(userId, userName, nodeType, deleteMessages)
+                            userRepository.deleteChat(userId, nodeType, deleteMessages)
                             _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
                         }
                     }

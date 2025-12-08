@@ -69,11 +69,12 @@ class ChatRepository @Inject constructor(
                 .child(NODE_CHATLIST)
                 .child(NODE_ACTIVE_CHAT)
 
-        val (first, second) = listOf(myUid, userId).sorted()
+        val chatId = getRefChatId(userId)
+
         val refChatId =
             firebaseRefsContainer.refChatMessageRoot
                 .child(nodeType)
-                .child("${first}_${second}")
+                .child(chatId)
                 .child(NODE_MESSAGES)
 
         return ChatRefs(
@@ -83,6 +84,13 @@ class ChatRepository @Inject constructor(
             refOtherActiveChat = refOtherActiveChat,
             refChatId= refChatId
         )
+    }
+
+    fun getRefChatId(
+        userId: String
+    ): String {
+        val (first, second) = listOf(myUid, userId).sorted()
+        return "${first}_${second}"
     }
 
     // User de grupo deja de estar disponible
@@ -140,7 +148,9 @@ class ChatRepository @Inject constructor(
     }
 
     // 1) Su actual: qué chat tiene abierto el OTRO usuario
-    suspend fun getActiveChat(userId: String, chatType: String): String {
+    suspend fun getActiveChat(
+        userId: String
+    ): String {
         val chatRef = firebaseRefsContainer.refDatos
             .child(userId)
             .child(NODE_CHATLIST)

@@ -75,6 +75,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIO
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -702,7 +703,7 @@ class ChatActivity : BaseChatSessionActivity() {
             val url = chatViewModel.uploadMedia(
                 fileName = fileName,
                 uri = localUri,
-                path = "audios"
+                path = PATH_AUDIO
             )
 
             if (url == null) {

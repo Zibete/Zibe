@@ -44,11 +44,6 @@ sealed class ChatSessionUiEvent {
         val userName: String,
     ) : ChatSessionUiEvent()
 
-/*    data class OpenPhotoSourcePicker(
-        val onPickCamera: (() -> Unit)? = null,
-        val onPickGallery: (() -> Unit)? = null
-    ) : ChatSessionUiEvent()*/
-
     data class ShowErrorDialog(
         val message: String
     ): ChatSessionUiEvent()

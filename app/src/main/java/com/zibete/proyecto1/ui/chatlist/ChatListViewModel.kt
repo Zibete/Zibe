@@ -213,7 +213,7 @@ class ChatListViewModel @Inject constructor(
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(userId, userName, nodeType, deleteMessages)
+                            userRepository.deleteChat(userId, nodeType, deleteMessages)
                             _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
                         }
                     }
