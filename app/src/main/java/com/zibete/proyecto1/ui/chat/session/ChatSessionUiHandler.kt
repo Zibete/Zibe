@@ -15,6 +15,7 @@ object ChatSessionUiHandler {
         root: View,
         event: ChatSessionUiEvent,
         scope: CoroutineScope
+
     ) {
         when (event) {
 
@@ -137,15 +138,15 @@ object ChatSessionUiHandler {
                 )
             }
 
-            is ChatSessionUiEvent.Error -> {
+            is ChatSessionUiEvent.ShowErrorDialog -> {
                 UserMessageUtils.alert(
                     context = context,
-                    title = "Error",
+                    title = "ShowErrorDialog",
                     message = event.message
                 )
             }
 
-
+            else -> {}
         }
     }
 }

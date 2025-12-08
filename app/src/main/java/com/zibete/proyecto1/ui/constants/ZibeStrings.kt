@@ -33,7 +33,7 @@ const val MESSAGE_NOT_SENT_USER_BLOCKED = "Mensaje no enviado: Estás bloqueado 
 const val SIGNUP_ERR_EMAIL_IN_USE = "El correo electrónico ya está registrado."
 const val SIGNUP_ERR_INVALID_PASSWORD = "Contraseña demasiado débil. Usá 6 caracteres o más."
 const val SIGNUP_ERR_INVALID_EMAIL = "El formato de correo es inválido."
-const val SIGNUP_ERR_GENERIC_PREFIX = "Error en el registro: código "
+const val SIGNUP_ERR_GENERIC_PREFIX = "ShowErrorDialog en el registro: código "
 const val SIGNUP_ERR_UNEXPECTED_PREFIX = "Ocurrió un error inesperado: "
 
 // Validaciones de formulario

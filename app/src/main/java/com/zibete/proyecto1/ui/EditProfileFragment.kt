@@ -650,7 +650,7 @@ class EditProfileFragment : Fragment() {
                             }
                         }
                 } catch (t: Throwable) {
-                    Log.e("EditProfile", "Error subiendo foto", t)
+                    Log.e("EditProfile", "ShowErrorDialog subiendo foto", t)
                 }
             }
 

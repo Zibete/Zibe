@@ -364,7 +364,7 @@ class SplashActivity : ComponentActivity() {
                 vm.onGoogleAccountReceived(account)
 
             } catch (e: ApiException) {
-                vm.showMessage("Error de Google: ${e.statusCode}", ZibeSnackType.ERROR)
+                vm.showMessage("ShowErrorDialog de Google: ${e.statusCode}", ZibeSnackType.ERROR)
             }
         } else {
             vm.showMessage("Inicio con Google cancelado", ZibeSnackType.INFO)
@@ -392,7 +392,7 @@ class SplashActivity : ComponentActivity() {
             }
 
             override fun onError(error: FacebookException) {
-                vm.showMessage("Error con Facebook: ${error.localizedMessage}", ZibeSnackType.ERROR)
+                vm.showMessage("ShowErrorDialog con Facebook: ${error.localizedMessage}", ZibeSnackType.ERROR)
             }
         })
     }

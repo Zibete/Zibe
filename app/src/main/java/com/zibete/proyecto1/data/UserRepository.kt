@@ -451,8 +451,8 @@ class UserRepository @Inject constructor(
             ).await()
     }
 
-    suspend fun setUserRecording() {
-        val state = State(context.getString(R.string.recording), "", "")
+    suspend fun setUserActivityStatus(status: String) {
+        val state = State(status, "", "")
         firebaseRefsContainer.refDatos
             .child(myUid)
             .child("Estado")

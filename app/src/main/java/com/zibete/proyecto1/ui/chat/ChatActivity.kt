@@ -77,7 +77,6 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -97,24 +96,9 @@ class ChatActivity : BaseChatSessionActivity() {
     val myUid  = userRepository.myUid
     val user  = userRepository.user
 
-
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var binding: ActivityChatBinding
-
     // --------- Estado / datos ---------
-
-
-    private var refChatWith: String? = null
-    private var refChat: String? = null
-    private var estadoUser: String? = null
-    private var estadoYo: String? = null
-    private var suActual: String? = null
-    private var token: String? = null
-    private var noVisto: Int = 0
-    private var miNoVisto: Int = 0
-    private var myName: String? = null
-
-
     private val userId = intent.extras?.getString("userId")?: ""
     private val nodeType = intent.extras?.getString("nodeType")?: ""
     private val userName = intent.extras?.getString("userName")?: ""
@@ -133,12 +117,10 @@ class ChatActivity : BaseChatSessionActivity() {
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioUri: Uri? = null
     private var currentPfd: ParcelFileDescriptor? = null
-    private var nameAudio: String? = null
+    private var pendingAudioName: String? = null
+    private var pendingImageName: String? = null
+
     private var recordStartElapsed: Long = 0L
-
-
-
-    private var listenerChatUnknown: ValueEventListener? = null
 
     private lateinit var iconVibrator: Vibrator
 
@@ -179,8 +161,6 @@ class ChatActivity : BaseChatSessionActivity() {
                                     .load(state.photoUrl)
                                     .into(binding.userImage)
 
-                                if (state.shouldCloseChat) finish()
-
                                 if (state.isBlocked) {
                                     binding.layoutChat.isVisible = false
                                     binding.layoutBloq.isVisible = true
@@ -190,24 +170,31 @@ class ChatActivity : BaseChatSessionActivity() {
                                     binding.layoutBloq.isVisible = false
                                     binding.linearLottie.isVisible = true
                                 }
-
-
                             }
                         }
                     }
                 }
 
-                lifecycleScope.launch {
+                launch {
                     repeatOnLifecycle(Lifecycle.State.STARTED) {
                         chatViewModel.chatState.collect { state ->
                             if (state.showPhotoPicker) {
-                                openMediaSourcePicker()                 // tu función actual con dialog/cámara/galería
+                                openMediaSourcePicker()
                                 chatViewModel.onPhotoPickerHandled()
+                            }
+                            if (state.photoReady) {
+                                updateSendUiState()
+                            } else {
+                                resetUiState()
+                            }
+                            if (state.textReady) {
+                                updateSendUiState()
+                            } else {
+                                resetUiState()
                             }
                         }
                     }
                 }
-
 
                 // Estado online/escribiendo (mismo repeatOnLifecycle)
                 launch {
@@ -240,9 +227,6 @@ class ChatActivity : BaseChatSessionActivity() {
                 }
 
                 setScrollbar()
-
-
-
 
             }
         }
@@ -279,56 +263,21 @@ class ChatActivity : BaseChatSessionActivity() {
         // --- init launchers ---
         initActivityResultLaunchers()
 
-        //esto tiene sentido??
-        // --- estado inicial botones ---
-        binding.msg.isVisible = true
-        binding.btnMic.isVisible = true
-        binding.btnCamera.isVisible = true
-        binding.loadingButton.isVisible = false
-        binding.frameSendMsg.isVisible = false
-        binding.btnSendMsg.isVisible = false
-        binding.linearPhotoView.isVisible = false
-        binding.loadingPhoto.isVisible = false
-
-        //esto tiene sentido??
-        // --- extras ---
-        lifecycleScope.launch { userRepository.setUserOnline() }
+        resetUiState()
 
         // ===== Config chat =====
-        // setupChatHeaderAndRefs: Lo que quedó acá:
         if (nodeType == NODE_CURRENT_CHAT) {
             binding.cardviewTitle.isVisible = false
-
-        } else { //en grupo
+        } else {
             binding.tvChatTitle.text = "Chat privado en ${userPreferencesRepository.groupName}"
             binding.cardviewTitle.isVisible = true
         }
 
-        // ===== CropHelper ===== comentado porque lo cambiamos por --> uCrop ??
-//        cropLauncher = CropHelper.registerLauncher(
-//            caller = this,
-//            ctx = this,
-//            refSendImages = refMyReceiverData!!,
-//            linearPhotoView = linearPhotoView,
-//            linearPhoto = linearPhoto,
-//            photo = photo,
-//            loadingPhoto = loadingPhoto,
-//            loadingButton = loadingButton,
-//            frameSendMsg = frameSendMsg,
-//            msg = msg,
-//            btnCamera = btnCamera,
-//            btnSendMsg = btnSendMsg
-//        ) { uri ->
-//            // Hay foto lista para enviar
-//            msgType = Constants.PHOTO
-//            stringMsg = uri.toString()   // Si CropHelper te devuelve downloadUrl, usá ese
-//            btnMic.isVisible = false
-//            loadingPhoto.isVisible = false
-//            loadingButton.isVisible = false
-//            frameSendMsg.isVisible = true
-//            btnSendMsg.isVisible = true
-//
-//        }
+        uCropResultLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            chatViewModel.handleCroppedImageResult(result.resultCode,pendingImageName, result.data)
+        }
 
         // ===== UI listeners =====
         val photoList = ArrayList<String>()
@@ -336,24 +285,10 @@ class ChatActivity : BaseChatSessionActivity() {
             chatViewModel.onSendPhotoClicked()
         }
         binding.btnSendMsg.setOnClickListener {
-
-            if (msgType == MSG_PHOTO) {
-                binding.linearPhotoView.isVisible = false
-                binding.msg.isVisible = true
-                binding.btnCamera.isVisible = true
-                binding.btnMic.isVisible = true
-            } else {
-                stringMsg = binding.msg.text.toString()
-            }
-
-            lifecycleScope.launch {
-                chatViewModel.sendMessage("", msgType, stringMsg)
-                binding.msg.setText("")
-                stringMsg = ""
-                msgType = MSG_TEXT
-            }
+            val textMessage = binding.msg.text.toString()
+            lifecycleScope.launch { chatViewModel.onSendMessage(textMessage) }
+            binding.msg.setText("")
         }
-
 
         linearDeleteMsg.setOnClickListener {
             binding.trashAnimated.playAnimation()
@@ -386,33 +321,24 @@ class ChatActivity : BaseChatSessionActivity() {
             }
         }
 
+        lifecycleScope.launch { userRepository.setUserOnline() }
+
         binding.msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 if (binding.msg.text.isEmpty()) {
-                    binding.btnCamera.isVisible = true
-                    binding.btnMic.isVisible = true
-                    binding.btnSendMsg.isVisible = false
-                    binding.frameSendMsg.isVisible = false
+                    chatViewModel.onTextReady(false)
                 }
             }
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (binding.msg.text.isNotEmpty()) {
-                    binding.btnCamera.isVisible = false
-                    binding.btnMic.isVisible = false
-                    binding.btnSendMsg.isVisible = true
-                    binding.frameSendMsg.isVisible = true
-                    firebaseRefsContainer.refDatos.child(myUid).child("Estado").child("estado")
-                        .setValue(getString(R.string.escribiendo))
-                    firebaseRefsContainer.refCuentas.child(myUid).child("estado").setValue(true)
+                    chatViewModel.onTextReady(true)
+                    lifecycleScope.launch { userRepository.setUserActivityStatus(getString(R.string.escribiendo))}
                 }
             }
             override fun afterTextChanged(s: Editable?) {
                 if (binding.msg.text.isEmpty()) {
-                    binding.btnCamera.isVisible = true
-                    binding.btnMic.isVisible = true
-                    binding.btnSendMsg.isVisible = false
-                    binding.frameSendMsg.isVisible = false
-                    lifecycleScope.launch { userRepository.setUserOnline() } // esta bien?
+                    chatViewModel.onTextReady(false)
+                    lifecycleScope.launch { userRepository.setUserOnline() }
                 }
             }
         })
@@ -443,28 +369,21 @@ class ChatActivity : BaseChatSessionActivity() {
         })
         binding.buttonScrollBack.setOnClickListener { setScrollbar() }
 
-//        // ===== Observadores =====
-//        hookChatListeners()
-//        // ===== Estados / block =====
-//        hookBlockAndPresence()
-
         setMicButton()
 
-//        visto()
     }
 
     // ---------------- Ciclo de vida ----------------
     override fun onPause() {
         super.onPause()
         lifecycleScope.launch { userRepository.setUserLastSeen() }
-
-//        refActual.setValue("") // Limpia referencia de chat activo
+        chatRepository.setActiveChat(myUid,"")
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { userRepository.setUserOnline() }
-//        refActual.setValue(myUid + (refChatWith ?: ""))
+        chatRepository.setActiveChat(myUid,myUid + nodeType)
     }
 
     override fun onDestroy() {
@@ -473,8 +392,7 @@ class ChatActivity : BaseChatSessionActivity() {
             try { player.stop() } catch (_: Exception) {}
             AdapterChat.mediaPlayer = null
         }
-
-//        refActual.setValue("")
+        chatRepository.setActiveChat(myUid,"")
     }
 
     // ---------------- Menú ----------------
@@ -523,7 +441,7 @@ class ChatActivity : BaseChatSessionActivity() {
         uCropResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            chatViewModel.handleCroppedImageResult(result.resultCode, result.data, this)
+            chatViewModel.handleCroppedImageResult(result.resultCode,pendingImageName, result.data)
         }
 
         // 2. Galería moderna
@@ -532,7 +450,7 @@ class ChatActivity : BaseChatSessionActivity() {
         ) { uri ->
             if (uri != null) {
                 // Delegamos la lógica de uCrop al VM, que nos dará las URIs
-                chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
+                chatViewModel.startUCropFlow(uri,this,uCropResultLauncher)
             }
         }
 
@@ -541,9 +459,10 @@ class ChatActivity : BaseChatSessionActivity() {
             ActivityResultContracts.TakePicture()
         ) { success ->
             if (success && imageUriCamera != null) {
-//                chatViewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
+                chatViewModel.startUCropFlow(imageUriCamera!!,this,uCropResultLauncher)
             } else {
                 imageUriCamera = null
+                pendingImageName = null
             }
         }
 
@@ -595,8 +514,11 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private suspend fun startCameraModern() {
+
+        pendingImageName = "IMG_${System.currentTimeMillis()}.jpg"
+
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_${System.currentTimeMillis()}.jpg")
+            put(MediaStore.Images.Media.DISPLAY_NAME, pendingImageName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT >= 29) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Zibe")
@@ -633,7 +555,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         // 2) Preparar destino
         val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        nameAudio = "AUD_${sdf.format(Date())}.m4a"
+        pendingAudioName = "AUD_${sdf.format(Date())}.m4a"
 
         currentPfd = null
         currentAudioUri = null
@@ -642,7 +564,7 @@ class ChatActivity : BaseChatSessionActivity() {
             if (Build.VERSION.SDK_INT >= 29) {
                 // MediaStore con scoped storage
                 val values = ContentValues().apply {
-                    put(MediaStore.Audio.Media.DISPLAY_NAME, nameAudio)
+                    put(MediaStore.Audio.Media.DISPLAY_NAME, pendingAudioName)
                     put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
                     put(MediaStore.Audio.Media.RELATIVE_PATH, "Music/Zibe")
                     put(MediaStore.Audio.Media.IS_PENDING, 1)
@@ -661,7 +583,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 val dir = getExternalFilesDir(Environment.DIRECTORY_MUSIC)
                     ?: return chatViewModel.onError("No hay directorio de música disponible")
 
-                val outFile = File(dir, nameAudio!!)
+                val outFile = File(dir, pendingAudioName!!)
                 currentAudioUri = FileProvider.getUriForFile(
                     this,
                     "$packageName.provider",
@@ -724,7 +646,7 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.timer.base = recordStartElapsed
         binding.timer.start()
 
-        userRepository.setUserRecording()
+        userRepository.setUserActivityStatus(getString(R.string.recording))
 
     }
 
@@ -773,13 +695,14 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         // ---------- Subir a Firebase con putFile(uri) ----------
-        val fileName = nameAudio ?: "AUD_${System.currentTimeMillis()}.m4a"
+        val fileName = pendingAudioName ?: "AUD_${System.currentTimeMillis()}.m4a"
         val localUri = currentAudioUri!!
 
         lifecycleScope.launch {
-            val url = chatViewModel.uploadAudio(
+            val url = chatViewModel.uploadMedia(
                 fileName = fileName,
-                localUri = localUri
+                uri = localUri,
+                path = "audios"
             )
 
             if (url == null) {
@@ -792,14 +715,7 @@ class ChatActivity : BaseChatSessionActivity() {
             val ss = (totalSeconds % 60).toInt().toString().padStart(2, '0')
             val duration = "$mm:$ss"
 
-            stringMsg = localUri.toString()
-            msgType = MSG_AUDIO
-
-            chatViewModel.sendMessage(
-                timerText = duration,
-                msgType = msgType,
-                stringMsg = stringMsg
-            )
+            chatViewModel.onSendAudio(url, duration)
 
             // Limpieza local
             runCatching { contentResolver.delete(localUri, null, null) }
@@ -853,7 +769,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         currentAudioUri = null
-        nameAudio = null
+        pendingAudioName = null
     }
 
     private fun normalizeUiCancelRecordAudio() {
@@ -862,9 +778,33 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.btnMic.cancelAnimation()
         binding.btnMic.clearAnimation()
         binding.timer.stop()
-        binding.linearTimer.visibility = View.GONE
-        binding.msg.visibility = View.VISIBLE
-        binding.btnCamera.visibility = View.VISIBLE
+
+        resetUiState()
+    }
+
+    private fun resetUiState() {
+
+        // --- estado inicial botones ---
+        binding.msg.isVisible = true
+        binding.btnMic.isVisible = true
+        binding.btnCamera.isVisible = true
+        binding.loadingPhoto.isVisible = true
+        binding.loadingButton.isVisible = true
+
+
+        binding.linearTimer.isVisible = false
+        binding.frameSendMsg.isVisible = false
+        binding.btnSendMsg.isVisible = false
+        binding.linearPhotoView.isVisible = false
+
+    }
+
+    private fun updateSendUiState(){
+        binding.btnMic.isVisible = false
+        binding.loadingPhoto.isVisible = false
+        binding.loadingButton.isVisible = false
+        binding.frameSendMsg.isVisible = true
+        binding.btnSendMsg.isVisible = true
     }
 
     private fun ParcelFileDescriptor?.closeQuietly() {
@@ -1024,9 +964,9 @@ class ChatActivity : BaseChatSessionActivity() {
 
             if (sender == myUid) {
                 when (type) {
-                    Constants.MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_SENDER_DLT)
+                    MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_SENDER_DLT)
                     Constants.MSG_TEXT_RECEIVER_DLT -> snap.ref.removeValue()
-                    Constants.MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_SENDER_DLT)
+                    MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_SENDER_DLT)
                     Constants.MSG_PHOTO_RECEIVER_DLT -> {
                         val start = chat.message.indexOf(userId) + userId.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
@@ -1043,16 +983,16 @@ class ChatActivity : BaseChatSessionActivity() {
                 }
             } else {
                 when (type) {
-                    Constants.MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_RECEIVER_DLT)
+                    MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_RECEIVER_DLT)
                     Constants.MSG_TEXT_SENDER_DLT -> snap.ref.removeValue()
-                    Constants.MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_RECEIVER_DLT)
+                    MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_RECEIVER_DLT)
                     Constants.MSG_PHOTO_SENDER_DLT -> {
                         val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".jpg") + 4
                         refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
                         snap.ref.removeValue()
                     }
-                    Constants.MSG_AUDIO -> snap.child("type").ref.setValue(Constants.MSG_AUDIO_RECEIVER_DLT)
+                    MSG_AUDIO -> snap.child("type").ref.setValue(MSG_AUDIO_RECEIVER_DLT)
                     Constants.MSG_AUDIO_SENDER_DLT -> {
                         val start = chat.message.indexOf(myUid) + myUid.length + 3
                         val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
@@ -1089,7 +1029,7 @@ class ChatActivity : BaseChatSessionActivity() {
                         }
                     } else {
                         when (chat.type) {
-                            Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
+                            Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, MSG_AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
                         }
                     }
                 }
@@ -1126,7 +1066,7 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.btnSendMsg.isVisible = false
         binding.frameSendMsg.isVisible = false
 
-        msgType = Constants.MSG_TEXT
+        msgType = MSG_TEXT
 
     }
 

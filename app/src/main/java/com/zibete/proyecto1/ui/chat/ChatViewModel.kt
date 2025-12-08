@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -26,8 +27,6 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.ChatActivity.Companion.yourPhoto
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.AUTH
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
@@ -37,6 +36,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -51,7 +51,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
@@ -76,8 +75,8 @@ class ChatViewModel @Inject constructor(
     private val userName: String = savedStateHandle["userName"] ?: ""
     private val groupName = userPreferencesRepository.groupName
     // ------------------------------------------------------------------------------------------------------------------------
-    private val _chatEvents = MutableSharedFlow<ChatUiEvent>()
-    val chatEvents: SharedFlow<ChatUiEvent> = _chatEvents.asSharedFlow()
+//    private val _chatEvents = MutableSharedFlow<ChatUiEvent>()
+//    val chatEvents: SharedFlow<ChatUiEvent> = _chatEvents.asSharedFlow()
     // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
@@ -141,10 +140,8 @@ class ChatViewModel @Inject constructor(
                             ChatSessionUiEvent.OtherUserNoLongerAvailable(
                                 userName = userName,
                                 onConfirm = {
-                                    _headerState.update { current ->
-                                        (current as? ChatHeaderState.Loaded)?.copy(
-                                            shouldCloseChat = true
-                                        ) ?: current
+                                    viewModelScope.launch {
+                                        _events.emit(ChatSessionUiEvent.CloseChat)
                                     }
                                 }
                             )
@@ -297,94 +294,135 @@ class ChatViewModel @Inject constructor(
 
     fun handleCroppedImageResult(
         resultCode: Int,
-        data: Intent?,
-        activity: AppCompatActivity
+        fileName: String?,
+        data: Intent?
     ) {
-        if (resultCode == AppCompatActivity.RESULT_OK && data != null) {
+        if (resultCode == Activity.RESULT_OK && data != null) {
             val resultUri = UCrop.getOutput(data)
-            if (resultUri != null) {
+
+            if (resultUri == null || fileName == null) {
                 viewModelScope.launch {
-                    _chatEvents.emit(
-                        ChatUiEvent.ShowSnackbar(
-                            "Imagen lista para enviar.",
-                            ZibeSnackType.SUCCESS
+                    _events.emit(
+                        ChatSessionUiEvent.ShowErrorDialog(
+                            message = "Error al obtener la imagen recortada"
                         )
                     )
                 }
-                // TODO: subir a Storage y preparar sendMessage con PHOTO.
-            } else {
-                viewModelScope.launch {
-                    _chatEvents.emit(
-                        ChatUiEvent.ShowSnackbar(
-                            "Error al obtener la imagen recortada.",
-                            ZibeSnackType.ERROR
+                return
+            }
+
+            viewModelScope.launch {
+                val url = uploadMedia(
+                    fileName = fileName,
+                    uri = resultUri,
+                    path = "images"
+                )
+
+                if (url == null) {
+                    _events.emit(
+                        ChatSessionUiEvent.ShowErrorDialog(
+                            message = "No se pudo subir la imagen"
                         )
                     )
+                } else {
+                    onPhotoReady(url, true)
                 }
             }
         } else if (resultCode == UCrop.RESULT_ERROR && data != null) {
             val error = UCrop.getError(data)
             Log.e("UCrop", "Error al recortar: $error")
             viewModelScope.launch {
-                _chatEvents.emit(
-                    ChatUiEvent.ShowSnackbar(
-                        "Fallo al recortar la imagen.",
-                        ZibeSnackType.ERROR
+                _events.emit(
+                    ChatSessionUiEvent.ShowErrorDialog(
+                        message = "Fallo al recortar la imagen."
                     )
                 )
             }
         }
     }
 
-    fun startRecordAudio() {
-        viewModelScope.launch {
-            _chatEvents.emit(
-                ChatUiEvent.ShowSnackbar(
-                    "Grabando audio... (Lógica en VM)",
-                    ZibeSnackType.INFO
-                )
+    suspend fun onSendMessage(text: String) {
+        val state = _chatState.value
+
+        when {
+            state.photoReady && state.pendingFileUrl != null -> {
+                onSendPhoto(state.pendingFileUrl)
+            }
+
+            state.textReady -> {
+                onSendText(text)
+            }
+        }
+    }
+
+
+    suspend fun onSendText(text: String) {
+        sendMessage(
+            msgType = MSG_TEXT,
+            content = text,
+            timerText = ""
+        )
+    }
+
+    suspend fun onSendPhoto(url: String) {
+        sendMessage(
+            msgType = MSG_PHOTO,
+            content = url,
+            timerText = ""
+        )
+    }
+
+    suspend fun onSendAudio(url: String, duration: String) {
+        sendMessage(
+            msgType = MSG_AUDIO,
+            content = url,
+            timerText = duration
+        )
+    }
+
+    fun onTextReady(state: Boolean) {
+        _chatState.update {
+            it.copy(
+                textReady = state
             )
         }
     }
 
-    fun stopRecordAudio() {
-        viewModelScope.launch {
-            _chatEvents.emit(ChatUiEvent.AudioUploadSuccess("00:05"))
-            sendMessage("") // TODO: pasar URL real del audio
-        }
-    }
-
-    fun cancelRecordAudio() {
-        viewModelScope.launch {
-            _chatEvents.emit(
-                ChatUiEvent.ShowSnackbar(
-                    "Grabación cancelada.",
-                    ZibeSnackType.WARNING
-                )
-            )
-        }
+    fun onPhotoReady(url: String, state: Boolean) {
+         _chatState.update {
+             it.copy(
+                 photoReady = state,
+                 pendingFileUrl = url
+             )
+         }
     }
 
     // =========================================================================
     //  MENSAJES
     // =========================================================================
 
-    suspend fun uploadAudio(fileName: String, localUri: Uri): String? {
+    suspend fun uploadMedia(fileName: String, uri: Uri, path: String): String? {
         return try {
             val refs = chatRefs.first { it != null }!!
+            val refOtherReceiverData = refs.refOtherReceiverData
 
-            chatRepository.uploadAudio(
-                localUri,
+            chatRepository.uploadChatData(
+                uri,
                 fileName,
-                refs.refOtherReceiverData)
+                path,
+                refOtherReceiverData)
         } catch (_: Exception) {
             null
         }
     }
 
-    suspend fun sendMessage(timerText: String, msgType: Int, stringMsg: String) {
+    suspend fun sendMessage(
+        msgType: Int,
+        content: String,
+        timerText: String)
+    {
 
-        if (stringMsg.isEmpty()) return
+        if (content.isEmpty()) return
 
         val myChatWith = chatRepository.getChatWith(myUid, userId, nodeType)
         val myState = myChatWith?.state?: nodeType
@@ -393,7 +431,11 @@ class ChatViewModel @Inject constructor(
         val otherCountMsgReceivedUnread = otherChatWith?.msgReceivedUnread?: 0
 
         if (otherState == CHAT_STATE_BLOQ) {
-            //snackCenter("Mensaje no enviado: Estás bloqueado por el usuario")
+            _events.emit(
+                ChatSessionUiEvent.ShowBlockedByOther(
+                    userName = userName
+                )
+            )
             return
         }
 
@@ -403,7 +445,7 @@ class ChatViewModel @Inject constructor(
         val date = if (timerText == "") now else "$now $timerText"
 
         val chatMessage = ChatMessage(
-            stringMsg,
+            content,
             date,
             myUid,
             msgType,
@@ -421,7 +463,7 @@ class ChatViewModel @Inject constructor(
             }
             MSG_AUDIO -> context.getString(R.string.audio_send) to context.getString(R.string.audio_received)
             else -> {
-                stringMsg to stringMsg
+                content to content
             }
         }
 
@@ -459,7 +501,7 @@ class ChatViewModel @Inject constructor(
                 1
             )
 
-            chatRepository.saveChatWith(userId,nodeType, myUid, myNewChatWith)
+            chatRepository.saveChatWith(userId,nodeType, myUid, otherNewChatWith)
 
             if (otherState != CHAT_STATE_SILENT) {
                 val body = JSONObject().apply {
@@ -486,10 +528,19 @@ class ChatViewModel @Inject constructor(
             }
         }
 
+        _chatState.update {
+            it.copy(
+                photoReady = false,
+                pendingFileUrl = null,
+                textReady = false,
+                pendingTextMessage = null
+            )
+        }
+
     }
 
     suspend fun onError(message: String) {
-        _events.emit(ChatSessionUiEvent.Error(
+        _events.emit(ChatSessionUiEvent.ShowErrorDialog(
             message = message
         ))
     }

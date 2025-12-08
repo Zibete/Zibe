@@ -16,15 +16,25 @@ open class BaseChatSessionActivity : BaseToolbarActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 events.collect { event ->
-                    ChatSessionUiHandler.handle(
-                        context = this@BaseChatSessionActivity,
-                        root = findViewById(android.R.id.content),
-                        event = event,
-                        scope = this
-                    )
+
+                    when (event) {
+                        is ChatSessionUiEvent.CloseChat -> {
+                            finish()
+                        }
+
+                        else -> {
+                            ChatSessionUiHandler.handle(
+                                context = this@BaseChatSessionActivity,
+                                root = findViewById(android.R.id.content),
+                                event = event,
+                                scope = this
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
 

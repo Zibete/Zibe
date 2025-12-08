@@ -595,7 +595,7 @@ class SettingsActivity : AppCompatActivity() {
                         AlertDialog.Builder(
                             ContextThemeWrapper(this, R.style.AlertDialogApp)
                         )
-                            .setTitle("Error")
+                            .setTitle("ShowErrorDialog")
                             .setMessage("Se necesita un inicio de sesión reciente para eliminar la cuenta")
                             .setCancelable(false)
                             .setPositiveButton("Ok") { _, _ ->

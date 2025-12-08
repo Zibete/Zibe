@@ -153,6 +153,14 @@ class ChatRepository @Inject constructor(
             ?: ""   // default
     }
 
+    fun setActiveChat(userId: String, value: String) {
+        firebaseRefsContainer.refDatos
+            .child(userId)
+            .child(NODE_CHATLIST)
+            .child(NODE_ACTIVE_CHAT)
+            .setValue(value)
+    }
+
     suspend fun getChatWith(firstUid: String, secondUid: String, nodeType: String): ChatWith? {
         val snapshot = firebaseRefsContainer.refDatos
             .child(firstUid)
@@ -185,21 +193,15 @@ class ChatRepository @Inject constructor(
         chatRef.push().setValue(message).await()
     }
 
-
-
-
-
-
-
-
-    suspend fun uploadAudio(
+    suspend fun uploadChatData(
         uri: Uri,
         fileName: String,
+        path: String,
         refOtherReceiverData: StorageReference): String? {
         return try {
             val ref = refOtherReceiverData
                 .child(myUid)
-                .child("audios")
+                .child(path)
                 .child(fileName)
 
             ref.putFile(uri).await()

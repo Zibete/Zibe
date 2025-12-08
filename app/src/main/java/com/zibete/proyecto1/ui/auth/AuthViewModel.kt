@@ -108,7 +108,7 @@ class AuthViewModel @Inject constructor(
 
     fun onGoogleAccountReceived(account: GoogleSignInAccount?) {
         if (account == null) {
-            showMessage("Error de Google (account nulo)", ZibeSnackType.ERROR)
+            showMessage("ShowErrorDialog de Google (account nulo)", ZibeSnackType.ERROR)
             return
         }
 
