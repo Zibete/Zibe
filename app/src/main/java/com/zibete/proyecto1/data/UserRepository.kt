@@ -19,6 +19,7 @@ import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_FavoriteList
 import com.zibete.proyecto1.utils.Utils.today
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.time
@@ -99,7 +100,7 @@ class UserRepository @Inject constructor(
     ): Boolean {
         val snap = firebaseRefsContainer.refDatos
             .child(myUid)
-            .child("FavoriteList")
+            .child(NODE_FavoriteList)
             .child(otherUid)
             .get()
             .await()
@@ -107,27 +108,29 @@ class UserRepository @Inject constructor(
         return snap.exists()
     }
 
-    suspend fun addFavoriteUser(
-        otherUid: String
-    ) {
-        firebaseRefsContainer.refDatos
-            .child(myUid)
-            .child("FavoriteList")
-            .child(otherUid)
-            .setValue(otherUid)
-            .await()
+
+
+    suspend fun toggleFavoriteUser(
+        userId: String,
+        isFavorite: Boolean
+    ){
+        if (isFavorite){
+            firebaseRefsContainer.refDatos
+                .child(myUid)
+                .child(NODE_FavoriteList)
+                .child(userId)
+                .removeValue()
+                .await()
+        } else {
+            firebaseRefsContainer.refDatos
+                .child(myUid)
+                .child(NODE_FavoriteList)
+                .child(userId)
+                .setValue(userId)
+                .await()
+        }
     }
 
-    suspend fun removeFavoriteUser(
-        otherUid: String
-    ) {
-        firebaseRefsContainer.refDatos
-            .child(myUid)
-            .child("FavoriteList")
-            .child(otherUid)
-            .removeValue()
-            .await()
-    }
 
     data class BlockState(
         val iBlockedUser: Boolean,
@@ -152,11 +155,11 @@ class UserRepository @Inject constructor(
             .get()
             .await()
 
-        val iBlocked = meSnap.getValue(String::class.java) == CHAT_STATE_BLOQ
+        val isBlocked = meSnap.getValue(String::class.java) == CHAT_STATE_BLOQ
         val blockedMe = otherSnap.getValue(String::class.java) == CHAT_STATE_BLOQ
 
         return BlockState(
-            iBlockedUser = iBlocked,
+            iBlockedUser = isBlocked,
             userBlockedMe = blockedMe
         )
     }

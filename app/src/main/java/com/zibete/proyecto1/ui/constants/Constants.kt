@@ -50,13 +50,21 @@ object Constants {
     const val ANONYMOUS_USER = 0
     const val PUBLIC_USER = 1
 
+    const val EXTRA_USER_ID = "EXTRA_USER_ID"
+    const val EXTRA_USER_IDS = "EXTRA_USER_IDS"
+    const val EXTRA_START_INDEX = "EXTRA_START_INDEX"
 
+    const val EXTRA_CHAT_ID = "userId"
+    const val EXTRA_CHAT_NODE = "nodeType"
+    const val EXTRA_CHAT_NAME = "userName"
+
+    const val NODE_FavoriteList = "FavoriteList"
     const val NODE_ChatMessage = "ChatMessage"
     const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
-    const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
     const val NODE_CHATLIST = "ChatList"
 
     const val NODE_CHATS = "Chats"
+    const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
 
 
     const val NODE_ACTIVE_CHAT = "Actual"

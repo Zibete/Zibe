@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
@@ -29,7 +30,8 @@ import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.databinding.ActivityPerfilBinding
+import com.zibete.proyecto1.databinding.ActivityProfileBinding
+import com.zibete.proyecto1.databinding.FragmentProfileBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
@@ -37,11 +39,19 @@ import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+
+
+
+
 
 @AndroidEntryPoint
 class ProfileActivity : BaseChatSessionActivity() {
@@ -51,7 +61,7 @@ class ProfileActivity : BaseChatSessionActivity() {
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
     private val profileViewModel: ProfileViewModel by viewModels()
-    private lateinit var binding: ActivityPerfilBinding
+    private lateinit var binding: FragmentProfileBinding
     // Estado / datos
     private val userId = intent.extras?.getString("userId")?: ""
     private val userName = intent.extras?.getString("userName")?: ""
@@ -59,65 +69,110 @@ class ProfileActivity : BaseChatSessionActivity() {
     private val receivedPhotos = ArrayList<String>()
     private lateinit var adapterPhotoReceived: AdapterPhotoReceived
 
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        binding = ActivityProfileBinding.inflate(layoutInflater)
+//        setContentView(binding.root)
+//
+//        observeChatSessionEvents(profileViewModel.events)
+//
+//        setupToolbar()
+//
+//        setupRecycler()
+//
+//        setupFabMenu()
+//
+//        binding.profileFavoriteOff.setOnClickListener {
+//            profileViewModel.onToggleFavorite(userId)
+//            Toast.makeText(this, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
+//        }
+//
+//        binding.profileFavoriteOn.setOnClickListener {
+//            profileViewModel.onToggleFavorite(userId)
+//            Toast.makeText(this, "Quitado de favoritos", Toast.LENGTH_SHORT).show()
+//        }
+//
+//        collectChatPhotos()
+//
+//        collectUiState()
+//        profileViewModel.loadProfile(userId)
+//
+//        setupImageLayout()
+//
+//        lifecycleScope.launch {
+//            profileViewModel.userStatus.collect { status ->
+//                when (status) {
+//                    is UserStatus.Online -> {
+//                        binding.iconConnected.isVisible = true
+//                        binding.iconDisconnected.isVisible = false
+//                        binding.tvStatus.text = getString(R.string.online)
+//                        binding.tvStatus.setTypeface(null, Typeface.NORMAL)
+//                    }
+//                    is UserStatus.TypingOrRecording -> {
+//                        binding.iconConnected.isVisible = true
+//                        binding.iconDisconnected.isVisible = false
+//                        binding.tvStatus.text = status.text
+//                        binding.tvStatus.setTypeface(null, Typeface.ITALIC)
+//                    }
+//                    is UserStatus.LastSeen -> {
+//                        binding.iconConnected.isVisible = false
+//                        binding.iconDisconnected.isVisible = true
+//                        binding.tvStatus.text = status.text
+//                    }
+//                    is UserStatus.Offline -> {
+//                        binding.iconDisconnected.isVisible = true
+//                        binding.iconConnected.isVisible = false
+//                        binding.tvStatus.text = getString(R.string.offline)
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityPerfilBinding.inflate(layoutInflater)
+        binding = FragmentProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        observeChatSessionEvents(profileViewModel.events)
+        val userIds = intent.getStringArrayListExtra(EXTRA_USER_IDS)
+        val startIndex = intent.getIntExtra(EXTRA_START_INDEX, 0)
+        val singleUserId = intent.getStringExtra(EXTRA_USER_ID)
 
-        setupToolbar()
+        if (!userIds.isNullOrEmpty()) {
+            // SLIDER MODE
+            binding.pager.isVisible = true
+            binding.singleContainer.isVisible = false
 
-        setupRecycler()
-
-        setupFabMenu()
-
-        binding.perfilFavoriteOff.setOnClickListener {
-            profileViewModel.onToggleFavorite(userId)
-            Toast.makeText(this, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.perfilFavoriteOn.setOnClickListener {
-            profileViewModel.onToggleFavorite(userId)
-            Toast.makeText(this, "Quitado de favoritos", Toast.LENGTH_SHORT).show()
-        }
-
-        collectChatPhotos()
-
-        collectUiState()
-        profileViewModel.loadProfile(userId)
-
-        setupImageLayout()
-
-        lifecycleScope.launch {
-            profileViewModel.userStatus.collect { status ->
-                when (status) {
-                    is UserStatus.Online -> {
-                        binding.iconConnected.isVisible = true
-                        binding.iconDisconnected.isVisible = false
-                        binding.tvStatus.text = getString(R.string.online)
-                        binding.tvStatus.setTypeface(null, Typeface.NORMAL)
-                    }
-                    is UserStatus.TypingOrRecording -> {
-                        binding.iconConnected.isVisible = true
-                        binding.iconDisconnected.isVisible = false
-                        binding.tvStatus.text = status.text
-                        binding.tvStatus.setTypeface(null, Typeface.ITALIC)
-                    }
-                    is UserStatus.LastSeen -> {
-                        binding.iconConnected.isVisible = false
-                        binding.iconDisconnected.isVisible = true
-                        binding.tvStatus.text = status.text
-                    }
-                    is UserStatus.Offline -> {
-                        binding.iconDisconnected.isVisible = true
-                        binding.iconConnected.isVisible = false
-                        binding.tvStatus.text = getString(R.string.offline)
-                    }
-                }
+            binding.pager.adapter = object : FragmentStateAdapter(this) {
+                override fun getItemCount() = userIds.size
+                override fun createFragment(position: Int) = ProfileFragment.newInstance(userIds[position])
             }
+            binding.pager.setCurrentItem(startIndex.coerceIn(0, userIds.lastIndex), false)
+
+        } else {
+            // SINGLE MODE
+            val uid = singleUserId.orEmpty()
+            binding.pager.isVisible = false
+            binding.singleContainer.isVisible = true
+
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.singleContainer, ProfileFragment.newInstance(uid))
+                .commit()
         }
     }
+
+
+
+
+
+
+
+
+
+
     private fun collectChatPhotos() {
         lifecycleScope.launchWhenStarted {
             profileViewModel.photosFromChat.collect { photos ->
@@ -140,7 +195,7 @@ class ProfileActivity : BaseChatSessionActivity() {
                     binding.loadingPhoto.visibility =
                         if (state.isLoading) View.VISIBLE else View.GONE
 
-                    state.age?.let { binding.edad.text = it.toString() }
+                    state.age?.let { binding.ageView.text = it.toString() }
                     binding.nameUser.text = state.name
                     binding.distanceUser.text = state.distance
 
@@ -179,7 +234,7 @@ class ProfileActivity : BaseChatSessionActivity() {
                                     return false
                                 }
                             })
-                            .into(binding.ftPerfil)
+                            .into(binding.profilePhoto)
                     }
 
                     if (state.isGroupMatch) {
@@ -192,18 +247,18 @@ class ProfileActivity : BaseChatSessionActivity() {
 
                     // Favorito
                     if (state.isFavorite) {
-                        binding.perfilFavoriteOn.visibility = View.VISIBLE
-                        binding.perfilFavoriteOff.visibility = View.GONE
+                        binding.profileFavoriteOn.visibility = View.VISIBLE
+                        binding.profileFavoriteOff.visibility = View.GONE
                     } else {
-                        binding.perfilFavoriteOn.visibility = View.GONE
-                        binding.perfilFavoriteOff.visibility = View.VISIBLE
+                        binding.profileFavoriteOn.visibility = View.GONE
+                        binding.profileFavoriteOff.visibility = View.VISIBLE
                     }
 
                     // Bloqueos
-                    binding.perfilBloq.visibility =
+                    binding.profileBlock.visibility =
                         if (state.iBlockedUser) View.VISIBLE else View.GONE
 
-                    binding.perfilBloqMe.visibility =
+                    binding.profileBlockMe.visibility =
                         if (state.userBlockedMe) View.VISIBLE else View.GONE
                 }
             }

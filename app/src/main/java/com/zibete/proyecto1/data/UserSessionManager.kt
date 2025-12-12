@@ -12,6 +12,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -40,59 +41,53 @@ class UserSessionManager @Inject constructor(
     var latitude: Double = 0.0
     var longitude: Double = 0.0
 
-    /**
-     * Lógica de abandono de grupo (Solo manipulación de datos y Firebase).
-     */
     fun performExitGroupDataCleanup() {
-        val currentGroup = userPreferencesRepository.groupName
-        val myUserNameGroup = userPreferencesRepository.userNameGroup
 
-        if (currentGroup.isEmpty()) return
+        // Elimino mi lista de chats en el grupo
+        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT).removeValue()
 
-        // 🛑 CRÍTICO: Eliminación de Listeners Estáticos
-        // Los listeners estáticos (listenerGroupBadge, etc.) NO PUEDEN ser accedidos
-        // aquí. La Activity/ViewModel que los creó debe eliminarlos al observar el cambio
-        // de estado (repo.inGroup = false) o al recibir un evento.
-
-        // 1. Eliminar chats unknown vinculados (Lógica de negocio)
-        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT)
+        // Eliminar todos mis chats del grupo
+        firebaseRefsContainer.refChatMessageGroupsRoot
             .addListenerForSingleValueEvent(object : ValueEventListener {
+
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
-                        firebaseRefsContainer.refChatUnknown.child("$myUid <---> $key").removeValue()
-                        firebaseRefsContainer.refChatUnknown.child("$key <---> $myUid").removeValue()
-                        firebaseRefsContainer.refDatos.child(key).child(NODE_GROUP_CHAT).child(myUid).removeValue()
+
+                        if (key.contains(myUid)) {
+                            snapshot.ref.removeValue()
+                        }
                     }
                 }
+
                 override fun onCancelled(error: DatabaseError) {}
             })
 
-        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT).removeValue()
 
         // 2. Notificación de Abandono al grupo
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", Locale.getDefault())
         val chatmsg = ChatsGroup(
             "abandonó la sala",
-            dateFormat.format(Calendar.getInstance().time),
-            myUserNameGroup,
+            now(),
+            userPreferencesRepository.userNameGroup,
             myUid,
             0,
             userPreferencesRepository.userType
         )
-        firebaseRefsContainer.refGroupChat.child(currentGroup).push().setValue(chatmsg)
+        firebaseRefsContainer.refGroupChat
+            .child(userPreferencesRepository.groupName)
+            .push()
+            .setValue(chatmsg)
 
         // 3. Eliminar usuario del nodo Users
-        firebaseRefsContainer.refGroupUsers.child(currentGroup).child(myUid).removeValue()
+        firebaseRefsContainer.refGroupUsers
+            .child(userPreferencesRepository.groupName)
+            .child(myUid)
+            .removeValue()
 
         // 4. Reset estado local (Repo)
         userPreferencesRepository.resetGroupState() // Función que limpia el estado de grupo en el Repo
     }
 
-    /**
-     * Ejecuta toda la limpieza de sesión y devuelve el Intent de navegación.
-     * @return Intent configurado para navegar a SplashActivity.
-     */
     suspend fun logOutCleanup(): Intent {
 
         // 1. Limpieza de estado

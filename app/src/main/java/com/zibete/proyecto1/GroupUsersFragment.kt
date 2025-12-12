@@ -21,6 +21,8 @@ import com.zibete.proyecto1.adapters.AdapterGroupUsers
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupData
 import com.zibete.proyecto1.utils.FirebaseRefs.refGroupUsers
@@ -125,12 +127,12 @@ class GroupUsersFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // 2. Single Tap Logic (Perfil o Toast)
     private fun handleUserSingleTap(groupUser: UserGroup) {
-        if (groupUser.type == 1) {
-            val intent = Intent(requireContext(), ProfileActivity::class.java).apply {
-                putExtra("id_user", groupUser.userId)
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            }
-            startActivity(intent)
+        if (groupUser.type == PUBLIC_USER) {
+            startActivity(
+                Intent(requireContext(), ProfileActivity::class.java)
+                    .putExtra(EXTRA_USER_ID, groupUser.userId)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            )
         } else {
             Toast.makeText(requireContext(), "Usuario incógnito", Toast.LENGTH_SHORT).show()
         }

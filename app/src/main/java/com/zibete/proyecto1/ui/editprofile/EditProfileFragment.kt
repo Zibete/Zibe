@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.ui
+package com.zibete.proyecto1.ui.editprofile
 
 import android.Manifest
 import android.app.AlertDialog
@@ -29,6 +29,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -62,8 +63,10 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.ResizableImageViewProfile
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs.refCuentas
+import com.zibete.proyecto1.utils.FirebaseRefs
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -76,10 +79,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 import java.util.Objects
-import androidx.core.content.edit
-import com.zibete.proyecto1.ui.constants.Constants.CAMERA_SELECTED
-import com.zibete.proyecto1.ui.constants.Constants.PERMISSIONS_EDIT_PROFILE
-import com.zibete.proyecto1.ui.constants.Constants.PHOTO_SELECTED
+import kotlin.collections.plusAssign
 
 class EditProfileFragment : Fragment() {
 
@@ -157,7 +157,7 @@ class EditProfileFragment : Fragment() {
             }
 
         // Bind UI
-        ftPerfil = view.findViewById(R.id.ftPerfil)
+        ftPerfil = view.findViewById(R.id.profilePhoto)
         loadingPhoto = view.findViewById(R.id.loadingPhoto)
         edtNameUser = view.findViewById(R.id.edtNameUser)
         edtDesc = view.findViewById(R.id.edtDesc)
@@ -192,7 +192,7 @@ class EditProfileFragment : Fragment() {
         }
 
         btnDone?.setOnClickListener {
-            refCuentas.child(user.uid)
+            FirebaseRefs.refCuentas.child(user.uid)
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (!snapshot.exists()) return
@@ -220,7 +220,7 @@ class EditProfileFragment : Fragment() {
 
         // Nombre y desc inicial
         edtNameUser?.setText(user.displayName.orEmpty())
-        refCuentas.child(user.uid)
+        FirebaseRefs.refCuentas.child(user.uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -270,7 +270,7 @@ class EditProfileFragment : Fragment() {
     private fun bindCurrentProfile() {
         val user = currentUser ?: return
 
-        refCuentas.child(user.uid)
+        FirebaseRefs.refCuentas.child(user.uid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -404,12 +404,12 @@ class EditProfileFragment : Fragment() {
     fun EditProfilePhoto() {
         val perms = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms += Manifest.permission.CAMERA
-            perms += Manifest.permission.READ_MEDIA_IMAGES
+            perms plusAssign Manifest.permission.CAMERA
+            perms plusAssign Manifest.permission.READ_MEDIA_IMAGES
         } else {
-            perms += Manifest.permission.CAMERA
-            perms += Manifest.permission.READ_EXTERNAL_STORAGE
-            perms += Manifest.permission.WRITE_EXTERNAL_STORAGE
+            perms plusAssign Manifest.permission.CAMERA
+            perms plusAssign Manifest.permission.READ_EXTERNAL_STORAGE
+            perms plusAssign Manifest.permission.WRITE_EXTERNAL_STORAGE
         }
 
         val needRequest = perms.any {
@@ -418,7 +418,7 @@ class EditProfileFragment : Fragment() {
         }
 
         if (needRequest) {
-            requestPermissions(perms.toTypedArray(), PERMISSIONS_EDIT_PROFILE)
+            requestPermissions(perms.toTypedArray(), Constants.PERMISSIONS_EDIT_PROFILE)
             return
         }
 
@@ -487,7 +487,7 @@ class EditProfileFragment : Fragment() {
         gallerySelection.setOnClickListener {
             val gallery = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             try {
-                startActivityForResult(gallery, PHOTO_SELECTED)
+                startActivityForResult(gallery, Constants.PHOTO_SELECTED)
             } catch (e: Exception) {
                 snack("No se pudo abrir la galería")
             }
@@ -511,7 +511,7 @@ class EditProfileFragment : Fragment() {
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
             }
-            startActivityForResult(intent, CAMERA_SELECTED)
+            startActivityForResult(intent, Constants.CAMERA_SELECTED)
         } catch (e: Exception) {
             snack("No se pudo abrir la cámara")
         }
@@ -564,7 +564,7 @@ class EditProfileFragment : Fragment() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSIONS_EDIT_PROFILE) {
+        if (requestCode == Constants.PERMISSIONS_EDIT_PROFILE) {
             val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
             if (allGranted) {
                 EditProfilePhoto()
@@ -640,7 +640,7 @@ class EditProfileFragment : Fragment() {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val downloadUri = task.result
-                                refCuentas.child(user.uid).child("foto")
+                                FirebaseRefs.refCuentas.child(user.uid).child("foto")
                                     .setValue(downloadUri.toString())
                                 imageUri = downloadUri
                                 val profileUpdates = UserProfileChangeRequest.Builder()
@@ -661,7 +661,7 @@ class EditProfileFragment : Fragment() {
                     refImgUser?.delete()
                 } catch (_: Throwable) {
                 }
-                refCuentas.child(user.uid).child("foto").setValue(imageurl)
+                FirebaseRefs.refCuentas.child(user.uid).child("foto").setValue(imageurl)
                 UserProfileChangeRequest.Builder()
                     .setDisplayName(name)
                     .setPhotoUri(imageUri)
@@ -677,19 +677,19 @@ class EditProfileFragment : Fragment() {
             val stamp = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val nowStr = stamp.format(Calendar.getInstance().time)
 
-            refCuentas.child(user.uid).child("nombre").setValue(name)
-            refCuentas.child(user.uid).child("birthDay").setValue(fecha)
-            refCuentas.child(user.uid).child("age").setValue(edad)
-            refCuentas.child(user.uid).child("descripcion").setValue(desc)
-            refCuentas.child(user.uid).child("date").setValue(nowStr)
+            FirebaseRefs.refCuentas.child(user.uid).child("nombre").setValue(name)
+            FirebaseRefs.refCuentas.child(user.uid).child("birthDay").setValue(fecha)
+            FirebaseRefs.refCuentas.child(user.uid).child("age").setValue(edad)
+            FirebaseRefs.refCuentas.child(user.uid).child("descripcion").setValue(desc)
+            FirebaseRefs.refCuentas.child(user.uid).child("date").setValue(nowStr)
 
             myInstallId?.takeIf { it.isNotEmpty() }?.let {
-                refCuentas.child(user.uid).child("installId").setValue(it)
-                refCuentas.child(user.uid).child("token").setValue(it)
+                FirebaseRefs.refCuentas.child(user.uid).child("installId").setValue(it)
+                FirebaseRefs.refCuentas.child(user.uid).child("token").setValue(it)
             }
 
             myFcmToken?.takeIf { it.isNotEmpty() }?.let {
-                refCuentas.child(user.uid).child("fcmToken").setValue(it)
+                FirebaseRefs.refCuentas.child(user.uid).child("fcmToken").setValue(it)
             }
 
             updateUI(user)

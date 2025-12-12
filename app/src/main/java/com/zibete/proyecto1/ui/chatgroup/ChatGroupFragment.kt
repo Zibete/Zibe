@@ -54,6 +54,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.utils.FirebaseRefs
 import dagger.hilt.android.AndroidEntryPoint
@@ -649,10 +650,11 @@ class ChatGroupFragment : Fragment() {
         if (chat.typeUser == 0) {
             showSnack(view, getString(R.string.perfil_incognito))
         } else if (chat.id != currentUserId) {
-            val intent = Intent(context, ProfileActivity::class.java)
-                .putExtra("id_user", chat.id)
-                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            startActivity(intent)
+            startActivity(
+                Intent(requireContext(), ProfileActivity::class.java)
+                    .putExtra(EXTRA_USER_ID, chat.id)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            )
         }
     }
 

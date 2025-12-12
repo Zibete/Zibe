@@ -13,6 +13,9 @@ import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,12 +47,13 @@ class ProfileViewModel @Inject constructor(
     private val _photosFromChat = MutableStateFlow<List<String>>(emptyList())
     val photosFromChat: StateFlow<List<String>> = _photosFromChat
 
-
-    private val targetUserId: String? = savedStateHandle["userId"]
+    private val userId: String? = savedStateHandle[EXTRA_USER_ID]
+    private val userIds: String? = savedStateHandle[EXTRA_USER_IDS]
+    private val startIndex: String? = savedStateHandle[EXTRA_START_INDEX]
 
 
     val userStatus: StateFlow<UserStatus> = userRepository
-        .observeUserStatus(targetUserId ?: "", "chatWith")
+        .observeUserStatus(userId ?: "", "chatWith")
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
 
     private val myUid = userRepository.myUid
@@ -112,11 +116,7 @@ class ProfileViewModel @Inject constructor(
     fun onToggleFavorite(userId: String) {
         viewModelScope.launch {
             val current = _uiState.value.isFavorite
-            if (current) {
-                userRepository.removeFavoriteUser(userId)
-            } else {
-                userRepository.addFavoriteUser(userId)
-            }
+            userRepository.toggleFavoriteUser(userId, current)
             _uiState.value = _uiState.value.copy(isFavorite = !current)
         }
     }
@@ -141,6 +141,14 @@ class ProfileViewModel @Inject constructor(
             // Si existe y type = 1 → match válido
             _uiState.value = _uiState.value.copy(isGroupMatch = true)
         }
+    }
+
+    fun setUserOnline() {
+        viewModelScope.launch { userRepository.setUserOnline() }
+    }
+
+    fun setUserLastSeen(){
+        viewModelScope.launch { userRepository.setUserLastSeen() }
     }
 
     // ---------- Acciones de menú ----------

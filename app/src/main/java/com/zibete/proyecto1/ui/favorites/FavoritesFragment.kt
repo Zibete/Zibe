@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.favorites
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -17,6 +18,7 @@ import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -57,9 +59,11 @@ class FavoritesFragment : Fragment() {
             context = requireContext()
         ) { favoriteUser ->
             // Navegar al perfil
-            val intent = android.content.Intent(requireContext(), ProfileActivity::class.java)
-            intent.putExtra("id_user", favoriteUser.id)
-            startActivity(intent)
+            startActivity(
+                Intent(requireContext(), ProfileActivity::class.java)
+                    .putExtra(EXTRA_USER_ID, favoriteUser.id)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            )
         }
 
         rvFavorites.adapter = adapter

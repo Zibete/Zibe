@@ -3,6 +3,7 @@ package com.zibete.proyecto1.data
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,10 +21,7 @@ class UserPreferencesRepository @Inject constructor(
     private val appPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
     private val filterPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("filterPrefs", Context.MODE_PRIVATE)
 
-    // ==========================================
-    // SECCIÓN 1: DATOS DE USUARIO Y GRUPO
-    // ==========================================
-
+    // DATOS DE USUARIO Y GRUPO
     var inGroup: Boolean
         get() = userPrefs.getBoolean("inGroup", false)
         set(value) = userPrefs.edit { putBoolean("inGroup", value) }
@@ -37,7 +35,7 @@ class UserPreferencesRepository @Inject constructor(
         set(value) = userPrefs.edit { putString("groupName", value) }
 
     var userType: Int
-        get() = userPrefs.getInt("userType", 2)
+        get() = userPrefs.getInt("userType", PUBLIC_USER)
         set(value) = userPrefs.edit { putInt("userType", value) }
 
     var userDate: String
@@ -48,10 +46,7 @@ class UserPreferencesRepository @Inject constructor(
         get() = userPrefs.getInt("readGroupMsg", 0)
         set(value) = userPrefs.edit { putInt("readGroupMsg", value) }
 
-    // ==========================================
-    // SECCIÓN 2: FILTROS
-    // ==========================================
-
+    // FILTROS
     var filterSwitch: Boolean
         get() = filterPrefs.getBoolean("filterPrefs", false)
         set(value) = filterPrefs.edit { putBoolean("filterPrefs", value) }
@@ -72,10 +67,7 @@ class UserPreferencesRepository @Inject constructor(
         get() = filterPrefs.getInt("hastaPref", 0)
         set(value) = filterPrefs.edit { putInt("hastaPref", value) }
 
-    // ==========================================
-    // SECCIÓN 3: NOTIFICACIONES - ONBOARDING
-    // ==========================================
-
+    // NOTIFICACIONES - ONBOARDING
     var individualNotifications: Boolean
         get() = appPrefs.getBoolean("individualNotifications", true)
         set(value) = appPrefs.edit { putBoolean("individualNotifications", value) }
@@ -100,45 +92,11 @@ class UserPreferencesRepository @Inject constructor(
         get() = appPrefs.getBoolean("deleteFirebaseAccount", false)
         set(value) = appPrefs.edit { putBoolean("deleteFirebaseAccount", value) }
 
-    // ==========================================
-    // SECCIÓN 4: ACCIONES EN BLOQUE (Optimizado)
-    // ==========================================
-
-    /**
-     * Guarda la info de sesión del usuario de una sola vez.
-     */
-    fun saveUserSession(
-        inGroup: Boolean,
-        userName: String,
-        groupName: String,
-        userType: Int,
-        readGroupMsg: Int,
-        userDate: String
-    ) {
-        userPrefs.edit {
-            putBoolean("inGroup", inGroup)
-            putString("userName", userName)
-            putString("groupName", groupName)
-            putInt("userType", userType)
-            putInt("readGroupMsg", readGroupMsg)
-            putString("userDate", userDate)
-        }
-    }
-
-    /**
-     * Limpia la sesión y resetea filtros (llamado en Logout).
-     */
     fun clearAllData() {
-        userPrefs.edit {
-            // Reseteo Usuario
-            putBoolean("inGroup", false)
-            putString("groupName", "")
-            putString("userName", "")
-            putInt("userType", 2)
-            putInt("readGroupMsg", 0)
-            putString("userDate", "")
 
-            // Reseteo Filtros (Manteniendo las notificaciones)
+        resetGroupState()
+
+        userPrefs.edit {
             putBoolean("filterPrefs", false)
             putBoolean("checkPref", false)
             putBoolean("edadPref", false)
@@ -147,18 +105,12 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Resetea solo el estado de la sesión de grupo (llamado al Salir del Grupo).
-     * [CRÍTICO]: Se aseguró que solo use el editor de prefs para evitar recursividad
-     * o llamadas a un Singleton externo que ya no existe.
-     */
     fun resetGroupState() {
-        // Limpiamos todos los campos relacionados con el estado de grupo de forma atómica.
         userPrefs.edit {
             putBoolean("inGroup", false)
             putString("userName", "")
             putString("groupName", "")
-            putInt("userType", 2)
+            putInt("userType", PUBLIC_USER)
             putInt("readGroupMsg", 0)
             putString("userDate", "")
         }

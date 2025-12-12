@@ -17,7 +17,7 @@
             android:layout_gravity="center"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/ftPerfil"/>
+            android:id="@+id/profilePhoto"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
@@ -62,7 +62,7 @@
 
                     <ImageView
                         android:layout_marginHorizontal="1dp"
-                        android:id="@+id/perfil_favorite_on"
+                        android:id="@+id/profile_favorite_on"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_24"
@@ -70,7 +70,7 @@
 
                     <ImageView
                         android:layout_marginHorizontal="1dp"
-                        android:id="@+id/perfil_favorite_off"
+                        android:id="@+id/profile_favorite_off"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_star_outline_24"
@@ -78,7 +78,7 @@
 
                     <ImageView
                         android:layout_marginHorizontal="1dp"
-                        android:id="@+id/perfil_bloq"
+                        android:id="@+id/profile_block"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_block_24"
@@ -87,7 +87,7 @@
                     <ImageView
                         android:layout_marginLeft="4dp"
                         android:layout_marginRight="1dp"
-                        android:id="@+id/perfil_bloq_me"
+                        android:id="@+id/profile_block_me"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:src="@drawable/ic_baseline_cancel_schedule_send_24"
@@ -115,7 +115,7 @@
                             android:orientation="horizontal">
 
                             <TextView
-                                android:id="@+id/edad"
+                                android:id="@+id/age_view"
                                 android:paddingStart="2dp"
                                 android:gravity="top"
                                 android:layout_width="wrap_content"

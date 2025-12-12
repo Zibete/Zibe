@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.ProfileUiBinder
@@ -36,6 +37,7 @@ import javax.inject.Inject
 class SliderProfileAdapter @Inject constructor(
     private val profileUiBinder: ProfileUiBinder,
     private val userRepository: UserRepository,
+    private val locationRepository: LocationRepository,
     private val context: Context,
     private val userList: MutableList<Users>,
     private val rotation: Int
@@ -45,23 +47,23 @@ class SliderProfileAdapter @Inject constructor(
     inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val floatingActionMenu: FloatingActionMenu = itemView.findViewById(R.id.floatingActionMenu)
         val subMenuChatWith: FloatingActionButton = itemView.findViewById(R.id.menu_go_chat)
-        val subMenuChatWithUnknown: FloatingActionButton = itemView.findViewById(R.id.menu_go_chat_group)
+        val subMenuGroupChat: FloatingActionButton = itemView.findViewById(R.id.menu_go_chat_group)
 
         val recyclerPhotos: RecyclerView = itemView.findViewById(R.id.recyclerPhotos)
         val linearImageActivity: LinearLayout = itemView.findViewById(R.id.linearImageActivity)
         val linearPhotos: LinearLayout = itemView.findViewById(R.id.linearPhotos)
         val distanceUser: TextView = itemView.findViewById(R.id.distanceUser)
-        val ftPerfil: ImageView = itemView.findViewById(R.id.ftPerfil)
+        val ftPerfil: ImageView = itemView.findViewById(R.id.profilePhoto)
         val nameUser: TextView = itemView.findViewById(R.id.nameUser)
         val desc: TextView = itemView.findViewById(R.id.desc)
-        val age: TextView = itemView.findViewById(R.id.edad)
+        val age: TextView = itemView.findViewById(R.id.age_view)
         val tvEstado: TextView = itemView.findViewById(R.id.tv_status)
         val iconConectado: ImageView = itemView.findViewById(R.id.icon_connected)
         val iconDesconectado: ImageView = itemView.findViewById(R.id.icon_disconnected)
-        val perfilFavoriteOff: ImageView = itemView.findViewById(R.id.perfil_favorite_off)
-        val perfilFavoriteOn: ImageView = itemView.findViewById(R.id.perfil_favorite_on)
-        val perfilBloq: ImageView = itemView.findViewById(R.id.perfil_bloq)
-        val perfilBloqMe: ImageView = itemView.findViewById(R.id.perfil_bloq_me)
+        val perfilFavoriteOff: ImageView = itemView.findViewById(R.id.profile_favorite_off)
+        val perfilFavoriteOn: ImageView = itemView.findViewById(R.id.profile_favorite_on)
+        val blockIcon: ImageView = itemView.findViewById(R.id.profile_block)
+        val blockMeIcon: ImageView = itemView.findViewById(R.id.profile_block_me)
         val coordinatorLayoutPhoto: CoordinatorLayout = itemView.findViewById(R.id.coordinatorLayoutPhoto)
     }
 
@@ -74,7 +76,7 @@ class SliderProfileAdapter @Inject constructor(
 
     override fun getItemCount(): Int = userList.size
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
+    override suspend fun onBindViewHolder(holder: VH, position: Int) {
         val user = userList[position]
 
         // FAB menu
@@ -187,14 +189,20 @@ class SliderProfileAdapter @Inject constructor(
 
         // Binders auxiliares
         profileUiBinder.setFavorite(user.id, holder.perfilFavoriteOn, holder.perfilFavoriteOff)
-        profileUiBinder.getBloqMe(user.id, holder.perfilBloqMe)
-        profileUiBinder.getAge(user.id, holder.age)
+        profileUiBinder.blockState(user.id, holder.blockMeIcon, holder.blockIcon)
 
-        profileUiBinder.getDistanceToUser(user.id) { distanceText ->
-            holder.distanceUser.text = distanceText
-        }
+
+
+        holder.distanceUser.text = locationRepository.getDistanceToUser(user.id)
+
 
         profileUiBinder.addPhotoReceived(user.id, adapterPhotoReceived, holder.linearPhotos)
-        profileUiBinder.setMenuProfile(context, user.id, holder.subMenuChatWithUnknown, holder.subMenuChatWith)
+
+        profileUiBinder.setProfile(
+            context = context,
+            userId = user.id,
+            subMenuGroupChat = holder.subMenuGroupChat,
+            subMenuChatWith = holder.subMenuChatWith,
+            ageView = holder.age)
     }
 }

@@ -27,16 +27,16 @@ class LocationRepository @Inject constructor(
     private val myUid
         get() = sessionManager.myUid
 
-    private suspend fun getLocation(idUser : String): Pair<Double, Double> {
-        val snapshot = firebaseRefsContainer.refCuentas.child(idUser).get().await()
+    private suspend fun getLocation(uid : String): Pair<Double, Double> {
+        val snapshot = firebaseRefsContainer.refCuentas.child(uid).get().await()
         val user = snapshot.getValue(Users::class.java)
             ?: throw Exception("User not found")
         return user.latitude to user.longitude
     }
 
-    suspend fun getDistanceToUser(idUser: String): String {
+    suspend fun getDistanceToUser(userId: String): String {
         val (myLat, myLng) = getLocation(myUid)
-        val (otherLat, otherLng) = getLocation(idUser)
+        val (otherLat, otherLng) = getLocation(userId)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
         return formatDistance(distance)
     }

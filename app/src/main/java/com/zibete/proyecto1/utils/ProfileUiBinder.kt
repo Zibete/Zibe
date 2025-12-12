@@ -6,85 +6,82 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.isVisible
 import com.github.clans.fab.FloatingActionButton
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
+import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.utils.Utils.calcAge
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ProfileUiBinder @Inject constructor(
-    private val repo: UserPreferencesRepository,
-    private val sessionManager: UserSessionManager
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userRepository: UserRepository,
+    private val groupRepository: GroupRepository,
+    private val firebaseRefsContainer: FirebaseRefsContainer
 ) {
 
-    private val myUid
-        get() = sessionManager.myUid
+    private val myUid = userRepository.myUid
 
-
-    // === Edad ===
-    fun getAge(idUser: String, ageView: TextView) {
-        FirebaseRefs.refCuentas.child(idUser)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val birthDay = snapshot.child("birthDay").getValue(String::class.java)
-                    val edad = calcAge(birthDay)
-                    ageView.text = edad.toString()
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
-
-    // === Menú flotante de perfil (chat normal / chat incógnito) ===
-    fun setMenuProfile(
+    // === UI Perfil (chat normal / chat grupo) ===
+    suspend fun setProfile(
         context: Context,
-        idUser: String,
-        subMenuChatWithUnknown: FloatingActionButton,
-        subMenuChatWith: FloatingActionButton
+        userId: String,
+        subMenuGroupChat: FloatingActionButton,
+        subMenuChatWith: FloatingActionButton,
+        ageView: TextView
     ) {
-        // Chat incógnito (si está en grupo)
-        FirebaseRefs.refGroupUsers.child(repo.groupName).child(idUser)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val unknownName =
-                            snapshot.child("user_name").getValue(String::class.java)
 
-                        subMenuChatWithUnknown.labelText =
-                            "Chat privado de: ${repo.groupName}"
+        val user = userRepository.getUserProfile(userId) ?: return
 
-                        subMenuChatWithUnknown.setOnClickListener {
-                            val intent = Intent(context, ChatActivity::class.java).apply {
-                                putExtra("unknownName", unknownName)
-                                putExtra("idUserUnknown", idUser)
-                                addFlags(
-                                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                                            Intent.FLAG_ACTIVITY_NEW_TASK
-                                )
-                            }
-                            context.startActivity(intent)
-                        }
-                    } else {
-                        subMenuChatWithUnknown.visibility = View.GONE
-                    }
+        // Edad
+        val ageUser = calcAge(user.birthDay)
+        ageView.text = ageUser.toString()
+
+        val userGroup = groupRepository.getUserGroup(userId, userPreferencesRepository.groupName)
+
+        // Grupo
+        if (userGroup != null && userGroup.type == PUBLIC_USER) {
+            subMenuGroupChat.isVisible = true
+            subMenuGroupChat.labelText =
+                context.getString(R.string.chat_private_in_group, userPreferencesRepository.groupName)
+
+            subMenuGroupChat.setOnClickListener {
+                val intent = Intent(context, ChatActivity::class.java).apply {
+                    putExtra("userId", userId)
+                    putExtra("nodeType", NODE_GROUP_CHAT)
+                    putExtra("userName", user.name)
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                                Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
                 }
+                context.startActivity(intent)
+            }
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        } else {
+            subMenuGroupChat.isVisible = false
+        }
 
-        // Chat normal
+        // Chat
         subMenuChatWith.setOnClickListener {
             val intent = Intent(context, ChatActivity::class.java).apply {
-                putExtra("id_user", idUser)
+                putExtra("userId", userId)
+                putExtra("nodeType", NODE_CURRENT_CHAT)
+                putExtra("userName", user.name)
                 addFlags(
                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
                             Intent.FLAG_ACTIVITY_NEW_TASK
@@ -95,65 +92,43 @@ class ProfileUiBinder @Inject constructor(
     }
 
     // === Favoritos ===
-    fun setFavorite(
+    suspend fun setFavorite(
         userId: String,
         favOn: ImageView,
         favOff: ImageView
     ) {
-        FirebaseRefs.refDatos.child(myUid).child("FavoriteList").child(userId)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val exists = snapshot.exists()
-                    favOn.visibility = if (exists) View.VISIBLE else View.GONE
-                    favOff.visibility = if (exists) View.GONE else View.VISIBLE
-                }
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        val isFavorite = userRepository.isUserFavorite(userId)
+
+        favOn.isVisible = isFavorite
+        favOff.isVisible = !isFavorite
+
     }
 
-    // === Bloqueo (yo bloqueo al otro) ===
-    fun setBloq(
+    // === Bloqueo ===
+    suspend fun blockState(
         userId: String,
+        blockMeIcon: ImageView,
         blockIcon: ImageView
     ) {
-        FirebaseRefs.refDatos.child(myUid).child(Constants.NODE_CURRENT_CHAT).child(userId).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val isBlocked = snapshot.getValue(String::class.java) == "bloq"
-                    blockIcon.visibility = if (isBlocked) View.VISIBLE else View.GONE
-                }
 
-                override fun onCancelled(error: DatabaseError) {}
-            })
+        val blockState = userRepository.getBlockStateWith(userId)
+
+        blockIcon.isVisible = blockState.iBlockedUser
+        blockMeIcon.isVisible = blockState.userBlockedMe
     }
 
-    // === Bloqueo (el otro me bloqueó) ===
-    fun getBloqMe(
-        userId: String,
-        blockMeIcon: ImageView
-    ) {
-        FirebaseRefs.refDatos.child(userId).child(Constants.NODE_CURRENT_CHAT).child(myUid).child("estado")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val blocked = snapshot.getValue(String::class.java) == "bloq"
-                    blockMeIcon.visibility = if (blocked) View.VISIBLE else View.GONE
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-    }
 
     // === Fotos recibidas en perfil ===
     fun addPhotoReceived(
-        idUser: String?,
+        userId: String?,
         adapter: AdapterPhotoReceived,
         linearPhotos: LinearLayout
     ) {
-        if (idUser.isNullOrEmpty()) return
+        if (userId.isNullOrEmpty()) return
 
         // Mis mensajes hacia él
-        FirebaseRefs.refChat.child("${myUid} <---> $idUser").child("Mensajes")
+        FirebaseRefs.refChat.child("${myUid} <---> $userId").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)
@@ -166,7 +141,7 @@ class ProfileUiBinder @Inject constructor(
             })
 
         // Sus mensajes hacia mí
-        FirebaseRefs.refChat.child("$idUser <---> ${myUid}").child("Mensajes")
+        FirebaseRefs.refChat.child("$userId <---> ${myUid}").child("Mensajes")
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     addPhoto(snapshot, adapter, linearPhotos)

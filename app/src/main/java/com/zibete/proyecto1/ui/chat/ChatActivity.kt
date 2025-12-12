@@ -16,8 +16,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.os.VibrationEffect
@@ -55,17 +53,18 @@ import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
-import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.ui.profile.ProfileActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.File
@@ -314,14 +313,11 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         binding.linearNameUser.setOnClickListener { v ->
-            val u = chatViewModel.otherProfile.value ?: return@setOnClickListener
-
-            val intent = Intent(this, SlideProfileActivity::class.java).apply {
-                putExtra("userList", arrayListOf(u))
-                putExtra("position", 0)
-                putExtra("rotation", 0)
-            }
-            v.context.startActivity(intent)
+            startActivity(
+                Intent(v.context, ProfileActivity::class.java)
+                    .putExtra(EXTRA_USER_ID, chatViewModel.userId)
+                    .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            )
         }
     }
 

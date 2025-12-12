@@ -9,12 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
@@ -23,9 +21,12 @@ import com.zibete.proyecto1.databinding.FilterLayoutBinding
 import com.zibete.proyecto1.databinding.FragmentUsersBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_OFF
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_ON
+import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.utils.ProfileUiBinder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -109,7 +110,12 @@ class UsersFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener 
             locationRepository = locationRepository,
             onChatClicked = { userId ->
                 val intent = Intent(requireContext(), ChatActivity::class.java).apply {
-                    putExtra("id_user", userId)
+                    putExtra("id_user", userId
+
+
+                    // hacer
+
+                    )
                 }
                 startActivity(intent)
             },
@@ -119,12 +125,13 @@ class UsersFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener 
 
                 val position = extra.indexOf(selectedUser)
 
-                val intent = Intent(requireContext(), SlideProfileActivity::class.java).apply {
-                    putExtra("userList", extra)
-                    putExtra("position", position)
-                    putExtra("rotation", 0)
-                }
-                startActivity(intent)
+                val ids = ArrayList(extra.map { it.id })
+
+                startActivity(
+                    Intent(requireContext(), ProfileActivity::class.java)
+                        .putStringArrayListExtra(EXTRA_USER_IDS, ids)
+                        .putExtra(EXTRA_START_INDEX, position)
+                )
             }
         )
 
