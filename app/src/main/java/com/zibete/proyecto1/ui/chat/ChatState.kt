@@ -7,7 +7,6 @@ data class ChatState(
     val photoReady: Boolean = false,
     val textReady: Boolean = false,
     val pendingFileUrl: String? = null,
-    val selectedMessages: Set<ChatMessage> = emptySet(),
-    val deleteModeEnabled: Boolean = false
-
+    val messages: List<ChatMessage> = emptyList(),
+    val selectedMessages: Set<ChatMessage> = emptySet()
 )

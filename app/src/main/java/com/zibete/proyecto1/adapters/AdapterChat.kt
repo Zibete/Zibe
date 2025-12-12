@@ -25,57 +25,64 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
-import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.ui.chat.ChatActivity
-import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.databinding.RowDateChatBinding
 import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.INFO
-import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_RIGHT
 import com.zibete.proyecto1.utils.Utils.today
 import com.zibete.proyecto1.utils.Utils.yesterday
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.widthPx
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Locale
+
 
 class AdapterChat(
-    msgList: ArrayList<ChatMessage>,
     private val maxSize: Int,
     private val context: Context,
-    private val onSelectionChanged: (ChatMessage, Boolean) -> Unit
-) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF),
-    View.OnCreateContextMenuListener {
+    private val hasSelection: () -> Boolean,
+    private val isSelected: (ChatMessage) -> Boolean,
+    private val onSelectionChanged: (ChatMessage, Boolean) -> Unit,
+    private val myAudioAvatarUrl: String?,
+    private val otherAudioAvatarUrl: String?,
+    private val myUid: String
+) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF), View.OnCreateContextMenuListener {
 
-    private val mutableMsgList = msgList.toMutableList()
     private val photoList = arrayListOf<String?>()
     private var positionForContext = 0
     private var handler: Handler? = null
     private var moveSeekBarThread: Runnable? = null
     private var mediaSelectedMs: Long = 0
     private var chronStateSave: Long = 0
-    private val vibrator: Vibrator? = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    private val userId: String? = FirebaseAuth.getInstance().currentUser?.uid
+
+    private val vibrator: Vibrator? =
+        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
 
     init {
-        msgList.forEach { if (it.type.isPhoto()) photoList.add(it.message) }
-        submitList(mutableMsgList.toList())
         setHasStableIds(false)
+    }
+
+    override fun submitList(list: List<ChatMessage>?) {
+        super.submitList(list?.takeLast(maxSize))
+        rebuildPhotoList()
+    }
+
+    private fun rebuildPhotoList() {
+        photoList.clear()
+        currentList.forEach { if (it.type.isPhoto()) photoList.add(it.message) }
     }
 
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         return when {
-            item.type == INFO            -> MSG_TYPE_MID
-            item.sender == userId        -> MSG_TYPE_RIGHT
-            else                         -> MSG_TYPE_LEFT
+            item.type == INFO -> MSG_TYPE_MID
+            item.sender == myUid -> MSG_TYPE_RIGHT
+            else -> MSG_TYPE_LEFT
         }
     }
 
@@ -85,9 +92,11 @@ class AdapterChat(
             MSG_TYPE_MID -> InfoVH(RowDateChatBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
+
             MSG_TYPE_RIGHT -> RightVH(RowMsgRightBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
+
             else -> LeftVH(RowMsgLeftBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
@@ -95,23 +104,25 @@ class AdapterChat(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val chats = getItem(position)
+        val msg = getItem(position)
         when (holder) {
-            is InfoVH  -> holder.bind(chats)
-            is RightVH -> holder.bindCommon(chats) { h -> bindInteractive(h, chats) }
-            is LeftVH  -> holder.bindCommon(chats) { h -> bindInteractive(h, chats) }
+            is InfoVH -> holder.bind(msg)
+            is RightVH -> holder.bindCommon(msg) { h -> bindInteractive(h, msg, isMe = true) }
+            is LeftVH -> holder.bindCommon(msg) { h -> bindInteractive(h, msg, isMe = false) }
         }
     }
 
-    private fun bindInteractive(h: BaseMsgVH, chatMessage: ChatMessage) {
+    private fun bindInteractive(h: BaseMsgVH, chatMessage: ChatMessage, isMe: Boolean) {
         val selectedColor = ContextCompat.getColor(context, R.color.accent_transparent)
         val transparent = ContextCompat.getColor(context, R.color.transparent)
-        val isSelected = ChatActivity.msgSelected.indexOf(chatMessage) != -1
-        h.bindingRoot.selectedItem.setBackgroundColor(if (isSelected) selectedColor else transparent)
 
+        val selected = isSelected(chatMessage)
+        h.bindingRoot.selectedItem.setBackgroundColor(if (selected) selectedColor else transparent)
+
+        // Click foto
         h.bindingRoot.imgPic?.setOnClickListener { v ->
-            if (ChatActivity.msgSelected.isEmpty()) {
-                val i = Intent(context, SlidePhotoActivity::class.java)
+            if (!hasSelection()) {
+                val i = Intent(v.context, SlidePhotoActivity::class.java)
                     .putExtra("photoList", photoList)
                     .putExtra("position", photoList.indexOf(chatMessage.message))
                     .putExtra("rotation", 0)
@@ -121,32 +132,41 @@ class AdapterChat(
             }
         }
 
+        // Click burbuja
         h.bindingRoot.linearCardMsg.setOnClickListener {
             onClickToggleSelect(h, chatMessage)
         }
 
+        // Long click (entra/continúa selección)
         val longClick: (View) -> Boolean = {
             vibrateShort()
-            if (ChatActivity.msgSelected.isEmpty()) {
+
+            if (!hasSelection()) {
                 select(h, chatMessage)
             } else {
-                val idx = ChatActivity.msgSelected.indexOf(chatMessage)
-                if (idx == -1) select(h, chatMessage) else unselect(h, chatMessage)
+                if (!isSelected(chatMessage)) select(h, chatMessage) else unselect(h, chatMessage)
             }
+
             val pos = h.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) setPosition(pos)
             false
         }
+
         h.bindingRoot.linearCardMsg.setOnLongClickListener(longClick)
         h.bindingRoot.imgPic?.setOnLongClickListener(longClick)
 
-        if (chatMessage.sender == userId) {
+        // Seen checks (solo sender)
+        if (isMe) {
             when (chatMessage.seen) {
                 1 -> {
                     h.bindingRoot.checked?.visibility = View.VISIBLE
-                    h.bindingRoot.checked?.setColorFilter(ContextCompat.getColor(context, R.color.blanco), PorterDuff.Mode.SRC_IN)
+                    h.bindingRoot.checked?.setColorFilter(
+                        ContextCompat.getColor(context, R.color.blanco),
+                        PorterDuff.Mode.SRC_IN
+                    )
                     h.bindingRoot.checked2?.visibility = View.GONE
                 }
+
                 2 -> {
                     h.bindingRoot.checked?.visibility = View.VISIBLE
                     h.bindingRoot.checked2?.visibility = View.VISIBLE
@@ -154,6 +174,7 @@ class AdapterChat(
                     h.bindingRoot.checked?.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                     h.bindingRoot.checked2?.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 }
+
                 3 -> {
                     h.bindingRoot.checked?.visibility = View.VISIBLE
                     h.bindingRoot.checked2?.visibility = View.VISIBLE
@@ -161,6 +182,7 @@ class AdapterChat(
                     h.bindingRoot.checked?.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                     h.bindingRoot.checked2?.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 }
+
                 else -> {
                     h.bindingRoot.checked?.visibility = View.GONE
                     h.bindingRoot.checked2?.visibility = View.GONE
@@ -171,16 +193,18 @@ class AdapterChat(
             h.bindingRoot.checked2?.visibility = View.GONE
         }
 
+        // Audio
         if (chatMessage.type.isAudio()) {
             h.bindingRoot.icPlayPause?.setOnClickListener {
                 when (h.stateMediaPlayer) {
                     MediaState.NOT_STARTED -> playAudio(h, chatMessage)
-                    MediaState.PLAY        -> pauseAudio(h, chatMessage)
-                    MediaState.PAUSE       -> continueAudio(h)
+                    MediaState.PLAY -> pauseAudio(h, chatMessage)
+                    MediaState.PAUSE -> continueAudio(h)
                 }
             }
 
-            h.bindingRoot.seekBar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            h.bindingRoot.seekBar?.setOnSeekBarChangeListener(object :
+                SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                     if (fromUser && mediaPlayer != null) {
                         mediaSelectedMs = progress.toLong()
@@ -188,6 +212,7 @@ class AdapterChat(
                         h.bindingRoot.tvTimer?.base = SystemClock.elapsedRealtime() - progress
                     }
                 }
+
                 override fun onStartTrackingTouch(sb: SeekBar?) {}
                 override fun onStopTrackingTouch(sb: SeekBar?) {}
             })
@@ -195,13 +220,10 @@ class AdapterChat(
     }
 
     private fun onClickToggleSelect(holder: BaseMsgVH, chatMessage: ChatMessage) {
-        if (ChatActivity.msgSelected.isEmpty()) return
+        if (!hasSelection()) return
         vibrateShort()
-        val idx = ChatActivity.msgSelected.indexOf(chatMessage)
-        if (idx == -1) select(holder, chatMessage) else unselect(holder, chatMessage)
+        if (!isSelected(chatMessage)) select(holder, chatMessage) else unselect(holder, chatMessage)
     }
-
-
 
     private fun select(holder: BaseMsgVH, chatMessage: ChatMessage) {
         holder.bindingRoot.selectedItem.setBackgroundColor(
@@ -221,85 +243,16 @@ class AdapterChat(
         vibrator?.vibrate(VibrationEffect.createOneShot(75, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-    // ==== API pública compatible ====
-
-    fun addChat(chatMessage: ChatMessage) {
-        if (mutableMsgList.size > maxSize) {
-            mutableMsgList.removeAt(0)
-        }
-
-        // ------- separador de fecha (FIX: "ayer" no muta el calendar de "hoy")
-        if (mutableMsgList.isNotEmpty()) {
-
-            val thisDate = chatMessage.date.safeSub(0, 10)
-            val lastDate = mutableMsgList.last().date.safeSub(0, 10)
-
-            if (thisDate != lastDate) {
-                val today = today()
-                val yesterday = yesterday()
-
-                val label = when (thisDate) {
-                    today     -> context.getString(R.string.today)
-                    yesterday -> context.getString(R.string.yesterday)
-                    else      -> thisDate
-                }
-
-                mutableMsgList.add(
-                    ChatMessage(
-                        message = label,
-                        date = thisDate,
-                        sender = "",
-                        type = INFO,
-                        seen = 0
-                    )
-                )
-            }
-        }
-
-
-        mutableMsgList.add(chatMessage)
-        if (chatMessage.type.isPhoto()) photoList.add(chatMessage.message)
-        submitList(mutableMsgList.toList())
-    }
-
-    fun actualizeMsg(chatMessage: ChatMessage) {
-        val idx = mutableMsgList.indexOf(chatMessage)
-        if (idx != -1) {
-            mutableMsgList[idx] = chatMessage
-            val iAmSender = chatMessage.sender == userId
-            val deleteType = if (iAmSender)
-                listOf(Constants.MSG_TEXT_SENDER_DLT, Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT)
-            else
-                listOf(Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT)
-
-            if (deleteType.contains(chatMessage.type)) {
-                mutableMsgList.removeAt(idx)
-            }
-            submitList(mutableMsgList.toList())
-        } else {
-            addChat(chatMessage)
-        }
-    }
-
-    fun deleteMsg(chatMessage: ChatMessage?) {
-        chatMessage ?: return
-        val idx = mutableMsgList.indexOf(chatMessage)
-        if (idx != -1) {
-            mutableMsgList.removeAt(idx)
-            submitList(mutableMsgList.toList())
-        }
-    }
-
     fun getDate(position: Int): String {
         val fecha = getItemOrNull(position)?.date?.safeSub(0, 10) ?: return ""
 
-        val today = today()
-        val yesterday = yesterday()
+        val t = today()
+        val y = yesterday()
 
         return when (fecha) {
-            today     -> context.getString(R.string.today)
-            yesterday -> context.getString(R.string.yesterday)
-            else      -> fecha
+            t -> context.getString(R.string.today)
+            y -> context.getString(R.string.yesterday)
+            else -> fecha
         }
     }
 
@@ -307,9 +260,11 @@ class AdapterChat(
         positionForContext = position
     }
 
-    override fun getItemCount(): Int = super.getItemCount()
-
-    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+    override fun onCreateContextMenu(
+        menu: ContextMenu,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
         menu.add(Constants.FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.eliminar)
     }
 
@@ -332,7 +287,9 @@ class AdapterChat(
             bindModel(model)
             attach(this)
         }
-        private fun bindModel(model: ChatMessage) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = true)
+
+        private fun bindModel(model: ChatMessage) =
+            bindCommonFields(bCommon = bindingRoot, model = model, isMe = true)
     }
 
     private inner class LeftVH(val b: RowMsgLeftBinding) : BaseMsgVH(b.root) {
@@ -341,7 +298,9 @@ class AdapterChat(
             bindModel(model)
             attach(this)
         }
-        private fun bindModel(model: ChatMessage) = bindCommonFields(bCommon = bindingRoot, model = model, isMe = false)
+
+        private fun bindModel(model: ChatMessage) =
+            bindCommonFields(bCommon = bindingRoot, model = model, isMe = false)
     }
 
     private data class CommonBindingAccessor(
@@ -355,9 +314,9 @@ class AdapterChat(
         val hora: TextView?,
         val checked: ImageView?,
         val checked2: ImageView?,
-        val linearMensajeMsg: View,
-        val linearMensajePic: View,
-        val linearMensajeAudio: View,
+        val linearMessageMessage: View,
+        val linearMessagePhoto: View,
+        val linearMessageAudio: View,
         val linearBubble: View,
         val circleImgAudio: de.hdodenhof.circleimageview.CircleImageView?,
         val icPlayPause: ImageView?,
@@ -376,15 +335,16 @@ class AdapterChat(
                 hora = b.horaMsg,
                 checked = b.checked,
                 checked2 = b.checked2,
-                linearMensajeMsg = b.linearMensajeMsg,
-                linearMensajePic = b.linearMensajePic,
-                linearMensajeAudio = b.linearMensajeAudio,
+                linearMessageMessage = b.linearMensajeMsg,
+                linearMessagePhoto = b.linearMensajePic,
+                linearMessageAudio = b.linearMensajeAudio,
                 linearBubble = b.linearBubble,
                 circleImgAudio = b.circleImgAudio,
                 icPlayPause = b.icPlayPause,
                 tvTimer = b.tvTimer,
                 seekBar = b.seekBar
             )
+
             fun from(b: RowMsgLeftBinding): CommonBindingAccessor = CommonBindingAccessor(
                 root = b.root,
                 linearCardMsg = b.linearCardMsg,
@@ -396,9 +356,9 @@ class AdapterChat(
                 hora = b.horaMsg,
                 checked = b.checked,
                 checked2 = b.checked2,
-                linearMensajeMsg = b.linearMensajeMsg,
-                linearMensajePic = b.linearMensajePic,
-                linearMensajeAudio = b.linearMensajeAudio,
+                linearMessageMessage = b.linearMensajeMsg,
+                linearMessagePhoto = b.linearMensajePic,
+                linearMessageAudio = b.linearMensajeAudio,
                 linearBubble = b.linearBubble,
                 circleImgAudio = b.circleImgAudio,
                 icPlayPause = b.icPlayPause,
@@ -408,28 +368,30 @@ class AdapterChat(
         }
     }
 
-    // Lógica común
     private fun bindCommonFields(bCommon: CommonBindingAccessor, model: ChatMessage, isMe: Boolean) {
         bCommon.hora?.text = model.date.safeSub(11, 16)
 
         val paramsBubble = bCommon.linearBubble.layoutParams as ViewGroup.MarginLayoutParams
 
         if (model.type.isPhoto()) {
-            if (isMe) paramsBubble.marginStart = (widthPx / 3) else paramsBubble.marginEnd = (widthPx / 3)
-        }else{
-            if (isMe) paramsBubble.marginStart = (widthPx / 6) else paramsBubble.marginEnd = (widthPx / 6)
+            if (isMe) paramsBubble.marginStart = (widthPx / 3) else paramsBubble.marginEnd =
+                (widthPx / 3)
+        } else {
+            if (isMe) paramsBubble.marginStart = (widthPx / 6) else paramsBubble.marginEnd =
+                (widthPx / 6)
         }
+
         when {
             model.type.isPhoto() -> {
-                bCommon.linearMensajePic.visibility = View.VISIBLE
-                bCommon.linearMensajeMsg.visibility = View.GONE
-                bCommon.linearMensajeAudio.visibility = View.GONE
+                bCommon.linearMessagePhoto.visibility = View.VISIBLE
+                bCommon.linearMessageMessage.visibility = View.GONE
+                bCommon.linearMessageAudio.visibility = View.GONE
                 bCommon.tvNotFound?.visibility = View.GONE
                 bCommon.loadingPhoto?.visibility = View.VISIBLE
 
                 Glide.with(context)
                     .load(model.message)
-                    .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                    .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                         override fun onLoadFailed(
                             e: GlideException?,
                             model: Any?,
@@ -457,18 +419,18 @@ class AdapterChat(
             }
 
             model.type.isText() -> {
-                bCommon.linearMensajePic.visibility = View.GONE
-                bCommon.linearMensajeMsg.visibility = View.VISIBLE
-                bCommon.linearMensajeAudio.visibility = View.GONE
+                bCommon.linearMessagePhoto.visibility = View.GONE
+                bCommon.linearMessageMessage.visibility = View.VISIBLE
+                bCommon.linearMessageAudio.visibility = View.GONE
                 bCommon.tvMsg?.text = model.message.orEmpty()
             }
 
             model.type.isAudio() -> {
-                bCommon.linearMensajePic.visibility = View.GONE
-                bCommon.linearMensajeMsg.visibility = View.GONE
-                bCommon.linearMensajeAudio.visibility = View.VISIBLE
+                bCommon.linearMessagePhoto.visibility = View.GONE
+                bCommon.linearMessageMessage.visibility = View.GONE
+                bCommon.linearMessageAudio.visibility = View.VISIBLE
 
-                val url = if (isMe) ChatActivity.myPhoto else ChatActivity.yourPhoto
+                val url = if (isMe) myAudioAvatarUrl else otherAudioAvatarUrl
                 Glide.with(context).load(url).into(bCommon.circleImgAudio!!)
 
                 bCommon.tvTimer?.text = model.date.safeSub(23, 28)
@@ -577,7 +539,10 @@ class AdapterChat(
     }
 
     private fun stopAndReleaseMedia(@Suppress("UNUSED_PARAMETER") h: BaseMsgVH) {
-        try { mediaPlayer?.stop() } catch (_: Exception) {}
+        try {
+            mediaPlayer?.stop()
+        } catch (_: Exception) {
+        }
         mediaPlayer?.release()
         mediaPlayer = null
     }
@@ -602,7 +567,11 @@ class AdapterChat(
         val s = this ?: return ""
         if (start < 0 || end <= start || start >= s.length) return ""
         val e = end.coerceAtMost(s.length)
-        return try { s.substring(start, e) } catch (_: Exception) { "" }
+        return try {
+            s.substring(start, e)
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     private fun getItemOrNull(position: Int): ChatMessage? =
@@ -622,7 +591,9 @@ class AdapterChat(
                                 oldItem.type == newItem.type &&
                                 oldItem.message == newItem.message)
             }
-            override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean = oldItem == newItem
+
+            override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean =
+                oldItem == newItem
         }
     }
 

@@ -1,5 +1,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
+
+
     <string name="app_name">Zibe</string>
     <string name="sign_in_with">Iniciar sesión con...</string>
     <string name="or_use_your_account">o utilizá tu cuenta</string>
@@ -132,6 +134,8 @@
     <string name="cargando">Cargando...</string>
     <string name="anonimous">Anónimo</string>
     <string name="deleted_profile_fallback">Perfil eliminado</string>
+    <string name="chat_private_in_group">Chat privado en %1$s</string>
+
 
     <string-array name="edad">
         <item>18</item>

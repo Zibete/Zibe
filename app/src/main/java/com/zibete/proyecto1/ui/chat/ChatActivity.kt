@@ -53,22 +53,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
-import com.google.firebase.database.DataSnapshot
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.SlideProfileActivity
 import com.zibete.proyecto1.adapters.AdapterChat
-import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
@@ -78,57 +72,39 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
 
+    // ===== DI =====
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userRepository: UserRepository
-    @Inject lateinit var chatRepository: ChatRepository
 
-    val myUid  = userRepository.myUid
-    val user  = userRepository.user
-
+    // ===== VM / Binding =====
     private val chatViewModel: ChatViewModel by viewModels()
     private lateinit var binding: ActivityChatBinding
-    // --------- Estado / datos ---------
-    private val userId = intent.extras?.getString("userId")?: ""
-    private val nodeType = intent.extras?.getString("nodeType")?: ""
-    private val userName = intent.extras?.getString("userName")?: ""
+    private val hideDateRunnable = Runnable { binding.linearDate.isVisible = false }
 
-    // --------- listas / adaptador ---------
-    private val chatMessageArrayList = ArrayList<ChatMessage?>()
-    private val extraUserList = ArrayList<Users?>()
+    // ===== Recycler =====
     private lateinit var adapter: AdapterChat
-    private lateinit var mLayoutManager: LinearLayoutManager
-    private lateinit var linearNameUser: LinearLayout
+    private lateinit var layoutManager: LinearLayoutManager
 
-    // --------- media / storage ---------
+    // ===== Media / Storage =====
     private var imageUriCamera: Uri? = null
-    private var msgType = MSG_TEXT
-    private var stringMsg: String = ""
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioUri: Uri? = null
     private var currentPfd: ParcelFileDescriptor? = null
     private var pendingAudioName: String? = null
     private var pendingImageName: String? = null
-
     private var recordStartElapsed: Long = 0L
-
     private lateinit var iconVibrator: Vibrator
 
-    // --------- Crop / pickers / permisos ---------
+    // ===== Launchers / Permisos =====
     private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var pickImageLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
     private lateinit var requestPermissionsLauncher: ActivityResultLauncher<Array<String>>
-    private val hasMicPermission = AtomicBoolean(false)
-    private val hasCameraPermission = AtomicBoolean(false)
-
-    // callback pendiente para ejecutar luego de otorgar permisos
     private var onPermissionsGranted: (() -> Unit)? = null
 
     // ==================================== onCreate ====================================
@@ -140,9 +116,85 @@ class ChatActivity : BaseChatSessionActivity() {
 
         observeChatSessionEvents(chatViewModel.events)
 
-        // Header (nombre, foto, bloqueo, etc.)
+        setupToolbar()
+        setupRecycler()
+        initActivityResultLaunchers()
+        setupUiListeners()
+        setupTextWatcher()
+        setupMicGesture()
+        setupScrollHelpers()
+
+        resetUiState()
+        chatViewModel.setUserOnline()
+
+        collectUiState()
+        configureChatTitle()
+        startAudioCancelBlink()
+        clearNotifications()
+    }
+
+    // ==================================== Setup ====================================
+
+    private fun setupToolbar() {
+        val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
+        setSupportActionBar(toolbar)
+        supportActionBar?.title = ""
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
+
+    private fun setupRecycler() {
+        layoutManager = LinearLayoutManager(this).apply {
+            reverseLayout = false
+            stackFromEnd = true
+        }
+        binding.rvMsg.layoutManager = layoutManager
+
+        adapter = AdapterChat(
+            maxSize = MAXCHATSIZE,
+            context = this,
+            hasSelection = { chatViewModel.chatState.value.selectedMessages.isNotEmpty() },
+            isSelected = { msg -> chatViewModel.chatState.value.selectedMessages.contains(msg) },
+            onSelectionChanged = { msg, selected ->
+                chatViewModel.onMessageSelectionChanged(msg, selected)
+            },
+            myAudioAvatarUrl = chatViewModel.myIdentity.photoUrl,
+            otherAudioAvatarUrl = chatViewModel.otherProfile.value?.profilePhoto,
+            myUid = chatViewModel.myUid
+        )
+
+        binding.rvMsg.adapter = adapter
+    }
+
+    private fun configureChatTitle() {
+        if (chatViewModel.nodeType == NODE_CURRENT_CHAT) {
+            binding.cardviewTitle.isVisible = false
+        } else {
+            binding.tvChatTitle.text =
+                getString(R.string.chat_private_in_group, userPreferencesRepository.groupName)
+            binding.cardviewTitle.isVisible = true
+        }
+    }
+
+    private fun clearNotifications() {
+        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+    }
+
+    private fun startAudioCancelBlink() {
+        ObjectAnimator.ofFloat(binding.tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
+            duration = 800
+            repeatCount = ValueAnimator.INFINITE
+            start()
+        }
+        currentAudioUri = null
+        iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+    }
+
+    // ==================================== Collectors ====================================
+
+    private fun collectUiState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+
                 launch {
                     chatViewModel.headerState.collect { state ->
                         when (state) {
@@ -150,6 +202,7 @@ class ChatActivity : BaseChatSessionActivity() {
                                 binding.nameUser.text = getString(R.string.cargando)
                                 binding.tvStatus.text = getString(R.string.offline)
                             }
+
                             is ChatHeaderState.Loaded -> {
                                 binding.nameUser.text = state.name
                                 binding.tvStatus.text = state.status
@@ -157,50 +210,36 @@ class ChatActivity : BaseChatSessionActivity() {
                                     .load(state.photoUrl)
                                     .into(binding.userImage)
 
-                                if (state.isBlocked) {
-                                    binding.layoutChat.isVisible = false
-                                    binding.layoutBloq.isVisible = true
-                                    binding.linearLottie.isVisible = false
-                                } else {
-                                    binding.layoutChat.isVisible = true
-                                    binding.layoutBloq.isVisible = false
-                                    binding.linearLottie.isVisible = true
-                                }
+                                binding.layoutChat.isVisible = !state.isBlocked
+                                binding.layoutBloq.isVisible = state.isBlocked
+                                binding.linearLottie.isVisible = !state.isBlocked
                             }
                         }
                     }
                 }
 
                 launch {
-                    repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        chatViewModel.chatState.collect { state ->
-                            if (state.showPhotoPicker) {
-                                openMediaSourcePicker()
-                                chatViewModel.onPhotoPickerHandled()
+                    chatViewModel.chatState.collect { state ->
+
+                        adapter.submitList(state.messages) {
+                            if (adapter.itemCount > 0) {
+                                binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
                             }
-
-                            if (state.photoReady) {
-                                updateSendUiState()
-                            } else {
-                                resetUiState()
-                            }
-
-                            if (state.textReady) {
-                                updateSendUiState()
-                            } else {
-                                resetUiState()
-                            }
-
-                            val selectionCount = state.selectedMessages.size
-
-                            binding.linearDeleteMsg.isVisible = selectionCount > 1
-                            binding.countDeleteMsg.text = selectionCount.toString()
-
                         }
+
+                        if (state.photoReady || state.textReady) updateSendUiState() else resetUiState()
+
+                        if (state.showPhotoPicker) {
+                            openMediaSourcePicker()
+                            chatViewModel.onPhotoPickerHandled()
+                        }
+
+                        val selectionCount = state.selectedMessages.size
+                        binding.linearDeleteMsg.isVisible = selectionCount > 1
+                        binding.countDeleteMsg.text = selectionCount.toString()
                     }
                 }
 
-                // Estado online/escribiendo (mismo repeatOnLifecycle)
                 launch {
                     chatViewModel.userStatus.collect { status ->
                         when (status) {
@@ -210,17 +249,20 @@ class ChatActivity : BaseChatSessionActivity() {
                                 binding.tvStatus.text = getString(R.string.online)
                                 binding.tvStatus.setTypeface(null, Typeface.NORMAL)
                             }
+
                             is UserStatus.TypingOrRecording -> {
                                 binding.iconConnected.isVisible = true
                                 binding.iconDisconnected.isVisible = false
                                 binding.tvStatus.text = status.text
                                 binding.tvStatus.setTypeface(null, Typeface.ITALIC)
                             }
+
                             is UserStatus.LastSeen -> {
                                 binding.iconConnected.isVisible = false
                                 binding.iconDisconnected.isVisible = true
                                 binding.tvStatus.text = status.text
                             }
+
                             is UserStatus.Offline -> {
                                 binding.iconDisconnected.isVisible = true
                                 binding.iconConnected.isVisible = false
@@ -229,68 +271,18 @@ class ChatActivity : BaseChatSessionActivity() {
                         }
                     }
                 }
-
-                setScrollbar()
-
             }
         }
+    }
 
+    // ==================================== Listeners ====================================
 
-        // --- toolbar y notifs ---
-        val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
-        setSupportActionBar(toolbar)
-        supportActionBar?.title = ""
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).cancelAll()
+    private fun setupUiListeners() {
 
-        ObjectAnimator.ofFloat(binding.tvCancelAudio, "alpha", 1f, 0f, 1f).apply {
-            duration = 800; repeatCount = ValueAnimator.INFINITE; start()
-        }
-
-        currentAudioUri = null
-        iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-
-        // --- Recycler ---
-//        rvMsg = findViewById(R.id.rvMsg)
-        mLayoutManager = LinearLayoutManager(this).apply {
-            reverseLayout = false
-            stackFromEnd = true
-        }
-        binding.rvMsg.layoutManager = mLayoutManager
-        adapter = AdapterChat(
-            chatMessageArrayList as ArrayList<ChatMessage>,
-            Constants.MAXCHATSIZE,
-            this, // mejor que applicationContext para temas de recursos/tema
-        ) { message, isSelected ->
-            chatViewModel.onMessageSelectionChanged(message, isSelected)
-        }
-
-        binding.rvMsg.adapter = adapter
-
-        // --- init launchers ---
-        initActivityResultLaunchers()
-
-        resetUiState()
-
-        // ===== Config chat =====
-        if (nodeType == NODE_CURRENT_CHAT) {
-            binding.cardviewTitle.isVisible = false
-        } else {
-            binding.tvChatTitle.text = "Chat privado en ${userPreferencesRepository.groupName}"
-            binding.cardviewTitle.isVisible = true
-        }
-
-        uCropResultLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            chatViewModel.handleCroppedImageResult(result.resultCode,pendingImageName, result.data)
-        }
-
-        // ===== UI listeners =====
-        val photoList = ArrayList<String>()
         binding.btnCamera.setOnClickListener {
             chatViewModel.onSendPhotoClicked()
         }
+
         binding.btnSendMsg.setOnClickListener {
             val textMessage = binding.msg.text.toString()
             lifecycleScope.launch { chatViewModel.onSendMessage(textMessage) }
@@ -300,54 +292,54 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.linearDeleteMsg.setOnClickListener {
             binding.trashAnimated.playAnimation()
             chatViewModel.onDeleteSelectedMessages()
-            binding.countDeleteMsg.text = "0"
-
-
-
-
-
         }
+
         binding.cancelAction.setOnClickListener {
             resetUiState()
         }
+
         binding.photo.setOnClickListener {
-            photoList.add(stringMsg) // <-- porque stringMsg?
-            val intent = Intent(this@ChatActivity, SlidePhotoActivity::class.java).apply {
-                putExtra("photoList", photoList)
+            val photoUrl = chatViewModel.otherProfile.value?.profilePhoto ?: return@setOnClickListener
+
+            val intent = Intent(this, SlidePhotoActivity::class.java).apply {
+                putExtra("photoList", arrayListOf(photoUrl))
                 putExtra("position", 0)
                 putExtra("rotation", 180)
             }
             startActivity(intent)
         }
+
         binding.buttonUnblockUser.setOnClickListener {
-            chatViewModel.onUnblockClicked(userId, userName, nodeType)
+            chatViewModel.onUnblockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
         }
 
-        linearNameUser.setOnClickListener { v ->
-            if (extraUserList.size == 1) {
-                val intent = Intent(this, SlideProfileActivity::class.java)
-                extraUserList.reverse()
-                intent.putExtra("userList", extraUserList)
-                intent.putExtra("position", 0)
-                intent.putExtra("rotation", 0)
-                v.context.startActivity(intent)
+        binding.linearNameUser.setOnClickListener { v ->
+            val u = chatViewModel.otherProfile.value ?: return@setOnClickListener
+
+            val intent = Intent(this, SlideProfileActivity::class.java).apply {
+                putExtra("userList", arrayListOf(u))
+                putExtra("position", 0)
+                putExtra("rotation", 0)
             }
+            v.context.startActivity(intent)
         }
+    }
 
-        chatViewModel.setUserOnline()
-
+    private fun setupTextWatcher() {
         binding.msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 if (binding.msg.text.isEmpty()) {
                     chatViewModel.onTextReady(false)
                 }
             }
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (binding.msg.text.isNotEmpty()) {
                     chatViewModel.onTextReady(true)
-                    chatViewModel.onMessageTyping()
+                    chatViewModel.setUserActivityStatus(getString(R.string.typing))
                 }
             }
+
             override fun afterTextChanged(s: Editable?) {
                 if (binding.msg.text.isEmpty()) {
                     chatViewModel.onTextReady(false)
@@ -355,38 +347,40 @@ class ChatActivity : BaseChatSessionActivity() {
                 }
             }
         })
+    }
 
-        // ===== Mic gesture =====
-        setupMicGesture()
-
-        // ===== Scroll / fecha =====
+    private fun setupScrollHelpers() {
         binding.rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val total = adapter.itemCount
-                val last = mLayoutManager.findLastVisibleItemPosition()
-                val first = mLayoutManager.findFirstVisibleItemPosition()
+                val last = layoutManager.findLastVisibleItemPosition()
+                val first = layoutManager.findFirstVisibleItemPosition()
                 val atEnd = last + 1 >= total
+
                 if (total > 0 && !atEnd) {
-                    binding.linearBack.isVisible =true
+                    binding.linearBack.isVisible = true
                     binding.linearDate.isVisible = true
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        binding.linearDate.isVisible = false
-                    }, 2000)
+                    binding.linearDate.isVisible = true
+                    binding.rvMsg.removeCallbacks(hideDateRunnable)
+                    binding.rvMsg.postDelayed(hideDateRunnable, 2000)
                     val date = adapter.getDate(first)
                     binding.tvDate.text = date
                 } else {
-                    binding.linearBack.isVisible =false
+                    binding.linearBack.isVisible = false
                     binding.linearDate.isVisible = false
                 }
             }
         })
-        binding.buttonScrollBack.setOnClickListener { setScrollbar() }
+
+        binding.buttonScrollBack.setOnClickListener {
+            if (adapter.itemCount > 0) binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
+        }
 
         setMicButton()
-
     }
 
-    // ---------------- Ciclo de vida ----------------
+    // ==================================== Lifecycle ====================================
+
     override fun onPause() {
         super.onPause()
         chatViewModel.setUserLastSeen()
@@ -396,7 +390,7 @@ class ChatActivity : BaseChatSessionActivity() {
     override fun onResume() {
         super.onResume()
         chatViewModel.setUserOnline()
-        chatViewModel.setActiveChat(userId + nodeType)
+        chatViewModel.setActiveChat(chatViewModel.userId + chatViewModel.nodeType)
     }
 
     override fun onDestroy() {
@@ -408,103 +402,108 @@ class ChatActivity : BaseChatSessionActivity() {
         chatViewModel.setActiveChat("")
     }
 
-    // ---------------- Menú ----------------
+    // ==================================== Menu ====================================
+
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         super.onPrepareOptionsMenu(menu)
 
         val state = chatViewModel.headerState.value
-
         if (state is ChatHeaderState.Loaded) {
             menu.findItem(R.id.action_delete_chat).isVisible = true
             menu.findItem(R.id.action_notifications_off).isVisible = state.notificationsEnabled
-            menu.findItem(R.id.action_notifications_on).isVisible  = !state.notificationsEnabled
-            menu.findItem(R.id.action_block).isVisible   = !state.isBlocked
+            menu.findItem(R.id.action_notifications_on).isVisible = !state.notificationsEnabled
+            menu.findItem(R.id.action_block).isVisible = !state.isBlocked
             menu.findItem(R.id.action_unblock).isVisible = state.isBlocked
         }
-
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-
             R.id.action_notifications_off, R.id.action_notifications_on -> {
-                chatViewModel.onToggleNotificationsClicked(userId, userName, nodeType)
+                chatViewModel.onToggleNotificationsClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
                 return true
             }
             R.id.action_bloq -> {
-                chatViewModel.onBlockClicked(userId, userName, nodeType)
+                chatViewModel.onBlockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
                 return true
             }
             R.id.action_desbloq -> {
-                chatViewModel.onUnblockClicked(userId, userName, nodeType)
+                chatViewModel.onUnblockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
                 return true
             }
             R.id.action_delete_chat -> {
-                chatViewModel.onDeleteChatClicked(userName)
+                chatViewModel.onDeleteChatClicked(chatViewModel.userName)
                 return true
             }
         }
         return super.onOptionsItemSelected(item)
     }
 
-    // ----------------------------- Activity Result Launchers -----------------------------
+    // ==================================== Launchers / Permissions ====================================
+
     private fun initActivityResultLaunchers() {
-        // ✅ 1. uCrop Launcher (REEMPLAZO DE LA DEPENDENCIA OBSOLETA)
+
         uCropResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
-            chatViewModel.handleCroppedImageResult(result.resultCode,pendingImageName, result.data)
+            chatViewModel.handleCroppedImageResult(result.resultCode, pendingImageName, result.data)
         }
 
-        // 2. Galería moderna
         pickImageLauncher = registerForActivityResult(
             ActivityResultContracts.PickVisualMedia()
         ) { uri ->
             if (uri != null) {
-                // Delegamos la lógica de uCrop al VM, que nos dará las URIs
-                chatViewModel.startUCropFlow(uri,this,uCropResultLauncher)
+                chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
             }
         }
 
-        // 3. Cámara moderna
         takePictureLauncher = registerForActivityResult(
             ActivityResultContracts.TakePicture()
         ) { success ->
             if (success && imageUriCamera != null) {
-                chatViewModel.startUCropFlow(imageUriCamera!!,this,uCropResultLauncher)
+                chatViewModel.startUCropFlow(imageUriCamera!!, this, uCropResultLauncher)
             } else {
                 imageUriCamera = null
                 pendingImageName = null
             }
         }
 
-        // 4. Permisos múltiples
         requestPermissionsLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { result ->
             val allGranted = result.values.all { it }
-            if (allGranted) {
-                onPermissionsGranted?.invoke()
-            }
+            if (allGranted) onPermissionsGranted?.invoke()
             onPermissionsGranted = null
         }
     }
 
-    // ----------------------------- Cámara / Galería / Crop -----------------------------
-    private fun openMediaSourcePicker() {
+    private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
+        val need = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (need) {
+            onPermissionsGranted = onGranted
+            requestPermissionsLauncher.launch(perms)
+        } else {
+            onGranted()
+        }
+    }
 
+    // ==================================== Media Picker ====================================
+
+    private fun openMediaSourcePicker() {
         val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
         val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
         val cameraSelection = viewFilter.findViewById<MaterialCardView>(R.id.cameraSelection)
         val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
         val title = viewFilter.findViewById<TextView>(R.id.tv_title)
+
         viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).visibility = View.GONE
         title.text = getString(R.string.enviar_desde)
 
         val dialog = AlertDialog.Builder(this, R.style.AlertDialogApp)
             .setView(viewFilter)
             .create()
+
         dialog.show()
 
         cameraSelection.setOnClickListener {
@@ -521,13 +520,10 @@ class ChatActivity : BaseChatSessionActivity() {
             dialog.dismiss()
         }
 
-        imgCancel.setOnClickListener {
-            dialog.dismiss()
-        }
+        imgCancel.setOnClickListener { dialog.dismiss() }
     }
 
     private suspend fun startCameraModern() {
-
         pendingImageName = "IMG_${System.currentTimeMillis()}.jpg"
 
         val values = ContentValues().apply {
@@ -548,10 +544,9 @@ class ChatActivity : BaseChatSessionActivity() {
         takePictureLauncher.launch(imageUriCamera!!)
     }
 
-    // ----------------------------- Audio (MediaStore, sin rutas directas) -----------------------------
+    // ==================================== Audio Record ====================================
 
     private suspend fun startRecordAudio() {
-        // 1) Permisos
         val perms = arrayOf(Manifest.permission.RECORD_AUDIO)
 
         val anyDenied = perms.any {
@@ -563,10 +558,8 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
-        // Si ya hay una grabación en curso, no hacemos nada
         if (mediaRecorder != null) return
 
-        // 2) Preparar destino
         val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
         pendingAudioName = "AUD_${sdf.format(Date())}.m4a"
 
@@ -575,7 +568,6 @@ class ChatActivity : BaseChatSessionActivity() {
 
         try {
             if (Build.VERSION.SDK_INT >= 29) {
-                // MediaStore con scoped storage
                 val values = ContentValues().apply {
                     put(MediaStore.Audio.Media.DISPLAY_NAME, pendingAudioName)
                     put(MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
@@ -588,11 +580,10 @@ class ChatActivity : BaseChatSessionActivity() {
                     values
                 ) ?: return chatViewModel.onError("No se pudo crear el archivo de audio")
 
-
                 currentPfd = contentResolver.openFileDescriptor(currentAudioUri!!, "w")
                     ?: return chatViewModel.onError("No se pudo abrir el archivo de audio")
+
             } else {
-                // ≤28: archivo app-specific + FileProvider
                 val dir = getExternalFilesDir(Environment.DIRECTORY_MUSIC)
                     ?: return chatViewModel.onError("No hay directorio de música disponible")
 
@@ -616,7 +607,6 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
-        // 3) Iniciar grabación
         try {
             mediaRecorder = MediaRecorder().apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -632,7 +622,6 @@ class ChatActivity : BaseChatSessionActivity() {
             currentPfd?.closeQuietly()
             currentPfd = null
 
-            // Limpiar entry en MediaStore si quedó pendiente (API 29+)
             if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
                 runCatching {
                     val cv = ContentValues().apply {
@@ -649,7 +638,6 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
-        // 4) UI "grabando"
         recordStartElapsed = SystemClock.elapsedRealtime()
         setMicAnimated()
 
@@ -659,22 +647,18 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.timer.base = recordStartElapsed
         binding.timer.start()
 
-        userRepository.setUserActivityStatus(getString(R.string.recording))
-
+        chatViewModel.setUserActivityStatus(getString(R.string.recording))
     }
 
     private fun stopRecordAudio() {
-        // Si no hay recorder, normalizamos UI y salimos
         if (mediaRecorder == null) {
             cancelRecordAudio()
             return
         }
 
-        // Duración de la grabación
         val elapsedMs = SystemClock.elapsedRealtime() - recordStartElapsed
-        val tooShort = elapsedMs < 1000L // <1s lo consideramos demasiado corto
+        val tooShort = elapsedMs < 1000L
 
-        // Parar y liberar el recorder
         try {
             mediaRecorder?.apply {
                 try { stop() } catch (_: Exception) {}
@@ -686,7 +670,6 @@ class ChatActivity : BaseChatSessionActivity() {
             currentPfd = null
         }
 
-        // Cerrar pending en ≥29
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
             runCatching {
                 val cv = ContentValues().apply {
@@ -696,7 +679,6 @@ class ChatActivity : BaseChatSessionActivity() {
             }
         }
 
-        // Si fue muy corto o no hay URI válido, cancelamos
         if (tooShort || currentAudioUri == null) {
             runCatching {
                 if (currentAudioUri != null) {
@@ -707,7 +689,6 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
-        // ---------- Subir a Firebase con putFile(uri) ----------
         val fileName = pendingAudioName ?: "AUD_${System.currentTimeMillis()}.m4a"
         val localUri = currentAudioUri!!
 
@@ -730,36 +711,28 @@ class ChatActivity : BaseChatSessionActivity() {
 
             chatViewModel.onSendAudio(url, duration)
 
-            // Limpieza local
             runCatching { contentResolver.delete(localUri, null, null) }
         }
 
         normalizeUiCancelRecordAudio()
-
         chatViewModel.setUserOnline()
     }
 
     private fun cancelRecordAudio() {
-        // Detener/limpiar recorder si quedaba algo
         runCatching { mediaRecorder?.reset() }
         runCatching { mediaRecorder?.release() }
         mediaRecorder = null
 
-        // Cerrar PFD si quedó abierto
         currentPfd?.closeQuietly()
         currentPfd = null
 
-        // Si fue ≥29 y quedó pendiente, cerramos flag
         if (Build.VERSION.SDK_INT >= 29 && currentAudioUri != null) {
             runCatching {
-                val cv = ContentValues().apply {
-                    put(MediaStore.Audio.Media.IS_PENDING, 0)
-                }
+                val cv = ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) }
                 contentResolver.update(currentAudioUri!!, cv, null, null)
             }
         }
 
-        // Animación de trash y ocultar al terminar
         binding.trashAnimated2.apply {
             visibility = View.VISIBLE
             playAnimation()
@@ -774,7 +747,6 @@ class ChatActivity : BaseChatSessionActivity() {
         normalizeUiCancelRecordAudio()
         chatViewModel.setUserOnline()
 
-        // Borrado del archivo (si existe)
         runCatching {
             if (currentAudioUri != null) {
                 contentResolver.delete(currentAudioUri!!, null, null)
@@ -785,34 +757,30 @@ class ChatActivity : BaseChatSessionActivity() {
         pendingAudioName = null
     }
 
+    // ==================================== UI Helpers ====================================
+
     private fun normalizeUiCancelRecordAudio() {
         vibrate(80)
-
         binding.btnMic.cancelAnimation()
         binding.btnMic.clearAnimation()
         binding.timer.stop()
-
         resetUiState()
     }
 
     private fun resetUiState() {
-
-        // --- estado inicial botones ---
         binding.msg.isVisible = true
         binding.btnMic.isVisible = true
         binding.btnCamera.isVisible = true
         binding.loadingPhoto.isVisible = true
         binding.loadingButton.isVisible = true
 
-
         binding.linearTimer.isVisible = false
         binding.frameSendMsg.isVisible = false
         binding.btnSendMsg.isVisible = false
         binding.linearPhotoView.isVisible = false
-
     }
 
-    private fun updateSendUiState(){
+    private fun updateSendUiState() {
         binding.btnMic.isVisible = false
         binding.loadingPhoto.isVisible = false
         binding.loadingButton.isVisible = false
@@ -824,7 +792,12 @@ class ChatActivity : BaseChatSessionActivity() {
         runCatching { this?.close() }
     }
 
-    // ----------------------------- Mic Gesture -----------------------------
+    private fun vibrate(ms: Long) {
+        iconVibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
+
+    // ==================================== Mic Gesture ====================================
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setupMicGesture() {
         var firstTouchX = 0f
@@ -852,12 +825,14 @@ class ChatActivity : BaseChatSessionActivity() {
                     dX = v.x - event.rawX - (75 * scale + 0.5f).toInt()
                     true
                 }
+
                 MotionEvent.ACTION_UP -> {
                     xAnim.start()
                     setMicButton()
                     stopRecordAudio()
                     true
                 }
+
                 MotionEvent.ACTION_MOVE -> {
                     if (binding.linearTimer.isVisible) {
                         if (event.rawX > halfWidth) {
@@ -871,36 +846,9 @@ class ChatActivity : BaseChatSessionActivity() {
                     }
                     true
                 }
+
                 else -> true
             }
-        }
-    }
-
-    // ----------------------------- Helpers -----------------------------
-    private fun setScrollbar() {
-
-        lifecycleScope.launch{
-            chatViewModel.messages.collect { list ->
-                adapter.submitList(list)
-                if (list.isNotEmpty()) {
-                    binding.rvMsg.scrollToPosition(list.lastIndex)
-                }
-            }
-        }
-
-    }
-
-    private fun vibrate(ms: Long) {
-        iconVibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
-
-    private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
-        val need = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-        if (need) {
-            onPermissionsGranted = onGranted
-            requestPermissionsLauncher.launch(perms)
-        } else {
-            onGranted()
         }
     }
 
@@ -918,7 +866,8 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.btnMic.playAnimation()
 
         binding.linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         ).apply {
             gravity = Gravity.END or Gravity.BOTTOM
             setMargins(0, 0, -dp65, -dp65)
@@ -935,63 +884,13 @@ class ChatActivity : BaseChatSessionActivity() {
         val dp50 = (50 * scale + 0.5f).toInt()
 
         binding.linearLottie.layoutParams = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
         binding.btnMic.layoutParams = LinearLayout.LayoutParams(dp50, dp50).apply {
             gravity = Gravity.END or Gravity.BOTTOM
             setMargins(dp10, dp10, dp10, dp10)
         }
         binding.btnMic.setPadding(dp13, dp13, dp13, dp13)
-    }
-
-
-
-    fun selectedDeleteMsg(chatMessage: ChatMessage?) {
-        if (chatMessage == null) return
-        msgSelected.add(chatMessage)
-        if (msgSelected.size > 1) {
-            binding.linearDeleteMsg.isVisible = true
-            binding.countDeleteMsg.text = msgSelected.size.toString()
-        }
-    }
-
-    fun notSelectedDeleteMsg(chatMessage: ChatMessage?) {
-        if (chatMessage == null) return
-        val idx = msgSelected.indexOf(chatMessage)
-        if (idx != -1) {
-            msgSelected.removeAt(idx)
-            if (msgSelected.isEmpty()) {
-                binding.linearDeleteMsg.isVisible = false
-            }
-            binding.countDeleteMsg.text = msgSelected.size.toString()
-        }
-    }
-
-
-    private fun addChat(ds: DataSnapshot) {
-        val chat = ds.getValue(ChatMessage::class.java) ?: return
-        adapter.addChat(chat)
-    }
-
-    private fun actualizeChat(ds: DataSnapshot) {
-        val chat = ds.getValue(ChatMessage::class.java) ?: return
-        adapter.actualizeMsg(chat)
-    }
-
-    private fun deleteChat(ds: DataSnapshot) {
-        val chat = ds.getValue(ChatMessage::class.java) ?: return
-        adapter.deleteMsg(chat)
-    }
-
-
-
-    // ---------------- Companion ----------------
-    companion object {
-        var msgSelected: ArrayList<ChatMessage> = ArrayList()
-        lateinit var linearDeleteMsg: LinearLayout
-        lateinit var countDeleteMsg: TextView
-
-
-
     }
 }

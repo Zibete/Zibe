@@ -49,16 +49,41 @@ data class DeleteResult(
 )
 
 sealed class ChatChildEvent {
-    data class Added(val snapshot: DataSnapshot) : ChatChildEvent()
-    data class Changed(val snapshot: DataSnapshot) : ChatChildEvent()
-    data class Removed(val snapshot: DataSnapshot) : ChatChildEvent()
+    data class Added(val message: ChatMessage) : ChatChildEvent()
+    data class Changed(val message: ChatMessage) : ChatChildEvent()
+    data class Removed(val message: ChatMessage) : ChatChildEvent()
 }
+
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userRepository: UserRepository,
     private val chatRefs: ChatRefs
 ) {
+
+    fun observeChatMessages(
+    ): Flow<ChatChildEvent> = callbackFlow {
+
+        val listener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Added(it)) }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Changed(it)) }
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Removed(it)) }
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) = Unit
+            override fun onCancelled(error: DatabaseError) = Unit
+        }
+
+        chatRefs.refChat.addChildEventListener(listener)
+        awaitClose { chatRefs.refChat.removeEventListener(listener) }
+    }
 
     private val myUid = userRepository.myUid
 
@@ -125,32 +150,6 @@ class ChatRepository @Inject constructor(
     ): String {
         val (first, second) = listOf(myUid, userId).sorted()
         return "${first}_${second}"
-    }
-
-    fun observeChatMessages(
-    ): Flow<ChatChildEvent> = callbackFlow {
-
-        val listener = object : ChildEventListener {
-            override fun onChildAdded(ds: DataSnapshot, prev: String?) {
-                trySend(ChatChildEvent.Added(ds))
-            }
-
-            override fun onChildChanged(ds: DataSnapshot, prev: String?) {
-                trySend(ChatChildEvent.Changed(ds))
-            }
-
-            override fun onChildRemoved(ds: DataSnapshot) {
-                trySend(ChatChildEvent.Removed(ds))
-            }
-
-            override fun onChildMoved(ds: DataSnapshot, prev: String?) {}
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
-        }
-
-        chatRefs.refChat.addChildEventListener(listener)
-        awaitClose { chatRefs.refChat.removeEventListener(listener) }
     }
 
     // 1) Su actual: qué chat tiene abierto el OTRO usuario
