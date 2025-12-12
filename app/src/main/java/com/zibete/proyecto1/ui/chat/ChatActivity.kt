@@ -54,8 +54,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
 import com.zibete.proyecto1.SlideProfileActivity
@@ -70,12 +68,9 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
-import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIO
+import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -183,16 +178,24 @@ class ChatActivity : BaseChatSessionActivity() {
                                 openMediaSourcePicker()
                                 chatViewModel.onPhotoPickerHandled()
                             }
+
                             if (state.photoReady) {
                                 updateSendUiState()
                             } else {
                                 resetUiState()
                             }
+
                             if (state.textReady) {
                                 updateSendUiState()
                             } else {
                                 resetUiState()
                             }
+
+                            val selectionCount = state.selectedMessages.size
+
+                            binding.linearDeleteMsg.isVisible = selectionCount > 1
+                            binding.countDeleteMsg.text = selectionCount.toString()
+
                         }
                     }
                 }
@@ -257,8 +260,11 @@ class ChatActivity : BaseChatSessionActivity() {
         adapter = AdapterChat(
             chatMessageArrayList as ArrayList<ChatMessage>,
             Constants.MAXCHATSIZE,
-            applicationContext
-        )
+            this, // mejor que applicationContext para temas de recursos/tema
+        ) { message, isSelected ->
+            chatViewModel.onMessageSelectionChanged(message, isSelected)
+        }
+
         binding.rvMsg.adapter = adapter
 
         // --- init launchers ---
@@ -291,12 +297,18 @@ class ChatActivity : BaseChatSessionActivity() {
             binding.msg.setText("")
         }
 
-        linearDeleteMsg.setOnClickListener {
+        binding.linearDeleteMsg.setOnClickListener {
             binding.trashAnimated.playAnimation()
-            DeleteMsgs()
+            chatViewModel.onDeleteSelectedMessages()
+            binding.countDeleteMsg.text = "0"
+
+
+
+
+
         }
         binding.cancelAction.setOnClickListener {
-            cancelSendPhoto()
+            resetUiState()
         }
         binding.photo.setOnClickListener {
             photoList.add(stringMsg) // <-- porque stringMsg?
@@ -322,7 +334,7 @@ class ChatActivity : BaseChatSessionActivity() {
             }
         }
 
-        lifecycleScope.launch { userRepository.setUserOnline() }
+        chatViewModel.setUserOnline()
 
         binding.msg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -333,13 +345,13 @@ class ChatActivity : BaseChatSessionActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (binding.msg.text.isNotEmpty()) {
                     chatViewModel.onTextReady(true)
-                    lifecycleScope.launch { userRepository.setUserActivityStatus(getString(R.string.escribiendo))}
+                    chatViewModel.onMessageTyping()
                 }
             }
             override fun afterTextChanged(s: Editable?) {
                 if (binding.msg.text.isEmpty()) {
                     chatViewModel.onTextReady(false)
-                    lifecycleScope.launch { userRepository.setUserOnline() }
+                    chatViewModel.setUserOnline()
                 }
             }
         })
@@ -377,14 +389,14 @@ class ChatActivity : BaseChatSessionActivity() {
     // ---------------- Ciclo de vida ----------------
     override fun onPause() {
         super.onPause()
-        lifecycleScope.launch { userRepository.setUserLastSeen() }
-        chatRepository.setActiveChat(myUid,"")
+        chatViewModel.setUserLastSeen()
+        chatViewModel.setActiveChat("")
     }
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { userRepository.setUserOnline() }
-        chatRepository.setActiveChat(myUid,myUid + nodeType)
+        chatViewModel.setUserOnline()
+        chatViewModel.setActiveChat(userId + nodeType)
     }
 
     override fun onDestroy() {
@@ -393,7 +405,7 @@ class ChatActivity : BaseChatSessionActivity() {
             try { player.stop() } catch (_: Exception) {}
             AdapterChat.mediaPlayer = null
         }
-        chatRepository.setActiveChat(myUid,"")
+        chatViewModel.setActiveChat("")
     }
 
     // ---------------- Menú ----------------
@@ -429,7 +441,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 return true
             }
             R.id.action_delete_chat -> {
-                chatViewModel.onDeleteClicked(userId, userName, nodeType)
+                chatViewModel.onDeleteChatClicked(userName)
                 return true
             }
         }
@@ -703,7 +715,7 @@ class ChatActivity : BaseChatSessionActivity() {
             val url = chatViewModel.uploadMedia(
                 fileName = fileName,
                 uri = localUri,
-                path = PATH_AUDIO
+                path = PATH_AUDIOS
             )
 
             if (url == null) {
@@ -724,7 +736,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         normalizeUiCancelRecordAudio()
 
-        lifecycleScope.launch { userRepository.setUserOnline() }
+        chatViewModel.setUserOnline()
     }
 
     private fun cancelRecordAudio() {
@@ -760,7 +772,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         normalizeUiCancelRecordAudio()
-        lifecycleScope.launch { userRepository.setUserOnline() }
+        chatViewModel.setUserOnline()
 
         // Borrado del archivo (si existe)
         runCatching {
@@ -847,7 +859,7 @@ class ChatActivity : BaseChatSessionActivity() {
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (linearTimer.isVisible) {
+                    if (binding.linearTimer.isVisible) {
                         if (event.rawX > halfWidth) {
                             val move = event.rawX + dX
                             binding.btnMic.animate().x(move).setDuration(0).start()
@@ -914,7 +926,7 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun setMicButton() {
-        binding.btnMic.setBackgroundResource(R.drawable.marco_color_b_round)
+        binding.btnMic.setBackgroundResource(R.drawable.badge_round)
         binding.btnMic.setImageResource(R.drawable.ic_baseline_mic_24)
 
         val scale = resources.displayMetrics.density
@@ -934,115 +946,27 @@ class ChatActivity : BaseChatSessionActivity() {
 
 
 
-    fun DeleteMsgs() {
-        for (chat in msgSelected) {
-            startedByMe!!.orderByChild("date").equalTo(chat.date)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(ds: DataSnapshot) {
-                        if (ds.exists()) iterateDelete(ds, chat) else {
-                            startedByHim!!.orderByChild("date").equalTo(chat.date)
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) iterateDelete(ds2, chat) }
-                                    override fun onCancelled(error: DatabaseError) {}
-                                })
-                        }
-                    }
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-        }
-
-        val count = msgSelected.size
-        Toast.makeText(this, if (count > 1) "$count mensajes eliminados" else "mensaje eliminado", Toast.LENGTH_SHORT).show()
-        removeChatWith(count)
-        msgSelected.clear()
-        countDeleteMsg.text = msgSelected.size.toString()
-    }
-
-    private fun iterateDelete(ds: DataSnapshot, chat: ChatMessage) {
-        for (snap in ds.children) {
-            val type = snap.child("type").getValue(Int::class.java)
-            val sender = snap.child("envia").getValue(String::class.java)
-
-            if (sender == myUid) {
-                when (type) {
-                    MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_SENDER_DLT)
-                    Constants.MSG_TEXT_RECEIVER_DLT -> snap.ref.removeValue()
-                    MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_SENDER_DLT)
-                    Constants.MSG_PHOTO_RECEIVER_DLT -> {
-                        val start = chat.message.indexOf(userId) + userId.length + 3
-                        val end = chat.message.indexOf(".jpg") + 4
-                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                    MSG_AUDIO -> snap.child("type").ref.setValue(Constants.MSG_AUDIO_SENDER_DLT)
-                    MSG_AUDIO_RECEIVER_DLT -> {
-                        val start = chat.message.indexOf(userId) + userId.length + 3
-                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
-                        refYourReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                }
-            } else {
-                when (type) {
-                    MSG_TEXT -> snap.child("type").ref.setValue(Constants.MSG_TEXT_RECEIVER_DLT)
-                    Constants.MSG_TEXT_SENDER_DLT -> snap.ref.removeValue()
-                    MSG_PHOTO -> snap.child("type").ref.setValue(Constants.MSG_PHOTO_RECEIVER_DLT)
-                    Constants.MSG_PHOTO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(myUid) + myUid.length + 3
-                        val end = chat.message.indexOf(".jpg") + 4
-                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                    MSG_AUDIO -> snap.child("type").ref.setValue(MSG_AUDIO_RECEIVER_DLT)
-                    Constants.MSG_AUDIO_SENDER_DLT -> {
-                        val start = chat.message.indexOf(myUid) + myUid.length + 3
-                        val end = chat.message.indexOf(".m4a") + 4 // FIX extensión
-                        refMyReceiverData!!.child(chat.message.substring(start, end)).delete()
-                        snap.ref.removeValue()
-                    }
-                }
-            }
+    fun selectedDeleteMsg(chatMessage: ChatMessage?) {
+        if (chatMessage == null) return
+        msgSelected.add(chatMessage)
+        if (msgSelected.size > 1) {
+            binding.linearDeleteMsg.isVisible = true
+            binding.countDeleteMsg.text = msgSelected.size.toString()
         }
     }
 
-    fun removeChatWith(countList: Int) {
-
-        startedByMe!!.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(ds: DataSnapshot) {
-                if (ds.exists()) deleteChatWith(ds) else {
-                    startedByHim!!.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(ds2: DataSnapshot) { if (ds2.exists()) deleteChatWith(ds2) }
-                        override fun onCancelled(error: DatabaseError) {}
-                    })
-                }
+    fun notSelectedDeleteMsg(chatMessage: ChatMessage?) {
+        if (chatMessage == null) return
+        val idx = msgSelected.indexOf(chatMessage)
+        if (idx != -1) {
+            msgSelected.removeAt(idx)
+            if (msgSelected.isEmpty()) {
+                binding.linearDeleteMsg.isVisible = false
             }
-            private fun deleteChatWith(data: DataSnapshot) {
-                val messages = data.childrenCount
-                val senderDelete = ArrayList<String>()
-                val receiverDelete = ArrayList<String>()
-
-                for (snap in data.children) {
-                    val chat = snap.getValue(ChatMessage::class.java) ?: continue
-                    val key = snap.key ?: continue
-                    if (chat.sender == myUid) {
-                        when (chat.type) {
-                            Constants.MSG_TEXT_SENDER_DLT, Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT -> senderDelete.add(key)
-                        }
-                    } else {
-                        when (chat.type) {
-                            Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_PHOTO_RECEIVER_DLT, MSG_AUDIO_RECEIVER_DLT -> receiverDelete.add(key)
-                        }
-                    }
-                }
-                val count = messages - (senderDelete.size + receiverDelete.size + countList)
-                if (count == 0L) {
-                    firebaseRefsContainer.refDatos.child(myUid).child(refChatWith!!).child(userId).removeValue()
-                    onBackPressedDispatcher.onBackPressed()
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
+            binding.countDeleteMsg.text = msgSelected.size.toString()
+        }
     }
+
 
     private fun addChat(ds: DataSnapshot) {
         val chat = ds.getValue(ChatMessage::class.java) ?: return
@@ -1059,46 +983,15 @@ class ChatActivity : BaseChatSessionActivity() {
         adapter.deleteMsg(chat)
     }
 
-    private fun cancelSendPhoto(){
-        binding.linearPhotoView.isVisible = false
-        binding.msg.isVisible = true
-        binding.btnCamera.isVisible = true
-        binding.btnMic.isVisible = true
-        binding.btnSendMsg.isVisible = false
-        binding.frameSendMsg.isVisible = false
 
-        msgType = MSG_TEXT
-
-    }
 
     // ---------------- Companion ----------------
     companion object {
         var msgSelected: ArrayList<ChatMessage> = ArrayList()
-        lateinit var linearTimer: LinearLayout
         lateinit var linearDeleteMsg: LinearLayout
         lateinit var countDeleteMsg: TextView
-        lateinit var myPhoto: String
-        lateinit var yourPhoto: String
 
-        fun selectedDeleteMsg(chatMessage: ChatMessage?) {
-            if (chatMessage == null) return
-            msgSelected.add(chatMessage)
-            if (msgSelected.size > 1) {
-                linearDeleteMsg.visibility = View.VISIBLE
-                countDeleteMsg.text = msgSelected.size.toString()
-            }
-        }
 
-        fun notSelectedDeleteMsg(chatMessage: ChatMessage?) {
-            if (chatMessage == null) return
-            val idx = msgSelected.indexOf(chatMessage)
-            if (idx != -1) {
-                msgSelected.removeAt(idx)
-                if (msgSelected.isEmpty()) {
-                    linearDeleteMsg.visibility = View.GONE
-                }
-                countDeleteMsg.text = msgSelected.size.toString()
-            }
-        }
+
     }
 }

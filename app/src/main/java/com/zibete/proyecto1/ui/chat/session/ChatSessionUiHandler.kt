@@ -103,11 +103,16 @@ object ChatSessionUiHandler {
                 )
             }
 
-            is ChatSessionUiEvent.ShowDeleteChatSuccess -> {
+            is ChatSessionUiEvent.ShowDeleteMessagesSuccess -> {
+
                 UserMessageUtils.showSnack(
                     root = root,
-                    message = "Se ha eliminado el chat con ${event.name}",
-                    duration = Snackbar.LENGTH_INDEFINITE,
+                    message =   if (event.count > 1) {
+                        "${event.count} mensajes eliminados"
+                    } else {
+                        "Mensaje eliminado"
+                    },
+                    duration = Snackbar.LENGTH_SHORT,
                     iconRes = R.drawable.ic_info_24
                 )
             }

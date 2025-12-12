@@ -202,15 +202,24 @@ class ProfileViewModel @Inject constructor(
 
     fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val count = userRepository.getMessageCount(userId, nodeType)
+            chatRepository.buildChatRefs(userId, nodeType)
+            val count = chatRepository.getMessageCount()
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = userName,
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(userId, nodeType, deleteMessages)
-                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
+                            try {
+                                val result = chatRepository.deleteMessages(null, deleteMessages)
+                                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
+                            } catch (e: Exception) {
+                                _events.emit(
+                                    ChatSessionUiEvent.ShowErrorDialog(
+                                        e.message ?: "Error al eliminar mensajes"
+                                    )
+                                )
+                            }
                         }
                     }
                 )

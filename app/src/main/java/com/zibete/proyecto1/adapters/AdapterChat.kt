@@ -48,7 +48,8 @@ import java.util.Locale
 class AdapterChat(
     msgList: ArrayList<ChatMessage>,
     private val maxSize: Int,
-    private val context: Context
+    private val context: Context,
+    private val onSelectionChanged: (ChatMessage, Boolean) -> Unit
 ) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF),
     View.OnCreateContextMenuListener {
 
@@ -200,18 +201,20 @@ class AdapterChat(
         if (idx == -1) select(holder, chatMessage) else unselect(holder, chatMessage)
     }
 
+
+
     private fun select(holder: BaseMsgVH, chatMessage: ChatMessage) {
         holder.bindingRoot.selectedItem.setBackgroundColor(
-            ContextCompat.getColor(context, R.color.accent_transparent)
+            ContextCompat.getColor(holder.itemView.context, R.color.accent_transparent)
         )
-        ChatActivity.selectedDeleteMsg(chatMessage)
+        onSelectionChanged(chatMessage, true)
     }
 
     private fun unselect(holder: BaseMsgVH, chatMessage: ChatMessage) {
         holder.bindingRoot.selectedItem.setBackgroundColor(
-            ContextCompat.getColor(context, R.color.transparent)
+            ContextCompat.getColor(holder.itemView.context, R.color.transparent)
         )
-        ChatActivity.notSelectedDeleteMsg(chatMessage)
+        onSelectionChanged(chatMessage, false)
     }
 
     private fun vibrateShort() {

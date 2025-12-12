@@ -205,7 +205,7 @@
                 android:id="@+id/button_unblock_user"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@drawable/marco_color_b_round"
+                android:background="@drawable/badge_round"
                 android:text="Desbloquear Usuario" />
         </LinearLayout>
 
@@ -223,7 +223,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="65dp"
                 android:layout_marginVertical="10dp"
-                android:background="@drawable/marco_color_b_round"
+                android:background="@drawable/badge_round"
                 android:orientation="horizontal"
                 android:animateLayoutChanges="true">
 
@@ -384,7 +384,7 @@
         android:id="@+id/frameSendMsg"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:background="@drawable/marco_color_b_round"
+        android:background="@drawable/badge_round"
         android:layout_gravity="end|bottom"
         android:layout_margin="10dp">
 

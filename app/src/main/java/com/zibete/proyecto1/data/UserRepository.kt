@@ -6,25 +6,19 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.State
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
-import com.zibete.proyecto1.ui.constants.Constants.EXTENSION_AUDIO
-import com.zibete.proyecto1.ui.constants.Constants.EXTENSION_IMAGE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_MESSAGES
 import com.zibete.proyecto1.utils.Utils.today
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.time
@@ -74,7 +68,6 @@ class UserRepository @Inject constructor(
         val refChat = firebaseRefsContainer.refChatMessageRoot // refChatMessageRoot
             .child(nodeType)
             .child(chatId)
-            .child(NODE_MESSAGES)
 
         val photos = mutableListOf<String>()
 
@@ -219,7 +212,6 @@ class UserRepository @Inject constructor(
         val refChat = firebaseRefsContainer.refChatMessageRoot
             .child(nodeType)
             .child(chatId)
-            .child(NODE_MESSAGES)
             .limitToLast(noSeen)
             .get()
             .await()
@@ -310,112 +302,6 @@ class UserRepository @Inject constructor(
 
         // Aplicar estado nuevo
         chatRef.child("estado").setValue(newState).await()
-    }
-
-    suspend fun deleteChat(
-        userId: String,
-        nodeType: String,
-        deleteMessages: Boolean
-    ) {
-
-        val chatId = chatRepository.getRefChatId(userId)
-
-        val refChat = firebaseRefsContainer.refChatMessageRoot
-            .child(nodeType)
-            .child(chatId)
-            .child(NODE_MESSAGES)
-
-        val messagesSnap = refChat.get().await()
-        val messages = messagesSnap.children.mapNotNull { it.getValue(ChatMessage::class.java) }
-
-        if (messages.isEmpty()) return
-
-        if (deleteMessages) {
-            messages.forEach { message ->
-                val isMine = message.sender == myUid
-                val newType = when {
-                    isMine && message.type == Constants.MSG_TEXT -> Constants.MSG_TEXT_SENDER_DLT
-                    !isMine && message.type == Constants.MSG_TEXT -> Constants.MSG_TEXT_RECEIVER_DLT
-                    isMine && message.type == Constants.MSG_PHOTO -> Constants.MSG_PHOTO_SENDER_DLT
-                    !isMine && message.type == Constants.MSG_PHOTO -> Constants.MSG_PHOTO_RECEIVER_DLT
-                    isMine && message.type == Constants.MSG_AUDIO -> Constants.MSG_AUDIO_SENDER_DLT
-                    !isMine && message.type == Constants.MSG_AUDIO -> Constants.MSG_AUDIO_RECEIVER_DLT
-                    else -> return@forEach
-                }
-
-                val messageRef = refChat.child(message.date)
-                messageRef.child("type").setValue(newType).await()
-
-                if (!isMine && newType in listOf(Constants.MSG_PHOTO_SENDER_DLT, Constants.MSG_AUDIO_SENDER_DLT)) {
-                    deleteRemoteFile(firebaseRefsContainer.storage.reference.child("$nodeType/$myUid/"), message)
-                    messageRef.removeValue().await()
-                } else if (isMine && newType in listOf(Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_AUDIO_RECEIVER_DLT)) {
-                    deleteRemoteFile(firebaseRefsContainer.storage.reference.child("$nodeType/$userId/"), message) // TODO verificar si falta "audio"
-                    messageRef.removeValue().await()
-                }
-            }
-            firebaseRefsContainer.refDatos.child(myUid).child(nodeType).child(userId).removeValue().await()
-        } else {
-            firebaseRefsContainer.refDatos.child(myUid).child(nodeType).child(userId).child("estado").setValue(CHAT_STATE_HIDE).await()
-        }
-    }
-
-    suspend fun getMessageCount(
-        userId: String,
-        nodeType: String
-    ): Int {
-        var count = 0
-
-        val chatId = chatRepository.getRefChatId(userId)
-
-        val refChat = firebaseRefsContainer.refChatMessageRoot
-            .child(nodeType)
-            .child(chatId)
-            .child(NODE_MESSAGES)
-
-        val messagesSnap = refChat.get().await()
-
-        for (snap in messagesSnap.children) {
-            val chat = snap.getValue(ChatMessage::class.java) ?: continue
-            val isMine = chat.sender == myUid
-
-            val validTypesMine = listOf(
-                Constants.MSG_TEXT,
-                Constants.MSG_PHOTO,
-                Constants.MSG_AUDIO,
-                Constants.MSG_TEXT_RECEIVER_DLT,
-                Constants.MSG_PHOTO_RECEIVER_DLT,
-                Constants.MSG_AUDIO_RECEIVER_DLT
-            )
-
-            val validTypesOther = listOf(
-                Constants.MSG_TEXT,
-                Constants.MSG_PHOTO,
-                Constants.MSG_AUDIO,
-                Constants.MSG_TEXT_SENDER_DLT,
-                Constants.MSG_PHOTO_SENDER_DLT,
-                Constants.MSG_AUDIO_SENDER_DLT
-            )
-
-            if (isMine && chat.type in validTypesMine) count++
-            if (!isMine && chat.type in validTypesOther) count++
-        }
-
-        return count
-    }
-
-    private suspend fun deleteRemoteFile(
-        ref: StorageReference,
-        chat: ChatMessage)
-    {
-        val msg = chat.message
-        val start = msg.indexOf(myUid) + myUid.length + 3
-        val ext = if (msg.contains(EXTENSION_IMAGE)) EXTENSION_IMAGE else EXTENSION_AUDIO
-        val end = msg.indexOf(ext) + ext.length
-        if (start in 0..end && end <= msg.length) {
-            val fileName = msg.substring(start, end)
-            ref.child(fileName).delete().await()
-        }
     }
 
     private fun createDefaultChatWith(
@@ -557,7 +443,7 @@ class UserRepository @Inject constructor(
         if (estado == context.getString(R.string.online)) return UserStatus.Online
 
         // Escribiendo / Grabando (y solo si es conmigo)
-        if (estado == context.getString(R.string.escribiendo) ||
+        if (estado == context.getString(R.string.typing) ||
             estado == context.getString(R.string.recording)) {
 
             val currentChat = child(key!!)

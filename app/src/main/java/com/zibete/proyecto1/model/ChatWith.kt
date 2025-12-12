@@ -20,10 +20,10 @@ data class ChatWith(
     var userId: String = "",
 
     @get:PropertyName("wUserName") @set:PropertyName("wUserName")
-    var userName: String? = "",
+    var userName: String = "",
 
     @get:PropertyName("wUserPhoto") @set:PropertyName("wUserPhoto")
-    var userPhoto: String? = "",
+    var userPhoto: String = "",
 
     @get:PropertyName("estado") @set:PropertyName("estado")
     var state: String = "",

@@ -27,6 +27,34 @@ class GroupRepository @Inject constructor(
 
     private val myUid = userRepository.user.uid
 
+
+    // User de grupo deja de estar disponible
+    fun observeGroupUserAvailability(
+        groupName: String,
+        userId: String
+    ): Flow<Boolean> = callbackFlow {
+
+        val ref = firebaseRefsContainer.refGroupUsers
+            .child(groupName)
+            .child(userId)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(ds: DataSnapshot) {
+
+                val isAvailable = ds.exists()
+
+                trySend(isAvailable)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
     suspend fun getUserGroup(userId: String, groupName: String): UserGroup? =
         firebaseRefsContainer.refGroupUsers
             .child(groupName)

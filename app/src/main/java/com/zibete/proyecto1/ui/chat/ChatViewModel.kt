@@ -39,6 +39,9 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
+import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
+import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -134,7 +137,7 @@ class ChatViewModel @Inject constructor(
 
     private suspend fun startGroupUserAvailability() {
         if (nodeType != NODE_CURRENT_CHAT) {
-            chatRepository
+            groupRepository
                 .observeGroupUserAvailability(groupName, userId)
                 .collect { isAvailable ->
                     if (!isAvailable) {
@@ -158,7 +161,7 @@ class ChatViewModel @Inject constructor(
             val refs = chatRefs.first { it != null }!!
 
             chatRepository
-                .observeChatMessages(refs.refChatId)
+                .observeChatMessages()
                 .collect { event ->
                     when (event) {
                         is ChatChildEvent.Added   -> addChat(event.snapshot)
@@ -187,15 +190,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun markMessagesAsSeenOnOpen() {
-        viewModelScope.launch {
-            val chatRefs = chatRefs.first { it != null }!!
-
-            chatRepository.markChatAsSeen(
-                userId = userId,
-                nodeType = nodeType,
-                refChatId = chatRefs.refChatId
-            )
-        }
+        viewModelScope.launch { chatRepository.markChatAsSeen() }
     }
 
     private suspend fun setupChat() {
@@ -332,7 +327,7 @@ class ChatViewModel @Inject constructor(
                 val url = uploadMedia(
                     fileName = fileName,
                     uri = resultUri,
-                    path = "images"
+                    path = PATH_PHOTOS
                 )
 
                 if (url == null) {
@@ -421,13 +416,18 @@ class ChatViewModel @Inject constructor(
     suspend fun uploadMedia(fileName: String, uri: Uri, path: String): String? {
         return try {
             val refs = chatRefs.first { it != null }!!
-            val refOtherReceiverData = refs.refOtherReceiverData
+
+            val refData = when (path) {
+                PATH_AUDIOS -> refs.refAudios
+                PATH_PHOTOS -> refs.refPhotos
+                else -> throw IllegalArgumentException(ERR_ZIBE)
+            }
 
             chatRepository.uploadChatData(
                 uri,
                 fileName,
-                path,
-                refOtherReceiverData)
+                refData
+            )
         } catch (_: Exception) {
             null
         }
@@ -456,7 +456,7 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val otherActiveChat = chatRepository.getActiveChat(userId)
+        val otherActiveChat = chatRepository.getActiveChat()
         val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
         val now = now()
         val date = if (timerText == "") now else "$now $timerText"
@@ -469,8 +469,7 @@ class ChatViewModel @Inject constructor(
             seen
         )
 
-        val refs = chatRefs.first { it != null }!!
-        chatRepository.pushMessageToChat(refs.refChatId, chatMessage)
+        chatRepository.pushMessageToChat(chatMessage)
 
         //CHATWITH
 
@@ -583,13 +582,20 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-
-    fun deleteSelectedMsgs() = viewModelScope.launch {
-        // TODO: implementar delete de mensajes
+    fun onMessageTyping() {
+        viewModelScope.launch { userRepository.setUserActivityStatus(context.getString(R.string.typing)) }
     }
 
-    fun onMessageTyping(isTyping: Boolean) {
-        // TODO: actualizar estado "escribiendo" en Firebase
+    fun setUserOnline() {
+        viewModelScope.launch { userRepository.setUserOnline() }
+    }
+
+    fun setUserLastSeen(){
+        viewModelScope.launch { userRepository.setUserLastSeen() }
+    }
+
+    fun setActiveChat(activeChat: String){
+        chatRepository.setActiveChat(activeChat)
     }
 
     // ---------- Acciones de menú ----------
@@ -661,17 +667,76 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
+    fun onMessageSelectionChanged(message: ChatMessage, isSelected: Boolean) {
+        _chatState.update { current ->
+            val currentSet = current.selectedMessages.toMutableSet()
+            if (isSelected) {
+                currentSet.add(message)
+            } else {
+                currentSet.remove(message)
+            }
+
+            current.copy(
+                selectedMessages = currentSet
+            )
+        }
+    }
+
+    fun clearSelection() {
+        _chatState.update { it.copy(selectedMessages = emptySet()) }
+    }
+
+
+
+    fun onDeleteSelectedMessages() {
+        val selected = _chatState.value.selectedMessages.toList()
+        if (selected.isEmpty()) return
+
         viewModelScope.launch {
-            val count = userRepository.getMessageCount(userId, nodeType)
+            try {
+                val result = chatRepository.deleteMessages(selected)
+
+                _chatState.update {
+                    it.copy(
+                        selectedMessages = emptySet(),
+                        deleteModeEnabled = false
+                    )
+                }
+
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
+
+                if (result.chatRemoved) {
+                    _events.emit(ChatSessionUiEvent.CloseChat)
+                }
+            } catch (e: Exception) {
+                _events.emit(
+                    ChatSessionUiEvent.ShowErrorDialog(
+                        e.message ?: "Error al eliminar mensajes"
+                    )
+                )
+            }
+        }
+    }
+
+    fun onDeleteChatClicked(userName: String) {
+        viewModelScope.launch {
+            val count = chatRepository.getMessageCount()
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = userName,
                     countMessages = count,
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
-                            userRepository.deleteChat(userId, nodeType, deleteMessages)
-                            _events.emit(ChatSessionUiEvent.ShowDeleteChatSuccess(userName))
+                            try {
+                                val result = chatRepository.deleteMessages(null, deleteMessages)
+                                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
+                            } catch (e: Exception) {
+                                _events.emit(
+                                    ChatSessionUiEvent.ShowErrorDialog(
+                                        e.message ?: "Error al eliminar mensajes"
+                                    )
+                                )
+                            }
                         }
                     }
                 )

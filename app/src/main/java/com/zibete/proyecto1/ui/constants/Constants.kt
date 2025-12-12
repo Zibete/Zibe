@@ -56,10 +56,13 @@ object Constants {
     const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
     const val NODE_CHATLIST = "ChatList"
 
+    const val NODE_CHATS = "Chats"
+
+
     const val NODE_ACTIVE_CHAT = "Actual"
 
-    const val PATH_AUDIO = "audio"
-    const val PATH_IMAGE = "image"
+    const val PATH_AUDIOS = "audios"
+    const val PATH_PHOTOS = "photos"
 
     const val EXTENSION_AUDIO = ".m4a"
     const val EXTENSION_IMAGE = ".jpg"
@@ -69,7 +72,6 @@ object Constants {
 //    const val NODE_PUBLIC_GROUP_CHAT = ""
 
 
-    const val NODE_MESSAGES = "Mensajes"
 
     const val AUTH = "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
 

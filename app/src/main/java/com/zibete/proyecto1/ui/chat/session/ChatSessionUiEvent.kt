@@ -29,7 +29,8 @@ sealed class ChatSessionUiEvent {
     data class ShowBlockSuccess(val name: String) : ChatSessionUiEvent()
     data class ShowUnblockSuccess(val name: String) : ChatSessionUiEvent()
     data class ShowChatHiddenSuccess(val name: String) : ChatSessionUiEvent()
-    data class ShowDeleteChatSuccess(val name: String) : ChatSessionUiEvent()
+    data class ShowDeleteMessagesSuccess(val count: Int) : ChatSessionUiEvent()
+
     data class ShowToggleNotificationSuccess(
         val name: String,
         val enabled: Boolean
