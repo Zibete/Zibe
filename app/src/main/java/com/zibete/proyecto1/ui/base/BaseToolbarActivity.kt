@@ -78,7 +78,7 @@ abstract class BaseToolbarActivity : AppCompatActivity() {
 //                true
 //            }
 //
-//            // ---------- ChatActivity / SlideProfileActivity ----------
+//            // ---------- ChatActivity / ProfileActivity ----------
 //            R.id.action_notifications_on -> {
 //                onNotificationsOnClicked()
 //                true

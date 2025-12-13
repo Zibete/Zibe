@@ -11,7 +11,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.core.os.bundleOf
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -37,10 +36,12 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NAME
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -56,13 +57,7 @@ class ProfileFragment : BaseChatSessionFragment() {
 
     private val profileViewModel: ProfileViewModel by viewModels()
 
-    // Args
-    private val userId: String by lazy {
-        requireArguments().getString(ARG_USER_ID).orEmpty()
-    }
-
     // Fotos (perfil + chat)
-    private val photoList = arrayListOf<String>()
     private val receivedPhotos = arrayListOf<String>()
     private lateinit var adapterPhotoReceived: AdapterPhotoReceived
 
@@ -73,6 +68,27 @@ class ProfileFragment : BaseChatSessionFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // --- Swipe refresh ---
+        binding.swipeRefresh.setOnRefreshListener {
+            profileViewModel.loadProfile(force = true)
+        }
+
+        // --- Cargar por primera vez ---
+        profileViewModel.loadProfile()
+
+        // Collects
+        collectUiState()
+        collectUserStatus()
+        collectChatPhotos()
+
+        observeChatSessionEvents(profileViewModel.events)
+
+        setupToolbar()
+        setupRecycler()
+        setupFabMenu()
+        setupImageLayout()
+        bindClicks()
 
         val menuHost = requireActivity() as MenuHost
 
@@ -86,33 +102,35 @@ class ProfileFragment : BaseChatSessionFragment() {
                 override fun onPrepareMenu(menu: Menu) {
                     val state = profileViewModel.uiState.value
 
+                    val isSilent = state.chatState == CHAT_STATE_SILENT
+
                     menu.findItem(R.id.action_block)?.isVisible = !state.iBlockedUser
                     menu.findItem(R.id.action_unblock)?.isVisible = state.iBlockedUser
-                    menu.findItem(R.id.action_delete_chat)?.isVisible = false
-                    menu.findItem(R.id.action_notifications_on)?.isVisible = false
-                    menu.findItem(R.id.action_notifications_off)?.isVisible = false
+                    menu.findItem(R.id.action_delete_chat)?.isVisible = true
+                    menu.findItem(R.id.action_notifications_on)?.isVisible = isSilent
+                    menu.findItem(R.id.action_notifications_off)?.isVisible = !isSilent
                 }
 
                 override fun onMenuItemSelected(item: MenuItem): Boolean {
                     return when (item.itemId) {
 
                         R.id.action_notifications_off, R.id.action_notifications_on -> {
-                            profileViewModel.onToggleNotificationsClicked(userId, profileViewModel.uiState.value.name, NODE_CURRENT_CHAT)
+                            profileViewModel.onToggleNotificationsClicked(NODE_CURRENT_CHAT)
                             true
                         }
 
                         R.id.action_block -> {
-                            profileViewModel.onBlockClicked(userId, profileViewModel.uiState.value.name, NODE_CURRENT_CHAT)
+                            profileViewModel.onBlockClicked(NODE_CURRENT_CHAT)
                             true
                         }
 
                         R.id.action_unblock -> {
-                            profileViewModel.onUnblockClicked(userId, profileViewModel.uiState.value.name, NODE_CURRENT_CHAT)
+                            profileViewModel.onUnblockClicked(NODE_CURRENT_CHAT)
                             true
                         }
 
                         R.id.action_delete_chat -> {
-                            profileViewModel.onDeleteClicked(userId, profileViewModel.uiState.value.name, NODE_CURRENT_CHAT)
+                            profileViewModel.onDeleteClicked(NODE_CURRENT_CHAT)
                             true
                         }
 
@@ -123,37 +141,23 @@ class ProfileFragment : BaseChatSessionFragment() {
             viewLifecycleOwner,
             Lifecycle.State.RESUMED
         )
-
-        observeChatSessionEvents(profileViewModel.events)
-
-        setupToolbar()
-        setupRecycler()
-        setupFabMenu()
-        setupImageLayout()
-        bindClicks()
-
-        // Cargar
-        profileViewModel.loadProfile(userId)
-
-        // Collects
-        collectUiState()
-        collectUserStatus()
-        collectChatPhotos()
-
     }
 
     private fun bindClicks() {
         binding.profileFavoriteOff.setOnClickListener {
-            profileViewModel.onToggleFavorite(userId)
+            profileViewModel.onToggleFavorite()
         }
         binding.profileFavoriteOn.setOnClickListener {
-            profileViewModel.onToggleFavorite(userId)
+            profileViewModel.onToggleFavorite()
         }
 
         binding.linearImageActivity.setOnClickListener {
-            if (photoList.isEmpty()) return@setOnClickListener
+            val url = profileViewModel.uiState.value.profile?.profilePhoto
+                ?.takeIf { it.isNotBlank() }
+                ?: return@setOnClickListener
+
             val intent = Intent(requireContext(), SlidePhotoActivity::class.java).apply {
-                putStringArrayListExtra("photoList", ArrayList(photoList))
+                putStringArrayListExtra("photoList", arrayListOf(url))
                 putExtra("position", 0)
                 putExtra("rotation", 180)
             }
@@ -169,47 +173,52 @@ class ProfileFragment : BaseChatSessionFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 profileViewModel.uiState.collect { state ->
 
-                    binding.loadingPhoto.isVisible = state.isLoading
+                    val profile = state.profile ?: return@collect
 
-                    state.age?.let { binding.ageView.text = it.toString() }
-                    binding.nameUser.text = state.name
-                    binding.distanceUser.text = state.distance
+                    binding.swipeRefresh.isRefreshing = state.isLoading
 
-                    binding.linearDesc.isVisible = !state.description.isNullOrEmpty()
-                    binding.desc.text = state.description.orEmpty()
+                    val age = Utils.calcAge(profile.birthDay).toString()
+                    val name = profile.name
+                    val distance = profileViewModel.getDistanceToUser(profile)
+                    val description = profile.description
+                    val photoUrl = profile.profilePhoto
+
+                    binding.ageView.text = age
+                    binding.nameUser.text = name
+                    binding.distanceUser.text = distance
+
+                    binding.linearDesc.isVisible = description.isNotEmpty()
+                    binding.desc.text = description
+
+                    binding.loadingPhoto.isVisible = false
 
                     // Foto perfil
-                    val url = state.photoUrl
-                    if (!url.isNullOrBlank()) {
-                        if (!photoList.contains(url)) photoList.add(url)
+                    Glide.with(requireContext())
+                        .load(photoUrl)
+                        .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable?>,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.loadingPhoto.isVisible = false
+                                return false
+                            }
 
-                        Glide.with(requireContext())
-                            .load(url)
-                            .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
-                            .listener(object : RequestListener<Drawable> {
-                                override fun onLoadFailed(
-                                    e: GlideException?,
-                                    model: Any?,
-                                    target: Target<Drawable?>,
-                                    isFirstResource: Boolean
-                                ): Boolean {
-                                    binding.loadingPhoto.isVisible = false
-                                    return false
-                                }
-
-                                override fun onResourceReady(
-                                    resource: Drawable,
-                                    model: Any,
-                                    target: Target<Drawable?>?,
-                                    dataSource: DataSource,
-                                    isFirstResource: Boolean
-                                ): Boolean {
-                                    binding.loadingPhoto.isVisible = false
-                                    return false
-                                }
-                            })
-                            .into(binding.profilePhoto)
-                    }
+                            override fun onResourceReady(
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable?>?,
+                                dataSource: DataSource,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.loadingPhoto.isVisible = false
+                                return false
+                            }
+                        })
+                        .into(binding.profilePhoto)
 
                     // Mostrar botón "chat privado en grupo"
                     binding.menuGoChatGroup.isVisible = state.isGroupMatch
@@ -234,7 +243,6 @@ class ProfileFragment : BaseChatSessionFragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // ✅ Si en tu VM el flow se llama distinto, cambiá ESTA línea:
                 profileViewModel.userStatus.collect { status ->
                     when (status) {
                         is UserStatus.Online -> {
@@ -317,11 +325,13 @@ class ProfileFragment : BaseChatSessionFragment() {
     // endregion
 
     private fun goChat() {
-        val name = profileViewModel.uiState.value.name
+
+        val profile = profileViewModel.uiState.value.profile ?: return
+
         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
-            putExtra(EXTRA_CHAT_ID, userId)
+            putExtra(EXTRA_CHAT_ID, profile.id)
             putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
-            putExtra(EXTRA_CHAT_NAME, name)
+            putExtra(EXTRA_CHAT_NAME, profile.name)
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         }
         startActivity(intent)
@@ -332,24 +342,12 @@ class ProfileFragment : BaseChatSessionFragment() {
         super.onDestroyView()
     }
 
-    companion object {
-        private const val ARG_USER_ID = "arg_user_id"
-
-        fun newInstance(
-            userId: String,
-        ) = ProfileFragment().apply {
-            arguments = bundleOf(
-                ARG_USER_ID to userId
-            )
-        }
-    }
-
-    override fun onStart() {
+    override fun onResume() {
         super.onStart()
         profileViewModel.setUserOnline()
     }
 
-    override fun onStop() {
+    override fun onPause() {
         super.onStop()
         profileViewModel.setUserLastSeen()
     }

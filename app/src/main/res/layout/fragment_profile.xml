@@ -1,45 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    android:id="@+id/swipeRefresh"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/zibe_night_start"
-    android:layout_gravity="center"
-    android:orientation="vertical"
-    android:id="@+id/coordinatorLayout">
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/pager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
-
-    <FrameLayout
-        android:id="@+id/singleContainer"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/zibe_night_start"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:id="@+id/coordinatorLayout">
 
-        <com.zibete.proyecto1.ui.ResizableImageViewProfile
-            android:layout_gravity="center"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/profilePhoto"/>
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
 
-        <ProgressBar
-            android:id="@+id/loadingPhoto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:indeterminate="true"
-            android:layout_gravity="center"/>
+        <FrameLayout
+            android:id="@+id/singleContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"/>
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <com.zibete.proyecto1.ui.ResizableImageViewProfile
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/profilePhoto"/>
+
+            <ProgressBar
+                android:id="@+id/loadingPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                android:layout_gravity="center"/>
 
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 
         <ScrollView
@@ -244,51 +251,54 @@
 
         </ScrollView>
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar_profile"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/Arrow"
-        android:background="@color/transparent">
-
-    </com.google.android.material.appbar.MaterialToolbar>
-
-    <com.github.clans.fab.FloatingActionMenu
-        android:id="@+id/floatingActionMenu"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_gravity="bottom|right"
-        app:menu_labels_cornerRadius="3dp"
-        app:menu_icon="@drawable/ic_logo"
-        app:menu_colorNormal="@color/accent"
-        app:menu_colorPressed="@color/accent_transparent"
-        android:layout_marginRight="10dp"
-        android:layout_marginBottom="10dp"
-        android:layout_marginLeft="10dp">
-
-        <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/menu_go_chat_group"
-            app:maxImageSize="28dp"
-            app:fab_colorNormal="@color/accent"
-            app:fab_colorPressed="@color/accent_transparent"
-            android:layout_width="wrap_content"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar_profile"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_baseline_person_add_24"
-            android:layout_marginBottom="15dp"
-            app:fab_label="Chat privado de la sala"/>
+            android:theme="@style/Arrow"
+            android:background="@color/transparent">
 
-        <com.github.clans.fab.FloatingActionButton
-            android:id="@+id/menu_go_chat"
-            app:maxImageSize="28dp"
-            app:fab_colorNormal="@color/accent"
-            app:fab_colorPressed="@color/accent_transparent"
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <com.github.clans.fab.FloatingActionMenu
+            android:id="@+id/floatingActionMenu"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_baseline_send_24"
-            android:layout_marginBottom="15dp"
-            app:fab_label="Chat de ZibeApp"/>
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|right"
+            app:menu_labels_cornerRadius="3dp"
+            app:menu_icon="@drawable/ic_logo"
+            app:menu_colorNormal="@color/accent"
+            app:menu_colorPressed="@color/accent_transparent"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="10dp">
 
-    </com.github.clans.fab.FloatingActionMenu>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/menu_go_chat_group"
+                app:maxImageSize="28dp"
+                app:fab_colorNormal="@color/accent"
+                app:fab_colorPressed="@color/accent_transparent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_person_add_24"
+                android:layout_marginBottom="15dp"
+                app:fab_label="Chat privado de la sala"/>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/menu_go_chat"
+                app:maxImageSize="28dp"
+                app:fab_colorNormal="@color/accent"
+                app:fab_colorPressed="@color/accent_transparent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_send_24"
+                android:layout_marginBottom="15dp"
+                app:fab_label="Chat de ZibeApp"/>
+
+        </com.github.clans.fab.FloatingActionMenu>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
 

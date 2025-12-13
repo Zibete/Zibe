@@ -94,9 +94,6 @@
             android:name=".SlidePhotoActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity
-            android:name=".SlideProfileActivity"
-            android:theme="@style/AppTheme.MainActivity" />
-        <activity
             android:name=".ui.settings.SettingsActivity"
             android:theme="@style/AppTheme.MainActivity" />
         <activity
