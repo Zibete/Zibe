@@ -272,6 +272,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun onSetUserOnline(){
+        viewModelScope.launch { userRepository.setUserOnline() }
+    }
+
+    fun onSetUserLastSeen(){
+        viewModelScope.launch { userRepository.setUserLastSeen() }
+    }
+
     fun onToolbarItemSelected(itemId: Int) {
         when (itemId) {
 

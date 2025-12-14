@@ -24,7 +24,7 @@ data class Users(
 
     @get:PropertyName("estado")
     @set:PropertyName("estado")
-    var state: Boolean = false,
+    var isOnline: Boolean = false,
 
     var token: String = "",
 

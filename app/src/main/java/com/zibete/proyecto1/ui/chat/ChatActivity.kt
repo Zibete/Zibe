@@ -156,7 +156,7 @@ class ChatActivity : BaseChatSessionActivity() {
             onSelectionChanged = { msg, selected ->
                 chatViewModel.onMessageSelectionChanged(msg, selected)
             },
-            myAudioAvatarUrl = chatViewModel.myIdentity.photoUrl,
+            myAudioAvatarUrl = chatViewModel.myIdentity.userPhotoUrl,
             otherAudioAvatarUrl = chatViewModel.otherProfile.value?.profilePhoto,
             myUid = chatViewModel.myUid
         )
@@ -198,8 +198,8 @@ class ChatActivity : BaseChatSessionActivity() {
                     chatViewModel.headerState.collect { state ->
                         when (state) {
                             ChatHeaderState.Loading -> {
-                                binding.nameUser.text = getString(R.string.cargando)
-                                binding.tvStatus.text = getString(R.string.offline)
+                                binding.nameUser.text = getString(R.string.loading)
+                                binding.tvStatus.text = getString(R.string.loading)
                             }
 
                             is ChatHeaderState.Loaded -> {
@@ -309,7 +309,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         binding.buttonUnblockUser.setOnClickListener {
-            chatViewModel.onUnblockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
+            chatViewModel.onUnblockClicked()
         }
 
         binding.linearNameUser.setOnClickListener { v ->
@@ -417,19 +417,19 @@ class ChatActivity : BaseChatSessionActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_notifications_off, R.id.action_notifications_on -> {
-                chatViewModel.onToggleNotificationsClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
+                chatViewModel.onToggleNotificationsClicked()
                 return true
             }
             R.id.action_bloq -> {
-                chatViewModel.onBlockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
+                chatViewModel.onBlockClicked()
                 return true
             }
             R.id.action_desbloq -> {
-                chatViewModel.onUnblockClicked(chatViewModel.userId, chatViewModel.userName, chatViewModel.nodeType)
+                chatViewModel.onUnblockClicked()
                 return true
             }
             R.id.action_delete_chat -> {
-                chatViewModel.onDeleteChatClicked(chatViewModel.userName)
+                chatViewModel.onDeleteChatClicked()
                 return true
             }
         }

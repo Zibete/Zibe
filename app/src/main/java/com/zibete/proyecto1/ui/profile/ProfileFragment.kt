@@ -38,7 +38,6 @@ import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NAME
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.utils.Utils
@@ -90,57 +89,8 @@ class ProfileFragment : BaseChatSessionFragment() {
         setupImageLayout()
         bindClicks()
 
-        val menuHost = requireActivity() as MenuHost
+        setupOptionMenu()
 
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-
-                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    // menu_main ya está inflado por BaseToolbarActivity
-                }
-
-                override fun onPrepareMenu(menu: Menu) {
-                    val state = profileViewModel.uiState.value
-
-                    val isSilent = state.chatState == CHAT_STATE_SILENT
-
-                    menu.findItem(R.id.action_block)?.isVisible = !state.iBlockedUser
-                    menu.findItem(R.id.action_unblock)?.isVisible = state.iBlockedUser
-                    menu.findItem(R.id.action_delete_chat)?.isVisible = true
-                    menu.findItem(R.id.action_notifications_on)?.isVisible = isSilent
-                    menu.findItem(R.id.action_notifications_off)?.isVisible = !isSilent
-                }
-
-                override fun onMenuItemSelected(item: MenuItem): Boolean {
-                    return when (item.itemId) {
-
-                        R.id.action_notifications_off, R.id.action_notifications_on -> {
-                            profileViewModel.onToggleNotificationsClicked(NODE_CURRENT_CHAT)
-                            true
-                        }
-
-                        R.id.action_block -> {
-                            profileViewModel.onBlockClicked(NODE_CURRENT_CHAT)
-                            true
-                        }
-
-                        R.id.action_unblock -> {
-                            profileViewModel.onUnblockClicked(NODE_CURRENT_CHAT)
-                            true
-                        }
-
-                        R.id.action_delete_chat -> {
-                            profileViewModel.onDeleteClicked(NODE_CURRENT_CHAT)
-                            true
-                        }
-
-                        else -> false
-                    }
-                }
-            },
-            viewLifecycleOwner,
-            Lifecycle.State.RESUMED
-        )
     }
 
     private fun bindClicks() {
@@ -322,6 +272,61 @@ class ProfileFragment : BaseChatSessionFragment() {
         )
     }
 
+    private fun setupOptionMenu(){
+        val menuHost = requireActivity() as MenuHost
+
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    // menu_main ya está inflado por BaseToolbarActivity
+                }
+
+                override fun onPrepareMenu(menu: Menu) {
+                    val state = profileViewModel.uiState.value
+
+                    val isSilent = state.chatState == CHAT_STATE_SILENT
+
+                    menu.findItem(R.id.action_block)?.isVisible = !state.iBlockedUser
+                    menu.findItem(R.id.action_unblock)?.isVisible = state.iBlockedUser
+                    menu.findItem(R.id.action_delete_chat)?.isVisible = true
+                    menu.findItem(R.id.action_notifications_on)?.isVisible = isSilent
+                    menu.findItem(R.id.action_notifications_off)?.isVisible = !isSilent
+                }
+
+                override fun onMenuItemSelected(item: MenuItem): Boolean {
+                    return when (item.itemId) {
+
+                        R.id.action_notifications_off, R.id.action_notifications_on -> {
+                            profileViewModel.onToggleNotificationsClicked(NODE_CURRENT_CHAT)
+                            true
+                        }
+
+                        R.id.action_block -> {
+                            profileViewModel.onBlockClicked(NODE_CURRENT_CHAT)
+                            true
+                        }
+
+                        R.id.action_unblock -> {
+                            profileViewModel.onUnblockClicked(NODE_CURRENT_CHAT)
+                            true
+                        }
+
+                        R.id.action_delete_chat -> {
+                            profileViewModel.onDeleteClicked(NODE_CURRENT_CHAT)
+                            true
+                        }
+
+                        else -> false
+                    }
+                }
+            },
+            viewLifecycleOwner,
+            Lifecycle.State.RESUMED
+        )
+
+    }
+
     // endregion
 
     private fun goChat() {
@@ -331,8 +336,6 @@ class ProfileFragment : BaseChatSessionFragment() {
         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
             putExtra(EXTRA_CHAT_ID, profile.id)
             putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
-            putExtra(EXTRA_CHAT_NAME, profile.name)
-            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         }
         startActivity(intent)
     }

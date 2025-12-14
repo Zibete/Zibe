@@ -6,10 +6,10 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.main.MainViewModel
 
 abstract class BaseToolbarActivity : AppCompatActivity() {
 
-    protected var toolbarMenu: Menu? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,12 +18,11 @@ abstract class BaseToolbarActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-        toolbarMenu = menu
 
-//        // SearchView (solo si la pantalla lo necesita)
-//        val searchItem = menu.findItem(R.id.action_search)
-//        val searchView = searchItem?.actionView as? SearchView
-//        searchView?.let { onSearchViewReady(it) }
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem?.actionView as? SearchView
+
+        searchView?.let { onSearchViewReady(it) }
 
         return true
     }
@@ -51,26 +50,26 @@ abstract class BaseToolbarActivity : AppCompatActivity() {
                 true
             }
 
-//            // ---------- MainActivity ----------
-//            R.id.action_settings -> {
-//                onSettingsClicked()
-//                true
-//            }
+            // ---------- MainActivity ----------
+            R.id.action_settings -> {
+                onSettingsClicked()
+                true
+            }
 //
 //            R.id.action_unblock_users -> {
 //                onUnblockUsersClicked()
 //                true
 //            }
 //
-//            R.id.action_unhide_chats -> {
-//                onUnhideChatsClicked()
-//                true
-//            }
-//
-//            R.id.action_favorites -> {
-//                onFavoritesClicked()
-//                true
-//            }
+            R.id.action_unhide_chats -> {
+                onUnhideChatsClicked()
+                true
+            }
+
+            R.id.action_favorites -> {
+                onFavoritesClicked()
+                true
+            }
 //
 //            // ---------- ChatGroupFragment ----------
 //            R.id.action_exit_group -> {
@@ -110,7 +109,8 @@ abstract class BaseToolbarActivity : AppCompatActivity() {
 
     // ===== Hooks para que cada Activity haga lo suyo =====
 
-    protected open fun onSettingsClicked() {}
+    protected open fun onSettingsClicked() {
+    }
     protected open fun onUnblockUsersClicked() {}
     protected open fun onUnhideChatsClicked() {}
     protected open fun onFavoritesClicked() {}

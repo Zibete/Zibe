@@ -1,125 +1,143 @@
 package com.zibete.proyecto1.adapters
 
-import android.content.Context
+import UsersDiffCallback
+import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.data.LocationRepository
-import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.databinding.RowUserBinding
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DESCRIPTION
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DISTANCE_METERS
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_NAME
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.utils.GlassEffect
-import com.zibete.proyecto1.utils.ProfileUiBinder
-import eightbitlab.com.blurview.BlurView
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 class AdapterUsers(
-    private val context: Context,
-    private val locationRepository: LocationRepository,
     private val onChatClicked: (String) -> Unit,
     private val onProfileClicked: (Users) -> Unit,
-) : RecyclerView.Adapter<AdapterUsers.ViewHolderAdapter>(), Filterable {
+    private val formatDistance: (Double) -> String
+) : ListAdapter<Users, AdapterUsers.VH>(UsersDiffCallback) {
 
-    /** Lista actual mostrada */
-    private var usersList: MutableList<Users> = mutableListOf()
+    /** Para filtro sin romper submitList (fuente “completa”) */
+    private var originalList: List<Users> = emptyList()
 
-    /** Lista original para filtro */
-    private var originalList: MutableList<Users> = mutableListOf()
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+        val binding = RowUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return VH(binding)
+    }
 
-    // ----------------------- FILTER ----------------------- //
-    override fun getFilter(): Filter = object : Filter() {
-        override fun performFiltering(constraint: CharSequence?): FilterResults {
-            val query = constraint?.toString()?.lowercase()?.trim() ?: ""
+    override fun onBindViewHolder(holder: VH, position: Int) {
+        val u = getItem(position)
+        holder.bind(u, formatDistance, onChatClicked, onProfileClicked)
+    }
 
-            val filtered = if (query.isEmpty()) {
-                originalList
-            } else {
-                originalList.filter { it.name.lowercase().contains(query) }
-            }
-
-            return FilterResults().apply {
-                values = filtered
-            }
+    override fun onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+            return
         }
 
-        @Suppress("UNCHECKED_CAST")
-        override fun publishResults(constraint: CharSequence?, results: FilterResults) {
-            usersList = (results.values as List<Users>).toMutableList()
-            notifyDataSetChanged()
+        val bundle = payloads.lastOrNull() as? Bundle
+        if (bundle == null) {
+            onBindViewHolder(holder, position)
+            return
+        }
+
+        holder.bindPayload(
+            getItem(position),
+            bundle,
+            formatDistance)
+    }
+
+    fun submitUsers(list: List<Users>) {
+        originalList = list
+        submitList(list)
+    }
+
+    fun filterByName(query: String?) {
+        val q = query.orEmpty().trim().lowercase()
+        if (q.isEmpty()) {
+            submitList(originalList)
+        } else {
+            submitList(originalList.filter { it.name.lowercase().contains(q) })
         }
     }
 
-    // ----------------------- VIEW HOLDER ----------------------- //
-    class ViewHolderAdapter(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvUsuario1: TextView = itemView.findViewById(R.id.tv_usuario1)
-        val tvEdad: TextView = itemView.findViewById(R.id.tv_edad)
-        val distance: TextView = itemView.findViewById(R.id.distance)
-        val tvDesc: TextView = itemView.findViewById(R.id.tv_desc)
-        val imgUser: ImageView = itemView.findViewById(R.id.image_user1)
-
-        val goChat: ImageView = itemView.findViewById(R.id.goChat)
-        val linearDesc: LinearLayout = itemView.findViewById(R.id.linear_desc)
-        val cardView: CardView = itemView.findViewById(R.id.cardviewUsers)
-
-        val blurView: BlurView? = itemView.findViewById(R.id.blur_view)
-        val glowBorder: View? = itemView.findViewById(R.id.glow_border)
+    class VH(private val b: RowUserBinding) : RecyclerView.ViewHolder(b.root) {
 
         init {
-            GlassEffect.applyGlassEffect(blurView, itemView)
-            GlassEffect.startGlowIfAny(glowBorder)
+            GlassEffect.applyGlassEffect(b.blurView, b.root)
+            GlassEffect.startGlowIfAny(b.glowBorder)
         }
-    }
 
-    // ----------------------- CREATE ----------------------- //
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolderAdapter {
-        val v = LayoutInflater.from(parent.context)
-            .inflate(R.layout.row_usuarios, parent, false)
-        return ViewHolderAdapter(v)
-    }
+        fun bind(
+            u: Users,
+            formatDistance: (Double) -> String,
+            onChatClicked: (String) -> Unit,
+            onProfileClicked: (Users) -> Unit
+        ) {
+            // Imagen
+            if (u.profilePhoto.isNotBlank()) {
+                Glide.with(b.root).load(u.profilePhoto).into(b.avatarImage)
+            } else {
+                b.avatarImage.setImageDrawable(null)
+            }
 
-    // ----------------------- BIND ----------------------- //
-    override fun onBindViewHolder(holder: ViewHolderAdapter, position: Int) {
-        val u = usersList[position]
-        loadUserCard(holder, u)
+            // Texto
+            b.userName.text = u.name
 
-        holder.goChat.setOnClickListener { onChatClicked(u.id) }
-        holder.cardView.setOnClickListener { onProfileClicked(u) }
-    }
+            b.onlineIcon.isVisible = u.isOnline
+            b.offlineIcon.isVisible = !u.isOnline
 
-    override fun getItemCount(): Int = usersList.size
+            b.userAge.text = u.age.toString()
+            b.userDistance.text = formatDistance(u.distanceMeters)
 
-    // ----------------------- CARD DATA ----------------------- //
-    private fun loadUserCard(h: ViewHolderAdapter, u: Users) {
-        Glide.with(context).load(u.profilePhoto).into(h.imgUser)
+            val hasDesc = u.description.isNotEmpty()
+            b.descriptionContainer.isVisible = hasDesc
+            b.userDescription.text = u.description
 
-        h.tvUsuario1.text = u.name
-        h.tvEdad.text = u.age.toString()
-
-        // Distancia ya viene calculada en UsersViewModel como distanceMeters
-        h.distance.text = locationRepository.formatDistance(u.distanceMeters)
-
-        if (u.description.isNotEmpty()) {
-            h.tvDesc.text = u.description
-            h.linearDesc.isVisible = true
-        } else {
-            h.linearDesc.isVisible = false
+            // Clicks (cada bind, porque cambia el item)
+            b.chatButton.setOnClickListener { onChatClicked(u.id) }
+            b.userCard.setOnClickListener { onProfileClicked(u) }
         }
-    }
 
-    // ----------------------- PUBLIC UPDATE ----------------------- //
-    fun updateDataUsers(newList: List<Users>) {
-        usersList = newList.toMutableList()
-        originalList = newList.toMutableList()
-        notifyDataSetChanged()
+        fun bindPayload(
+            u: Users,
+            payload: Bundle,
+            formatDistance: (Double) -> String
+        ) {
+            if (payload.containsKey(PAYLOAD_NAME)) {
+                b.userName.text = u.name
+            }
+            if (payload.containsKey(PAYLOAD_AGE)) {
+                b.userAge.text = u.age.toString()
+            }
+            if (payload.containsKey(PAYLOAD_DISTANCE_METERS)) {
+                b.userDistance.text = formatDistance(u.distanceMeters)
+            }
+            if (payload.containsKey(PAYLOAD_DESCRIPTION)) {
+                val hasDesc = u.description.isNotEmpty()
+                b.descriptionContainer.isVisible = hasDesc
+                b.userDescription.text = u.description
+            }
+            if (payload.containsKey(PAYLOAD_PHOTO_URL)) {
+                if (u.profilePhoto.isNotBlank()) {
+                    Glide.with(b.root).load(u.profilePhoto).into(b.avatarImage)
+                } else {
+                    b.avatarImage.setImageDrawable(null)
+                }
+            }
+            if (payload.containsKey(PAYLOAD_ONLINE)) {
+                val isOnline = payload.getBoolean(PAYLOAD_ONLINE)
+                b.onlineIcon.isVisible = isOnline
+                b.offlineIcon.isVisible = !isOnline
+            }
+        }
     }
 }

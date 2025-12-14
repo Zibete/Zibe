@@ -26,7 +26,7 @@ import javax.inject.Inject
 class UsersViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val locationRepository: LocationRepository,
+    val locationRepository: LocationRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -37,14 +37,8 @@ class UsersViewModel @Inject constructor(
     private val _events = MutableSharedFlow<UsersUiEvent>()
     val events: SharedFlow<UsersUiEvent> = _events.asSharedFlow()
 
-    private val _filterActive = MutableStateFlow(userPreferencesRepository.filterSwitch)
-    val filterActive: StateFlow<Boolean> = _filterActive
-
-//    private val _events = MutableSharedFlow<UsersUiEvent>()
-//    val events: SharedFlow<UsersUiEvent> = _events.asSharedFlow()
-
-    fun loadUsers(isRefresh: Boolean) {
-        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+    fun loadUsers() {
+        _uiState.value = _uiState.value.copy(isLoading = true)
 
         // Ojo: usá tu ref real, dejo nombre genérico
         firebaseRefsContainer.refCuentas
@@ -53,8 +47,7 @@ class UsersViewModel @Inject constructor(
                     if (!snapshot.exists()) {
                         _uiState.value = UsersUiState(
                             isLoading = false,
-                            users = emptyList(),
-                            errorMessage = "No existen usuarios"
+                            users = emptyList()
                         )
                         return
                     }
@@ -83,7 +76,7 @@ class UsersViewModel @Inject constructor(
 
                         var isValid = true
 
-                        if (applyOnlineFilter && !user.state) {
+                        if (applyOnlineFilter && !user.isOnline) {
                             isValid = false
                         }
 
@@ -102,16 +95,14 @@ class UsersViewModel @Inject constructor(
 
                     _uiState.value = UsersUiState(
                         isLoading = false,
-                        users = tempList,
-                        errorMessage = null
+                        users = tempList
                     )
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     _uiState.value = UsersUiState(
                         isLoading = false,
-                        users = emptyList(),
-                        errorMessage = error.message
+                        users = emptyList()
                     )
                 }
             })
@@ -134,7 +125,15 @@ class UsersViewModel @Inject constructor(
             userPreferencesRepository.maxAgePref = 0
         }
 
-        loadUsers(isRefresh = false)
+        loadUsers()
+    }
+
+    fun currentApplyAgeFilter() : Boolean {
+        return userPreferencesRepository.applyAgeFilter
+    }
+
+    fun currentApplyOnlineFilter() : Boolean {
+        return userPreferencesRepository.applyOnlineFilter
     }
 
     fun clearFilters() {
@@ -143,7 +142,7 @@ class UsersViewModel @Inject constructor(
         userPreferencesRepository.minAgePref = 0
         userPreferencesRepository.maxAgePref = 0
 
-        loadUsers(isRefresh = false)
+        loadUsers()
     }
 
     fun onFilterClicked() {
@@ -151,7 +150,4 @@ class UsersViewModel @Inject constructor(
             _events.emit(UsersUiEvent.ShowFilterDialog)
         }
     }
-
-
-
 }

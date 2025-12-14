@@ -13,6 +13,24 @@ object Constants {
         const val FIRST_LOGIN_DONE = "flag_Splash"
     }
 
+
+
+    const val PAYLOAD_DISTANCE_METERS = "payload_distance_meters"
+    const val PAYLOAD_AGE = "payload_age"
+    const val PAYLOAD_NAME = "payload_name"
+    const val PAYLOAD_PHOTO_URL = "payload_photo_url"
+    const val PAYLOAD_DESCRIPTION = "payload_description"
+    const val PAYLOAD_ONLINE = "payload_online"
+
+
+
+
+
+
+
+
+
+
     const val REQUEST_LOCATION = 0
     const val FRAGMENT_ID_CHATLIST = 1
     const val FRAGMENT_ID_CHATGROUPLIST = 2
@@ -56,7 +74,8 @@ object Constants {
 
     const val EXTRA_CHAT_ID = "userId"
     const val EXTRA_CHAT_NODE = "nodeType"
-    const val EXTRA_CHAT_NAME = "userName"
+
+
 
     const val NODE_FavoriteList = "FavoriteList"
     const val NODE_ChatMessage = "ChatMessage"

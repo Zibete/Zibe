@@ -6,7 +6,7 @@
     android:layout_height="wrap_content">
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardviewUsers"
+        android:id="@+id/userCard"
         android:layout_width="match_parent"
         android:layout_height="125dp"
         android:layout_marginHorizontal="8dp"
@@ -18,28 +18,24 @@
         app:shapeAppearanceOverlay="@style/Shape.Zibe.Card.Large"
         app:cardElevation="0dp">
 
-        <!-- Fondo tipo vidrio (translúcido + leve degradado) -->
         <FrameLayout
-            android:id="@+id/glass_container"
+            android:id="@+id/glassContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/bg_glass_morphism">
 
-            <!-- capa de glow animado -->
             <View
-                android:id="@+id/glow_border"
+                android:id="@+id/glowBorder"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_glow_zibe"
                 android:alpha="0.9"/>
 
-            <!-- blurview (desenfoque real) -->
             <eightbitlab.com.blurview.BlurView
-                android:id="@+id/blur_view"
+                android:id="@+id/blurView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 
-            <!-- CONTENIDO -->
             <LinearLayout
                 android:orientation="horizontal"
                 android:padding="8dp"
@@ -52,7 +48,7 @@
                     android:gravity="center">
 
                     <com.zibete.proyecto1.ui.ResizableImageView
-                        android:id="@+id/image_user1"
+                        android:id="@+id/avatarImage"
                         android:layout_width="84dp"
                         android:layout_height="84dp"
                         android:scaleType="centerCrop"
@@ -66,34 +62,33 @@
                     android:layout_weight="1"
                     android:orientation="vertical">
 
-                    <!-- Fila superior: estado + usuario + íconos -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical">
 
                         <ImageView
-                            android:id="@+id/icon_connected"
+                            android:id="@+id/onlineIcon"
                             android:layout_width="10dp"
                             android:layout_height="10dp"
                             android:src="@drawable/ic_circle_online"
                             android:visibility="gone" />
 
                         <ImageView
-                            android:id="@+id/icon_disconnected"
+                            android:id="@+id/offlineIcon"
                             android:layout_width="10dp"
                             android:layout_height="10dp"
                             android:src="@drawable/ic_circle_offline"
                             android:visibility="gone" />
 
                         <TextView
-                            android:id="@+id/tv_status"
+                            android:id="@+id/statusText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:visibility="gone" />
 
                         <TextView
-                            android:id="@+id/tv_usuario1"
+                            android:id="@+id/userName"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -104,7 +99,7 @@
                             android:ellipsize="end" />
 
                         <ImageView
-                            android:id="@+id/bloq"
+                            android:id="@+id/blockedIcon"
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:src="@drawable/ic_baseline_block_24"
@@ -112,7 +107,7 @@
                             app:tint="@color/zibe_text_muted" />
 
                         <ImageView
-                            android:id="@+id/favorite_on"
+                            android:id="@+id/favoriteIcon"
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:layout_marginStart="8dp"
@@ -121,7 +116,7 @@
                             app:tint="@color/colorAccent" />
 
                         <TextView
-                            android:id="@+id/tv_edad"
+                            android:id="@+id/userAge"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
@@ -129,9 +124,8 @@
                             android:textColor="@color/zibe_text_light"/>
                     </LinearLayout>
 
-                    <!-- Descripción -->
                     <LinearLayout
-                        android:id="@+id/linear_desc"
+                        android:id="@+id/descriptionContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
@@ -144,7 +138,7 @@
                             android:background="#33FFFFFF"/>
 
                         <TextView
-                            android:id="@+id/tv_desc"
+                            android:id="@+id/userDescription"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:paddingVertical="4dp"
@@ -160,7 +154,6 @@
                             android:background="#33FFFFFF"/>
                     </LinearLayout>
 
-                    <!-- Fila inferior: ubicación + acciones -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -174,7 +167,7 @@
                             app:tint="@color/zibe_text_light" />
 
                         <TextView
-                            android:id="@+id/distance"
+                            android:id="@+id/userDistance"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -183,7 +176,7 @@
                             android:textColor="@color/colorAccent"/>
 
                         <ImageView
-                            android:id="@+id/goChat"
+                            android:id="@+id/chatButton"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:src="@drawable/ic_baseline_send_24"
@@ -192,7 +185,7 @@
                             app:tint="@color/zibe_text_light" />
 
                         <ImageView
-                            android:id="@+id/bloq_me"
+                            android:id="@+id/blockedMeIcon"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:src="@drawable/ic_baseline_cancel_schedule_send_24"

@@ -27,6 +27,8 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -217,7 +219,8 @@ class AdapterChatList(
         // Click: ir al chat
         binding.cardview.setOnClickListener {
             val intent = Intent(context, ChatActivity::class.java).apply {
-                putExtra("id_user", chat.userId)
+                putExtra(EXTRA_CHAT_ID, chat.userId)
+                putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
             }
             context.startActivity(intent)
         }

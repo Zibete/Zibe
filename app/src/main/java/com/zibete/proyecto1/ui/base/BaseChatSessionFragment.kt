@@ -28,6 +28,7 @@ abstract class BaseChatSessionFragment : Fragment() {
         }
     }
 
+    // Profile Toolbar setup
     protected fun setupToolbar(toolbar: MaterialToolbar) {
         (requireActivity() as AppCompatActivity).apply {
             setSupportActionBar(toolbar)

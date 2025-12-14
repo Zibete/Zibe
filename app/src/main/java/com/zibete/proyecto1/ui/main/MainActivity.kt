@@ -61,6 +61,7 @@ import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.ui.users.SearchHandler
 import com.zibete.proyecto1.ui.users.UsersViewModel
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.ZibeApp
@@ -132,7 +133,7 @@ class MainActivity : BaseToolbarActivity() {
 
         // Botón de refrescar
         refreshButton?.setOnClickListener {
-            usersViewModel.loadUsers(isRefresh = true)
+            usersViewModel.loadUsers()
         }
 
         // Botón de filtro → dispara un evento, el Fragment abre el diálogo
@@ -467,6 +468,24 @@ class MainActivity : BaseToolbarActivity() {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
     }
 
+    override fun onSearchViewReady(searchView: SearchView) {
+        this.searchView = searchView
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val active = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+                    ?.childFragmentManager
+                    ?.primaryNavigationFragment
+
+                (active as? SearchHandler)?.onSearchQueryChanged(newText)
+                return true
+            }
+        })
+    }
+
+
     private fun setupOnBackPressedDispatcher() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -483,15 +502,6 @@ class MainActivity : BaseToolbarActivity() {
         })
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-
-        val searchItem = menu.findItem(R.id.action_search)
-        searchView = searchItem.actionView as SearchView
-
-        return true
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         mainViewModel.onToolbarItemSelected(item.itemId)
         return true
@@ -500,13 +510,13 @@ class MainActivity : BaseToolbarActivity() {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { userRepository.setUserOnline() }
+        mainViewModel.onSetUserOnline()
         startLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
-        lifecycleScope.launch { userRepository.setUserLastSeen() }
+        mainViewModel.onSetUserLastSeen()
         stopLocationUpdates()
     }
 

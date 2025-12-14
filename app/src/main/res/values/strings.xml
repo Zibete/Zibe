@@ -131,7 +131,7 @@
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finalizar_registro">Finalizar registro</string>
     <string name="default_web_client_id">572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com</string>
-    <string name="cargando">Cargando...</string>
+    <string name="loading">Cargando...</string>
     <string name="anonimous">Anónimo</string>
     <string name="deleted_profile_fallback">Perfil eliminado</string>
     <string name="chat_private_in_group">Chat privado en %1$s</string>
