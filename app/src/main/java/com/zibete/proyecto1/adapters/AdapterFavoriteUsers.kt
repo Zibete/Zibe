@@ -82,12 +82,9 @@ class AdapterFavoriteUsers(
         val q = query.orEmpty().trim()
         if (q.isEmpty()) {
             submitList(originalList)
-            return
+        } else {
+            submitList(originalList.filter { it.name.contains(q, ignoreCase = true) })
         }
-
-        submitList(
-            originalList.filter { it.name.contains(q, ignoreCase = true) }
-        )
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FavoriteViewHolder {

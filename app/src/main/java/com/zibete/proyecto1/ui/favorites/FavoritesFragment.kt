@@ -8,7 +8,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -17,32 +16,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
-import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
-import com.zibete.proyecto1.databinding.FragmentUsersBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.chat.ChatActivity
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
-import com.zibete.proyecto1.ui.users.SearchHandler
+import com.zibete.proyecto1.ui.profile.ProfileActivity
+import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-
-//interface SearchHandler {
-//    fun onSearchQueryChanged(query: String?)
-//}
 
 @AndroidEntryPoint
 class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {

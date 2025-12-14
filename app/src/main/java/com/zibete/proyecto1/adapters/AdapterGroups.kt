@@ -1,62 +1,45 @@
 package com.zibete.proyecto1.adapters
 
-import android.content.Context
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
-import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.databinding.RowGroupBinding
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_CATEGORY
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_DATA
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_USERS
 import com.zibete.proyecto1.utils.GlassEffect
 import eightbitlab.com.blurview.BlurView
-import java.util.Locale
-import java.util.ArrayList
 
 class AdapterGroups(
-    private val groupsList: MutableList<Groups>,
-    private val originalGroupsArrayList: MutableList<Groups>,
-    private val context: Context,
     private val onGroupClicked: (Groups) -> Unit
-) : RecyclerView.Adapter<AdapterGroups.ViewHolder>(), Filterable {
+) : ListAdapter<Groups, AdapterGroups.ViewHolder>(GroupsDiffCallback) {
 
-    private val inflater: LayoutInflater = LayoutInflater.from(context)
+    private var originalList: List<Groups> = emptyList()
 
-    // ---------- FILTRO ----------
-    override fun getFilter(): Filter = filterGroups
-
-    private val filterGroups = object : Filter() {
-        override fun performFiltering(constraint: CharSequence): FilterResults {
-            val filtered = ArrayList<Groups>()
-            val search = constraint.toString().lowercase(Locale.getDefault()).trim()
-
-            if (search.isEmpty()) {
-                filtered.addAll(originalGroupsArrayList)
-            } else {
-                for (group in originalGroupsArrayList) {
-                    if (group.name.lowercase(Locale.getDefault()).contains(search)) {
-                        filtered.add(group)
-                    }
-                }
-            }
-            return FilterResults().apply { values = filtered }
-        }
-
-        override fun publishResults(constraint: CharSequence?, results: FilterResults) {
-            groupsList.clear()
-            @Suppress("UNCHECKED_CAST")
-            groupsList.addAll(results.values as List<Groups>)
-            notifyDataSetChanged()
-        }
+    fun submitOriginal(list: List<Groups>) {
+        originalList = list
+        submitList(list)
     }
 
-    // ---------- VIEW HOLDER ----------
+    fun filterByName(query: String?) {
+        val q = query.orEmpty().trim().lowercase()
+        if (q.isEmpty()) {
+            submitList(originalList)
+            return
+        }
+
+        submitList(
+            originalList.filter { it.name.lowercase().contains(q) }
+        )
+    }
+
     inner class ViewHolder(val binding: RowGroupBinding) :
         RecyclerView.ViewHolder(binding.root) {
+
         val blurView: BlurView = binding.blurView
         val glowBorder: View = binding.glowBorder
         val card = binding.cardviewGroups
@@ -65,64 +48,61 @@ class AdapterGroups(
             GlassEffect.applyGlassEffect(blurView, itemView)
             GlassEffect.startGlowIfAny(glowBorder)
         }
-    }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(RowGroupBinding.inflate(inflater, parent, false))
-    }
+        fun bind(item: Groups) = with(binding) {
+            tvTitle.text = item.name
+            tvDataGroup.text = item.data
+            tvDataGroup.isSelected = true
+            tvNumberPersons.text = item.users.toString()
 
-    override fun getItemCount(): Int = groupsList.size
-
-    override fun onBindViewHolder(
-        holder: ViewHolder,
-        position: Int,
-        payloads: MutableList<Any?>
-    ) {
-        val group = groupsList[position]
-        if (payloads.isEmpty()) {
-            bindGroup(holder, group)
-        } else {
-            (payloads[0] as? Bundle)
-                ?.takeIf { it.containsKey("users") }
-                ?.let { bindGroup(holder, group) }
+            card.setOnClickListener {
+                if (item.groupType == Constants.PUBLIC_GROUP) {
+                    onGroupClicked(item)
+                }
+            }
         }
 
-        holder.card.setOnClickListener {
-            if (group.category == Constants.PUBLIC_GROUP) {
-                onGroupClicked(group)
+        fun bindPayload(payload: Any, item: Groups) = with(binding) {
+            val changes = payload as? Set<String> ?: run {
+                bind(item)
+                return
+            }
+
+            if (PAYLOAD_GROUPS_USERS in changes) {
+                tvNumberPersons.text = item.users.toString()
+            }
+
+            if (PAYLOAD_GROUPS_DATA in changes) {
+                tvDataGroup.text = item.data
+            }
+
+            if (PAYLOAD_GROUPS_CATEGORY in changes) {
+                // si cambia categoría, puede afectar el click habilitado
+                card.setOnClickListener {
+                    if (item.groupType == Constants.PUBLIC_GROUP) {
+                        onGroupClicked(item)
+                    }
+                }
             }
         }
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) = Unit
-
-    private fun bindGroup(holder: ViewHolder, group: Groups) = with(holder.binding) {
-        tvTitle.text = group.name
-        tvDataGroup.text = group.data
-        tvDataGroup.isSelected = true
-
-        // Ahora usamos directamente el valor ya seteado en el modelo
-        tvNumberPersons.text = group.users.toString()
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = RowGroupBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return ViewHolder(binding)
     }
 
-    // ---------- UTILIDADES ----------
-    fun addGroup(group: Groups) {
-        groupsList.add(group)
-        originalGroupsArrayList.add(group)
-        notifyItemInserted(groupsList.size - 1)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(getItem(position))
     }
 
-    fun updateDataGroups(newList: ArrayList<Groups>) {
-        val diff = GroupsDiffCallback(newList, groupsList)
-        val result = DiffUtil.calculateDiff(diff)
-        result.dispatchUpdatesTo(this)
-        groupsList.clear()
-        groupsList.addAll(newList)
-
-        // Mantenemos también el original actualizado para el filtro
-        originalGroupsArrayList.clear()
-        originalGroupsArrayList.addAll(newList)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        val item = getItem(position)
+        val payload = payloads.firstOrNull()
+        if (payload != null) holder.bindPayload(payload, item) else holder.bind(item)
     }
-
-    override fun getItemViewType(position: Int): Int = Constants.PUBLIC_GROUP
 }

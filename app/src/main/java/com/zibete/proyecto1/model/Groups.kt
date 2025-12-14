@@ -10,7 +10,8 @@ data class Groups(
     var data: String = "",
     @get:PropertyName("id_creator") @set:PropertyName("id_creator")
     var idCreator: String = "",
-    var category: Int = 0,
+    @get:PropertyName("category") @set:PropertyName("category")
+    var groupType: Int = 0,
     var users: Int = 0,
     @get:PropertyName("dateCreate") @set:PropertyName("dateCreate")
     var creationDateTime: String? = null

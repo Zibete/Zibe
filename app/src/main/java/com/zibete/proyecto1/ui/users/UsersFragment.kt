@@ -33,16 +33,9 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_OFF
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_ON
 import com.zibete.proyecto1.ui.profile.ProfileActivity
+import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-
-/**
- * Esta interfaz permite que MainActivity le “inyecte” el SearchView
- * al fragment activo, sin que el fragment maneje el menú.
- */
-interface SearchHandler {
-    fun onSearchQueryChanged(query: String?)
-}
 
 @AndroidEntryPoint
 class UsersFragment : BaseChatSessionFragment(), SearchHandler {

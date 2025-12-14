@@ -25,7 +25,9 @@ object Constants {
 
 
 
-
+    const val PAYLOAD_GROUPS_USERS = "payload_users"
+    const val PAYLOAD_GROUPS_DATA = "payload_data"
+    const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
 
 
 

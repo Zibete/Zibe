@@ -225,15 +225,22 @@ class MainViewModel @Inject constructor(
                 _navEvents.emit(MainNavEvent.ToGroupsSelect)
             } else {
                 showToolbar(true)
-                _navEvents.emit(
-                    MainNavEvent.ToGroupsDetail(
-                        groupName = userPreferencesRepository.groupName,
-                        userName = userPreferencesRepository.userNameGroup
-                    )
-                )
+                onGroupJoinConfirmed()
             }
         }
     }
+
+    fun onGroupJoinConfirmed() {
+        viewModelScope.launch {
+            _navEvents.emit(
+                MainNavEvent.ToGroupsDetail(
+                    groupName = userPreferencesRepository.groupName,
+                    userName = userPreferencesRepository.userNameGroup
+                )
+            )
+        }
+    }
+
 
     fun onEditProfileSelected() {
         if (_uiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return

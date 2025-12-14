@@ -2,96 +2,68 @@ package com.zibete.proyecto1.ui.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.awaitClose
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class GroupsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    private val user = userRepository.user
+    private val user get() = userRepository.user
 
     private val _uiState = MutableStateFlow(GroupsUiState())
     val uiState: StateFlow<GroupsUiState> = _uiState
 
-    private val _events = MutableSharedFlow<GroupsUiEvent>()
-    val events = _events
+    private val _events = MutableSharedFlow<GroupsUiEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<GroupsUiEvent> = _events
 
-    fun loadGroups() {
-        _uiState.update { it.copy(isLoading = true, error = null) }
+    fun loadGroups() = fetchGroups(showLoading = true)
 
+    fun refreshGroups() = fetchGroups(showLoading = false)
+
+    private fun fetchGroups(showLoading: Boolean) {
         viewModelScope.launch {
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
+
             try {
                 val groupsList = groupRepository.getGroups()
-                val sorted = groupsList.sortedBy { it.name }
+                val sorted = groupsList.sortedBy { it.name.lowercase() }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        groups = sorted,
-                        originalGroups = sorted,
-                        error = null
+                        groups = sorted
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        groups = emptyList(),
-                        originalGroups = emptyList(),
-                        error = e.message ?: ERR_ZIBE
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, groups = emptyList()) }
+                _events.tryEmit(GroupsUiEvent.ShowMessage(e.message))
             }
         }
     }
 
-    fun refreshGroups() = loadGroups()
-
-    fun filter(query: String) {
-        val baseList = _uiState.value.originalGroups
-
-        if (query.isEmpty()) {
-            _uiState.update { it.copy(groups = baseList) }
-            return
-        }
-
-        val filtered = baseList.filter {
-            it.name.lowercase().contains(query.lowercase())
-        }
-
-        _uiState.update { it.copy(groups = filtered) }
-    }
-
-    fun joinGroupAndNavigate(
+    private fun joinGroupAndNavigate(
         groupName: String,
         nick: String,
         type: Int
     ) {
-
         userPreferencesRepository.userNameGroup = nick
         userPreferencesRepository.groupName = groupName
         userPreferencesRepository.inGroup = true
@@ -108,17 +80,15 @@ class GroupsViewModel @Inject constructor(
     fun onJoinGroupRequested(groupName: String, nick: String, type: Int) {
         viewModelScope.launch {
             val inUse = groupRepository.isNickInUse(groupName, nick)
-
             if (inUse) {
                 _events.emit(GroupsUiEvent.NickInUse(nick))
             } else {
-                _events.emit(GroupsUiEvent.JoinGroup(groupName, nick, type))
+                joinGroupAndNavigate(groupName, nick, type)
             }
         }
     }
 
     fun onCreateNewGroupClicked(groupName: String, groupData: String) {
-
         viewModelScope.launch {
             if (groupRepository.isGroupNameInUse(groupName)) {
                 _events.emit(GroupsUiEvent.GroupNameInUse(groupName))
@@ -126,21 +96,19 @@ class GroupsViewModel @Inject constructor(
             }
 
             groupRepository.createGroup(
-                groupName,
-                groupData,
-                PUBLIC_GROUP,)
+                groupName = groupName,
+                groupData = groupData,
+                groupType = PUBLIC_GROUP
+            )
 
             joinGroupAndNavigate(
                 groupName = groupName,
                 nick = user.displayName ?: "",
                 type = PUBLIC_USER
             )
-
-            // 4) Navegar al pager
-            _events.emit(GroupsUiEvent.NavigateToGroupPager)
         }
     }
 
-
-
+    fun myDisplayName(): String = user.displayName.orEmpty()
+    fun myPhotoUrl(): String? = user.photoUrl?.toString()
 }
