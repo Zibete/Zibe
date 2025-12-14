@@ -1,24 +1,28 @@
 package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
+import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 
-class FavoritesDiffCallback(
-    private val newList: List<String>,
-    private val oldList: List<String>
-) :  DiffUtil.Callback() {
+object FavoritesDiffCallback : DiffUtil.ItemCallback<FavoriteUserUi>() {
 
-    override fun getOldListSize() = newList.size
+    override fun areItemsTheSame(oldItem: FavoriteUserUi, newItem: FavoriteUserUi): Boolean =
+        oldItem.id == newItem.id
 
-    override fun getNewListSize() = oldList.size
+    override fun areContentsTheSame(oldItem: FavoriteUserUi, newItem: FavoriteUserUi): Boolean =
+        oldItem == newItem
 
-    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-        oldList[oldItemPosition] == newList[newItemPosition]
+    override fun getChangePayload(oldItem: FavoriteUserUi, newItem: FavoriteUserUi): Any? {
+        val changed = mutableSetOf<String>()
 
-    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-        oldList[oldItemPosition] == newList[newItemPosition]
+        if (oldItem.isOnline != newItem.isOnline) changed += PAYLOAD_ONLINE
+        if (oldItem.profilePhoto != newItem.profilePhoto) changed += PAYLOAD_PHOTO_URL
 
-    override fun getChangePayload(oldPos: Int, newPos: Int): Any? = null // innecesario para String
+        return changed.takeIf { it.isNotEmpty() }
+    }
 }
+
 
 
 

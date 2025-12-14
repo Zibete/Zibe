@@ -117,7 +117,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
             stackFromEnd = true
         }
 
-        binding.rv.apply {
+        binding.rvUsers.apply {
             this.layoutManager = this@UsersFragment.layoutManager
             setHasFixedSize(true)
         }
@@ -145,12 +145,12 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
             formatDistance = { meters -> usersViewModel.locationRepository.formatDistance(meters) }
         )
 
-        binding.rv.adapter = adapterUsers
+        binding.rvUsers.adapter = adapterUsers
     }
 
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.apply {
-            setRecyclerView(binding.rv)
+            setRecyclerView(binding.rvUsers)
             setOnRefreshListener {
                 usersViewModel.loadUsers()
             }
@@ -243,7 +243,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
 
     private fun scrollToBottom() {
         val count = adapterUsers?.itemCount ?: 0
-        if (count > 0) binding.rv.scrollToPosition(count - 1)
+        if (count > 0) binding.rvUsers.scrollToPosition(count - 1)
     }
 
     private fun isUserAtBottom(): Boolean {

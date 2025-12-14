@@ -1,143 +1,103 @@
 package com.zibete.proyecto1.ui.favorites
 
 import androidx.lifecycle.ViewModel
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
+import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.FirebaseRefs
+import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
+import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
+
+    private val myUid = userRepository.myUid
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState
 
-    private val currentUser get() = userRepository.user
+    private val _events = MutableSharedFlow<FavoritesUiEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<FavoritesUiEvent> = _events
 
-    fun loadFavorites() {
-        _uiState.update { it.copy(isLoading = true, error = null, isEmpty = false) }
+    fun loadFavorites() = fetchFavorites(showLoading = true)
 
-        FirebaseRefs.refDatos.child(currentUser.uid).child("FavoriteList")
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists() || snapshot.childrenCount == 0L) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                favorites = emptyList(),
-                                isEmpty = true
-                            )
-                        }
-                        return
-                    }
+    fun refreshFavorites() = fetchFavorites(showLoading = false)
 
-                    val pending = snapshot.childrenCount
-                    var processed = 0L
-                    val result = mutableListOf<FavoriteUserUi>()
+    private fun fetchFavorites(showLoading: Boolean) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = showLoading) }
 
-                    fun checkComplete() {
-                        if (processed < pending) return
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true) }
+            }
 
-                        val sorted = result.sortedBy { f -> f.name.lowercase() }
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                favorites = sorted,
-                                isEmpty = sorted.isEmpty()
-                            )
-                        }
-                    }
+            try {
+                val favListSnap = firebaseRefsContainer.refDatos
+                    .child(myUid)
+                    .child(NODE_FAVORITE_LIST)
+                    .get()
+                    .await()
 
-                    snapshot.children.forEach { favChild ->
-                        val favUserId = favChild.getValue(String::class.java)
+                if (!favListSnap.exists() || favListSnap.childrenCount == 0L) {
+                    _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
 
-                        if (favUserId.isNullOrEmpty()) {
-                            processed++
-                            checkComplete()
-                            return@forEach
-                        }
 
-                        // Verificamos que el usuario siga existiendo
-                        FirebaseRefs.refCuentas.child(favUserId)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(userSnap: DataSnapshot) {
-                                    if (!userSnap.exists()) {
-                                        // Limpieza: si ya no existe el user, borramos de favoritos
-                                        favChild.ref.removeValue()
-                                        processed++
-                                        checkComplete()
-                                        return
-                                    }
-
-                                    val u = userSnap.getValue(Users::class.java)
-                                    if (u == null) {
-                                        processed++
-                                        checkComplete()
-                                        return
-                                    }
-
-                                    val age = Utils.calcAge(u.birthDay)
-
-                                    // Estado online/offline
-                                    FirebaseRefs.refDatos.child(favUserId).child("Estado")
-                                        .addListenerForSingleValueEvent(object : ValueEventListener {
-                                            override fun onDataChange(stateSnap: DataSnapshot) {
-                                                val estado = stateSnap.child("estado")
-                                                    .getValue(String::class.java)
-                                                val online = estado == "Online" // o R.string.online, si querés, pero acá mantenemos literal
-
-                                                result.add(
-                                                    FavoriteUserUi(
-                                                        id = favUserId,
-                                                        name = u.name ?: "",
-                                                        age = age,
-                                                        profilePhoto = u.profilePhoto,
-                                                        isOnline = online
-                                                    )
-                                                )
-
-                                                processed++
-                                                checkComplete()
-                                            }
-
-                                            override fun onCancelled(error: DatabaseError) {
-                                                processed++
-                                                checkComplete()
-                                            }
-                                        })
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                    processed++
-                                    checkComplete()
-                                }
-                            })
-                    }
+                    _events.emit(FavoritesUiEvent.ShowEmptyFavorites)
+                    return@launch
                 }
 
-                override fun onCancelled(error: DatabaseError) {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = error.message,
-                            favorites = emptyList()
+                val favIds = favListSnap.children
+                    .mapNotNull { it.getValue(String::class.java) }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+
+                val result = favIds.mapNotNull { favUserId ->
+                    val userRef = firebaseRefsContainer.refCuentas.child(favUserId)
+
+                    val userSnap = userRef.get().await()
+                    if (!userSnap.exists()) {
+                        // Limpieza: usuario ya no existe -> borrar de favoritos
+                        favListSnap.ref.child(favUserId).removeValue().await()
+                        null
+                    } else {
+                        val u = userSnap.getValue(Users::class.java) ?: return@mapNotNull null
+
+                        FavoriteUserUi(
+                            id = favUserId,
+                            name = u.name,
+                            age = Utils.calcAge(u.birthDay),
+                            profilePhoto = u.profilePhoto,
+                            isOnline = u.isOnline
                         )
                     }
-                }
-            })
-    }
+                }.sortedBy { it.name.lowercase() }
 
-    fun refreshFavorites() {
-        loadFavorites()
+                _uiState.update { it.copy(isLoading = false, favorites = result) }
+
+                if (result.isEmpty()) {
+                    _events.emit(FavoritesUiEvent.ShowEmptyFavorites)
+                }
+
+            } catch (t: Throwable) {
+                _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
+                _events.emit(FavoritesUiEvent.ShowMessage(
+                    t.message ?: ERR_ZIBE
+                )
+                )
+            }
+        }
     }
 }

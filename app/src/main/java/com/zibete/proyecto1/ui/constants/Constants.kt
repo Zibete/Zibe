@@ -77,8 +77,8 @@ object Constants {
 
 
 
-    const val NODE_FavoriteList = "FavoriteList"
-    const val NODE_ChatMessage = "ChatMessage"
+    const val NODE_FAVORITE_LIST = "FavoriteList"
+    const val NODE_CHAT_MESSAGE = "ChatMessage"
     const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
     const val NODE_CHATLIST = "ChatList"
 

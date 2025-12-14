@@ -19,7 +19,7 @@ import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_FavoriteList
+import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.utils.Utils.today
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.time
@@ -100,7 +100,7 @@ class UserRepository @Inject constructor(
     ): Boolean {
         val snap = firebaseRefsContainer.refDatos
             .child(myUid)
-            .child(NODE_FavoriteList)
+            .child(NODE_FAVORITE_LIST)
             .child(otherUid)
             .get()
             .await()
@@ -117,14 +117,14 @@ class UserRepository @Inject constructor(
         if (isFavorite){
             firebaseRefsContainer.refDatos
                 .child(myUid)
-                .child(NODE_FavoriteList)
+                .child(NODE_FAVORITE_LIST)
                 .child(userId)
                 .removeValue()
                 .await()
         } else {
             firebaseRefsContainer.refDatos
                 .child(myUid)
-                .child(NODE_FavoriteList)
+                .child(NODE_FAVORITE_LIST)
                 .child(userId)
                 .setValue(userId)
                 .await()
