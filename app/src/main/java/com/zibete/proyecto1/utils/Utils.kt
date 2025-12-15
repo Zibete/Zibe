@@ -21,7 +21,7 @@ object Utils {
             val hoy = LocalDate.now()
             return Period.between(fechaNac, hoy).years
         } catch (e: Exception) {
-            return -1 // error de formato
+            return 0
         }
     }
 

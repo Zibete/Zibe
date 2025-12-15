@@ -9,6 +9,8 @@ import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserRepository.AccountKeys
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.ERR_UNDER_AGE
@@ -29,6 +31,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val userSessionManager: UserSessionManager,
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
@@ -126,16 +129,16 @@ class EditProfileViewModel @Inject constructor(
     fun onSaveClicked() {
         viewModelScope.launch {
             val state = _uiState.value
-            val name = state.displayName.trim()
-            val description = state.description.trim()
-            val birthDate = state.birthDate.trim()
+            val newName = state.displayName.trim()
+            val newDescription = state.description.trim()
+            val newBirthDate = state.birthDate.trim()
 
-            if (birthDate.isBlank()) {
+            if (newBirthDate.isBlank()) {
                 onError(SIGNUP_ERR_BIRTHDAY_REQUIRED)
                 return@launch
             }
 
-            val age = computeAgeFromString(birthDate)
+            val age = computeAgeFromString(newBirthDate)
 
             if (age < 18) {
                 onError(ERR_UNDER_AGE)
@@ -161,28 +164,17 @@ class EditProfileViewModel @Inject constructor(
                     }
                 }
 
-                // 2) Update FirebaseAuth user profile
-                val req = UserProfileChangeRequest.Builder()
-                    .setDisplayName(name)
-                    .apply {
-                        finalPhotoUrl?.let { photoUri = it.toUri() }
-                    }
-                    .build()
-
-                firebaseUser.updateProfile(req).await()
-
-                // 3) Update Realtime DB (/Cuentas)
-
+                // 2) Update Realtime DB (/Cuentas)
 
                 val updates = mutableMapOf<String, Any>(
-                    "nombre" to name,
-                    "birthDay" to birthDate,
-                    "age" to age,
-                    "descripcion" to description,
-                    "date" to dateTime()
+                    AccountKeys.NAME to newName,
+                    AccountKeys.BIRTHDAY to newBirthDate,
+                    AccountKeys.AGE to age,
+                    AccountKeys.DESCRIPTION to newDescription,
+                    AccountKeys.CREATED_AT to dateTime()
                 )
 
-                finalPhotoUrl?.let { updates["foto"] = it }
+                finalPhotoUrl?.let { updates[AccountKeys.PHOTO_URL] = it }
 
                 myInstallId?.takeIf { it.isNotBlank() }?.let {
                     updates["installId"] = it
@@ -204,6 +196,12 @@ class EditProfileViewModel @Inject constructor(
                         saveEnabled = false
                     )
                 }
+
+                // 3) Update FirebaseAuth user profile
+                userSessionManager.updateAuthProfile(
+                    newName,
+                    finalPhotoUrl
+                )
 
                 _events.tryEmit(EditProfileUiEvent.NavigateToSplash)
             }.onFailure {

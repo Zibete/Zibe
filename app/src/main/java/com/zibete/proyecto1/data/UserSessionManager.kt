@@ -2,9 +2,11 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.content.Intent
+import androidx.core.net.toUri
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -14,6 +16,7 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -107,6 +110,21 @@ class UserSessionManager @Inject constructor(
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         }
     }
+
+    suspend fun updateAuthProfile(
+        userName: String,
+        photoUrl: String?
+    ) {
+        val req = UserProfileChangeRequest.Builder()
+            .setDisplayName(userName)
+            .apply {
+                photoUrl?.let { photoUri = it.toUri() }
+            }
+            .build()
+
+        firebaseUser.updateProfile(req).await()
+    }
+
 
     fun deleteFirebaseUser() {
         firebaseUser.delete()

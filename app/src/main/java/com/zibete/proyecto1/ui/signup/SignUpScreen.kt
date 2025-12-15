@@ -73,7 +73,7 @@ fun SignUpScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var birthday by rememberSaveable { mutableStateOf("") }
-    var desc by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -243,8 +243,8 @@ fun SignUpScreen(
 
                 // DESCRIPCIÓN
                 ZibeInputField(
-                    value = desc,
-                    onValueChange = { desc = it },
+                    value = description,
+                    onValueChange = { description = it },
                     label = "¿Algo sobre vos?",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,7 +276,7 @@ fun SignUpScreen(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     text = stringResource(R.string.finalizar_registro),
-                    onClick = { onRegister(email, password, name, birthday, desc) },
+                    onClick = { onRegister(email, password, name, birthday, description) },
                     enabled = !isLoading,
                     isLoading = isLoading
                 )

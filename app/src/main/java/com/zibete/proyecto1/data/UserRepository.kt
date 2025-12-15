@@ -30,6 +30,7 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_USER_LAST_HOUR
 import com.zibete.proyecto1.ui.constants.Constants.NODE_USER_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.Utils.now
 import com.zibete.proyecto1.utils.Utils.time
 import com.zibete.proyecto1.utils.Utils.today
@@ -250,20 +251,25 @@ class UserRepository @Inject constructor(
 
     suspend fun createUserNode(
         firebaseUser: FirebaseUser,
-        token: String)
+        birthDate: String,
+        description: String)
     {
+
+        val email: String = firebaseUser.email ?: ""
+
+        val photoUrl: String = firebaseUser.photoUrl?.toString() ?: DEFAULT_PROFILE_PHOTO_URL
+
         val newUser = Users(
             id = firebaseUser.uid,
             name = firebaseUser.displayName.orEmpty(),
-            birthDay = "",
+            birthDay = birthDate,
             createdAt = now(),
-            age = 0,
-            email = firebaseUser.email.orEmpty(),
-            photoUrl = firebaseUser.photoUrl?.toString() ?: DEFAULT_PROFILE_PHOTO_URL,
+            age = Utils.calcAge(birthDate),
+            email = email,
+            photoUrl = photoUrl,
             isOnline = true,
-            fcmToken = token,
             distanceMeters = 0.0,
-            description = "",
+            description = description,
             latitude = 0.0,
             longitude = 0.0
         )

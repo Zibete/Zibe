@@ -19,8 +19,6 @@ data class Users(
     var photoUrl: String = "",
     var isOnline: Boolean = false,
 
-    var fcmToken: String = "",
-
     // calculado localmente
     @get:Exclude
     var distanceMeters: Double = 0.0,
@@ -52,7 +50,6 @@ data class Users(
         const val EMAIL = "email"
         const val PHOTO_URL = "photoUrl"
         const val IS_ONLINE = "isOnline"
-        const val FCM_TOKEN = "fcmToken"
         const val DESCRIPTION = "description"
         const val LATITUDE = "latitude"
         const val LONGITUDE = "longitude"

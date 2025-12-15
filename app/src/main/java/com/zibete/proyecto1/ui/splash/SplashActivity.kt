@@ -217,14 +217,14 @@ class SplashActivity : ComponentActivity() {
                             SignUpScreen(
                                 onBack = { navController.popBackStack() },
 
-                                onRegister = { email, pass, name, birthday, desc ->
+                                onRegister = { email, pass, name, birthday, description ->
                                     val defaultPhotoUrl = getString(R.string.URL_PHOTO_DEF)
                                     signUpViewModel.onRegister(
                                         email = email,
                                         password = pass,
                                         name = name,
-                                        birthday = birthday,
-                                        desc = desc,
+                                        birthDate = birthday,
+                                        description = description,
                                         defaultPhotoUrl = defaultPhotoUrl
                                     )
                                 },

@@ -1,18 +1,28 @@
 package com.zibete.proyecto1.ui.signup
 
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
+import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.*
+import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
+import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
+import com.zibete.proyecto1.ui.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_EMAIL_IN_USE
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_EXCEPTION
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_GENERIC_PREFIX
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_INVALID_EMAIL
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_INVALID_PASSWORD
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_NAME_REQUIRED
+import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_UNEXPECTED_PREFIX
+import com.zibete.proyecto1.ui.constants.SIGNUP_MSG_SUCCESS
 import com.zibete.proyecto1.utils.Utils
-import com.zibete.proyecto1.utils.FirebaseRefs
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -20,11 +30,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import javax.inject.Inject
 
-class SignUpViewModel : ViewModel() {
+@HiltViewModel
+class SignUpViewModel @Inject constructor(
+    private val firebaseAuth: FirebaseAuth,
+    private val userRepository: UserRepository,
+    private val userSessionManager: UserSessionManager,
+    private val sessionRepository: SessionRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState = _uiState.asStateFlow()
@@ -32,53 +46,52 @@ class SignUpViewModel : ViewModel() {
     private val _events = MutableSharedFlow<SignUpUiEvent>()
     val events = _events.asSharedFlow()
 
-    private var myInstallId: String? = null
-    private var myFcmToken: String? = null
-
-    init {
-        setupFirebase()
-    }
-
-    // -------------------------- Firebase IDs / Tokens
-
-    private fun setupFirebase() {
-        FirebaseInstallations.getInstance().id.addOnCompleteListener { t ->
-            if (t.isSuccessful) myInstallId = t.result
-        }
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { t ->
-            if (t.isSuccessful) myFcmToken = t.result
-        }
-    }
-
     // -------------------------- Registro
 
     fun onRegister(
         email: String,
         password: String,
         name: String,
-        birthday: String,
-        desc: String,
-        defaultPhotoUrl: String
+        birthDate: String,
+        description: String
     ) {
         viewModelScope.launch {
 
-            if (!validateInputs(email, password, name, birthday)) return@launch
+            if (!validateInputs(email, password, name, birthDate)) return@launch
 
-            setLoading(true)
+            _uiState.update { it.copy(isLoading = true) }
 
             try {
-                // 1) Autenticación
-                val authResult = FirebaseRefs.auth
+                // 1) Auth
+                val authResult = firebaseAuth
                     .createUserWithEmailAndPassword(email, password)
                     .await()
 
-                val user = authResult.user
+                val firebaseUser = authResult.user
                     ?: throw IllegalStateException(SIGNUP_ERR_EXCEPTION)
 
-                // 2) Guardar perfil
-                writeUserProfile(user, email, name, birthday, desc, defaultPhotoUrl)
+                // 2) Auth profile (para que createUserNode tome displayName/photoUrl)
+                userSessionManager.updateAuthProfile(
+                    userName = name,
+                    photoUrl = DEFAULT_PROFILE_PHOTO_URL
+                )
 
-                // 3) Mensaje de éxito
+                // 3) Guardar perfil
+                userRepository.createUserNode(firebaseUser, birthDate, description)
+
+                // 4) Sesión /sessions (installId + fcmToken)
+                val installId = sessionRepository.getLocalInstallId()
+                val fcmToken = sessionRepository.getLocalFcmToken()
+
+                if (installId.isNotBlank()) {
+                    sessionRepository.setActiveSession(
+                        uid = firebaseUser.uid,
+                        installId = installId,
+                        fcmToken = fcmToken
+                    )
+                }
+
+                // 5) Éxito
                 _events.emit(
                     SignUpUiEvent.ShowSnackbar(
                         message = SIGNUP_MSG_SUCCESS,
@@ -86,7 +99,7 @@ class SignUpViewModel : ViewModel() {
                     )
                 )
 
-                // 4) Pedir permisos de ubicación (lo maneja la Activity)
+                // 6) Pedir permisos de ubicación (lo maneja la Activity)
                 _events.emit(SignUpUiEvent.RequestLocationPermission)
 
             } catch (e: Exception) {
@@ -115,52 +128,9 @@ class SignUpViewModel : ViewModel() {
                     )
                 )
             } finally {
-                setLoading(false)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
-    }
-
-    // -------------------------- Perfil en Realtime DB
-
-    private suspend fun writeUserProfile(
-        user: FirebaseUser,
-        email: String,
-        name: String,
-        birthday: String,
-        desc: String,
-        defaultPhotoUrl: String
-    ) {
-        val nowStr = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            .format(Calendar.getInstance().time)
-        val age = Utils.calcAge(birthday)
-
-        val data = hashMapOf<String, Any?>(
-            "id" to user.uid,
-            "nombre" to name,
-            "birthDay" to birthday,
-            "date" to nowStr,
-            "age" to age,
-            "mail" to email,
-            "foto" to defaultPhotoUrl,
-            "estado" to true,
-            "installId" to myInstallId,
-            "fcmToken" to myFcmToken,
-            "token" to myInstallId,
-            "distance" to 0,
-            "descripcion" to desc.ifEmpty { "" },
-            "latitud" to 0,
-            "longitud" to 0
-        )
-
-        val userRef: DatabaseReference = FirebaseRefs.refCuentas.child(user.uid)
-        userRef.setValue(data).await()
-
-        val profileUpdates = UserProfileChangeRequest.Builder()
-            .setDisplayName(name)
-            .setPhotoUri(defaultPhotoUrl.toUri())
-            .build()
-
-        user.updateProfile(profileUpdates).await()
     }
 
     private fun isAdult(birthStr: String): Boolean = try {
@@ -177,7 +147,7 @@ class SignUpViewModel : ViewModel() {
     ): Boolean {
 
         suspend fun warn(msg: String): Boolean {
-            setLoading(false)
+            _uiState.update { it.copy(isLoading = false) }
             _events.emit(
                 SignUpUiEvent.ShowSnackbar(
                     message = msg,
@@ -187,25 +157,13 @@ class SignUpViewModel : ViewModel() {
             return false
         }
 
-        if (email.isBlank())
-            return warn(ERR_EMAIL_REQUIRED)
-
-        if (password.isBlank())
-            return warn(ERR_PASSWORD_REQUIRED)
-
-        if (name.isBlank())
-            return warn(SIGNUP_ERR_NAME_REQUIRED)
-
-        if (birthday.isBlank())
-            return warn(SIGNUP_ERR_BIRTHDAY_REQUIRED)
-
-        if (!isAdult(birthday))
-            return warn(ERR_UNDER_AGE)
+        if (email.isBlank()) return warn(ERR_EMAIL_REQUIRED)
+        if (password.isBlank()) return warn(ERR_PASSWORD_REQUIRED)
+        if (name.isBlank()) return warn(SIGNUP_ERR_NAME_REQUIRED)
+        if (birthday.isBlank()) return warn(SIGNUP_ERR_BIRTHDAY_REQUIRED)
+        if (!isAdult(birthday)) return warn(ERR_UNDER_AGE)
 
         return true
     }
 
-    private fun setLoading(value: Boolean) {
-        _uiState.update { it.copy(isLoading = value) }
-    }
 }

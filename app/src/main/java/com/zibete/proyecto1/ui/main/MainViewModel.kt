@@ -11,6 +11,7 @@ import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
@@ -38,6 +39,7 @@ class MainViewModel @Inject constructor(
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
     private val groupRepository: GroupRepository,
+    private val sessionRepository: SessionRepository,
     private val locationRepository: LocationRepository
 ) : ViewModel() {
 
@@ -52,6 +54,8 @@ class MainViewModel @Inject constructor(
 
     // --- LOGICA DE SESION ---
     private var myInstallId: String? = null
+    private var myFcmToken: String? = null
+
     private var installIdListener: ValueEventListener? = null
 
     init {
@@ -79,14 +83,52 @@ class MainViewModel @Inject constructor(
     private fun setupInstallIdAndFcm() {
 
         FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                myInstallId = task.result
-                checkSessionConflict(myUid)
-            }
+            if (!task.isSuccessful) return@addOnCompleteListener
+
+            val installId = task.result ?: return@addOnCompleteListener
+            myInstallId = installId
+
+            // 1) empezar a escuchar conflicto (sessions/<uid>/activeInstallId)
+            checkSessionConflict(myUid, installId)
+
+            // 2) si ya tenés token, seteás sesión completa
+            maybeSetActiveSession()
         }
+
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                firebaseRefsContainer.refAccounts.child(myUid).child("fcmToken").setValue(task.result)
+            if (!task.isSuccessful) return@addOnCompleteListener
+
+            val token = task.result
+
+            // guardalo donde vos quieras (si lo cacheás en VM o repo)
+            myFcmToken = token
+
+            // si ya tenés installId, seteás sesión completa
+            maybeSetActiveSession()
+        }
+    }
+
+    private fun maybeSetActiveSession() {
+        val installId = myInstallId ?: return
+
+        viewModelScope.launch {
+            sessionRepository.setActiveSession(
+                uid = myUid,
+                installId = installId,
+                fcmToken = myFcmToken
+            )
+        }
+    }
+
+    private fun checkSessionConflict(uid: String, installId: String) {
+        installIdListener?.let { sessionRepository.removeSessionListener(uid, it) }
+
+        installIdListener = sessionRepository.observeSessionConflict(
+            uid = uid,
+            myInstallId = installId
+        ) {
+            viewModelScope.launch {
+                _navEvents.emit(MainNavEvent.ToSplash)
             }
         }
     }
@@ -111,23 +153,6 @@ class MainViewModel @Inject constructor(
 
     fun setToolbarTitle(title: String) {
         _uiState.update { it.copy(toolbarTitle = title) }
-    }
-
-    private fun checkSessionConflict(uid: String) {
-        val ref = firebaseRefsContainer.refAccounts.child(uid).child("installId")
-
-        installIdListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val remoteId = snapshot.getValue(String::class.java)
-                if (myInstallId != null && remoteId != null && remoteId != myInstallId) {
-                    viewModelScope.launch {
-                        _navEvents.emit(MainNavEvent.ToSplash)
-                    }
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        ref.addValueEventListener(installIdListener!!)
     }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
