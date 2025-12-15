@@ -1,93 +1,56 @@
 package com.zibete.proyecto1.adapters
 
-import android.content.Context
-import android.content.Intent
 import android.graphics.PorterDuff
 import android.graphics.Typeface
-import android.os.Bundle
 import android.view.ContextMenu
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.View.OnCreateContextMenuListener
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
+import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 class AdapterChatList(
-    private val context: Context,
     private val lifecycleScope: CoroutineScope,
     private val userRepository: UserRepository,
-    private val userSessionManager: UserSessionManager
+    private val onChatClicked: (ChatWith) -> Unit
 ) : ListAdapter<ChatWith, AdapterChatList.ChatListViewHolder>(
-    ChatDiffCallback()
+    ChatListDiffCallback
 ), OnCreateContextMenuListener {
 
-    private val user = userRepository.user
-    private var menu1: String? = null
-    private var menu2: String? = null
     private var contextMenuPosition: Int = 0
 
-    // ---------- DiffUtil ----------
+    private var menuReadTitle: CharSequence? = null
+    private var menuNotifTitle: CharSequence? = null
 
-    class ChatDiffCallback : DiffUtil.ItemCallback<ChatWith>() {
-        override fun areItemsTheSame(oldItem: ChatWith, newItem: ChatWith): Boolean {
-            // Ajustá si tu ChatWith tiene otro identificador único
-            return oldItem.userId == newItem.userId
-        }
-
-        override fun areContentsTheSame(oldItem: ChatWith, newItem: ChatWith): Boolean {
-            return oldItem == newItem
-        }
-    }
-
-    // ---------- ViewHolder ----------
-
-    class ChatListViewHolder(val binding: RowChatlistaBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-
+    class ChatListViewHolder(val binding: RowChatlistaBinding) : RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
-
-        init {
-            binding.cardview.isVisible = false
-            binding.iconConnected.isVisible = false
-            binding.iconDisconnected.isVisible = false
-            binding.tvStatus.isVisible = false
-            binding.notifOff.isVisible = false
-            binding.nuevoMsg.isVisible = false
-            binding.relativeLayout.isVisible = false
-            binding.checked.isVisible = false
-            binding.checked2.isVisible = false
-        }
     }
-
-    // ---------- Creación ViewHolder ----------
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatListViewHolder {
         val binding = RowChatlistaBinding.inflate(
-            android.view.LayoutInflater.from(parent.context),
+            LayoutInflater.from(parent.context),
             parent,
             false
         )
@@ -95,64 +58,179 @@ class AdapterChatList(
         return ChatListViewHolder(binding)
     }
 
-    // ---------- Bind con payloads ----------
-
-    override fun onBindViewHolder(
-        holder: ChatListViewHolder,
-        position: Int,
-        payloads: MutableList<Any>
-    ) {
-        val chat = getItem(position)
-
-        if (payloads.isEmpty()) {
-            super.onBindViewHolder(holder, position, payloads)
-            bindFull(holder, chat)
-        } else {
-            val bundle = payloads.firstOrNull() as? Bundle
-            if (bundle != null && bundle.keySet().contains("id")) {
-                bindFull(holder, chat)
-            } else {
-                bindFull(holder, chat)
-            }
-        }
-    }
-
     override fun onBindViewHolder(holder: ChatListViewHolder, position: Int) {
         bindFull(holder, getItem(position))
     }
 
-    // ---------- Lógica principal de bind ----------
+    override fun onBindViewHolder(holder: ChatListViewHolder, position: Int, payloads: MutableList<Any>) {
+        val item = getItem(position)
+        val payload = payloads.firstOrNull()
+
+        if (payload == null) {
+            bindFull(holder, item)
+            return
+        }
+
+        bindPayload(holder, item, payload)
+    }
+
+    override fun onViewRecycled(holder: ChatListViewHolder) {
+        holder.statusJob?.cancel()
+        holder.statusJob = null
+        super.onViewRecycled(holder)
+    }
+
+    private fun bindPayload(holder: ChatListViewHolder, chat: ChatWith, payload: Any) {
+        val changes = payload as? Set<*> ?: run {
+            bindFull(holder, chat)
+            return
+        }
+
+        val b = holder.binding
+        val ctx = b.root.context
+
+        if ("state" in changes) applyCardState(b, chat)
+        if ("name" in changes) b.tvUsuario1.text = chat.userName?.takeIf { it.isNotBlank() }
+            ?: ctx.getString(R.string.deleted_profile_fallback)
+        if ("photo" in changes) Glide.with(ctx).load(chat.userPhoto).into(b.imageUser1)
+        if ("msg" in changes) {
+            b.ultMsg.text = chat.msg.orEmpty()
+            applyLastMsgStyle(b)
+        }
+        if ("time" in changes) setLastMsgTime(b, chat)
+        if ("unread" in changes) bindUnreadBadge(b, chat)
+        if ("checks" in changes) bindChecks(b, chat)
+
+        // click/longclick dependen de state/categorías → los re-aplicamos siempre
+        bindClicks(holder, chat)
+    }
 
     private fun bindFull(holder: ChatListViewHolder, chat: ChatWith) {
+        val b = holder.binding
+        val ctx = b.root.context
 
-        val binding = holder.binding
+        applyCardState(b, chat)
 
-        // Card según estado / visibilidad lógica
-        applyCardState(binding, chat)
+        b.tvUsuario1.text = chat.userName?.takeIf { it.isNotBlank() }
+            ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        // Nombre (desde el modelo)
-        binding.tvUsuario1.text =
-            chat.userName?.ifBlank { context.getString(R.string.deleted_profile_fallback) }
+        Glide.with(ctx).load(chat.userPhoto).into(b.imageUser1)
 
-        // Foto (desde el modelo)
-        Glide.with(context.applicationContext)
-            .load(chat.userPhoto)
-            .into(binding.imageUser1)
-
-        // Estado online / offline (Flow)
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
-            userRepository.observeUserStatus(chat.userId, Constants.NODE_CURRENT_CHAT)
+            userRepository.observeUserStatus(chat.userId, NODE_CURRENT_CHAT)
                 .collectLatest { status ->
-                    bindUserStatus(binding, status)
+                    bindUserStatus(b, status)
                 }
         }
 
-        // Checks (double check, leído, etc. desde el modelo)
+        b.ultMsg.text = chat.msg.orEmpty()
+        applyLastMsgStyle(b)
+        setLastMsgTime(b, chat)
+        bindUnreadBadge(b, chat)
+        bindChecks(b, chat)
+
+        bindClicks(holder, chat)
+    }
+
+    private fun bindClicks(holder: ChatListViewHolder, chat: ChatWith) {
+        val b = holder.binding
+        val ctx = b.root.context
+
+        b.cardview.setOnClickListener {
+            onChatClicked(chat)
+        }
+
+        b.cardview.setOnLongClickListener {
+            contextMenuPosition = holder.bindingAdapterPosition.coerceAtLeast(0)
+
+            menuNotifTitle = if (b.notifOff.isVisible) {
+                ctx.getString(R.string.menu_notifications_on)
+            } else {
+                ctx.getString(R.string.menu_notifications_off)
+            }
+
+            menuReadTitle = if (b.nuevoMsg.isVisible) {
+                ctx.getString(R.string.leido)
+            } else {
+                ctx.getString(R.string.noleido)
+            }
+
+            false
+        }
+    }
+
+    private fun bindUnreadBadge(binding: RowChatlistaBinding, chat: ChatWith) {
+        val noSeen = chat.msgReceivedUnread
+        if (noSeen > 0) {
+            binding.nuevoMsg.isVisible = true
+            binding.nuevoMsg.text = noSeen.toString()
+        } else {
+            binding.nuevoMsg.isVisible = false
+        }
+    }
+
+    private fun applyLastMsgStyle(binding: RowChatlistaBinding) {
+        val ctx = binding.root.context
+        val m = binding.ultMsg.text?.toString().orEmpty()
+
+        val isMedia =
+            m == ctx.getString(R.string.photo_send) ||
+                    m == ctx.getString(R.string.photo_received) ||
+                    m == ctx.getString(R.string.audio_send) ||
+                    m == ctx.getString(R.string.audio_received)
+
+        binding.ultMsg.setTypeface(null, if (isMedia) Typeface.ITALIC else Typeface.NORMAL)
+    }
+
+    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: ChatWith) {
+        val dt = chat.dateTime.orEmpty()
+        if (dt.length < 10) {
+            binding.horaUltMsg.text = ""
+            return
+        }
+
+        val datePart = dt.substring(0, 10)
+        val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Calendar.getInstance().time)
+
+        val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
+        val yesterday = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(yesterdayCal.time)
+
+        binding.horaUltMsg.text = when {
+            datePart == today -> if (dt.length >= 16) dt.substring(11, 16) else ""
+            datePart == yesterday -> binding.root.context.getString(R.string.yesterday)
+            else -> datePart
+        }
+    }
+
+    private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
+        val state = chat.state
+        val photo = chat.userPhoto
+
+        when (state) {
+            NODE_CURRENT_CHAT -> {
+                binding.cardview.isVisible = true
+                binding.notifOff.isVisible = false
+            }
+            CHAT_STATE_SILENT -> {
+                binding.cardview.isVisible = true
+                binding.notifOff.isVisible = true
+            }
+            CHAT_STATE_BLOQ, CHAT_STATE_HIDE -> {
+                binding.cardview.isVisible = false
+            }
+            else -> {
+                binding.cardview.isVisible = photo != Constants.EMPTY
+            }
+        }
+    }
+
+    private fun bindChecks(binding: RowChatlistaBinding, chat: ChatWith) {
+        val myUid = userRepository.myUid
         val senderId = chat.senderId
         val seen = chat.seen
 
-        if (senderId == user.uid && seen != 0) {
+        if (senderId == myUid && seen != 0) {
             binding.relativeLayout.isVisible = true
 
             when (seen) {
@@ -182,129 +260,23 @@ class AdapterChatList(
             binding.checked2.isVisible = false
             binding.relativeLayout.isVisible = false
         }
-
-        // No vistos (desde el modelo)
-        val noSeen = chat.msgReceivedUnread
-        if (noSeen > 0) {
-            binding.nuevoMsg.isVisible = true
-            binding.nuevoMsg.text = noSeen.toString()
-        } else {
-            binding.nuevoMsg.isVisible = false
-        }
-
-        // Último mensaje + hora (desde el modelo)
-        if (binding.cardview.isVisible) {
-
-            // Texto del último mensaje
-            binding.ultMsg.text = chat.msg
-
-            // Formato especial si es foto/audio
-            if (chat.msg == context.getString(R.string.photo_send) ||
-                chat.msg == context.getString(R.string.photo_received) ||
-                chat.msg == context.getString(R.string.audio_send) ||
-                chat.msg == context.getString(R.string.audio_received)
-            ) {
-                binding.ultMsg.setTypeface(null, Typeface.ITALIC)
-            } else {
-                binding.ultMsg.setTypeface(null, Typeface.NORMAL)
-            }
-
-            // Hora del último mensaje
-            setLastMsgTime(binding, chat)
-
-            // Marcar mensajes como vistos (en repo)
-            setMyDoubleCheck(chat)
-        }
-
-        // Click: ir al chat
-        binding.cardview.setOnClickListener {
-            val intent = Intent(context, ChatActivity::class.java).apply {
-                putExtra(EXTRA_CHAT_ID, chat.userId)
-                putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
-            }
-            context.startActivity(intent)
-        }
-
-        // Long click: menú contextual
-        binding.cardview.setOnLongClickListener {
-            setPosition(holder.bindingAdapterPosition)
-
-            menu2 = if (binding.notifOff.isVisible) {
-                context.getString(R.string.menu_notifications_on)
-            } else {
-                context.getString(R.string.menu_notifications_off)
-            }
-
-            menu1 = if (binding.nuevoMsg.isVisible) {
-                context.getString(R.string.leido)
-            } else {
-                context.getString(R.string.noleido)
-            }
-
-            false
-        }
     }
 
-    // ---------- Helpers de UI ----------
-
     private fun tintCheck(binding: RowChatlistaBinding, colorRes: Int) {
-        val color = ContextCompat.getColor(context, colorRes)
+        val ctx = binding.root.context
+        val color = ContextCompat.getColor(ctx, colorRes)
         binding.checked.setColorFilter(color, PorterDuff.Mode.SRC_IN)
         binding.checked2.setColorFilter(color, PorterDuff.Mode.SRC_IN)
     }
 
-    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: ChatWith) {
-        val c = Calendar.getInstance()
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy")
-        val date = chat.dateTime.substring(0, 10)
-
-        binding.horaUltMsg.text = when {
-            date == dateFormat.format(c.time) -> {
-                chat.dateTime.substring(11, 16)
-            }
-            date == dateFormat.format(
-                Calendar.getInstance().apply { add(Calendar.DATE, -1) }.time
-            ) -> {
-                context.getString(R.string.yesterday)
-            }
-            else -> {
-                chat.dateTime.substring(0, 10)
-            }
-        }
-    }
-
-    private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
-        val state = chat.state
-        val photo = chat.userPhoto
-
-        when (state) {
-            NODE_CURRENT_CHAT -> {
-                binding.cardview.isVisible = true
-                binding.notifOff.isVisible = false
-            }
-            CHAT_STATE_SILENT -> {
-                binding.cardview.isVisible = true
-                binding.notifOff.isVisible = true
-            }
-            CHAT_STATE_BLOQ, CHAT_STATE_HIDE -> {
-                binding.cardview.isVisible = false
-            }
-            else -> {
-                binding.cardview.isVisible = photo != Constants.EMPTY
-            }
-        }
-    }
-
-    private fun bindUserStatus(
-        binding: RowChatlistaBinding,
-        status: UserStatus
-    ) {
+    private fun bindUserStatus(binding: RowChatlistaBinding, status: UserStatus) {
+        val ctx = binding.root.context
         when (status) {
             is UserStatus.Online -> {
                 binding.iconConnected.isVisible = true
                 binding.iconDisconnected.isVisible = false
                 binding.tvStatus.isVisible = true
-                binding.tvStatus.text = binding.root.context.getString(R.string.online)
+                binding.tvStatus.text = ctx.getString(R.string.online)
             }
             is UserStatus.TypingOrRecording -> {
                 binding.iconConnected.isVisible = true
@@ -322,41 +294,22 @@ class AdapterChatList(
                 binding.iconConnected.isVisible = false
                 binding.iconDisconnected.isVisible = false
                 binding.tvStatus.isVisible = true
-                binding.tvStatus.text = binding.root.context.getString(R.string.offline)
+                binding.tvStatus.text = ctx.getString(R.string.offline)
             }
-        }
-    }
-
-    // ---------- Double check / marcar mensajes vistos ----------
-
-    private fun setMyDoubleCheck(chat: ChatWith) {
-        val noSeen = chat.msgReceivedUnread
-        if (noSeen <= 0) return
-
-        lifecycleScope.launch {
-            userRepository.markMessagesAsSeen(
-                userId = chat.userId,
-                nodeType = NODE_CURRENT_CHAT,
-                noSeen = noSeen
-            )
         }
     }
 
     // ---------- Context menu ----------
 
-    override fun onCreateContextMenu(
-        menu: ContextMenu,
-        v: View?,
-        menuInfo: ContextMenu.ContextMenuInfo?
-    ) {
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, menu1)
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, menu2)
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_block)
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.eliminar)
-    }
+    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+        val ctx = v?.context ?: return
+        val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
+        val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_notifications_off)
 
-    fun setPosition(position: Int) {
-        contextMenuPosition = position
+        menu.add(FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, titleRead)
+        menu.add(FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, titleNotif)
+        menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_block)
+        menu.add(FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
+        menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.eliminar)
     }
 }

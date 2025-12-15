@@ -72,7 +72,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setupInitialUi() = with(binding) {
         // Estado inicial: cargando
-        rv.isVisible = true
+        binding.rvUsers.isVisible = true
         linearOnBoardingChatList.isVisible = false
         progressbar2.isVisible = true
 
@@ -94,12 +94,12 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
             onMarkAsRead = { chat -> processDoubleCheckLogic(chat) }
         )
 
-        binding.rv.apply {
+        binding.rvUsers.apply {
             layoutManager = this@ChatListGroupsFragment.layoutManager
             adapter = adapterChatGroupsList
         }
 
-        registerForContextMenu(binding.rv)
+        registerForContextMenu(binding.rvUsers)
     }
 
     // ---------- Listener principal: chatWithUnknown ----------
@@ -205,7 +205,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun showOnBoarding() = with(binding) {
-        rv.isVisible = false
+        rvUsers.isVisible = false
         linearOnBoardingChatList.isVisible = true
 
         lottieChatLeft.playAnimation()
@@ -215,7 +215,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun showChatList() = with(binding) {
-        rv.isVisible = true
+        binding.rvUsers.isVisible = true
         linearOnBoardingChatList.isVisible = false
 
         lottieChatLeft.cancelAnimation()
@@ -236,7 +236,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setScrollbar() {
         if (adapterChatGroupsList.itemCount > 0) {
-            binding.rv.scrollToPosition(adapterChatGroupsList.itemCount - 1)
+            binding.rvUsers.scrollToPosition(adapterChatGroupsList.itemCount - 1)
         }
     }
 

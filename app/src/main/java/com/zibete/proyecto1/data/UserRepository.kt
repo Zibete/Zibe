@@ -493,4 +493,9 @@ class UserRepository @Inject constructor(
         }
     }.flowOn(Dispatchers.IO)
 
+    fun getChatIdWith(otherUid: String): String {
+        val (first, second) = listOf(myUid, otherUid).sorted()
+        return "${first}_${second}"
+    }
+
 }

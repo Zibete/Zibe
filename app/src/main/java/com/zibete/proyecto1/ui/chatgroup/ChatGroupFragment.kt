@@ -103,7 +103,7 @@ class ChatGroupFragment : Fragment() {
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageReference: StorageReference = storage.reference
-    private val user get() = FirebaseRefs.currentUser!!
+    private val user = userRepository.user
 
     private val refSendImages: StorageReference by lazy {
         storageReference.child("ChatMessage/${user.uid}/")
@@ -812,7 +812,7 @@ class ChatGroupFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
+//        _binding = null
     }
 
     companion object {
