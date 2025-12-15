@@ -1,11 +1,11 @@
 package com.zibete.proyecto1
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.RingtoneManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -14,116 +14,132 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_MESSAGE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.utils.FirebaseRefs.refChatMessage
-import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
-import com.zibete.proyecto1.utils.FirebaseRefs.currentUser
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+
+private const val CHANNEL_ID = "mensaje"
+private const val NOTIFICATION_ID = 0
 
 @AndroidEntryPoint
 class FCM : FirebaseMessagingService() {
 
-    @Inject
-    lateinit var repo: UserPreferencesRepository
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-    override fun onDeletedMessages() {
-        super.onDeletedMessages()
-    }
-
-    private val user get() = currentUser!!
-
-    @SuppressLint("WrongThread") // por el acceso a MainActivity.toolbar
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
 
         val data = remoteMessage.data
-        val novistos = data["novistos"]
+        if (data.isEmpty()) return
+
+        val myUid = userRepository.myUid
+        if (myUid.isBlank()) return
+
+        val novistos = data["novistos"].orEmpty()
         val userName = data["user"] ?: return
-        val msg = data["msg"] ?: ""
-        val idUser = data["id_user"] ?: return
+        val msg = data["msg"].orEmpty()
+        val otherUid = data["id_user"] ?: return
         val type = data["type"] ?: return
 
-        val ref: String = if (type == NODE_CURRENT_CHAT) NODE_CHAT_MESSAGE else NODE_GROUP_CHAT
+        val ref = if (type == NODE_CURRENT_CHAT) NODE_CHAT_MESSAGE else NODE_GROUP_CHAT
 
-        if (type != repo.groupName) {
-            if (repo.individualNotifications) {
-                if (data.isNotEmpty()) {
-                    val newQuery: Query =
-                        refDatos.child(user.uid).child(type)
-                            .orderByChild("noVisto")
-                            .startAt(1.0)
+        // type == NODE_CURRENT_CHAT => chat 1-1
+        if (type == NODE_CURRENT_CHAT) {
 
-                    newQuery.addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(dataSnapshot: DataSnapshot) {
-                            if (dataSnapshot.exists()) {
-                                val childrenCount =
-                                    dataSnapshot.childrenCount //Cantidad de chats con mensajes no vistos
+            // Si el user está en un grupo, NO tiene nada que ver con chat 1-1.
+            // Acá respetamos tu switch de notificaciones individuales
+            if (userPreferencesRepository.individualNotifications) {
 
-                                var countMsgUnread = 0
+                val newQuery: Query =
+                    firebaseRefsContainer.refDatos
+                        .child(myUid)
+                        .child(type) // NODE_CURRENT_CHAT
+                        .orderByChild("noVisto")
+                        .startAt(1.0)
 
-                                for (snapshot in dataSnapshot.children) {
-                                    val unRead =
-                                        snapshot.child("noVisto")
-                                            .getValue(Int::class.java) ?: 0
-                                    countMsgUnread += unRead
-                                }
+                newQuery.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        if (!dataSnapshot.exists()) return
 
-                                if (childrenCount > 1) {
-                                    val title = "$countMsgUnread mensajes de $childrenCount chats"
-                                    val text = "$userName: $msg"
+                        val childrenCount = dataSnapshot.childrenCount
+                        var countMsgUnread = 0
 
-                                    msgNotify(title, text, idUser, type, ref)
-                                } else {
-                                    val title = if (novistos == "1") {
-                                        "Nuevo mensaje de $userName"
-                                    } else {
-                                        "$novistos mensajes de $userName"
-                                    }
-                                    msgNotify(title, msg, idUser, type, ref)
-                                }
+                        for (snapshot in dataSnapshot.children) {
+                            val unRead = snapshot.child("noVisto").getValue(Int::class.java) ?: 0
+                            countMsgUnread += unRead
+                        }
+
+                        if (childrenCount > 1) {
+                            val title = "$countMsgUnread mensajes de $childrenCount chats"
+                            val text = "$userName: $msg"
+                            msgNotify(title, text)
+                        } else {
+                            val title = if (novistos == "1") {
+                                "Nuevo mensaje de $userName"
+                            } else {
+                                "$novistos mensajes de $userName"
                             }
+                            msgNotify(title, msg)
                         }
+                    }
 
-                        override fun onCancelled(error: DatabaseError) {
-                        }
-                    })
-                }
+                    override fun onCancelled(error: DatabaseError) = Unit
+                })
+
             } else {
-                doubleCheck(idUser, type, ref)
-            }
-        } else {
-            if (repo.groupNotifications && data.isNotEmpty()) {
-                // Si el usuario está dentro del grupo activo y es el mismo grupo, no notificamos
-                val isInActiveGroup = repo.inGroup &&
-                        repo.groupName.isNotEmpty() &&
-                        repo.groupName == type
-
-                if (!isInActiveGroup) {
-                    val title = "Nuevo mensaje de $type"
-                    val text = "$userName: $msg"
-                    msgNotify(title, text, idUser, type, ref)
-                }
+                // modo agrupado/silencioso => igual seteamos doble check
+                doubleCheck(myUid, otherUid, type, ref)
             }
 
+            return
+        }
+
+        // Si no es NODE_CURRENT_CHAT, en tu payload "type" te queda como nombre del grupo
+        val groupName = type
+
+        if (userPreferencesRepository.groupNotifications && data.isNotEmpty()) {
+
+            val isInActiveGroup =
+                userPreferencesRepository.inGroup &&
+                        userPreferencesRepository.groupName.isNotEmpty() &&
+                        userPreferencesRepository.groupName == groupName
+
+            if (!isInActiveGroup) {
+                val title = "Nuevo mensaje de $groupName"
+                val text = "$userName: $msg"
+                msgNotify(title, text, otherUid, groupName, ref)
+            }
         }
     }
 
-    fun msgNotify(title: String?, text: String?, idUser: String, type: String, ref: String) {
+    private fun msgNotify(
+        title: String?,
+        text: String?,
+        otherUid: String? = null,
+        type: String? = null,
+        ref: String? = null
+    ) {
         val notificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelName: CharSequence = getString(R.string.channel_name)
+            val notificationChannel =
+                NotificationChannel(CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_HIGH)
+            notificationChannel.setShowBadge(true)
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
+
         val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-
-        val name: CharSequence = getString(R.string.channel_name)
-        val notificationChannel =
-            NotificationChannel(CHANNEL_ID, name, NotificationManager.IMPORTANCE_HIGH)
-        notificationChannel.setShowBadge(true)
-        notificationManager.createNotificationChannel(notificationChannel)
-
-        builder.setAutoCancel(true)
+            .setAutoCancel(true)
             .setWhen(System.currentTimeMillis())
             .setSmallIcon(R.drawable.ic_logo)
             .setContentTitle(title)
@@ -137,65 +153,65 @@ class FCM : FirebaseMessagingService() {
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
 
-        if (type != repo.groupName) {
-            doubleCheck(idUser, type, ref)
+        // Doble check solo aplica a chat 1-1
+        if (otherUid != null && type == NODE_CURRENT_CHAT && ref != null) {
+            doubleCheck(userRepository.myUid, otherUid, type, ref)
         }
     }
 
-    fun doubleCheck(idUser: String, type: String, ref: String) {
+    private fun doubleCheck(myUid: String, otherUid: String, type: String, ref: String) {
 
-        refDatos.child(user.uid).child(type).child(idUser).child("wVisto").setValue(2)
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child(type)
+            .child(otherUid)
+            .child("wVisto")
+            .setValue(2)
 
-        refDatos.child(user.uid).child(type).child(idUser).child("noVisto")
+        firebaseRefsContainer.refDatos
+            .child(myUid)
+            .child(type)
+            .child(otherUid)
+            .child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {
+
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     val noVistos = dataSnapshot.getValue(Int::class.java) ?: 0
+                    if (noVistos <= 0) return
 
-                    if (noVistos > 0) {
-                        refChatMessage.child(ref).child("${user.uid} <---> $idUser")
-                            .child("Mensajes").limitToLast(noVistos)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                    setDoubleCheck(dataSnapshot)
-                                }
+                    // ✅ alineado a tu repo: chatId ordenado con "_"
+                    val chatId = userRepository.getChatIdWith(otherUid)
 
-                                override fun onCancelled(error: DatabaseError) {
-                                }
-                            })
+                    firebaseRefsContainer.refChatMessageRoot
+                        .child(ref)
+                        .child(chatId)
+                        .orderByChild("date")
+                        .limitToLast(noVistos)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(ds: DataSnapshot) {
+                                setDoubleCheck(myUid, ds)
+                            }
 
-                        refChatMessage.child(ref).child("$idUser <---> ${user.uid}")
-                            .child("Mensajes").limitToLast(noVistos)
-                            .addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                                    setDoubleCheck(dataSnapshot)
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {
-                                }
-                            })
-                    }
+                            override fun onCancelled(error: DatabaseError) = Unit
+                        })
                 }
 
-                override fun onCancelled(error: DatabaseError) {
-                }
+                override fun onCancelled(error: DatabaseError) = Unit
             })
     }
 
-    fun setDoubleCheck(dataSnapshot: DataSnapshot) {
+    private fun setDoubleCheck(myUid: String, dataSnapshot: DataSnapshot) {
+        if (!dataSnapshot.exists()) return
 
-        if (dataSnapshot.exists()) {
-            for (snapshot in dataSnapshot.children) {
-                if (snapshot.hasChild("envia")) {
-                    val envia = snapshot.child("envia").getValue(String::class.java)
-                    if (envia != user.uid && snapshot.hasChild("visto")) {
-                        snapshot.ref.child("visto").setValue(2)
-                    }
-                }
+        for (snapshot in dataSnapshot.children) {
+            val envia = snapshot.child("envia").getValue(String::class.java)
+            if (envia != null && envia != myUid && snapshot.hasChild("visto")) {
+                snapshot.ref.child("visto").setValue(2)
             }
         }
     }
 
-    fun pendingIntent(): PendingIntent {
+    private fun pendingIntent(): PendingIntent {
         val intent = Intent(applicationContext, SplashActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -206,10 +222,5 @@ class FCM : FirebaseMessagingService() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
-
-    companion object {
-        private const val CHANNEL_ID = "mensaje"
-        private const val NOTIFICATION_ID = 0
     }
 }

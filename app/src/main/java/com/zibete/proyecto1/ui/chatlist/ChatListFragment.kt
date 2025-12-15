@@ -1,12 +1,15 @@
 package com.zibete.proyecto1.ui.chatlist
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
+import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.SearchView
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -14,48 +17,44 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.zibete.proyecto1.ChatListGroupsFragment
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
+import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATGROUPLIST
+import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListener {
+class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
-    @Inject lateinit var userSessionManager: UserSessionManager
 
     private val chatListViewModel: ChatListViewModel by viewModels()
+
     private var _binding: FragmentChatListBinding? = null
     private val binding get() = _binding!!
+
     private lateinit var adapterChatList: AdapterChatList
     private lateinit var layoutManager: LinearLayoutManager
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        observeChatSessionEvents(chatListViewModel.events)
-
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
-        setHasOptionsMenu(true)
 
+        setupOptionMenu()
         setupRecycler()
         setupInitialUi()
         setupAdapterObserver()
@@ -66,23 +65,28 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        observeChatSessionEvents(chatListViewModel.events)
+
+        collectUiState()
+
+        chatListViewModel.loadChatList()
+    }
+
+    private fun collectUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // UI state
-                launch {
-                    chatListViewModel.uiState.collect { state ->
-                        binding.progressbar2.isVisible = state.isLoading
+                chatListViewModel.uiState.collect { state ->
+                    val b = _binding ?: return@collect
 
-                        if (state.showOnboarding) {
-                            showOnBoarding()
-                        } else {
-                            showChatList()
-                        }
+                    b.progressbar2.isVisible = state.isLoading
 
-                        adapterChatList.submitList(state.filteredChats)
-                        setScrollbar()
-
+                    if (state.showOnboarding) {
+                        showOnBoarding()
+                    } else {
+                        showChatList()
                     }
+
+                    adapterChatList.submitList(state.filteredChats)
                 }
             }
         }
@@ -91,7 +95,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
     // ---------- UI inicial ----------
 
     private fun setupInitialUi() = with(binding) {
-        rv.isVisible = true
+        binding.rvChatlist.isVisible = true
         linearOnBoardingChatList.isVisible = false
         progressbar2.isVisible = true
 
@@ -106,24 +110,32 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
         }
 
         adapterChatList = AdapterChatList(
-            context = requireContext(),
             lifecycleScope = viewLifecycleOwner.lifecycleScope,
             userRepository = userRepository,
-            userSessionManager = userSessionManager
+            onChatClicked = ::openChat
         )
 
-        binding.rv.apply {
+        binding.rvChatlist.apply {
             layoutManager = this@ChatListFragment.layoutManager
             adapter = adapterChatList
+            setHasFixedSize(true)
         }
 
-        registerForContextMenu(binding.rv)
+        registerForContextMenu(binding.rvChatlist)
+    }
+
+    private fun openChat(chat: ChatWith) {
+        val intent = Intent(requireContext(), ChatActivity::class.java).apply {
+            putExtra(EXTRA_CHAT_ID, chat.userId)
+            putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
+        }
+        startActivity(intent)
     }
 
     // ---------- Empty state / onboarding ----------
 
     private fun showOnBoarding() = with(binding) {
-        rv.isVisible = false
+        binding.rvChatlist.isVisible = false
         linearOnBoardingChatList.isVisible = true
 
         lottieChatLeft.playAnimation()
@@ -134,7 +146,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
     }
 
     private fun showChatList() = with(binding) {
-        rv.isVisible = true
+        binding.rvChatlist.isVisible = true
         linearOnBoardingChatList.isVisible = false
 
         lottieChatLeft.cancelAnimation()
@@ -156,70 +168,54 @@ class ChatListFragment : BaseChatSessionFragment(), SearchView.OnQueryTextListen
     private fun setScrollbar() {
         val b = _binding ?: return
         if (::adapterChatList.isInitialized && adapterChatList.itemCount > 0) {
-            b.rv.scrollToPosition(adapterChatList.itemCount - 1)
+            b.rvChatlist.scrollToPosition(adapterChatList.itemCount - 1)
         }
     }
 
-    // ---------- Context menu acciones ----------
+    private fun setupOptionMenu() {
+        val menuHost = requireActivity() as MenuHost
+
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = Unit
+
+                override fun onPrepareMenu(menu: Menu) {
+                    menu.findItem(R.id.action_settings)?.isVisible = true
+                    menu.findItem(R.id.action_search)?.isVisible = true
+                    menu.findItem(R.id.action_favorites)?.isVisible = true
+                    menu.findItem(R.id.action_unblock_users)?.isVisible = true
+                }
+
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
+            },
+            viewLifecycleOwner,
+            Lifecycle.State.RESUMED
+        )
+    }
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
-        // Chat individual
-        if (item.groupId == FRAGMENT_ID_CHATLIST) {
-            val wChat = adapterChatList.currentList[item.order]
-            runItemSelected(item, NODE_CURRENT_CHAT, wChat.userId, wChat.userName)
-        }
-        // Chat unknown / grupos
-        if (item.groupId == FRAGMENT_ID_CHATGROUPLIST) {
-            val wChat = ChatListGroupsFragment.chatsGroupArrayList[item.order]
-            runItemSelected(item, NODE_GROUP_CHAT, wChat.userId, wChat.userName)
-        }
+        if (item.groupId != FRAGMENT_ID_CHATLIST) return false
 
-        return true
-    }
+        val chat = adapterChatList.currentList.getOrNull(item.order) ?: return false
 
-    private fun runItemSelected(
-        item: MenuItem,
-        userId: String,
-        userName: String,
-        nodeType: String
-    ) {
         when (item.itemId) {
-            1 -> chatListViewModel.onMarkAsReadChatListClicked(userId, nodeType)
-            2 -> chatListViewModel.onToggleNotificationsClicked(userId, userName, nodeType)
-            3 -> chatListViewModel.onBlockClicked(userId, userName, nodeType) //No hay unblock
-            4 -> chatListViewModel.onHideClicked(userId, userName, nodeType)
-            5 -> chatListViewModel.onDeleteClicked(userId, userName, nodeType)
+            1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.userId, NODE_CURRENT_CHAT)
+            2 -> chatListViewModel.onToggleNotificationsClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
+            3 -> chatListViewModel.onBlockClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
+            4 -> chatListViewModel.onHideClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
+            5 -> chatListViewModel.onDeleteClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
         }
-    }
-
-
-    // ---------- SearchView ----------
-
-    @Deprecated("Deprecated in Java")
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        val actionSearch = menu.findItem(R.id.action_search)
-        val actionUnblock = menu.findItem(R.id.action_unblock)
-
-        actionSearch.isVisible = true
-        actionUnblock.isVisible = true
-
-        val searchView = actionSearch.actionView as? SearchView
-        searchView?.setOnQueryTextListener(this)
-    }
-
-    override fun onQueryTextSubmit(query: String?): Boolean = false
-
-    override fun onQueryTextChange(newText: String?): Boolean {
-        chatListViewModel.onSearchQueryChanged(newText.orEmpty())
         return true
     }
 
+    override fun onSearchQueryChanged(query: String?) {
+        chatListViewModel.onSearchQueryChanged(query.orEmpty())
+    }
 
-    // ---------- Ciclo de vida ----------
     override fun onDestroyView() {
-        _binding = null
         super.onDestroyView()
+        binding.lottieChatLeft.cancelAnimation()
+        binding.lottieChatRight.cancelAnimation()
+        _binding = null
     }
 }

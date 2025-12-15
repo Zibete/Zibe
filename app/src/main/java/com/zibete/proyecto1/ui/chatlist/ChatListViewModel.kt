@@ -15,57 +15,55 @@ import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import javax.inject.Inject
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val chatRepository: ChatRepository,
-    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
-    // ---------- Firebase ref ----------
-
-    private val myUid = userRepository.myUid
+    private val myUid get() = userRepository.myUid
 
     private val chatRef
         get() = firebaseRefsContainer.refDatos
-            .child(userRepository.myUid)
-            .child(Constants.NODE_CURRENT_CHAT)
+            .child(myUid)
+            .child(NODE_CURRENT_CHAT)
 
     private var chatListListener: ValueEventListener? = null
-
-    // ---------- UI state ----------
+    private var observing = false
 
     private val _uiState = MutableStateFlow(ChatListUiState())
     val uiState: StateFlow<ChatListUiState> = _uiState.asStateFlow()
 
-    // ---------- One-shot events ----------
-
-    private val _events = MutableSharedFlow<ChatSessionUiEvent>()
+    private val _events = MutableSharedFlow<ChatSessionUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
 
-    init {
+    fun loadChatList() {
+        if (observing) return
+        observing = true
         observeChatList()
     }
 
-    // ---------- Firebase observer ----------
-
     private fun observeChatList() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        _uiState.update { it.copy(isLoading = true) }
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+
                 if (!snapshot.exists()) {
                     _uiState.value = ChatListUiState(
                         isLoading = false,
@@ -76,39 +74,31 @@ class ChatListViewModel @Inject constructor(
                     return
                 }
 
-                val chats = mutableListOf<ChatWith>()
-                var visibleCount = 0L
+                val all = snapshot.children.mapNotNull { it.getValue(ChatWith::class.java) }.toMutableList()
 
-                for (child in snapshot.children) {
-                    val chat = child.getValue(ChatWith::class.java) ?: continue
-                    chats.add(chat)
+                updateDatesAndSort(all)
 
-                    val state = child.child("estado").getValue(String::class.java)
-                    val photo = child.child("wUserPhoto").getValue(String::class.java)
-
-                    if (photo != Constants.EMPTY &&
-                        (state == Constants.NODE_CURRENT_CHAT || state == CHAT_STATE_SILENT)
-                    ) {
-                        visibleCount++
-                    }
+                // Visible = (foto != EMPTY) y (estado == NODE_CURRENT_CHAT o estado == SILENT)
+                val visible = all.filter { chat ->
+                    val photo = chat.userPhoto
+                    val state = chat.state
+                    photo != Constants.EMPTY && (state == NODE_CURRENT_CHAT || state == CHAT_STATE_SILENT)
                 }
 
-                updateDatesAndSort(chats)
-
-                val currentQuery = _uiState.value.searchQuery
-                val filtered = filterChats(chats, currentQuery)
+                val q = _uiState.value.searchQuery
+                val filtered = filterChats(visible, q)
 
                 _uiState.value = ChatListUiState(
                     isLoading = false,
-                    chats = chats,
+                    chats = visible,
                     filteredChats = filtered,
-                    showOnboarding = visibleCount == 0L
+                    showOnboarding = visible.isEmpty(),
+                    searchQuery = q
                 )
             }
 
-
             override fun onCancelled(error: DatabaseError) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
 
@@ -121,22 +111,28 @@ class ChatListViewModel @Inject constructor(
         val currentChats = _uiState.value.chats
         val filtered = filterChats(currentChats, normalized)
 
-        _uiState.value = _uiState.value.copy(
-            searchQuery = normalized,
-            filteredChats = filtered
-        )
+        _uiState.update {
+            it.copy(
+                searchQuery = normalized,
+                filteredChats = filtered
+            )
+        }
     }
-
 
     @SuppressLint("SimpleDateFormat")
     private fun updateDatesAndSort(list: MutableList<ChatWith>) {
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+
         list.forEach { chat ->
+            val dt = chat.dateTime
+            if (dt.isNullOrBlank()) return@forEach
             try {
-                chat.date = format.parse(chat.dateTime)
+                chat.date = format.parse(dt)
             } catch (_: ParseException) {
             }
         }
+
+        // Respeta tu Comparable si existe (como venías usando)
         list.sort()
     }
 
@@ -144,6 +140,7 @@ class ChatListViewModel @Inject constructor(
         super.onCleared()
         chatListListener?.let { chatRef.removeEventListener(it) }
         chatListListener = null
+        observing = false
     }
 
     // ---------- Acciones de menú ----------
@@ -154,29 +151,20 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun onToggleNotificationsClicked(userId: String, userName: String, nodeType : String) {
-
+    fun onToggleNotificationsClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             val chatWith = chatRepository.getChatWith(myUid, userId, nodeType)
-
             val currentState = chatWith?.state
 
-            val newState = if (currentState == CHAT_STATE_SILENT) {
-                nodeType
-            } else {
-                CHAT_STATE_SILENT
-            }
-
+            val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
             userRepository.updateStateChatWith(userId, userName, nodeType, newState)
 
-            val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
-
-            _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
-
+            val enabled = newState != CHAT_STATE_SILENT
+            _events.tryEmit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
         }
     }
 
-    fun onBlockClicked(userId: String, userName: String, nodeType : String) {
+    fun onBlockClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmBlock(
@@ -190,7 +178,7 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun onHideClicked(userId: String, userName: String, nodeType : String) {
+    fun onHideClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmHideChat(
@@ -206,8 +194,8 @@ class ChatListViewModel @Inject constructor(
 
     fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            chatRepository.buildChatRefs(userId, nodeType)
-            val count = chatRepository.getMessageCount()
+            val count = chatRepository.getMessageCountFor(userId, nodeType)
+
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = userName,
@@ -215,7 +203,7 @@ class ChatListViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteMessages(null, deleteMessages)
+                                val result = chatRepository.deleteChatFor(userId, nodeType, deleteMessages)
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
                                 _events.emit(
@@ -231,16 +219,14 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------
-
     private fun filterChats(chats: List<ChatWith>, query: String): List<ChatWith> {
         if (query.isBlank()) return chats
         val lower = query.trim().lowercase()
 
         return chats.filter { chat ->
-            chat.userName.lowercase().contains(lower) ||
-                    chat.userId.lowercase().contains(lower)
+            val name = chat.userName.orEmpty().lowercase()
+            val id = chat.userId.orEmpty().lowercase()
+            name.contains(lower) || id.contains(lower)
         }
     }
 }
-

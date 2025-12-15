@@ -2,28 +2,11 @@ package com.zibete.proyecto1.utils
 
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 
 object FirebaseRefs {
 
-//    // === Auth ===
-//    @JvmField
-//    val auth: FirebaseAuth = FirebaseAuth.getInstance()
-//
-//    val currentUser: FirebaseUser?
-//        get() = auth.currentUser
-//
-//    // 1. Para usar "user" directo en cualquier Activity (MainActivity, etc)
-//    val Activity.user: FirebaseUser
-//        get() = currentUser!!
-//
-//    // 2. Para usar "user" directo en cualquier Fragment
-//    val Fragment.user: FirebaseUser
-//        get() = currentUser!!
-//
-//    // 3. Para usar "user" directo en tus ViewModels
-//    val AndroidViewModel.user: FirebaseUser
-//        get() = currentUser!!
-//    // === Database ===
+
     private val db: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
 
     // Usuarios
@@ -42,11 +25,11 @@ object FirebaseRefs {
     @JvmField val refGroupChat: DatabaseReference = refGroups.child("Chat")
     @JvmField val refGroupUsers: DatabaseReference = refGroups.child("Users")
 
-//    // Zibe
-//    @JvmField val refZibe: DatabaseReference = db.getReference("Zibe")
-//
-//    // === Storage ===
-//    @JvmField
-//    val storage: FirebaseStorage = FirebaseStorage.getInstance()
+    // Zibe
+    @JvmField val refZibe: DatabaseReference = db.getReference("Zibe")
+
+    // === Storage ===
+    @JvmField
+    val storage: FirebaseStorage = FirebaseStorage.getInstance()
 
 }

@@ -58,7 +58,7 @@ sealed class ChatChildEvent {
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userRepository: UserRepository,
-    private val chatRefs: ChatRefs
+    private var chatRefs: ChatRefs
 ) {
 
     fun observeChatMessages(
@@ -86,6 +86,25 @@ class ChatRepository @Inject constructor(
     }
 
     private val myUid = userRepository.myUid
+
+    suspend fun getMessageCountFor(userId: String, nodeType: String): Int {
+        val chatId = getRefChatId(userId)
+        val refChat = firebaseRefsContainer.refChatMessageRoot.child(nodeType).child(chatId)
+        return refChat.get().await().childrenCount.toInt()
+    }
+
+    suspend fun deleteChatFor(userId: String, nodeType: String, deleteMessages: Boolean): DeleteResult {
+        // Reusar tu lógica actual: construimos refs "locales" y ejecutamos igual que antes
+        val refs = buildChatRefs(userId, nodeType)
+
+        // 👇 si querés reutilizar tu métod deleteMessages() actual, necesitás que opere sobre "refs"
+        // Como tu deleteMessages() usa `chatRefs`, la mínima corrección es:
+        // - Convertir `chatRefs` en `var` y asignarlo acá antes de llamar deleteMessages()
+
+        this.chatRefs = refs
+        return deleteMessages(selected = null, deleteMessages = deleteMessages)
+    }
+
 
     fun buildChatRefs(
         userId: String,
