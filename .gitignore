@@ -1,10 +1,21 @@
-﻿.gradle/
+﻿# === Android / Gradle ===
+.gradle/
+build/
 **/build/
+
+# === Local configs ===
 local.properties
-*.iml
+
+# === IntelliJ / Android Studio ===
 .idea/
-*.jks
-*.keystore
+*.iml
+
+# === Kotlin ===
+.kotlin/
+
+# === Logs ===
 *.log
-*.apk
-*.aab
+
+# === OS ===
+.DS_Store
+Thumbs.db
