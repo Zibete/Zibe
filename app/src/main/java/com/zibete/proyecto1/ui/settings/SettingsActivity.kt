@@ -19,9 +19,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.material.appbar.MaterialToolbar
@@ -30,22 +30,18 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
-import com.zibete.proyecto1.PageAdapterGroup
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.report.ReportActivity
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
-import com.zibete.proyecto1.ui.groups.GroupsFragment
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.getValue
 
@@ -55,9 +51,9 @@ class SettingsActivity : AppCompatActivity() {
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var userSessionManager: UserSessionManager
 
-    private val myUid = userRepository.myUid
-
+    private val firebaseUser = userRepository.firebaseUser
 
     private val settingsViewModel: SettingsViewModel by viewModels()
 
@@ -206,14 +202,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setupAccountInfo() {
         // Detectar proveedor
-        FirebaseAuth.getInstance().currentUser?.providerData?.forEach { info ->
+        firebaseUser.providerData.forEach { info ->
             when (info.providerId) {
                 "facebook.com" -> provider = "Facebook"
                 "google.com" -> provider = "Google"
             }
         }
 
-        val email = userSessionManager.user.email.orEmpty()
+        val email = userRepository.myEmail
         myEmail.text = if (provider == null) {
             email
         } else {
@@ -298,13 +294,13 @@ class SettingsActivity : AppCompatActivity() {
         btnChangeEmail.setOnClickListener {
             if (provider == null) {
                 if (linearChangeEmail.isGone) {
-                    linearChangeEmail.visibility = View.VISIBLE
-                    arrowDownChangeEmail.visibility = View.GONE
-                    arrowUpChangeEmail.visibility = View.VISIBLE
+                    linearChangeEmail.isVisible = true
+                    arrowDownChangeEmail.isVisible = false
+                    arrowUpChangeEmail.isVisible = true
                 } else {
-                    linearChangeEmail.visibility = View.GONE
-                    arrowDownChangeEmail.visibility = View.VISIBLE
-                    arrowUpChangeEmail.visibility = View.GONE
+                    linearChangeEmail.isVisible = false
+                    arrowDownChangeEmail.isVisible = true
+                    arrowUpChangeEmail.isVisible = false
                 }
             } else {
                 UserMessageUtils.showSnack(
@@ -473,7 +469,9 @@ class SettingsActivity : AppCompatActivity() {
                 .setTitle("Cerrar sesión")
                 .setMessage("¿Está seguro de cerrar su sesión?")
                 .setCancelable(false)
-                .setPositiveButton("Si") { _, _ -> logOut(null) }
+                .setPositiveButton("Si") { _, _ ->
+                    lifecycleScope.launch { logOut(deleteUser = false) }
+                }
                 .setNegativeButton("No", null)
                 .show()
         }
@@ -481,59 +479,11 @@ class SettingsActivity : AppCompatActivity() {
 
     // endregion
 
-    // region Group / Logout
 
-    fun exitGroup() {
+    suspend fun logOut(deleteUser: Boolean) {
+        userPreferencesRepository.deleteUser = deleteUser
 
-        // listeners globales definidos en MainActivity
-//        MainActivity.listenerGroupBadge?.let {
-//            refGroupChat.child(repo.groupName)
-//                .removeEventListener(it)
-//        }
-//
-//        MainActivity.listenerMsgUnreadBadge?.let {
-//            val query: Query = refDatos.child(user.uid)
-//                .child(CHATWITHUNKNOWN)
-//                .orderByChild("noVisto")
-//                .startAt(1.0)
-//            query.removeEventListener(it)
-//        }
-
-        userSessionManager.performExitGroupDataCleanup()
-
-        PageAdapterGroup.Companion.valueEventListenerTitle?.let {
-            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
-                .removeEventListener(it)
-        }
-
-        ChatGroupFragment.Companion.listenerGroupChat?.let {
-            firebaseRefsContainer.refGroupChat.child(userPreferencesRepository.groupName)
-                .removeEventListener(it)
-        }
-
-
-
-//        MainActivity.layoutSettings?.visibility = View.GONE
-
-        invalidateOptionsMenu()
-
-        val newFragment = GroupsFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.nav_host_fragment, newFragment)
-            .commit()
-
-        toolbar.setTitle(R.string.menu_groups)
-    }
-
-    suspend fun logOut(deleteUser: String?) {
-
-//        MainActivity.listenerToken?.let {
-//            firebaseRefsContainer.refCuentas.child(user.uid)
-//                .child("installId")
-//                .removeEventListener(it)
-//        }
-
-        EditProfileFragment.Companion.deleteProfilePreferences(this)
+        if (deleteUser) deleteFirebaseUser()
 
         userSessionManager.logOutCleanup()
     }
@@ -548,16 +498,15 @@ class SettingsActivity : AppCompatActivity() {
         newPassword: String?,
         deleteUser: String?
     ) {
-        val credential: AuthCredential?
 
         when {
             provider == null && password != null -> {
-                val credential = EmailAuthProvider.getCredential(userSessionManager.user.email!!, password)
+                val credential = EmailAuthProvider.getCredential(userRepository.myEmail, password)
                 reAuthenticate(newEmail, newPassword, deleteUser, credential)
             }
 
             provider == "Facebook" -> {
-                val token = AccessToken.Companion.getCurrentAccessToken()
+                val token = AccessToken.getCurrentAccessToken()
                 if (token != null) {
                     val credential = FacebookAuthProvider.getCredential(token.token)
                     reAuthenticate(newEmail, newPassword, deleteUser, credential)
@@ -581,7 +530,7 @@ class SettingsActivity : AppCompatActivity() {
         deleteUser: String?,
         credential: AuthCredential
     ) {
-        userSessionManager.user.reauthenticate(credential)
+        firebaseUser.reauthenticate(credential)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     progress.dismiss()
@@ -599,12 +548,7 @@ class SettingsActivity : AppCompatActivity() {
                             .setMessage("Se necesita un inicio de sesión reciente para eliminar la cuenta")
                             .setCancelable(false)
                             .setPositiveButton("Ok") { _, _ ->
-                                val zibeAppPrefs =
-                                    getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
-                                zibeAppPrefs.edit {
-                                    putBoolean("deleteUser", true)
-                                }
-                                logOut(deleteUser)
+                                lifecycleScope.launch { logOut(deleteUser = true) }
                             }
                             .show()
                     }
@@ -612,31 +556,19 @@ class SettingsActivity : AppCompatActivity() {
                     when {
                         newEmail != null -> updateEmail(newEmail)
                         newPassword != null -> updatePassword(newPassword)
-                        deleteUser != null -> deleteFirebaseUser(deleteUser)
+                        deleteUser != null -> lifecycleScope.launch { logOut(deleteUser = true) }
                     }
                 }
             }
     }
 
-    private fun deleteFirebaseUser(@Suppress("UNUSED_PARAMETER") deleteUser: String?) {
-        val zibeAppPrefs = getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
-        zibeAppPrefs.edit {
-            putBoolean("deleteFirebaseAccount", true)
-        }
-
-        firebaseRefsContainer.refDatos.child(userSessionManager.myUid).removeValue()
-        firebaseRefsContainer.refCuentas.child(userSessionManager.myUid).removeValue()
-
-        FirebaseStorage.getInstance().reference
-            .child("Users/imgPerfil/${userSessionManager.myUid}.jpg")
-            .delete()
-
-        logOut(deleteUser)
-        userSessionManager.user.delete()
+    private suspend fun deleteFirebaseUser() {
+        userRepository.deleteMyAccountData()
+        userSessionManager.deleteFirebaseUser()
     }
 
     private fun updatePassword(newPassword: String) {
-        userSessionManager.user.updatePassword(newPassword)
+        firebaseUser.updatePassword(newPassword)
             .addOnCompleteListener { task ->
                 progress.dismiss()
                 if (task.isSuccessful) {
@@ -648,17 +580,18 @@ class SettingsActivity : AppCompatActivity() {
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 } else {
-                    Toast.makeText(
-                        this,
-                        "La contraseña debe tener al menos seis caracteres",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    UserMessageUtils.showSnack(
+                        root = findViewById(android.R.id.content),
+                        message = "La contraseña debe tener al menos seis caracteres",
+                        duration = Snackbar.LENGTH_SHORT,
+                        actionText = "OK"
+                    )
                 }
             }
     }
 
     private fun updateEmail(newEmail: String) {
-        userSessionManager.user.updateEmail(newEmail)
+        firebaseUser.updateEmail(newEmail)
             .addOnCompleteListener { task ->
                 progress.dismiss()
                 if (task.isSuccessful) {
@@ -702,8 +635,6 @@ class SettingsActivity : AppCompatActivity() {
         getCredential(password, newEmail, newPassword, null)
     }
 
-    // endregion
-
     // region Lifecycle / Menu
 
     override fun onPause() {
@@ -724,9 +655,4 @@ class SettingsActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    companion object {
-        private const val RC_SIGN_IN = 1 // hoy no se usa, lo dejamos por compatibilidad
-    }
-
-    // endregion
 }

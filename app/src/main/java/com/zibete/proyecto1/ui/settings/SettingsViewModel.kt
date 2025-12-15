@@ -13,10 +13,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// ESTADO INTERNO (Propiedades que antes eran 'lateinit' en la Activity)
-// Ahora son privadas y gestionadas por el VM.
-private const val CHAT_TYPE_INDIVIDUAL = "CHAT"
-private const val CHAT_TYPE_UNKNOWN = "CHATWITHUNKNOWN"
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,

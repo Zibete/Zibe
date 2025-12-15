@@ -178,7 +178,7 @@
                             android:layout_width="50dp"
                             android:layout_height="50dp"
                             android:background="@drawable/btn_check_zibe"
-                            android:contentDescription="@string/guardar"
+                            android:contentDescription="@string/save"
                             android:layout_marginBottom="7dp"
                             android:layout_marginHorizontal="5dp" />
 
@@ -282,7 +282,7 @@
                             android:layout_width="50dp"
                             android:layout_height="50dp"
                             android:background="@drawable/btn_check_zibe"
-                            android:contentDescription="@string/guardar"
+                            android:contentDescription="@string/save"
                             android:layout_marginBottom="7dp"
                             android:layout_marginHorizontal="5dp" />
 

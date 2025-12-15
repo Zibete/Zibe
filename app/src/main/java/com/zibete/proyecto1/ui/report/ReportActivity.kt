@@ -15,7 +15,6 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs
 import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -29,7 +28,7 @@ class ReportActivity : AppCompatActivity() {
 
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-    private val user = userRepository.user
+    private val myUid = userRepository.myUid
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var edtComentarios: TextInputEditText
@@ -90,9 +89,9 @@ class ReportActivity : AppCompatActivity() {
 
             // Guarda datos del usuario
             firebaseRefsContainer.refZibe.child("Comentarios").child(dateKey).apply {
-                child("ID").setValue(user.uid)
-                child("nombre").setValue(user.displayName)
-                child("email").setValue(user.email)
+                child("ID").setValue(myUid)
+                child("nombre").setValue(userRepository.myUserName)
+                child("email").setValue(userRepository.myEmail)
                 child("mensaje").setValue(mensaje)
             }
 

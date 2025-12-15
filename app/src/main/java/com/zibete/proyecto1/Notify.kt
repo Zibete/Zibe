@@ -12,6 +12,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
 import com.zibete.proyecto1.model.State
+import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -32,7 +33,7 @@ class Notify : Service() {
     private var notificationAña: Notification? = null
     private val refEstado: DatabaseReference? =
         user?.let {
-            refDatos.child(it.uid).child("Estado")
+            refDatos.child(it.uid).child(NODE_STATUS)
         }
 
     override fun onCreate() {

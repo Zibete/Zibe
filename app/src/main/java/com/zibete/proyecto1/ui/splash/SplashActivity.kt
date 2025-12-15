@@ -47,6 +47,7 @@ import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_CONTINUE
+import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_1
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_2
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_3
@@ -294,7 +295,7 @@ class SplashActivity : ComponentActivity() {
                                 noInternetDialog = false
                                 coroutineScope.launch { splashViewModel.start(this@SplashActivity, isRetry = true) }
                             },
-                            dismissText = "Salir",
+                            dismissText = DIALOG_EXIT,
                             onDismiss = {
                                 noInternetDialog = false
                                 finish()

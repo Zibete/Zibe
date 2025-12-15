@@ -20,7 +20,6 @@ import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
-import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -167,8 +166,8 @@ class AuthViewModel @Inject constructor(
 
     private suspend fun deleteCurrentUser(user: FirebaseUser) {
         // Eliminar datos del usuario en RTDB
-        firebaseRefsContainer.refDatos.child(user.uid).removeValue()
-        firebaseRefsContainer.refCuentas.child(user.uid).removeValue()
+        firebaseRefsContainer.refData.child(user.uid).removeValue()
+        firebaseRefsContainer.refAccounts.child(user.uid).removeValue()
 
         // Eliminar foto de perfil en Storage
         FirebaseStorage.getInstance()

@@ -45,7 +45,7 @@ class FavoritesViewModel @Inject constructor(
             }
 
             try {
-                val favListSnap = firebaseRefsContainer.refDatos
+                val favListSnap = firebaseRefsContainer.refData
                     .child(myUid)
                     .child(NODE_FAVORITE_LIST)
                     .get()
@@ -65,7 +65,7 @@ class FavoritesViewModel @Inject constructor(
                     .distinct()
 
                 val result = favIds.mapNotNull { favUserId ->
-                    val userRef = firebaseRefsContainer.refCuentas.child(favUserId)
+                    val userRef = firebaseRefsContainer.refAccounts.child(favUserId)
 
                     val userSnap = userRef.get().await()
                     if (!userSnap.exists()) {

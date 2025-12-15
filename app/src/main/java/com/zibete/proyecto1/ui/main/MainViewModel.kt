@@ -10,12 +10,11 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,10 +37,11 @@ class MainViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
-    private val myUid = userRepository.user.uid
+    private val myUid = userRepository.myUid
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -86,7 +86,7 @@ class MainViewModel @Inject constructor(
         }
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                firebaseRefsContainer.refCuentas.child(myUid).child("fcmToken").setValue(task.result)
+                firebaseRefsContainer.refAccounts.child(myUid).child("fcmToken").setValue(task.result)
             }
         }
     }
@@ -114,7 +114,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun checkSessionConflict(uid: String) {
-        val ref = firebaseRefsContainer.refCuentas.child(uid).child("installId")
+        val ref = firebaseRefsContainer.refAccounts.child(uid).child("installId")
 
         installIdListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -133,7 +133,7 @@ class MainViewModel @Inject constructor(
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
-            userRepository.updateLocation(location)
+            locationRepository.updateLocation(location)
         }
     }
 
@@ -144,12 +144,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun checkIfMustOpenEditProfile() {
-        if (!userPreferencesRepository.firstLoginDone) {
-            viewModelScope.launch {
-                _navEvents.emit(MainNavEvent.ToEditProfile)
-            }
-        }
+    fun isOnboardingProfileDone() {
+        if (!userPreferencesRepository.onboardingProfileDone) onEditProfileSelected()
     }
 
     fun onExitGroupConfirmed() {
@@ -260,6 +256,19 @@ class MainViewModel @Inject constructor(
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
+
+
+
+
+
+
+
+
+
+
+
+
+
                     _navEvents.emit(MainNavEvent.BackFromEditProfile)
                 }
             }

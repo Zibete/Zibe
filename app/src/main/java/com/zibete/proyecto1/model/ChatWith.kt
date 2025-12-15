@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.model
 
 import com.google.firebase.database.PropertyName
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_STATE
 import java.io.Serializable
 import java.util.Date
 
@@ -25,7 +26,7 @@ data class ChatWith(
     @get:PropertyName("wUserPhoto") @set:PropertyName("wUserPhoto")
     var userPhoto: String = "",
 
-    @get:PropertyName("estado") @set:PropertyName("estado")
+    @get:PropertyName(NODE_CHAT_STATE) @set:PropertyName(NODE_CHAT_STATE)
     var state: String = "",
 
     @get:PropertyName("noVisto") @set:PropertyName("noVisto")

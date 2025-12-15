@@ -1,345 +1,305 @@
 package com.zibete.proyecto1.ui.editprofile
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.ContentValues
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.provider.MediaStore
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
+import androidx.core.view.isVisible
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.google.android.gms.tasks.Continuation
-import com.google.android.gms.tasks.Task
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.UploadTask
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.SlidePhotoActivity
-import com.zibete.proyecto1.ui.ResizableImageViewProfile
-import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.SIGNUP_PROFILE_MESSAGE
+import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.FirebaseRefs
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.Instant
-import java.time.LocalDate
-import java.time.Period
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
 import java.util.Locale
-import java.util.Objects
-import kotlin.collections.plusAssign
 
-class EditProfileFragment : Fragment() {
+@AndroidEntryPoint
+class EditProfileFragment : BaseChatSessionFragment() {
 
-    // UI
-    private var ftPerfil: ResizableImageViewProfile? = null
-    private var loadingPhoto: ProgressBar? = null
-    private var edtNameUser: TextInputEditText? = null
-    private var edtDesc: TextInputEditText? = null
-    private var edtDate: TextInputEditText? = null
-    private var tvAge: TextView? = null
-    private var completeProfile: TextView? = null
-    private var btnDone: TextView? = null
-    private var btnOk: TextView? = null
+    private val editProfileViewModel: EditProfileViewModel by viewModels()
 
-    private var btSave: ExtendedFloatingActionButton? = null
-    private var btEdit: ExtendedFloatingActionButton? = null
-    private var linearButtonsEdit: LinearLayout? = null
-    private var linearOnBoardingProfile: LinearLayout? = null
+    private var _binding: FragmentEditProfileBinding? = null
+    private val binding get() = _binding!!
 
-    // State
-    private var birthDay: String? = null
-    private var progress: ProgressDialog? = null
-    private var photoList: ArrayList<String?> = arrayListOf()
+    private var editPhotoDialog: AlertDialog? = null
+//    private var prefs: SharedPreferences? = null
 
-    // Firebase
-    private val currentUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
-    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
-    private val storageReference: StorageReference = storage.reference
-    private var refImgUser: StorageReference? = null
+    private var pendingCameraUri: Uri? = null
+    private val photoList: ArrayList<String> = arrayListOf()
 
-    // Media
-    private var values: ContentValues? = null
-    private var imageUri: Uri? = null
-    private var imageurl: String? = null
-    private var thumb_byte: ByteArray? = null
-    private val thumbnail: Bitmap? = null // se rellena donde corresponda en tu flujo actual
+    private val permissionsLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val allGranted = result.values.all { it }
+            if (allGranted) showEditPhotoDialogInternal() else editProfileViewModel.onError("Necesitás otorgar permisos para cambiar la foto.")
+        }
 
-    // Tokens
-    private var myInstallId: String? = null
-    private var myFcmToken: String? = null
+    private val galleryLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let { editProfileViewModel.onPhotoSelected(it) }
+        }
 
-    // Prefs
-    private var prefs: SharedPreferences? = null
-    private var editor: SharedPreferences.Editor? = null
-    private var flagProfile: Boolean = false
+    private val cameraLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            if (res.resultCode == Activity.RESULT_OK) {
+                pendingCameraUri?.let { editProfileViewModel.onPhotoSelected(it) }
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.fragment_edit_profile, container, false)
-        setHasOptionsMenu(true)
+        _binding = FragmentEditProfileBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        val user = currentUser ?: return view
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        // Prefs
-        val ctx = requireContext()
-        prefs = ctx.getSharedPreferences("OnBoardingProfile", Context.MODE_PRIVATE)
-        editor = prefs!!.edit()
-        flagProfile = prefs!!.getBoolean("flag_OnBoardingProfile", false)
+        setupOptionMenu()
 
-        // Firebase storage ref
-        refImgUser = storageReference.child("Users/imgPerfil/${user.uid}.jpg")
+        binding.btnSave.isEnabled = false
 
-        // Tokens
-        FirebaseInstallations.getInstance().id
-            .addOnCompleteListener { t ->
-                if (t.isSuccessful) myInstallId = t.result
+        binding.profilePhoto.setOnClickListener {
+            val url = editProfileViewModel.uiState.value.photoUrl
+                ?: DEFAULT_PROFILE_PHOTO_URL
+
+            photoList.clear()
+            if (url.isNotBlank()) photoList.add(url)
+
+            startActivity(
+                Intent(requireContext(), SlidePhotoActivity::class.java).apply {
+                    putExtra("photoList", photoList)
+                    putExtra("position", 0)
+                    putExtra("rotation", 0)
+                }
+            )
+        }
+
+        binding.btnEditPhoto.setOnClickListener { requestPermsAndOpenPhotoDialog() }
+        binding.datePickerBirthDay.setOnClickListener { showMaterialDatePicker() }
+        binding.btnSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
+
+        // Watchers -> VM
+        binding.edtNameUser.addTextChangedListener(SimpleWatcher { editProfileViewModel.onNameChanged(it) })
+        binding.edtDesc.addTextChangedListener(SimpleWatcher { editProfileViewModel.onDescriptionChanged(it) })
+
+        editProfileViewModel.load()
+
+        collectUi()
+
+        setupOnboarding()
+    }
+
+    private fun collectUi() {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                launch {
+                    editProfileViewModel.uiState.collect { state ->
+
+                        binding.btnSave.isEnabled = state.saveEnabled // && !state.isSaving
+
+                        binding.edtNameUser.setText(state.displayName)
+                        binding.datePickerBirthDay.setText(state.birthDate)
+                        binding.edtDesc.setText(state.description)
+
+                        binding.tvEdad.text = state.age?.toString().orEmpty()
+
+                        binding.completeProfile.text = SIGNUP_PROFILE_MESSAGE
+
+                        val toLoad: Any = state.photoPreviewUri
+                            ?: state.photoUrl
+                            ?: DEFAULT_PROFILE_PHOTO_URL
+
+                        loadProfilePhoto(toLoad)
+                    }
+                }
+
+                launch {
+                    editProfileViewModel.events.collect { ev ->
+                        when (ev) {
+                            is EditProfileUiEvent.ShowMessage -> editProfileViewModel.onError(ev.message)
+                        }
+                    }
+                }
             }
+        }
+    }
 
-        FirebaseMessaging.getInstance().token
-            .addOnCompleteListener { t ->
-                if (t.isSuccessful) myFcmToken = t.result
-            }
+    private fun loadProfilePhoto(model: Any) {
+        binding.loadingPhoto.isVisible = true
 
-        // Bind UI
-        ftPerfil = view.findViewById(R.id.profilePhoto)
-        loadingPhoto = view.findViewById(R.id.loadingPhoto)
-        edtNameUser = view.findViewById(R.id.edtNameUser)
-        edtDesc = view.findViewById(R.id.edtDesc)
-        edtDate = view.findViewById(R.id.edtFecha)
-        tvAge = view.findViewById(R.id.tvEdad)
-        linearButtonsEdit = view.findViewById(R.id.linearButtonsEdit)
-        btEdit = view.findViewById(R.id.bt_edit)
-        btSave = view.findViewById(R.id.bt_save)
-        btnDone = view.findViewById(R.id.btn_done)
-        linearOnBoardingProfile = view.findViewById(R.id.linearOnBoardingProfile)
-        completeProfile = view.findViewById(R.id.completeProfile)
-        btnOk = view.findViewById(R.id.btn_ok)
+        Glide.with(requireContext())
+            .load(model)
+            .apply(RequestOptions().dontTransform())
+            .listener(object : RequestListener<android.graphics.drawable.Drawable?> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<android.graphics.drawable.Drawable?>,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    binding.loadingPhoto.isVisible = false
+                    return false
+                }
 
-        progress = ProgressDialog(context, R.style.AlertDialogApp)
+                override fun onResourceReady(
+                    resource: android.graphics.drawable.Drawable?,
+                    model: Any?,
+                    target: Target<android.graphics.drawable.Drawable?>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    binding.loadingPhoto.isVisible = false
+                    return false
+                }
+            })
+            .into(binding.profilePhoto)
+    }
 
-        // Onboarding overlay
-        btSave?.isEnabled = false
-        if (!flagProfile) {
-            linearOnBoardingProfile?.visibility = View.VISIBLE
-            btnDone?.visibility = View.VISIBLE
-            editor?.putBoolean("flag_OnBoardingProfile", true)?.apply()
+    private fun setupOnboarding() {
+
+        binding.linearOnBoardingProfile.isVisible = !editProfileViewModel.isOnboardingProfileDone()
+
+        if (!editProfileViewModel.isOnboardingProfileDone()) editProfileViewModel.onboardingProfileDone()
+
+        binding.btnOk.setOnClickListener { binding.linearOnBoardingProfile.isVisible = false }
+        binding.linearOnBoardingProfile.setOnClickListener { binding.linearOnBoardingProfile.isVisible = false }
+
+        binding.btnDone.isVisible = isDateOfBirthSet()
+        binding.btnDone.setOnClickListener {
+            (activity as? MainActivity)?.mainViewModel?.onBackPressed()
+        }
+    }
+
+    private fun requestPermsAndOpenPhotoDialog() {
+        val perms = requiredPhotoPermissions()
+        val needRequest = perms.any {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (needRequest) {
+            permissionsLauncher.launch(perms.associateWith { true }.keys.toTypedArray())
         } else {
-            linearOnBoardingProfile?.visibility = View.GONE
-            btnDone?.visibility = View.GONE
+            showEditPhotoDialogInternal()
         }
-
-        btnOk?.setOnClickListener {
-            linearOnBoardingProfile?.visibility = View.GONE
-        }
-        linearOnBoardingProfile?.setOnClickListener {
-            linearOnBoardingProfile?.visibility = View.GONE
-        }
-
-        btnDone?.setOnClickListener {
-            FirebaseRefs.refCuentas.child(user.uid)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        if (!snapshot.exists()) return
-                        val bd = snapshot.child("birthDay").getValue(String::class.java)
-                        if (bd.isNullOrEmpty()) {
-                            snack("Complete su fecha de nacimiento")
-                        } else {
-                            val intent = Intent(context, SplashActivity::class.java).apply {
-                                addFlags(
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                            Intent.FLAG_ACTIVITY_CLEAR_TASK or
-                                            Intent.FLAG_ACTIVITY_NEW_TASK
-                                )
-                            }
-                            startActivity(intent)
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {}
-                })
-        }
-
-        // Cargar datos actuales
-        bindCurrentProfile()
-
-        // Nombre y desc inicial
-        edtNameUser?.setText(user.displayName.orEmpty())
-        FirebaseRefs.refCuentas.child(user.uid)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) return
-                    val desc = snapshot.child("descripcion").getValue(String::class.java)
-                    edtDesc?.setText(desc.orEmpty())
-                    btSave?.isEnabled = false
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        // Click foto -> SlidePhotoActivity
-        ftPerfil?.setOnClickListener {
-            val intent = Intent(context, SlidePhotoActivity::class.java).apply {
-                putExtra("photoList", photoList)
-                putExtra("position", 0)
-                putExtra("rotation", 0)
-            }
-            startActivity(intent)
-        }
-
-        // Editar foto
-        btEdit?.setOnClickListener { EditProfilePhoto() }
-
-        // Date picker
-        edtDate?.setOnClickListener { showMaterialDatePicker() }
-
-        // Guardar
-        btSave?.setOnClickListener { save() }
-
-        // Habilitar guardar al modificar texto
-        val enableSaveWatcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                btSave?.isEnabled = true
-            }
-
-            override fun afterTextChanged(s: Editable?) {}
-        }
-        edtNameUser?.addTextChangedListener(enableSaveWatcher)
-        edtDesc?.addTextChangedListener(enableSaveWatcher)
-
-        return view
     }
 
-    // Carga de perfil actual
-    private fun bindCurrentProfile() {
-        val user = currentUser ?: return
-
-        FirebaseRefs.refCuentas.child(user.uid)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) return
-
-                    val foto = snapshot.child("foto").getValue(String::class.java)
-                    val bd = snapshot.child("birthDay").getValue(String::class.java)
-                    val desc = snapshot.child("descripcion").getValue(String::class.java)
-
-                    // Edad + textos (API 26+ con fallback)
-                    if (bd.isNullOrEmpty()) {
-                        completeProfile?.text =
-                            "Te pediremos que completes tu fecha de nacimiento. También podrás agregar información sobre vos o cambiar tu foto de perfil"
-                    } else {
-                        try {
-                            val edad = computeAgeFromString(bd)
-                            tvAge?.text = edad.toString()
-                            edtDate?.setText(bd)
-                            completeProfile?.text =
-                                "Actualizá tu perfil con una foto y tus datos personales"
-                        } catch (_: Exception) {
-                        }
-                    }
-
-                    edtDesc?.setText(desc.orEmpty())
-
-                    loadingPhoto?.visibility = View.VISIBLE
-
-                    val opts = RequestOptions().dontTransform()
-
-                    Glide.with(requireContext())
-                        .load(if (!foto.isNullOrEmpty()) foto else getString(R.string.URL_PHOTO_DEF))
-                        .apply(opts)
-                        .listener(object : RequestListener<Drawable?> {
-
-                            override fun onLoadFailed(
-                                e: GlideException?,
-                                model: Any?,
-                                target: Target<Drawable?>,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                loadingPhoto?.visibility = View.GONE
-                                return false
-                            }
-
-                            override fun onResourceReady(
-                                resource: Drawable?,
-                                model: Any?,
-                                target: Target<Drawable?>?,
-                                dataSource: DataSource?,
-                                isFirstResource: Boolean
-                            ): Boolean {
-                                loadingPhoto?.visibility = View.GONE
-                                return false                            }
-
-
-                        })
-                        .into(ftPerfil!!)
-
-                    if (!foto.isNullOrEmpty()) {
-                        photoList.add(foto)
-                    }
-                    btSave?.isEnabled = false
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
+    private fun requiredPhotoPermissions(): Array<String> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.READ_MEDIA_IMAGES
+            )
+        } else {
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        }
     }
 
-    // ======== DATE PICKER (Material) ========
+    private fun showEditPhotoDialogInternal() {
+        val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
+
+        val deleteSelected = viewFilter.findViewById<ImageView>(R.id.deleteSelected)
+        val cameraSelection = viewFilter.findViewById<MaterialCardView>(R.id.cameraSelection)
+        val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
+        val tvTitle = viewFilter.findViewById<TextView>(R.id.tv_title)
+        val cardEditDelete = viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete)
+        val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
+
+        cardEditDelete.isVisible = true
+        tvTitle.text = getString(R.string.editar_foto_de_perfil)
+
+        editPhotoDialog = AlertDialog.Builder(
+            ContextThemeWrapper(requireContext(), R.style.AlertDialogApp)
+        )
+            .setView(viewFilter)
+            .setCancelable(true)
+            .create()
+
+        deleteSelected.setOnClickListener {
+            editProfileViewModel.onPhotoDeletedSetDefault()
+            editPhotoDialog?.dismiss()
+        }
+
+        cameraSelection.setOnClickListener {
+            startCamera()
+            editPhotoDialog?.dismiss()
+        }
+
+        gallerySelection.setOnClickListener {
+            galleryLauncher.launch("image/*")
+            editPhotoDialog?.dismiss()
+        }
+
+        imgCancel.setOnClickListener { editPhotoDialog?.dismiss() }
+        editPhotoDialog?.show()
+    }
+
+    private fun startCamera() {
+        try {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis())
+            }
+            pendingCameraUri = requireContext().contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values
+            )
+
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, pendingCameraUri)
+            }
+            cameraLauncher.launch(intent)
+        } catch (_: Exception) {
+            editProfileViewModel.onError("No se pudo abrir la cámara")
+        }
+    }
+
     private fun showMaterialDatePicker() {
         val constraints = CalendarConstraints.Builder()
             .setValidator(DateValidatorPointBackward.now())
@@ -352,20 +312,11 @@ class EditProfileFragment : Fragment() {
             .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
             .build()
 
-        picker.addOnPositiveButtonClickListener(
-            MaterialPickerOnPositiveButtonClickListener { selection ->
-                val formatted = epochToDate(selection)
-                birthDay = formatted
-                edtDate?.setText(formatted)
-
-                try {
-                    val edad = computeAgeFromString(formatted)
-                    tvAge?.text = edad.toString()
-                } catch (_: Exception) {
-                }
-                btSave?.isEnabled = true
-            }
-        )
+        picker.addOnPositiveButtonClickListener { selection ->
+            val formatted = epochToDate(selection)
+            binding.datePickerBirthDay.setText(formatted)
+            editProfileViewModel.onBirthDateChanged(formatted)
+        }
 
         picker.show(parentFragmentManager, "ZIBE_BIRTHDATE_PICKER")
     }
@@ -383,396 +334,40 @@ class EditProfileFragment : Fragment() {
         }
     }
 
-    @Throws(Exception::class)
-    private fun computeAgeFromString(ddMMyyyy: String): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            val birth = LocalDate.parse(ddMMyyyy, fmt)
-            Period.between(birth, LocalDate.now()).years
-        } else {
-            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val b = Calendar.getInstance()
-            b.time = Objects.requireNonNull(sdf.parse(ddMMyyyy))
-            val now = Calendar.getInstance()
-            var age = now[Calendar.YEAR] - b[Calendar.YEAR]
-            if (now[Calendar.DAY_OF_YEAR] < b[Calendar.DAY_OF_YEAR]) age--
-            age
-        }
-    }
-
-    // ======== FOTO DE PERFIL ========
-    fun EditProfilePhoto() {
-        val perms = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms plusAssign Manifest.permission.CAMERA
-            perms plusAssign Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            perms plusAssign Manifest.permission.CAMERA
-            perms plusAssign Manifest.permission.READ_EXTERNAL_STORAGE
-            perms plusAssign Manifest.permission.WRITE_EXTERNAL_STORAGE
-        }
-
-        val needRequest = perms.any {
-            ContextCompat.checkSelfPermission(requireContext(), it) !=
-                    PackageManager.PERMISSION_GRANTED
-        }
-
-        if (needRequest) {
-            requestPermissions(perms.toTypedArray(), Constants.PERMISSIONS_EDIT_PROFILE)
-            return
-        }
-
-        val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
-        val deleteSelected = viewFilter.findViewById<ImageView>(R.id.deleteSelected)
-        val cameraSelection = viewFilter.findViewById<MaterialCardView>(R.id.cameraSelection)
-        val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
-        val tvTitle = viewFilter.findViewById<TextView>(R.id.tv_title)
-        val cardEditDelete = viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete)
-        val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
-
-        cardEditDelete.visibility = View.VISIBLE
-        tvTitle.text = getString(R.string.editar_foto_de_perfil)
-
-        val dialog = AlertDialog.Builder(
-            ContextThemeWrapper(requireContext(), R.style.AlertDialogApp)
+    private fun setupOptionMenu() {
+        val menuHost = requireActivity() as MenuHost
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: android.view.MenuInflater) = Unit
+                override fun onPrepareMenu(menu: Menu) {
+                    menu.findItem(R.id.action_settings)?.isVisible = true
+                }
+                override fun onMenuItemSelected(menuItem: android.view.MenuItem): Boolean = false
+            },
+            viewLifecycleOwner,
+            Lifecycle.State.RESUMED
         )
-            .setView(viewFilter)
-            .setCancelable(true)
-            .create()
-
-        deleteSelected.setOnClickListener {
-            btSave?.isEnabled = true
-            imageUri = Uri.parse(getString(R.string.URL_PHOTO_DEF))
-            imageurl = getString(R.string.URL_PHOTO_DEF)
-            loadingPhoto?.visibility = View.VISIBLE
-
-            Glide.with(requireContext())
-                .load(imageUri)
-                .apply(RequestOptions().dontTransform())
-                .listener(object : RequestListener<Drawable?> {
-
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable?>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        loadingPhoto?.visibility = View.GONE
-                        return false                    }
-
-                    override fun onResourceReady(
-                        resource: Drawable?,
-                        model: Any?,
-                        target: Target<Drawable?>?,
-                        dataSource: DataSource?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        loadingPhoto?.visibility = View.GONE
-                        return false
-                    }
-
-
-                })
-                .into(ftPerfil!!)
-
-            thumb_byte = null
-            dialog.dismiss()
-        }
-
-        cameraSelection.setOnClickListener {
-            startCamera()
-            dialog.dismiss()
-        }
-
-        gallerySelection.setOnClickListener {
-            val gallery = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            try {
-                startActivityForResult(gallery, Constants.PHOTO_SELECTED)
-            } catch (e: Exception) {
-                snack("No se pudo abrir la galería")
-            }
-            dialog.dismiss()
-        }
-
-        imgCancel.setOnClickListener { dialog.dismiss() }
-
-        dialog.show()
     }
 
-    private fun startCamera() {
-        try {
-            values = ContentValues().apply {
-                put(MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis())
-            }
-            imageUri = requireContext().contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                values
-            )
-            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                putExtra(MediaStore.EXTRA_OUTPUT, imageUri)
-            }
-            startActivityForResult(intent, Constants.CAMERA_SELECTED)
-        } catch (e: Exception) {
-            snack("No se pudo abrir la cámara")
-        }
+    fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
+
+    fun isDateOfBirthSet(): Boolean = editProfileViewModel.uiState.value.birthDate.isNotBlank()
+
+    override fun onDestroyView() {
+        editPhotoDialog?.dismiss()
+        editPhotoDialog = null
+        pendingCameraUri = null
+        _binding = null
+        super.onDestroyView()
     }
+}
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (!isAdded) return
-
-        if (progress == null) {
-            progress = ProgressDialog(context, R.style.AlertDialogApp)
-        }
-        progress?.apply {
-            setMessage("Espere...")
-            setCanceledOnTouchOutside(false)
-        }
-
-        try {
-            progress?.show()
-            // Aquí iría el procesamiento real de la imagen
-        } catch (_: Throwable) {
-        } finally {
-            if (progress?.isShowing == true) {
-                try {
-                    progress?.dismiss()
-                } catch (_: Throwable) {
-                }
-            }
-        }
+private class SimpleWatcher(
+    private val onChanged: (String) -> Unit
+) : android.text.TextWatcher {
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+    override fun afterTextChanged(s: android.text.Editable?) = Unit
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        onChanged(s?.toString().orEmpty())
     }
-
-    fun getRealPathFromURI(contentUri: Uri): String? {
-        return try {
-            val proj = arrayOf(MediaStore.Images.Media.DATA)
-            val cursor = requireActivity().contentResolver
-                .query(contentUri, proj, null, null, null) ?: return null
-            val columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-            cursor.moveToFirst()
-            val res = cursor.getString(columnIndex)
-            cursor.close()
-            res
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == Constants.PERMISSIONS_EDIT_PROFILE) {
-            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            if (allGranted) {
-                EditProfilePhoto()
-            } else {
-                snack("Necesitás otorgar permisos para cambiar la foto.")
-            }
-        }
-    }
-
-    private fun save() {
-        val user = currentUser ?: return
-
-        if (progress == null) {
-            progress = ProgressDialog(context, R.style.AlertDialogApp)
-        }
-        progress?.apply {
-            setMessage("Espere...")
-            setCanceledOnTouchOutside(false)
-            show()
-        }
-
-        try {
-            val name = edtNameUser?.text?.toString()?.trim().orEmpty()
-            val fecha = edtDate?.text?.toString()?.trim().orEmpty()
-            val desc = edtDesc?.text?.toString()?.trim().orEmpty()
-
-            if (fecha.isEmpty()) {
-                snack("Debe ingresar su fecha de nacimiento para continuar")
-                return
-            }
-
-            val edad = try {
-                computeAgeFromString(fecha).also {
-                    if (it < 18) {
-                        snack("Lo sentimos, debe ser mayor de 18 años para utilizar la App")
-                        return
-                    }
-                }
-            } catch (e: Exception) {
-                snack("Fecha de nacimiento inválida")
-                return
-            }
-
-            // Subida de foto si hay thumb_byte
-            thumb_byte?.let { bytes ->
-                try {
-                    val folder = File(
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                        "Zibe"
-                    )
-                    if (!folder.exists() && !folder.mkdirs()) {
-                        Log.e("EditProfile", "No se pudo crear directorio Zibe")
-                    }
-
-                    val sdf = SimpleDateFormat("ddMMyyyyHHmm", Locale.getDefault())
-                    val fname = "IMG_${sdf.format(Calendar.getInstance().time)}"
-                    val file = File(folder, "$fname.jpg")
-                    try {
-                        val fos = FileOutputStream(file)
-                        thumbnail?.compress(Bitmap.CompressFormat.JPEG, 100, fos)
-                    } catch (e: FileNotFoundException) {
-                        e.printStackTrace()
-                    }
-
-                    val uploadTask = refImgUser!!.putBytes(bytes)
-                    uploadTask
-                        .continueWithTask(Continuation<UploadTask.TaskSnapshot, Task<Uri>> { task ->
-                            if (!task.isSuccessful) {
-                                throw task.exception ?: Exception("Upload failed")
-                            }
-                            refImgUser!!.downloadUrl
-                        })
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                val downloadUri = task.result
-                                FirebaseRefs.refCuentas.child(user.uid).child("foto")
-                                    .setValue(downloadUri.toString())
-                                imageUri = downloadUri
-                                val profileUpdates = UserProfileChangeRequest.Builder()
-                                    .setPhotoUri(downloadUri)
-                                    .build()
-                                user.updateProfile(profileUpdates)
-                            }
-                        }
-                } catch (t: Throwable) {
-                    Log.e("EditProfile", "ShowErrorDialog subiendo foto", t)
-                }
-            }
-
-            val profileUpdates = if (imageurl != null &&
-                imageurl == getString(R.string.URL_PHOTO_DEF)
-            ) {
-                try {
-                    refImgUser?.delete()
-                } catch (_: Throwable) {
-                }
-                FirebaseRefs.refCuentas.child(user.uid).child("foto").setValue(imageurl)
-                UserProfileChangeRequest.Builder()
-                    .setDisplayName(name)
-                    .setPhotoUri(imageUri)
-                    .build()
-            } else {
-                UserProfileChangeRequest.Builder()
-                    .setDisplayName(name)
-                    .build()
-            }
-
-            user.updateProfile(profileUpdates)
-
-            val stamp = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            val nowStr = stamp.format(Calendar.getInstance().time)
-
-            FirebaseRefs.refCuentas.child(user.uid).child("nombre").setValue(name)
-            FirebaseRefs.refCuentas.child(user.uid).child("birthDay").setValue(fecha)
-            FirebaseRefs.refCuentas.child(user.uid).child("age").setValue(edad)
-            FirebaseRefs.refCuentas.child(user.uid).child("descripcion").setValue(desc)
-            FirebaseRefs.refCuentas.child(user.uid).child("date").setValue(nowStr)
-
-            myInstallId?.takeIf { it.isNotEmpty() }?.let {
-                FirebaseRefs.refCuentas.child(user.uid).child("installId").setValue(it)
-                FirebaseRefs.refCuentas.child(user.uid).child("token").setValue(it)
-            }
-
-            myFcmToken?.takeIf { it.isNotEmpty() }?.let {
-                FirebaseRefs.refCuentas.child(user.uid).child("fcmToken").setValue(it)
-            }
-
-            updateUI(user)
-        } finally {
-            if (progress?.isShowing == true) {
-                try {
-                    progress?.dismiss()
-                } catch (_: Throwable) {
-                }
-            }
-        }
-    }
-
-    private fun updateUI(user: FirebaseUser?) {
-        if (!isAdded) return
-        if (user != null) {
-            try {
-                Toast.makeText(context, "Datos actualizados correctamente", Toast.LENGTH_SHORT)
-                    .show()
-            } catch (_: Throwable) {
-            }
-            if (progress?.isShowing == true) progress?.dismiss()
-
-            val intent = Intent(context, SplashActivity::class.java).apply {
-                addFlags(
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK or
-                            Intent.FLAG_ACTIVITY_NEW_TASK
-                )
-            }
-            startActivity(intent)
-        } else {
-            if (progress?.isShowing == true) progress?.dismiss()
-        }
-    }
-
-    fun canExit(): Boolean {
-        return !binding.btSave.isEnabled
-    }
-
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-        try {
-            menu.findItem(R.id.action_search)?.isVisible = false
-            menu.findItem(R.id.action_favorites)?.isVisible = false
-        } catch (_: Throwable) {
-        }
-    }
-
-    private fun snack(msg: String) {
-        if (!isAdded || view == null) return
-        val snack = Snackbar.make(requireView(), msg, Snackbar.LENGTH_INDEFINITE)
-        snack.setAction("OK") { snack.dismiss() }
-        try {
-            snack.setBackgroundTint(resources.getColor(R.color.zibe_pink))
-            val tv = snack.view.findViewById<TextView>(
-                com.google.android.material.R.id.snackbar_text
-            )
-            tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
-        } catch (_: Throwable) {
-        }
-        snack.show()
-    }
-
-    // ===== ViewModel pequeño (se mantiene por compatibilidad) =====
-    class UsuariosViewModel : ViewModel() {
-        private val mText = MutableLiveData<String?>().apply {
-            value = "This is Usuarios fragment"
-        }
-        val text: LiveData<String?> = mText
-    }
-
-    companion object {
-        fun deleteProfilePreferences(context: Context?) {
-            if (context == null) return
-            val prefs =
-                context.getSharedPreferences("OnBoardingProfile", Context.MODE_PRIVATE)
-            prefs.edit {
-                putBoolean("flag_OnBoardingProfile", false)
-            }
-        }
-    }
-
-
 }

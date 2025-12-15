@@ -24,9 +24,9 @@ class FirebaseRefsContainer @Inject constructor(
 ) {
 
     // === Referencias a Usuarios ===
-    @Named("refUsuarios")     val refUsuarios: DatabaseReference = db.getReference("Usuarios")
-    @Named("refDatos")        val refDatos: DatabaseReference = refUsuarios.child("Datos")
-    @Named("refCuentas")      val refCuentas: DatabaseReference = refUsuarios.child("Cuentas")
+    @Named("refUsuarios")     val refUsers: DatabaseReference = db.getReference("Usuarios")
+    @Named("refDatos")        val refData: DatabaseReference = refUsers.child("Datos")
+    @Named("refCuentas")      val refAccounts: DatabaseReference = refUsers.child("Cuentas")
 
     // === Referencias a Chats ===
     @Named("refChatMessageRoot")    val refChatMessageRoot: DatabaseReference = db.getReference(NODE_CHATS)

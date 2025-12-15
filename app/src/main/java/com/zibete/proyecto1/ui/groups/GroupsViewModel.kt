@@ -24,8 +24,6 @@ class GroupsViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    private val user get() = userRepository.user
-
     private val _uiState = MutableStateFlow(GroupsUiState())
     val uiState: StateFlow<GroupsUiState> = _uiState
 
@@ -103,12 +101,12 @@ class GroupsViewModel @Inject constructor(
 
             joinGroupAndNavigate(
                 groupName = groupName,
-                nick = user.displayName ?: "",
+                nick = userRepository.myUserName,
                 type = PUBLIC_USER
             )
         }
     }
 
-    fun myDisplayName(): String = user.displayName.orEmpty()
-    fun myPhotoUrl(): String? = user.photoUrl?.toString()
+    fun myDisplayName(): String = userRepository.myUserName
+    fun myPhotoUrl(): String = userRepository.myUserName
 }

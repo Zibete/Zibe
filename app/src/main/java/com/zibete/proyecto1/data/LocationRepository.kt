@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.data
 
 import android.content.Context
+import android.location.Location
+import com.zibete.proyecto1.data.UserRepository.AccountKeys
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -18,17 +20,28 @@ import kotlin.math.sqrt
 
 @Singleton
 class LocationRepository @Inject constructor(
-    // Dependencias inyectadas por Hilt
-    @ApplicationContext private val applicationContext: Context,
-    private val sessionManager: UserSessionManager,
+    private val userRepository: UserRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) {
 
-    private val myUid
-        get() = sessionManager.myUid
+    private val myUid = userRepository.myUid
+
+
+    // ============================================================
+    // LOCATION
+    // ============================================================
+
+    suspend fun updateLocation(location: Location) {
+        userRepository.updateUserFields(
+            mapOf(
+                AccountKeys.LATITUDE to location.latitude,
+                AccountKeys.LONGITUDE to location.longitude
+            )
+        )
+    }
 
     private suspend fun getLocation(uid : String): Pair<Double, Double> {
-        val snapshot = firebaseRefsContainer.refCuentas.child(uid).get().await()
+        val snapshot = firebaseRefsContainer.refAccounts.child(uid).get().await()
         val user = snapshot.getValue(Users::class.java)
             ?: throw Exception("User not found")
         return user.latitude to user.longitude

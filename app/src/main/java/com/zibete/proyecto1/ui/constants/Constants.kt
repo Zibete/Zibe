@@ -84,6 +84,24 @@ object Constants {
     const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
     const val NODE_CHATLIST = "ChatList"
 
+    const val NODE_STATUS = "Estado"
+
+    const val NODE_UNREAD_COUNT = "msgNoLeidos"
+
+
+    const val NODE_CHAT_STATE = "estado"
+
+    const val NODE_USER_STATUS = "estado"
+    const val NODE_USER_LAST_DATE = "fecha"
+
+    const val NODE_USER_LAST_HOUR = "hora"
+
+
+
+
+    const val NODE_USERS = "Users"
+
+
     const val NODE_CHATS = "Chats"
     const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
 
@@ -92,6 +110,11 @@ object Constants {
 
     const val PATH_AUDIOS = "audios"
     const val PATH_PHOTOS = "photos"
+
+    const val PATH_PROFILE_PHOTOS = "profile_photos"
+
+    const val PROFILE_PHOTO = "profile.jpg"
+
 
     const val EXTENSION_AUDIO = ".m4a"
     const val EXTENSION_IMAGE = ".jpg"

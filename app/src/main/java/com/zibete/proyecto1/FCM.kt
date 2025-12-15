@@ -19,8 +19,6 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_MESSAGE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -59,7 +57,7 @@ class FCM : FirebaseMessagingService() {
             if (userPreferencesRepository.individualNotifications) {
 
                 val newQuery: Query =
-                    firebaseRefsContainer.refDatos
+                    firebaseRefsContainer.refData
                         .child(myUid)
                         .child(type) // NODE_CURRENT_CHAT
                         .orderByChild("noVisto")
@@ -161,14 +159,14 @@ class FCM : FirebaseMessagingService() {
 
     private fun doubleCheck(myUid: String, otherUid: String, type: String, ref: String) {
 
-        firebaseRefsContainer.refDatos
+        firebaseRefsContainer.refData
             .child(myUid)
             .child(type)
             .child(otherUid)
             .child("wVisto")
             .setValue(2)
 
-        firebaseRefsContainer.refDatos
+        firebaseRefsContainer.refData
             .child(myUid)
             .child(type)
             .child(otherUid)

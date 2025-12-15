@@ -2,12 +2,16 @@ package com.zibete.proyecto1.utils
 
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.Query
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
 
 object FirebaseRefs {
 
 
     private val db: FirebaseDatabase by lazy { FirebaseDatabase.getInstance() }
+
+    suspend fun Query.awaitSnapshot() = get().await()
 
     // Usuarios
     @JvmField val refUsuarios: DatabaseReference = db.getReference("Usuarios")

@@ -14,9 +14,6 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,13 +27,13 @@ class UserSessionManager @Inject constructor(
     private val userRepository: UserRepository
 ) {
 
-    val user: FirebaseUser
+    val firebaseUser: FirebaseUser
         get() = checkNotNull(firebaseAuth.currentUser) {
         "User must be logged in to access this property"
     }
 
     val myUid: String
-        get() = user.uid
+        get() = firebaseUser.uid
 
     var latitude: Double = 0.0
     var longitude: Double = 0.0
@@ -44,7 +41,7 @@ class UserSessionManager @Inject constructor(
     fun performExitGroupDataCleanup() {
 
         // Elimino mi lista de chats en el grupo
-        firebaseRefsContainer.refDatos.child(myUid).child(NODE_GROUP_CHAT).removeValue()
+        firebaseRefsContainer.refData.child(myUid).child(NODE_GROUP_CHAT).removeValue()
 
         // Eliminar todos mis chats del grupo
         firebaseRefsContainer.refChatMessageGroupsRoot
@@ -110,4 +107,9 @@ class UserSessionManager @Inject constructor(
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         }
     }
+
+    fun deleteFirebaseUser() {
+        firebaseUser.delete()
+    }
+
 }

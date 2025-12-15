@@ -9,55 +9,43 @@ import androidx.lifecycle.viewModelScope
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-import kotlin.coroutines.resume
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository, // ← Inyectado
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseAuth: FirebaseAuth,
-    private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val user: FirebaseUser?
-        get() = firebaseAuth.currentUser
+    private val firebaseUser = userRepository.firebaseUser
 
 
     // replay = 1 para no perder el último evento (ej. sin internet antes de que Compose empiece a colectar)
     private val _events = MutableSharedFlow<SplashUiEvent>(replay = 1)
     val events = _events.asSharedFlow()
+
     private var userToken: String? = null
 
     fun start(context: Context, isRetry: Boolean = false) {
         viewModelScope.launch {
 
-            if (isRetry) {
-                // pequeño delay solo en reintentos para evitar parpadeos bruscos
-                delay(150L)
-            }
+            if (isRetry) delay(150L)
 
             // 1) Delay visual opcional
             delay(1000L)
 
             // 2) OnBoarding solo la primera vez
-            val onBoardingDone = userPreferencesRepository.onboardingDone
-            if (!onBoardingDone) {
+            if (!userPreferencesRepository.onboardingDone) {
                 userPreferencesRepository.onboardingDone = true
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
@@ -69,16 +57,17 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
 
-            // 4) Obtener token FCM (asíncrono, no bloqueante)
-            FirebaseMessaging.getInstance().token
-                .addOnSuccessListener { userToken = it }
+            // 4) Obtener token FCM (espera real para no correr sin token)
+            userToken = runCatching {
+                FirebaseMessaging.getInstance().token.await()
+            }.getOrNull()
 
-            // Sin usuario → navegar a Auth
-            if (user == null) {
+            // 5) Sin usuario → navegar a Auth
+            val currentUser = firebaseAuth.currentUser
+            if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
-
 
             // 6) Permisos de ubicación
             if (!hasLocationPermission(context)) {
@@ -87,81 +76,74 @@ class SplashViewModel @Inject constructor(
             }
 
             // 7) Token + ruta
-            queryTokenAndRoute(user!!)
+            routeWithTokenIfNeeded(currentUser)
         }
     }
 
     // ============================================================
-    // TOKEN FLOW
+    // TOKEN FLOW (nuevo schema: fcmToken + email)
     // ============================================================
 
-    private fun queryTokenAndRoute(user: FirebaseUser) {
+    private fun routeWithTokenIfNeeded(firebaseUser: FirebaseUser) {
         viewModelScope.launch {
             val token = userToken
 
             // Token vacío → seguir flujo normal
             if (token.isNullOrEmpty()) {
-                updateUserFlow(user)
+                updateUserFlow(firebaseUser)
                 return@launch
             }
 
-            // Buscar cuentas con mismo token
-            val snapshot = suspendFirebaseQuery {
-                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
-            }
+            val snapshot = userRepository.findAccountsByFcmToken(token)
 
+            // Nadie tiene el token → asignar y seguir
             if (!snapshot.exists()) {
-                assignTokenToUser(user, token)
-                updateUserFlow(user)
+                userRepository.setFcmToken(firebaseUser.uid, token)
+                updateUserFlow(firebaseUser)
                 return@launch
             }
 
             val accounts = snapshot.children.toList()
-            val count = accounts.size
 
-            // Caso 1: solo una cuenta lo tiene
-            if (count == 1) {
+            // Solo una cuenta lo tiene
+            if (accounts.size == 1) {
                 val single = accounts.first()
-                if (single.key == user.uid) {
-                    updateUserFlow(user)
+                if (single.key == firebaseUser.uid) {
+                    updateUserFlow(firebaseUser)
                 } else {
-                    val mail = single.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                    onExternalSessionConflict(mail, flag = 1)
+                    val email = single.child("email").getValue(String::class.java) ?: "otra cuenta"
+                    onExternalSessionConflict(email, flag = 1)
                 }
                 return@launch
             }
 
-            // Caso 2: varias cuentas
-            val other = accounts.firstOrNull { it.key != user.uid }
+            // Varias cuentas: conflicto si hay alguna distinta a la mía
+            val other = accounts.firstOrNull { it.key != firebaseUser.uid }
             if (other != null) {
-                val mail = other.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                onExternalSessionConflict(mail, flag = 2)
+                val email = other.child("email").getValue(String::class.java) ?: "otra cuenta"
+                onExternalSessionConflict(email, flag = 2)
             } else {
-                updateUserFlow(user)
+                updateUserFlow(firebaseUser)
             }
-
         }
     }
 
     suspend fun onTokenDialogConfirmed(flag: Int) {
-        val user = firebaseAuth.currentUser ?: return
+        val currentUser = firebaseAuth.currentUser ?: return
         val token = userToken ?: return
 
-        assignTokenToUser(user, token)
+        // asignar token a mi cuenta
+        userRepository.setFcmToken(currentUser.uid, token)
 
+        // limpiar token de otras cuentas (si aplica)
         if (flag == 1 || flag == 2) {
-            // limpiar token de otras cuentas
-            val snapshot = suspendFirebaseQuery {
-                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
-            }
-            snapshot.children.forEach {
-                if (it.key != user.uid) {
-                    it.ref.child("token").setValue("")
-                }
-            }
+            userRepository.clearFcmTokenFromOtherAccounts(
+                token = token,
+                keepUid = currentUser.uid
+            )
         }
 
-        updateUserFlow(user)
+        updateUserFlow(currentUser)
     }
 
     suspend fun onTokenDialogCancelled(flag: Int) {
@@ -170,26 +152,16 @@ class SplashViewModel @Inject constructor(
         _events.emit(SplashUiEvent.NavigateAuth)
     }
 
-    private fun assignTokenToUser(user: FirebaseUser, token: String) {
-        firebaseRefsContainer.refCuentas.child(user.uid).child("token").setValue(token)
-    }
-
     // ============================================================
     // USER FLOW
     // ============================================================
 
-    private suspend fun updateUserFlow(user: FirebaseUser) {
-
-        val snapshot = suspendFirebaseQuery {
-            firebaseRefsContainer.refCuentas.child(user.uid)
-        }
+    private suspend fun updateUserFlow(firebaseUser: FirebaseUser) {
+        val snapshot = userRepository.getAccountSnapshot(firebaseUser.uid)
 
         // Usuario nuevo
         if (!snapshot.exists()) {
-            viewModelScope.launch {
-                userRepository.createUserNode(user, userToken)
-            }
-
+            userRepository.createUserNode(firebaseUser, userToken)
             userPreferencesRepository.firstLoginDone = false
             _events.emit(SplashUiEvent.NavigateMain)
             return
@@ -222,24 +194,9 @@ class SplashViewModel @Inject constructor(
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 
-    private suspend fun suspendFirebaseQuery(
-        block: () -> com.google.firebase.database.Query
-    ): DataSnapshot = suspendCancellableCoroutine { cont ->
-        block().addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (cont.isActive) cont.resume(snapshot)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                if (cont.isActive) cont.cancel()
-            }
-        })
-    }
-
-    fun onExternalSessionConflict(mail: String, flag: Int) {
+    fun onExternalSessionConflict(email: String, flag: Int) {
         viewModelScope.launch {
-            _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag))
+            _events.emit(SplashUiEvent.ShowTokenDialog(email, flag))
         }
     }
-
 }

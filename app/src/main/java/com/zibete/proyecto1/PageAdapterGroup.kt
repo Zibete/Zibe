@@ -37,7 +37,7 @@ class PageAdapterGroup : Fragment() {
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userSessionManager: UserSessionManager
 
-    private val myUid = userSessionManager.user.uid
+    private val myUid = userSessionManager.firebaseUser.uid
 
 
     private lateinit var viewPager: ViewPager

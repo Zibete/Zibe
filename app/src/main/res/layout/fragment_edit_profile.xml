@@ -109,7 +109,7 @@
                                     app:boxBackgroundMode="filled">
 
                                     <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/edtFecha"
+                                        android:id="@+id/datePickerBirthDay"
                                         style="@style/Zibe.EditText"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
@@ -219,22 +219,22 @@
             android:padding="16dp">
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/bt_edit"
+                android:id="@+id/btn_edit_photo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:text="Foto"
                 app:icon="@drawable/ic_baseline_add_a_photo_24"
-                app:backgroundTint="@color/zibe_btn_secondary"
+                app:iconTint="@color/white"
                 android:textColor="@color/white"/>
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/bt_save"
+                android:id="@+id/btn_save"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/guardar"
+                android:text="@string/save"
                 app:icon="@drawable/ic_baseline_save_24"
-                app:backgroundTint="@color/zibe_btn_primary"
+                app:iconTint="@color/white"
                 android:textColor="@color/white"/>
 
             <TextView
@@ -245,7 +245,8 @@
                 android:gravity="end"
                 android:paddingEnd="6dp"
                 android:paddingTop="6dp"
-                android:text="Saltar"
+                android:text="@string/comenzar"
+                android:textSize="16dp"
                 android:textColor="@color/zibe_text_muted"
                 android:visibility="gone"/>
 

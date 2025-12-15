@@ -78,8 +78,6 @@ class MainActivity : BaseToolbarActivity() {
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userRepository: UserRepository
 
-    private val user = userRepository.user
-
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -115,7 +113,7 @@ class MainActivity : BaseToolbarActivity() {
 
         setupLocation()
 
-        mainViewModel.checkIfMustOpenEditProfile()
+        mainViewModel.isOnboardingProfileDone()
 
         setupOnBackPressedDispatcher()
     }
@@ -187,9 +185,9 @@ class MainActivity : BaseToolbarActivity() {
             ZibeApp.ScreenUtils.heightPx / 2
         )
 
-        tvUserName?.text = user.displayName
-        tvUserEmail?.text = user.email
-        Glide.with(this).load(user.photoUrl).into(userImage)
+        tvUserName?.text = userRepository.myUserName
+        tvUserEmail?.text = userRepository.myEmail
+        Glide.with(this).load(userRepository.myProfilePhotoUrl).into(userImage)
 
         editProfileButton?.setOnClickListener { editProfileNavigation() }
     }
@@ -400,10 +398,19 @@ class MainActivity : BaseToolbarActivity() {
         val frag = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
 
         if (frag is EditProfileFragment) {
-            if (!frag.canExit()) {
+            if (frag.hasPendingChanges()) {
                 UserMessageUtils.showSnack(
                     root = binding.root,
                     message = "Guarde los cambios antes de salir",
+                    duration = Snackbar.LENGTH_SHORT,
+                    iconRes = R.drawable.ic_info_24
+                )
+                return
+            }
+            if (frag.isDateOfBirthSet()) {
+                UserMessageUtils.showSnack(
+                    root = binding.root,
+                    message = "Complete su fecha de nacimiento",
                     duration = Snackbar.LENGTH_SHORT,
                     iconRes = R.drawable.ic_info_24
                 )
