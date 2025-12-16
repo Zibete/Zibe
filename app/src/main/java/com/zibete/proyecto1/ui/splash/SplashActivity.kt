@@ -21,7 +21,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,9 +32,8 @@ import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
 import com.zibete.proyecto1.data.UserPreferencesRepository
@@ -45,8 +43,7 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.DIALOG_CONTINUE
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_1
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_2
@@ -54,9 +51,12 @@ import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_3
 import com.zibete.proyecto1.ui.constants.ONBOARDING_TITLE_1
 import com.zibete.proyecto1.ui.constants.ONBOARDING_TITLE_2
 import com.zibete.proyecto1.ui.constants.ONBOARDING_TITLE_3
-import com.zibete.proyecto1.ui.constants.TOKEN_DIALOG_MESSAGE
-import com.zibete.proyecto1.ui.constants.TOKEN_DIALOG_TITLE
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_KEEP_HERE
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_LOGOUT
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_MESSAGE
+import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
+import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
 import com.zibete.proyecto1.ui.signup.SignUpScreen
 import com.zibete.proyecto1.ui.signup.SignUpViewModel
@@ -70,7 +70,7 @@ import javax.inject.Inject
 class SplashActivity : ComponentActivity() {
 
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var firebaseAuth: FirebaseAuth
+
 
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
@@ -90,30 +90,19 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Manejo de conflicto externo de sesión
-        val mailExtra = intent.getStringExtra("EXTRA_CONFLICT_MAIL")
-        val flagExtra = intent.getIntExtra("EXTRA_CONFLICT_FLAG", -1)
+        splashViewModel.handleIntentExtras(
+            intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false))
 
-        if (mailExtra != null && flagExtra != -1) {
-            splashViewModel.onExternalSessionConflict(mailExtra, flagExtra)
-        }
-        
         // Configurar Google/Facebook
         setupGoogleSignIn()
         setupFacebookSignIn(authViewModel)
-
-        // Inicializar prefs en el VM
-//        splashViewModel.initPrefs(prefs)
 
         setContent {
             ZibeTheme {
 
                 val navController = rememberNavController()
                 val snackbarHostState = remember { SnackbarHostState() }
-
-                data class TokenDialogState(val mail: String, val flag: Int)
-
-                var tokenDialogState by remember { mutableStateOf<TokenDialogState?>(null) }
+                var showSessionConflictDialog by remember { mutableStateOf(false) }
                 var noInternetDialog by remember { mutableStateOf(false) }
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -140,7 +129,6 @@ class SplashActivity : ComponentActivity() {
                             OnboardingScreen(
                                 pages = pages,
                                 onFinished = {
-                                    userPreferencesRepository.onboardingDone = true
                                     navController.navigate("auth") {
                                         popUpTo("onboarding") { inclusive = true }
                                     }
@@ -152,8 +140,12 @@ class SplashActivity : ComponentActivity() {
 
                             val uiState by authViewModel.uiState.collectAsState()
 
-                            authViewModel.initFromPrefs(userPreferencesRepository.deleteUser,
-                                                        userPreferencesRepository.deleteFirebaseAccount)
+                            LaunchedEffect(Unit) {
+                                authViewModel.initFromPrefs(
+                                    userPreferencesRepository.deleteUser,
+                                    userPreferencesRepository.deleteFirebaseAccount
+                                )
+                            }
 
                             AuthScreen(
                                 deleteUser = uiState.deleteUser,
@@ -211,21 +203,19 @@ class SplashActivity : ComponentActivity() {
                         // ======================================
                         composable("signup") {
 
-                            val signUpViewModel: SignUpViewModel = viewModel()
+                            val signUpViewModel: SignUpViewModel = hiltViewModel()
                             val uiState by signUpViewModel.uiState.collectAsState()
 
                             SignUpScreen(
                                 onBack = { navController.popBackStack() },
 
                                 onRegister = { email, pass, name, birthday, description ->
-                                    val defaultPhotoUrl = getString(R.string.URL_PHOTO_DEF)
                                     signUpViewModel.onRegister(
                                         email = email,
                                         password = pass,
                                         name = name,
                                         birthDate = birthday,
-                                        description = description,
-                                        defaultPhotoUrl = defaultPhotoUrl
+                                        description = description
                                     )
                                 },
 
@@ -248,11 +238,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onForceLogout = {
-                                    firebaseAuth.signOut()
-                                    LoginManager.getInstance().logOut()
-                                    navController.navigate("auth") {
-                                        popUpTo("permission") { inclusive = true }
-                                    }
+                                    splashViewModel.onLogoutRequested()
                                 }
                             )
                         }
@@ -268,19 +254,19 @@ class SplashActivity : ComponentActivity() {
 
                     val coroutineScope = rememberCoroutineScope()
 
-                    tokenDialogState?.let { state ->
+                    if (showSessionConflictDialog) {
                         ZibeDialog(
-                            title = TOKEN_DIALOG_TITLE,
-                            textContent = { Text(TOKEN_DIALOG_MESSAGE.format(state.mail)) },
-                            confirmText = DIALOG_CONTINUE,
+                            title = SESSION_CONFLICT_TITLE,
+                            textContent = { Text(SESSION_CONFLICT_MESSAGE) },
+                            confirmText = SESSION_CONFLICT_KEEP_HERE,
                             onConfirm = {
-                                coroutineScope.launch { splashViewModel.onTokenDialogConfirmed(state.flag) }
-                                tokenDialogState = null
+                                coroutineScope.launch { splashViewModel.onSessionConflictConfirmed() }
+                                showSessionConflictDialog = false
                             },
-                            dismissText = DIALOG_CANCEL,
+                            dismissText = SESSION_CONFLICT_LOGOUT,
                             onDismiss = {
-                                coroutineScope.launch { splashViewModel.onTokenDialogCancelled(state.flag) }
-                                tokenDialogState = null
+                                coroutineScope.launch { splashViewModel.onSessionConflictCancelled() }
+                                showSessionConflictDialog = false
                             }
                         )
                     }
@@ -315,8 +301,8 @@ class SplashActivity : ComponentActivity() {
                             is SplashUiEvent.ShowNoInternetDialog ->
                                 noInternetDialog = true
 
-                            is SplashUiEvent.ShowTokenDialog ->
-                                tokenDialogState = TokenDialogState(event.mail, event.flag)
+                            is SplashUiEvent.ShowSessionConflictDialog ->
+                                showSessionConflictDialog = true
 
                             is SplashUiEvent.NavigateOnBoarding ->
                                 navController.navigate("onboarding") {
@@ -327,6 +313,10 @@ class SplashActivity : ComponentActivity() {
                                 navController.navigate("auth") {
                                     popUpTo("splash") { inclusive = true }
                                 }
+
+                            is SplashUiEvent.Navigate -> {
+                                this@SplashActivity.startActivity(event.intent)
+                            }
 
                             is SplashUiEvent.RequestLocationPermission ->
                                 navController.navigate("permission")

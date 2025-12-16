@@ -13,6 +13,7 @@ object Constants {
         const val FIRST_LOGIN_DONE = "flag_Splash"
     }
 
+    const val EXTRA_SESSION_CONFLICT = "extra_session_conflict"
 
 
     const val PAYLOAD_DISTANCE_METERS = "payload_distance_meters"
@@ -23,6 +24,13 @@ object Constants {
     const val PAYLOAD_ONLINE = "payload_online"
 
 
+    // ===============================
+// Sessions (Realtime DB)
+// ===============================
+    const val NODE_SESSIONS = "sessions"
+
+    const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
+    const val KEY_FCM_TOKEN = "fcmToken"
 
 
     const val PAYLOAD_GROUPS_USERS = "payload_users"
@@ -91,10 +99,10 @@ object Constants {
 
     const val NODE_CHAT_STATE = "estado"
 
-    const val NODE_USER_STATUS = "estado"
-    const val NODE_USER_LAST_DATE = "fecha"
+    const val KEY_USER_STATUS = "estado"
+    const val KEY_USER_LAST_DATE = "fecha"
 
-    const val NODE_USER_LAST_HOUR = "hora"
+    const val KEY_USER_LAST_HOUR = "hora"
 
 
 

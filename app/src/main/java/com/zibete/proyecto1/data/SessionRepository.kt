@@ -5,6 +5,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.ui.constants.Constants.KEY_ACTIVE_INSTALL_ID
+import com.zibete.proyecto1.ui.constants.Constants.KEY_FCM_TOKEN
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -14,26 +16,46 @@ class SessionRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) {
 
-
-
+    // LOCAL INFO
     suspend fun getLocalInstallId(): String = FirebaseInstallations.getInstance().id.await()
-
     suspend fun getLocalFcmToken(): String = FirebaseMessaging.getInstance().token.await()
-
-
 
     // ============================================================
     // Refs
     // ============================================================
 
-    private fun sessionRef(uid: String) =
+    private fun refSession(uid: String) =
         firebaseRefsContainer.refSessions.child(uid)
 
-    private fun activeInstallRef(uid: String) =
-        sessionRef(uid).child("activeInstallId")
+    private fun refInstallId(uid: String) =
+        refSession(uid).child(KEY_ACTIVE_INSTALL_ID)
 
-    private fun fcmTokenRef(uid: String) =
-        sessionRef(uid).child("fcmToken")
+    private fun refFcmToken(uid: String) =
+        refSession(uid).child(KEY_FCM_TOKEN)
+
+    // ============================================================
+    // READ
+    // ============================================================
+
+    suspend fun getInstallId(uid: String): String? =
+        refInstallId(uid)
+            .get()
+            .await()
+            .getValue(String::class.java)
+
+    suspend fun getFcmToken(uid: String): String? =
+        refFcmToken(uid)
+            .get()
+            .await()
+            .getValue(String::class.java)
+
+    suspend fun findSessionsByFcmToken(token: String): DataSnapshot {
+        return firebaseRefsContainer.refSessions
+            .orderByChild(KEY_FCM_TOKEN)
+            .equalTo(token)
+            .get()
+            .await()
+    }
 
     // ============================================================
     // WRITE
@@ -45,39 +67,23 @@ class SessionRepository @Inject constructor(
         fcmToken: String?
     ) {
         val data = mutableMapOf<String, Any>(
-            "activeInstallId" to installId
+            KEY_ACTIVE_INSTALL_ID to installId
         )
 
         if (!fcmToken.isNullOrBlank()) {
-            data["fcmToken"] = fcmToken
+            data[KEY_FCM_TOKEN] = fcmToken
         }
 
-        sessionRef(uid)
+        refSession(uid)
             .updateChildren(data)
             .await()
     }
 
     suspend fun clearSession(uid: String) {
-        sessionRef(uid)
+        refSession(uid)
             .removeValue()
             .await()
     }
-
-    // ============================================================
-    // READ (one-shot)
-    // ============================================================
-
-    suspend fun getActiveInstallId(uid: String): String? =
-        activeInstallRef(uid)
-            .get()
-            .await()
-            .getValue(String::class.java)
-
-    suspend fun getFcmToken(uid: String): String? =
-        fcmTokenRef(uid)
-            .get()
-            .await()
-            .getValue(String::class.java)
 
     // ============================================================
     // LISTENER (conflicto de sesión)
@@ -89,7 +95,7 @@ class SessionRepository @Inject constructor(
         onConflict: () -> Unit
     ): ValueEventListener {
 
-        val ref = activeInstallRef(uid)
+        val ref = refInstallId(uid)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -107,6 +113,6 @@ class SessionRepository @Inject constructor(
     }
 
     fun removeSessionListener(uid: String, listener: ValueEventListener) {
-        activeInstallRef(uid).removeEventListener(listener)
+        refInstallId(uid).removeEventListener(listener)
     }
 }

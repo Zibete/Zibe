@@ -470,7 +470,7 @@ class SettingsActivity : AppCompatActivity() {
                 .setMessage("¿Está seguro de cerrar su sesión?")
                 .setCancelable(false)
                 .setPositiveButton("Si") { _, _ ->
-                    lifecycleScope.launch { logOut(deleteUser = false) }
+                    lifecycleScope.launch { settingsViewModel.logOut() }
                 }
                 .setNegativeButton("No", null)
                 .show()
@@ -480,17 +480,6 @@ class SettingsActivity : AppCompatActivity() {
     // endregion
 
 
-    suspend fun logOut(deleteUser: Boolean) {
-        userPreferencesRepository.deleteUser = deleteUser
-
-        if (deleteUser) deleteFirebaseUser()
-
-        userSessionManager.logOutCleanup()
-    }
-
-    // endregion
-
-    // region Auth helpers
 
     private fun getCredential(
         password: String?,
@@ -548,7 +537,7 @@ class SettingsActivity : AppCompatActivity() {
                             .setMessage("Se necesita un inicio de sesión reciente para eliminar la cuenta")
                             .setCancelable(false)
                             .setPositiveButton("Ok") { _, _ ->
-                                lifecycleScope.launch { logOut(deleteUser = true) }
+                                lifecycleScope.launch { settingsViewModel.deleteAccount() }
                             }
                             .show()
                     }
@@ -556,16 +545,12 @@ class SettingsActivity : AppCompatActivity() {
                     when {
                         newEmail != null -> updateEmail(newEmail)
                         newPassword != null -> updatePassword(newPassword)
-                        deleteUser != null -> lifecycleScope.launch { logOut(deleteUser = true) }
+                        deleteUser != null -> lifecycleScope.launch { settingsViewModel.deleteAccount() }
                     }
                 }
             }
     }
 
-    private suspend fun deleteFirebaseUser() {
-        userRepository.deleteMyAccountData()
-        userSessionManager.deleteFirebaseUser()
-    }
 
     private fun updatePassword(newPassword: String) {
         firebaseUser.updatePassword(newPassword)

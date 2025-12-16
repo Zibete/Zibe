@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.UserRepository.AccountKeys.BIRTHDAY
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
 import com.zibete.proyecto1.model.State
@@ -25,9 +26,9 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_UNREAD_COUNT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USER_LAST_DATE
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USER_LAST_HOUR
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USER_STATUS
+import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_LAST_DATE
+import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_LAST_HOUR
+import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
 import com.zibete.proyecto1.utils.Utils
@@ -102,7 +103,7 @@ class UserRepository @Inject constructor(
         const val EMAIL = "email"
         const val PHOTO_URL = "photoUrl"
         const val IS_ONLINE = "isOnline"
-        const val FCM_TOKEN = "fcmToken"
+//        const val FCM_TOKEN = "fcmToken"
         const val DESCRIPTION = "description"
         const val LATITUDE = "latitude"
         const val LONGITUDE = "longitude"
@@ -279,6 +280,15 @@ class UserRepository @Inject constructor(
             .await()
     }
 
+    suspend fun hasBirthDate(uid: String): Boolean =
+        firebaseRefsContainer.refAccounts
+            .child(uid)
+            .child(BIRTHDAY)
+            .get()
+            .await()
+            .getValue(String::class.java)
+            .orEmpty()
+            .isNotBlank()
 
     // ============================================================
     // FAVORITES
@@ -529,9 +539,9 @@ class UserRepository @Inject constructor(
     private fun DataSnapshot.toUserStatus(chatType: String): UserStatus {
         if (!exists()) return UserStatus.Offline
 
-        val status = child(NODE_USER_STATUS).getValue(String::class.java)
-        val date = child(NODE_USER_LAST_DATE).getValue(String::class.java)
-        val hour = child(NODE_USER_LAST_HOUR).getValue(String::class.java)
+        val status = child(KEY_USER_STATUS).getValue(String::class.java)
+        val date = child(KEY_USER_LAST_DATE).getValue(String::class.java)
+        val hour = child(KEY_USER_LAST_HOUR).getValue(String::class.java)
 
         if (status == context.getString(R.string.online)) return UserStatus.Online
 

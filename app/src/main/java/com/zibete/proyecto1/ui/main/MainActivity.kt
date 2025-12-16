@@ -52,6 +52,7 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
@@ -275,6 +276,10 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
+                            is MainNavEvent.BackToChat -> {
+                                mainViewModel.onChatTabSelected()
+                            }
+
                             is MainNavEvent.ToGroupsDetail -> {
 
                                 userPreferencesRepository.groupName = event.groupName
@@ -324,10 +329,14 @@ class MainActivity : BaseToolbarActivity() {
                                 startActivity(Intent(this@MainActivity, SplashActivity::class.java))
                             }
 
-                            is MainNavEvent.ToSplash -> {
+                            is MainNavEvent.ToSplashSessionConflict -> {
                                 stopLocationUpdates()
                                 finish()
-                                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
+                                startActivity(
+                                    Intent(this@MainActivity, SplashActivity::class.java).apply {
+                                        putExtra(EXTRA_SESSION_CONFLICT, true)
+                                    }
+                                )
                             }
 
                             is MainNavEvent.ToGroupsAfterExit -> {
@@ -350,10 +359,6 @@ class MainActivity : BaseToolbarActivity() {
                                 } else {
                                     finish()
                                 }
-                            }
-
-                            is MainNavEvent.BackToChat -> {
-                                mainViewModel.onChatTabSelected()
                             }
 
                             is MainNavEvent.ToSettings -> {
@@ -421,18 +426,18 @@ class MainActivity : BaseToolbarActivity() {
         mainViewModel.onChatTabSelected()
     }
 
-    fun logout() {
-        UserMessageUtils.confirm(
-            context = this,
-            title = "Cerrar sesión",
-            message = "¿Está seguro de cerrar su sesión?",
-            positiveText = DIALOG_ACCEPT,
-            negativeText = DIALOG_CANCEL,
-            onConfirm = {
-                mainViewModel.onLogoutConfirmed()
-            }
-        )
-    }
+//    fun logout() {
+//        UserMessageUtils.confirm(
+//            context = this,
+//            title = "Cerrar sesión",
+//            message = "¿Está seguro de cerrar su sesión?",
+//            positiveText = DIALOG_ACCEPT,
+//            negativeText = DIALOG_CANCEL,
+//            onConfirm = {
+//                mainViewModel.onLogoutConfirmed()
+//            }
+//        )
+//    }
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)

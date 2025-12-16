@@ -27,4 +27,17 @@ class SettingsViewModel @Inject constructor(
     fun setUserOnline() = viewModelScope.launch { userRepository.setUserOnline() }
     fun setUserOffline() = viewModelScope.launch { userRepository.setUserLastSeen() }
 
+    suspend fun logOut() {
+        val intent = userSessionManager.logOutCleanup()
+        context.startActivity(intent)
+    }
+
+    suspend fun deleteAccount() {
+        userSessionManager.deleteFirebaseUser()
+
+        userRepository.deleteMyAccountData()
+
+        logOut()
+    }
+
 }

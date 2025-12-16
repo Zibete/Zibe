@@ -41,17 +41,17 @@ data class Users(
 
     override fun hashCode(): Int = Objects.hash(id)
 
-    companion object Keys {
-        const val ID = "id"
-        const val NAME = "name"
-        const val BIRTHDAY = "birthDay"
-        const val CREATED_AT = "createdAt"
-        const val AGE = "age"
-        const val EMAIL = "email"
-        const val PHOTO_URL = "photoUrl"
-        const val IS_ONLINE = "isOnline"
-        const val DESCRIPTION = "description"
-        const val LATITUDE = "latitude"
-        const val LONGITUDE = "longitude"
-    }
+//    companion object Keys {
+//        const val ID = "id"
+//        const val NAME = "name"
+//        const val BIRTHDAY = "birthDay"
+//        const val CREATED_AT = "createdAt"
+//        const val AGE = "age"
+//        const val EMAIL = "email"
+//        const val PHOTO_URL = "photoUrl"
+//        const val IS_ONLINE = "isOnline"
+//        const val DESCRIPTION = "description"
+//        const val LATITUDE = "latitude"
+//        const val LONGITUDE = "longitude"
+//    }
 }
