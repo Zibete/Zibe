@@ -52,6 +52,8 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
@@ -77,8 +79,6 @@ class MainActivity : BaseToolbarActivity() {
     @Inject lateinit var userSessionManager: UserSessionManager
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
     @Inject lateinit var userRepository: UserRepository
-
-    private val user = userRepository.user
 
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
@@ -115,7 +115,7 @@ class MainActivity : BaseToolbarActivity() {
 
         setupLocation()
 
-        mainViewModel.checkIfMustOpenEditProfile()
+        mainViewModel.isFirstLoginDone()
 
         setupOnBackPressedDispatcher()
     }
@@ -187,9 +187,9 @@ class MainActivity : BaseToolbarActivity() {
             ZibeApp.ScreenUtils.heightPx / 2
         )
 
-        tvUserName?.text = user.displayName
-        tvUserEmail?.text = user.email
-        Glide.with(this).load(user.photoUrl).into(userImage)
+        tvUserName?.text = userRepository.myUserName
+        tvUserEmail?.text = userRepository.myEmail
+        Glide.with(this).load(userRepository.myProfilePhotoUrl).into(userImage)
 
         editProfileButton?.setOnClickListener { editProfileNavigation() }
     }
@@ -277,6 +277,10 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
+                            is MainNavEvent.BackToChat -> {
+                                mainViewModel.onChatTabSelected()
+                            }
+
                             is MainNavEvent.ToGroupsDetail -> {
 
                                 userPreferencesRepository.groupName = event.groupName
@@ -326,10 +330,14 @@ class MainActivity : BaseToolbarActivity() {
                                 startActivity(Intent(this@MainActivity, SplashActivity::class.java))
                             }
 
-                            is MainNavEvent.ToSplash -> {
+                            is MainNavEvent.ToSplashSessionConflict -> {
                                 stopLocationUpdates()
                                 finish()
-                                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
+                                startActivity(
+                                    Intent(this@MainActivity, SplashActivity::class.java).apply {
+                                        putExtra(EXTRA_SESSION_CONFLICT, true)
+                                    }
+                                )
                             }
 
                             is MainNavEvent.ToGroupsAfterExit -> {
@@ -343,6 +351,13 @@ class MainActivity : BaseToolbarActivity() {
                             }
 
                             is MainNavEvent.BackFromEditProfile -> {
+                                if (!event.message.isNullOrEmpty()) {
+                                    UserMessageUtils.showSnack(
+                                        root = binding.root,
+                                        message = event.message,
+                                        type = ZibeSnackType.SUCCESS
+                                    )
+                                }
                                 handleBackFromEditProfile()
                             }
 
@@ -352,10 +367,6 @@ class MainActivity : BaseToolbarActivity() {
                                 } else {
                                     finish()
                                 }
-                            }
-
-                            is MainNavEvent.BackToChat -> {
-                                mainViewModel.onChatTabSelected()
                             }
 
                             is MainNavEvent.ToSettings -> {
@@ -372,6 +383,14 @@ class MainActivity : BaseToolbarActivity() {
                                     onConfirm = {
                                         mainViewModel.onExitGroupConfirmed()
                                     }
+                                )
+                            }
+
+                            is MainNavEvent.ShowMessage -> {
+                                UserMessageUtils.showSnack(
+                                    root = binding.root,
+                                    message = event.message,
+                                    type = event.type
                                 )
                             }
                         }
@@ -400,32 +419,30 @@ class MainActivity : BaseToolbarActivity() {
         val frag = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
 
         if (frag is EditProfileFragment) {
-            if (!frag.canExit()) {
+            if (frag.hasPendingChanges()) {
                 UserMessageUtils.showSnack(
                     root = binding.root,
                     message = "Guarde los cambios antes de salir",
-                    duration = Snackbar.LENGTH_SHORT,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.WARNING
                 )
                 return
             }
         }
-
         mainViewModel.onChatTabSelected()
     }
 
-    fun logout() {
-        UserMessageUtils.confirm(
-            context = this,
-            title = "Cerrar sesión",
-            message = "¿Está seguro de cerrar su sesión?",
-            positiveText = DIALOG_ACCEPT,
-            negativeText = DIALOG_CANCEL,
-            onConfirm = {
-                mainViewModel.onLogoutConfirmed()
-            }
-        )
-    }
+//    fun logout() {
+//        UserMessageUtils.confirm(
+//            context = this,
+//            title = "Cerrar sesión",
+//            message = "¿Está seguro de cerrar su sesión?",
+//            positiveText = DIALOG_ACCEPT,
+//            negativeText = DIALOG_CANCEL,
+//            onConfirm = {
+//                mainViewModel.onLogoutConfirmed()
+//            }
+//        )
+//    }
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)

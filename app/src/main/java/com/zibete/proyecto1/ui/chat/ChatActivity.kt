@@ -493,7 +493,7 @@ class ChatActivity : BaseChatSessionActivity() {
         val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
         val title = viewFilter.findViewById<TextView>(R.id.tv_title)
 
-        viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).visibility = View.GONE
+        viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).isVisible = false
         title.text = getString(R.string.enviar_desde)
 
         val dialog = AlertDialog.Builder(this, R.style.AlertDialogApp)

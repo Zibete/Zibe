@@ -28,6 +28,7 @@ import com.zibete.proyecto1.databinding.DialogGoNewGroupBinding
 import com.zibete.proyecto1.databinding.FragmentGroupsBinding
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
@@ -103,8 +104,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             UserMessageUtils.showSnack(
                                 root = binding.root,
                                 message = "${event.nick} está en uso",
-                                duration = Snackbar.LENGTH_SHORT,
-                                iconRes = R.drawable.ic_warning_24
+                                type = ZibeSnackType.INFO
                             )
                         }
 
@@ -112,8 +112,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             UserMessageUtils.showSnack(
                                 root = binding.root,
                                 message = "El nombre ${event.name} ya está en uso",
-                                duration = Snackbar.LENGTH_SHORT,
-                                iconRes = R.drawable.ic_warning_24
+                                type = ZibeSnackType.WARNING
                             )
                         }
 
@@ -121,8 +120,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             UserMessageUtils.showSnack(
                                 root = binding.root,
                                 message = event.message ?: ERR_ZIBE,
-                                duration = Snackbar.LENGTH_SHORT,
-                                iconRes = R.drawable.ic_warning_24
+                                type = ZibeSnackType.INFO
                             )
                         }
 

@@ -25,6 +25,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_STATE
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import kotlinx.coroutines.channels.awaitClose
@@ -129,25 +130,25 @@ class ChatRepository @Inject constructor(
                 .child(chatId)
 
         val refMyActiveChat =
-            firebaseRefsContainer.refDatos
+            firebaseRefsContainer.refData
                 .child(myUid)
                 .child(NODE_CHATLIST)
                 .child(NODE_ACTIVE_CHAT)
 
         val refOtherActiveChat =
-            firebaseRefsContainer.refDatos
+            firebaseRefsContainer.refData
                 .child(userId)
                 .child(NODE_CHATLIST)
                 .child(NODE_ACTIVE_CHAT)
 
         val refMyChatListItem =
-            firebaseRefsContainer.refDatos
+            firebaseRefsContainer.refData
                 .child(myUid)
                 .child(nodeType)
                 .child(userId)
 
         val refOtherChatListItem =
-            firebaseRefsContainer.refDatos
+            firebaseRefsContainer.refData
                 .child(userId)
                 .child(nodeType)
                 .child(myUid)
@@ -189,7 +190,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getChatWith(firstUid: String, secondUid: String, nodeType: String): ChatWith? {
-        val snapshot = firebaseRefsContainer.refDatos
+        val snapshot = firebaseRefsContainer.refData
             .child(firstUid)
             .child(nodeType)
             .child(secondUid)
@@ -205,7 +206,7 @@ class ChatRepository @Inject constructor(
         otherUid: String,
         chatWith: ChatWith
     ) {
-        firebaseRefsContainer.refDatos
+        firebaseRefsContainer.refData
             .child(ownerUid)
             .child(nodeType)
             .child(otherUid)
@@ -275,7 +276,7 @@ class ChatRepository @Inject constructor(
 
         // Si es "ocultar chat" y no hay mensajes seleccionados → solo ocultar
         if (!deleteMessages && selected == null) {
-            chatRefs.refMyChatListItem.child("estado").setValue(CHAT_STATE_HIDE).await()
+            chatRefs.refMyChatListItem.child(NODE_CHAT_STATE).setValue(CHAT_STATE_HIDE).await()
             return DeleteResult(deletedCount = 0, chatRemoved = false)
         }
 

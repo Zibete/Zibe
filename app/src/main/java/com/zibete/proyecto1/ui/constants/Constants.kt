@@ -15,6 +15,16 @@ object Constants {
 
 
 
+    //EditProfile:
+    const val MSG_PROFILE_SAVED = "Perfil guardado con éxito"
+    const val MSG_PROFILE_SAVE_ERROR = "Error guardando perfil"
+    const val MSG_PROFILE_LOAD_ERROR = "No se pudo cargar el perfil"
+    const val MSG_CAMERA_ERROR = "No se pudo abrir la cámara"
+    const val MSG_CAMERA_PERMISSION_REQUIRED = "Necesitás otorgar permiso de cámara para sacar una foto."
+
+    const val EXTRA_SESSION_CONFLICT = "extra_session_conflict"
+
+
     const val PAYLOAD_DISTANCE_METERS = "payload_distance_meters"
     const val PAYLOAD_AGE = "payload_age"
     const val PAYLOAD_NAME = "payload_name"
@@ -23,6 +33,13 @@ object Constants {
     const val PAYLOAD_ONLINE = "payload_online"
 
 
+    // ===============================
+// Sessions (Realtime DB)
+// ===============================
+    const val NODE_SESSIONS = "sessions"
+
+    const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
+    const val KEY_FCM_TOKEN = "fcmToken"
 
 
     const val PAYLOAD_GROUPS_USERS = "payload_users"
@@ -84,6 +101,24 @@ object Constants {
     const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
     const val NODE_CHATLIST = "ChatList"
 
+    const val NODE_STATUS = "Estado"
+
+    const val NODE_UNREAD_COUNT = "msgNoLeidos"
+
+
+    const val NODE_CHAT_STATE = "estado"
+
+    const val KEY_USER_STATUS = "estado"
+    const val KEY_USER_LAST_DATE = "fecha"
+
+    const val KEY_USER_LAST_HOUR = "hora"
+
+
+
+
+    const val NODE_USERS = "Users"
+
+
     const val NODE_CHATS = "Chats"
     const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
 
@@ -92,6 +127,11 @@ object Constants {
 
     const val PATH_AUDIOS = "audios"
     const val PATH_PHOTOS = "photos"
+
+    const val PATH_PROFILE_PHOTOS = "profile_photos"
+
+    const val PROFILE_PHOTO = "profile.jpg"
+
 
     const val EXTENSION_AUDIO = ".m4a"
     const val EXTENSION_IMAGE = ".jpg"

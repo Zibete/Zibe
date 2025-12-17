@@ -29,6 +29,12 @@ const val ERR_ZIBE = "Ocurrió un error inesperado. Intentá nuevamente."
 const val MESSAGE_NOT_SENT_USER_BLOCKED = "Mensaje no enviado: Estás bloqueado por el usuario."
 
 
+const val SIGNUP_PROFILE_MESSAGE =
+    "¡Bienvenido a ZIBE! 🎉\n\n" +
+            "Estamos emocionados de tenerte aquí. Para comenzar, te recomendamos completar tu perfil con información auténtica y una foto clara. Esto ayudará a que otros usuarios te conozcan mejor y aumentará tus posibilidades de hacer conexiones significativas.\n\n" +
+            "¡Disfrutá de la experiencia ZIBE y conectate con personas increíbles! 🌟"
+
+
 // Errores de FirebaseAuth
 const val SIGNUP_ERR_EMAIL_IN_USE = "El correo electrónico ya está registrado."
 const val SIGNUP_ERR_INVALID_PASSWORD = "Contraseña demasiado débil. Usá 6 caracteres o más."

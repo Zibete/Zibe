@@ -4,60 +4,57 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.facebook.login.LoginManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.messaging.FirebaseMessaging
+import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
-import kotlin.coroutines.resume
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository, // ← Inyectado
-    private val firebaseAuth: FirebaseAuth,
-    private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository
+    private val savedStateHandle: SavedStateHandle,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userRepository: UserRepository,
+    private val sessionRepository: SessionRepository,
+    private val userSessionManager: UserSessionManager
 ) : ViewModel() {
 
-    private val user: FirebaseUser?
-        get() = firebaseAuth.currentUser
-
-
-    // replay = 1 para no perder el último evento (ej. sin internet antes de que Compose empiece a colectar)
-    private val _events = MutableSharedFlow<SplashUiEvent>(replay = 1)
+    private val _events = MutableSharedFlow<SplashUiEvent>(
+        replay = 0,
+        extraBufferCapacity = 1
+    )
     val events = _events.asSharedFlow()
-    private var userToken: String? = null
+
+    fun handleIntentExtras(hasSessionConflict: Boolean) {
+        savedStateHandle[EXTRA_SESSION_CONFLICT] = hasSessionConflict
+    }
 
     fun start(context: Context, isRetry: Boolean = false) {
         viewModelScope.launch {
 
-            if (isRetry) {
-                // pequeño delay solo en reintentos para evitar parpadeos bruscos
-                delay(150L)
-            }
+            if (isRetry) delay(150L)
 
-            // 1) Delay visual opcional
+            // Delay visual opcional
             delay(1000L)
 
-            // 2) OnBoarding solo la primera vez
-            val onBoardingDone = userPreferencesRepository.onboardingDone
-            if (!onBoardingDone) {
+            // 1) Conflicto de sesión externo (viene por Intent Extra)
+            val hasSessionConflict = savedStateHandle.get<Boolean>(EXTRA_SESSION_CONFLICT) ?: false
+            if (hasSessionConflict) {
+                _events.emit(SplashUiEvent.ShowSessionConflictDialog)
+                return@launch
+            }
+
+            // 2) Onboarding solo la primera vez
+            if (!userPreferencesRepository.onboardingDone) {
                 userPreferencesRepository.onboardingDone = true
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
@@ -69,138 +66,85 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
 
-            // 4) Obtener token FCM (asíncrono, no bloqueante)
-            FirebaseMessaging.getInstance().token
-                .addOnSuccessListener { userToken = it }
-
-            // Sin usuario → navegar a Auth
-            if (user == null) {
+            // 4) Sin usuario → Auth (fuente de verdad: UserSessionManager)
+            val currentUser = userSessionManager.currentUser
+            if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
 
-
-            // 6) Permisos de ubicación
+            // 5) Permisos de ubicación
             if (!hasLocationPermission(context)) {
                 _events.emit(SplashUiEvent.RequestLocationPermission)
                 return@launch
             }
 
-            // 7) Token + ruta
-            queryTokenAndRoute(user!!)
+            // 6) Manejo de sesión (installId + fcmToken)
+            setActiveSession(currentUser.uid)
+
+            // 7) Continuar flujo normal
+            updateUserFlow(currentUser.uid)
         }
     }
 
     // ============================================================
-    // TOKEN FLOW
+    // SESSION CONFLICT
     // ============================================================
 
-    private fun queryTokenAndRoute(user: FirebaseUser) {
+    suspend fun onSessionConflictConfirmed() {
+        val currentUser = userSessionManager.currentUser ?: return
+        setActiveSession(currentUser.uid)
+        updateUserFlow(currentUser.uid)
+    }
+
+    fun onSessionConflictCancelled() {
+        onLogoutRequested()
+    }
+
+    private suspend fun setActiveSession(uid: String) {
+        val installId = sessionRepository.getLocalInstallId()
+        val fcmToken = sessionRepository.getLocalFcmToken()
+
+        sessionRepository.setActiveSession(
+            uid = uid,
+            installId = installId,
+            fcmToken = fcmToken
+        )
+    }
+
+    fun onLogoutRequested() {
         viewModelScope.launch {
-            val token = userToken
-
-            // Token vacío → seguir flujo normal
-            if (token.isNullOrEmpty()) {
-                updateUserFlow(user)
-                return@launch
-            }
-
-            // Buscar cuentas con mismo token
-            val snapshot = suspendFirebaseQuery {
-                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
-            }
-
-            if (!snapshot.exists()) {
-                assignTokenToUser(user, token)
-                updateUserFlow(user)
-                return@launch
-            }
-
-            val accounts = snapshot.children.toList()
-            val count = accounts.size
-
-            // Caso 1: solo una cuenta lo tiene
-            if (count == 1) {
-                val single = accounts.first()
-                if (single.key == user.uid) {
-                    updateUserFlow(user)
-                } else {
-                    val mail = single.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                    onExternalSessionConflict(mail, flag = 1)
-                }
-                return@launch
-            }
-
-            // Caso 2: varias cuentas
-            val other = accounts.firstOrNull { it.key != user.uid }
-            if (other != null) {
-                val mail = other.child("mail").getValue(String::class.java) ?: "otra cuenta"
-                onExternalSessionConflict(mail, flag = 2)
-            } else {
-                updateUserFlow(user)
-            }
-
+            val intent = userSessionManager.logOutCleanup()
+            _events.emit(SplashUiEvent.Navigate(intent))
         }
     }
 
-    suspend fun onTokenDialogConfirmed(flag: Int) {
-        val user = firebaseAuth.currentUser ?: return
-        val token = userToken ?: return
-
-        assignTokenToUser(user, token)
-
-        if (flag == 1 || flag == 2) {
-            // limpiar token de otras cuentas
-            val snapshot = suspendFirebaseQuery {
-                firebaseRefsContainer.refCuentas.orderByChild("token").equalTo(token)
-            }
-            snapshot.children.forEach {
-                if (it.key != user.uid) {
-                    it.ref.child("token").setValue("")
-                }
-            }
+    fun onExternalSessionConflict() {
+        viewModelScope.launch {
+            _events.emit(SplashUiEvent.ShowSessionConflictDialog)
         }
-
-        updateUserFlow(user)
-    }
-
-    suspend fun onTokenDialogCancelled(flag: Int) {
-        firebaseAuth.signOut()
-        LoginManager.getInstance().logOut()
-        _events.emit(SplashUiEvent.NavigateAuth)
-    }
-
-    private fun assignTokenToUser(user: FirebaseUser, token: String) {
-        firebaseRefsContainer.refCuentas.child(user.uid).child("token").setValue(token)
     }
 
     // ============================================================
     // USER FLOW
     // ============================================================
 
-    private suspend fun updateUserFlow(user: FirebaseUser) {
+    private suspend fun updateUserFlow(uid: String) {
+        val snapshot = userRepository.getAccountSnapshot(uid)
 
-        val snapshot = suspendFirebaseQuery {
-            firebaseRefsContainer.refCuentas.child(user.uid)
-        }
-
-        // Usuario nuevo
+        // Usuario nuevo: crear nodo y marcar que falta completar perfil
         if (!snapshot.exists()) {
-            viewModelScope.launch {
-                userRepository.createUserNode(user, userToken)
+            val firebaseUser = userSessionManager.currentUser
+            if (firebaseUser != null) {
+                userRepository.createUserNode(firebaseUser, "", "")
             }
-
             userPreferencesRepository.firstLoginDone = false
             _events.emit(SplashUiEvent.NavigateMain)
             return
         }
 
-        // Usuario existente → verificar perfil
-        val birthDay = snapshot.child("birthDay").getValue(String::class.java).orEmpty()
-
         // Perfil incompleto → Main luego enviará a EditProfile
-        userPreferencesRepository.firstLoginDone = birthDay.isNotEmpty()
-
+        userPreferencesRepository.firstLoginDone = userRepository.hasBirthDate(uid)
         _events.emit(SplashUiEvent.NavigateMain)
     }
 
@@ -221,25 +165,4 @@ class SplashViewModel @Inject constructor(
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
-
-    private suspend fun suspendFirebaseQuery(
-        block: () -> com.google.firebase.database.Query
-    ): DataSnapshot = suspendCancellableCoroutine { cont ->
-        block().addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (cont.isActive) cont.resume(snapshot)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                if (cont.isActive) cont.cancel()
-            }
-        })
-    }
-
-    fun onExternalSessionConflict(mail: String, flag: Int) {
-        viewModelScope.launch {
-            _events.emit(SplashUiEvent.ShowTokenDialog(mail, flag))
-        }
-    }
-
 }

@@ -41,7 +41,7 @@ class UsersViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true)
 
         // Ojo: usá tu ref real, dejo nombre genérico
-        firebaseRefsContainer.refCuentas
+        firebaseRefsContainer.refAccounts
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {

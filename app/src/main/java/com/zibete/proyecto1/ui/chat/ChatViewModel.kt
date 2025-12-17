@@ -70,7 +70,6 @@ class ChatViewModel @Inject constructor(
     ) : ViewModel() {
 
     val myUid = userRepository.myUid
-    private val user = userRepository.user
 
     val userId: String = savedStateHandle["userId"] ?: ""
     val nodeType: String = savedStateHandle["nodeType"] ?: NODE_CURRENT_CHAT// 0 = unknown 1 = normal // DEF = ChatWith
@@ -210,12 +209,7 @@ class ChatViewModel @Inject constructor(
         val userPhotoUrl: String,
         val userToken: String = ""
     )
-
-    private lateinit var otherProfileNN: Users
-
-
     lateinit var myIdentity: ChatIdentity
-
     lateinit var otherIdentity: ChatIdentity
 
     private suspend fun loadChatPublicProfiles() {
@@ -223,14 +217,14 @@ class ChatViewModel @Inject constructor(
         _otherProfile.value = profile
 
         myIdentity = ChatIdentity(
-            userName = user.displayName.orEmpty(),
-            userPhotoUrl = user.photoUrl?.toString().orEmpty()
+            userName = userRepository.myUserName,
+            userPhotoUrl = userRepository.myProfilePhotoUrl
         )
 
         otherIdentity = ChatIdentity(
             userName = profile.name,
-            userPhotoUrl = profile.profilePhoto,
-            userToken = profile.token
+            userPhotoUrl = profile.photoUrl,
+            userToken = profile.fcmToken
         )
 
         _headerState.value = ChatHeaderState.Loaded(
@@ -256,8 +250,8 @@ class ChatViewModel @Inject constructor(
             )
         } else {
             ChatIdentity(
-                userName = user.displayName.orEmpty(),
-                userPhotoUrl = user.photoUrl?.toString().orEmpty()
+                userName = userRepository.myUserName,
+                userPhotoUrl = userRepository.myProfilePhotoUrl
             )
         }
 
@@ -270,8 +264,8 @@ class ChatViewModel @Inject constructor(
         } else {
             ChatIdentity(
                 userName = profile.name,
-                userPhotoUrl = profile.profilePhoto,
-                userToken = profile.token
+                userPhotoUrl = profile.photoUrl,
+                userToken = profile.fcmToken
             )
         }
 
@@ -530,7 +524,7 @@ class ChatViewModel @Inject constructor(
                     put("type", nodeType)
                 }
                 val json = JSONObject().apply {
-                    put("to", otherProfile.value?.token)
+                    put("to", otherProfile.value?.fcmToken)
                     put("priority", "high")
                     put("data", body)
                 }

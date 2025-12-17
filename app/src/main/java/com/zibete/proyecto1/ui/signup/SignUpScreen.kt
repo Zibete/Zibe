@@ -52,6 +52,7 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import com.zibete.proyecto1.utils.Utils.millisToBirthDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -73,7 +74,7 @@ fun SignUpScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var birthday by rememberSaveable { mutableStateOf("") }
-    var desc by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -219,22 +220,17 @@ fun SignUpScreen(
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    val millis = datePickerState.selectedDateMillis
-                                    if (millis != null) {
-                                        val sdf =
-                                            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                                        birthday = sdf.format(Date(millis))
-                                    }
-                                    showDatePicker = false
+                            TextButton(onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val formatted = millisToBirthDate(millis)
+                                    birthday = formatted
                                 }
-                            ) { Text("OK") }
+                                showDatePicker = false
+                            }) { Text("OK") }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
-                                Text(DIALOG_CANCEL)
-                            }
+                                Text(DIALOG_CANCEL) }
                         }
                     ) {
                         DatePicker(state = datePickerState)
@@ -243,8 +239,8 @@ fun SignUpScreen(
 
                 // DESCRIPCIÓN
                 ZibeInputField(
-                    value = desc,
-                    onValueChange = { desc = it },
+                    value = description,
+                    onValueChange = { description = it },
                     label = "¿Algo sobre vos?",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,7 +272,7 @@ fun SignUpScreen(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     text = stringResource(R.string.finalizar_registro),
-                    onClick = { onRegister(email, password, name, birthday, desc) },
+                    onClick = { onRegister(email, password, name, birthday, description) },
                     enabled = !isLoading,
                     isLoading = isLoading
                 )

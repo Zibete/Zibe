@@ -43,7 +43,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     @Inject
     lateinit var userRepository: UserRepository
 
-    private val user = userRepository.user
+    private val myUid = userRepository.myUid
 
     private var _binding: FragmentChatListBinding? = null
     private val binding get() = _binding!!
@@ -72,7 +72,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setupInitialUi() = with(binding) {
         // Estado inicial: cargando
-        binding.rvUsers.isVisible = true
+        binding.rvChatlist.isVisible = true
         linearOnBoardingChatList.isVisible = false
         progressbar2.isVisible = true
 
@@ -94,12 +94,14 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
             onMarkAsRead = { chat -> processDoubleCheckLogic(chat) }
         )
 
-        binding.rvUsers.apply {
+        binding.rvChatlist
+.apply {
             layoutManager = this@ChatListGroupsFragment.layoutManager
             adapter = adapterChatGroupsList
         }
 
-        registerForContextMenu(binding.rvUsers)
+        registerForContextMenu(binding.rvChatlist
+)
     }
 
     // ---------- Listener principal: chatWithUnknown ----------
@@ -109,7 +111,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         // Reset lista compartida
         chatsGroupArrayList.clear()
 
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT)
+        refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
             .addChildEventListener(object : ChildEventListener {
 
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -127,7 +129,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT)
+                    refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(dataSnapshot: DataSnapshot) {
                                 if (!dataSnapshot.exists()) {
@@ -178,7 +180,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setupEmptyStateListener() {
 
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT)
+        refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
@@ -205,7 +207,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun showOnBoarding() = with(binding) {
-        rvUsers.isVisible = false
+        rvChatlist.isVisible = false
         linearOnBoardingChatList.isVisible = true
 
         lottieChatLeft.playAnimation()
@@ -215,7 +217,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     private fun showChatList() = with(binding) {
-        binding.rvUsers.isVisible = true
+        binding.rvChatlist.isVisible = true
         linearOnBoardingChatList.isVisible = false
 
         lottieChatLeft.cancelAnimation()
@@ -236,7 +238,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setScrollbar() {
         if (adapterChatGroupsList.itemCount > 0) {
-            binding.rvUsers.scrollToPosition(adapterChatGroupsList.itemCount - 1)
+            binding.rvChatlist.scrollToPosition(adapterChatGroupsList.itemCount - 1)
         }
     }
 
@@ -262,7 +264,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                         ).show()
 
                         // Eliminamos el chat si el usuario ya no existe
-                        refDatos.child(user.uid)
+                        refDatos.child(myUid)
                             .child(Constants.NODE_GROUP_CHAT)
                             .child(chat.userId)
                             .removeValue()
@@ -274,7 +276,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // 2. Marcar chat como visto (wVisto = 2)
     private fun markChatAsSeen(chat: ChatWith) {
-        refDatos.child(user.uid)
+        refDatos.child(myUid)
             .child(Constants.NODE_GROUP_CHAT)
             .child(chat.userId)
             .child("wVisto")
@@ -283,7 +285,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     // 3. Lógica compleja de Doble Check (setMyDoubleCheck)
     private fun processDoubleCheckLogic(chat: ChatWith) {
-        refDatos.child(user.uid)
+        refDatos.child(myUid)
             .child(Constants.NODE_GROUP_CHAT)
             .child(chat.userId)
             .child("noVisto")
@@ -299,7 +301,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                     }
 
                     // Intenta ruta 1: YO <--> EL
-                    val path1 = "${user.uid} <---> ${chat.userId}"
+                    val path1 = "${myUid} <---> ${chat.userId}"
                     refChatUnknown.child(path1).child("Mensajes")
                         .limitToLast(noVistos)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -308,7 +310,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                                     markMessagesInNode(ds)
                                 } else {
                                     // Intenta ruta 2: EL <--> YO
-                                    val path2 = "${chat.userId} <---> ${user.uid}"
+                                    val path2 = "${chat.userId} <---> ${myUid}"
                                     refChatUnknown.child(path2).child("Mensajes")
                                         .limitToLast(noVistos)
                                         .addListenerForSingleValueEvent(object : ValueEventListener {

@@ -1,732 +1,306 @@
 package com.zibete.proyecto1.ui.settings
 
-import android.app.AlertDialog
-import android.app.ProgressDialog
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.ContextThemeWrapper
-import android.view.LayoutInflater
-import android.view.MenuItem
-import android.view.View
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.ImageView
+import android.util.TypedValue
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
-import com.facebook.AccessToken
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.material.appbar.MaterialToolbar
+import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.switchmaterial.SwitchMaterial
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.EmailAuthProvider
-import com.google.firebase.auth.FacebookAuthProvider
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
-import com.zibete.proyecto1.PageAdapterGroup
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.report.ReportActivity
-import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
-import com.zibete.proyecto1.ui.groups.GroupsFragment
+import com.zibete.proyecto1.databinding.ActivitySettingsBinding
+import com.zibete.proyecto1.databinding.DialogSetpasswordBinding
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.ui.report.ReportActivity
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
-import kotlin.getValue
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
 
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userRepository: UserRepository
+    private val viewModel: SettingsViewModel by viewModels()
 
-    private val myUid = userRepository.myUid
+    private lateinit var binding: ActivitySettingsBinding
+    private var progressDialog: AlertDialog? = null
 
-
-    private val settingsViewModel: SettingsViewModel by viewModels()
-
-
-    // UI
-    private lateinit var toolbar: MaterialToolbar
-    private lateinit var myEmail: TextView
-    private lateinit var btnChangeEmail: LinearLayout
-    private lateinit var btnChangePassword: LinearLayout
-
-    private lateinit var linearNotifGrupales: LinearLayout
-    private lateinit var linearNotifIndividuales: LinearLayout
-
-    private lateinit var arrowDownChangePass: ImageView
-    private lateinit var arrowUpChangePass: ImageView
-    private lateinit var arrowDownChangeEmail: ImageView
-    private lateinit var arrowUpChangeEmail: ImageView
-
-    private lateinit var btnLogout: View
-    private lateinit var btnReport: View
-    private lateinit var btnDeleteAccount: View
-
-    private lateinit var btnSavePass: ImageButton
-    private lateinit var btnSaveEmail: ImageButton
-
-    private lateinit var linearChangeEmail: LinearLayout
-    private lateinit var linearChangePassword: LinearLayout
-    private lateinit var edtPasswordEmail: EditText
-    private lateinit var edtPasswordPass: EditText
-    private lateinit var edtNewMail: EditText
-    private lateinit var edtNewPass: EditText
-
-    private lateinit var switchIndividualNotifications: SwitchMaterial
-    private lateinit var switchGroupNotifications: SwitchMaterial
-
-    // Estado
-    private var newEmail: String? = null
-    private var newPassword: String? = null
-    private var password: String? = null
-    private lateinit var progress: ProgressDialog
-    private var provider: String? = null
-
+    private var latestState: SettingsUiState = SettingsUiState()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
 
-        bindViews()
+        binding = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
         setupToolbar()
-        setupNotificationSwitches()
-        setupAccountInfo()
+        setupClicks()
         setupTextWatchers()
-        setupExpandables()
-        setupSaveButtons()
-        setupDeleteAccount()
-        setupLogout()
-    }
-
-    // region Setup
-
-    private fun bindViews() {
-        arrowDownChangePass = findViewById(R.id.arrow_down_change_pass)
-        arrowUpChangePass = findViewById(R.id.arrow_up_change_pass)
-        arrowDownChangeEmail = findViewById(R.id.arrow_down_change_email)
-        arrowUpChangeEmail = findViewById(R.id.arrow_up_change_email)
-
-        toolbar = findViewById(R.id.toolbar_ajustes)
-        myEmail = findViewById(R.id.my_email)
-        btnChangeEmail = findViewById(R.id.btn_change_email)
-        btnChangePassword = findViewById(R.id.btn_change_password)
-
-        btnSavePass = findViewById(R.id.btn_save_pass)
-        btnSaveEmail = findViewById(R.id.btn_save_email)
-
-        btnLogout = findViewById(R.id.btn_logout)
-        btnReport = findViewById(R.id.btn_report)
-        btnDeleteAccount = findViewById(R.id.btn_delete_account)
-
-        linearChangeEmail = findViewById(R.id.linearChangeEmail)
-        linearChangePassword = findViewById(R.id.linearChangePassword)
-        edtPasswordEmail = findViewById(R.id.edt_password_email)
-        edtPasswordPass = findViewById(R.id.edt_password_pass)
-        edtNewMail = findViewById(R.id.edt_new_mail)
-        edtNewPass = findViewById(R.id.edt_new_pass)
-
-        switchGroupNotifications = findViewById(R.id.switch_groupNotifications)
-        switchIndividualNotifications = findViewById(R.id.switch_individualNotifications)
-
-        linearNotifGrupales = findViewById(R.id.linear_notif_grupales)
-        linearNotifIndividuales = findViewById(R.id.linear_notif_individuales)
-
-        progress = ProgressDialog(this, R.style.AlertDialogApp)
-
-        linearNotifGrupales.setOnClickListener {
-            switchGroupNotifications.performClick()
-        }
-
-        linearNotifIndividuales.setOnClickListener {
-            switchIndividualNotifications.performClick()
-        }
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.apply {
-            title = ""
-            setDisplayHomeAsUpEnabled(true)
-        }
-    }
-
-    private fun setupNotificationSwitches() {
-        val root = findViewById<View>(android.R.id.content)
-
-        // Estado inicial desde prefs
-        switchGroupNotifications.isChecked = userPreferencesRepository.groupNotifications
-        switchIndividualNotifications.isChecked = userPreferencesRepository.individualNotifications
-
-        // Grupales
-        switchGroupNotifications.setOnClickListener {
-            val enabled = switchGroupNotifications.isChecked
-            userPreferencesRepository.groupNotifications = enabled
-
-            UserMessageUtils.showInfo(
-                root,
-                if (enabled)
-                    "Notificaciones grupales encendidas"
-                else
-                    "Notificaciones grupales apagadas"
-            )
-        }
-
-        // Individuales
-        switchIndividualNotifications.setOnClickListener {
-            val enabled = switchIndividualNotifications.isChecked
-            userPreferencesRepository.individualNotifications = enabled
-
-            UserMessageUtils.showInfo(
-                root,
-                if (enabled)
-                    "Notificaciones individuales encendidas"
-                else
-                    "Notificaciones individuales apagadas"
-            )
-        }
-    }
-
-    private fun setupAccountInfo() {
-        // Detectar proveedor
-        FirebaseAuth.getInstance().currentUser?.providerData?.forEach { info ->
-            when (info.providerId) {
-                "facebook.com" -> provider = "Facebook"
-                "google.com" -> provider = "Google"
-            }
-        }
-
-        val email = userSessionManager.user.email.orEmpty()
-        myEmail.text = if (provider == null) {
-            email
-        } else {
-            "$email (${provider})"
-        }
-
-        btnReport.setOnClickListener {
-            startActivity(Intent(this, ReportActivity::class.java))
-        }
-
-        btnSaveEmail.isEnabled = false
-        btnSavePass.isEnabled = false
-    }
-
-    private fun setupTextWatchers() {
-        // Habilitar / deshabilitar botón guardar contraseña
-        edtPasswordPass.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                if (edtPasswordPass.length() == 0) btnSavePass.isEnabled = false
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                btnSavePass.isEnabled =
-                    edtPasswordPass.length() != 0 && edtNewPass.length() != 0
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                if (edtPasswordPass.length() == 0) btnSavePass.isEnabled = false
-            }
-        })
-
-        edtNewPass.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                if (edtNewPass.length() == 0) btnSavePass.isEnabled = false
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                btnSavePass.isEnabled =
-                    edtNewPass.length() != 0 && edtPasswordPass.length() != 0
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                if (edtNewPass.length() == 0) btnSavePass.isEnabled = false
-            }
-        })
-
-        // Habilitar / deshabilitar botón guardar email
-        edtPasswordEmail.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                if (edtPasswordEmail.length() == 0) btnSaveEmail.isEnabled = false
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                btnSaveEmail.isEnabled =
-                    edtPasswordEmail.length() != 0 && edtNewMail.length() != 0
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                if (edtPasswordEmail.length() == 0) btnSaveEmail.isEnabled = false
-            }
-        })
-
-        edtNewMail.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                if (edtNewMail.length() == 0) btnSaveEmail.isEnabled = false
-            }
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                btnSaveEmail.isEnabled =
-                    edtNewMail.length() != 0 && edtPasswordEmail.length() != 0
-            }
-
-            override fun afterTextChanged(s: Editable?) {
-                if (edtNewMail.length() == 0) btnSaveEmail.isEnabled = false
-            }
-        })
-    }
-
-    private fun setupExpandables() {
-        val root = findViewById<View>(android.R.id.content)
-
-        btnChangeEmail.setOnClickListener {
-            if (provider == null) {
-                if (linearChangeEmail.isGone) {
-                    linearChangeEmail.visibility = View.VISIBLE
-                    arrowDownChangeEmail.visibility = View.GONE
-                    arrowUpChangeEmail.visibility = View.VISIBLE
-                } else {
-                    linearChangeEmail.visibility = View.GONE
-                    arrowDownChangeEmail.visibility = View.VISIBLE
-                    arrowUpChangeEmail.visibility = View.GONE
-                }
-            } else {
-                UserMessageUtils.showSnack(
-                    root = root,
-                    message = "No disponible para usuarios autenticados con $provider",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    actionText = "OK",
-                    action = {}
-                )
-            }
-        }
-
-        btnChangePassword.setOnClickListener {
-            if (provider == null) {
-                if (!linearChangePassword.isVisible) {
-                    linearChangePassword.isVisible = true
-                    arrowDownChangePass.isVisible = false
-                    arrowUpChangePass.isVisible = true
-                } else {
-                    linearChangePassword.isVisible = false
-                    arrowDownChangePass.isVisible = true
-                    arrowUpChangePass.isVisible = false
-                }
-            } else {
-                UserMessageUtils.showSnack(
-                    root = root,
-                    message = "No disponible para usuarios autenticados con $provider",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    actionText = "OK",
-                    action = {}
-                )
-            }
-        }
-    }
-
-    private fun setupSaveButtons() {
-        btnSaveEmail.setOnClickListener {
-            password = edtPasswordEmail.text.toString().trim()
-            newEmail = edtNewMail.text.toString().trim()
-            checkData(password, newEmail, null)
-        }
-
-        btnSavePass.setOnClickListener {
-            password = edtPasswordPass.text.toString().trim()
-            newPassword = edtNewPass.text.toString().trim()
-            checkData(password, null, newPassword)
-        }
-    }
-
-    private fun setupDeleteAccount() {
-        val root = findViewById<View>(android.R.id.content)
-
-        btnDeleteAccount.setOnClickListener {
-            AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
-                .setTitle("Eliminar Cuenta")
-                .setMessage("¿Está seguro de eliminar su cuenta?")
-                .setCancelable(false)
-                .setPositiveButton("Si") { _, _ ->
-                    AlertDialog.Builder(
-                        ContextThemeWrapper(this, R.style.AlertDialogApp)
-                    )
-                        .setTitle("Atención")
-                        .setMessage(
-                            "Si continúa se eliminarán todos sus datos personales, las fotos y las conversaciones. ¿Desea continuar?"
-                        )
-                        .setCancelable(false)
-                        .setPositiveButton("Si") { _, _ ->
-                            if (provider == null) {
-                                val dialogView = LayoutInflater.from(this)
-                                    .inflate(R.layout.dialog_setpassword, null)
-                                val edtPassword =
-                                    dialogView.findViewById<EditText>(R.id.edt_password)
-
-                                val builder =
-                                    AlertDialog.Builder(
-                                        ContextThemeWrapper(
-                                            this,
-                                            R.style.AlertDialogApp
-                                        )
-                                    )
-                                builder.setView(dialogView)
-                                    .setTitle("Ingrese su contraseña para finalizar")
-                                    .setCancelable(true)
-                                    .setPositiveButton("Eliminar cuenta") { _, _ ->
-                                        progress.setMessage("Espere...")
-                                        progress.setCanceledOnTouchOutside(false)
-                                        progress.show()
-                                        getCredential(
-                                            edtPassword.text.toString(),
-                                            null,
-                                            null,
-                                            edtPassword.text.toString()
-                                        )
-                                    }
-                                    .setNegativeButton(DIALOG_CANCEL, null)
-
-                                val dialog = builder.create()
-
-                                edtPassword.addTextChangedListener(object : TextWatcher {
-                                    override fun beforeTextChanged(
-                                        s: CharSequence?,
-                                        start: Int,
-                                        count: Int,
-                                        after: Int
-                                    ) {
-                                        if (edtPassword.length() == 0) {
-                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                                                ?.apply {
-                                                    isEnabled = false
-                                                    setTextColor(Color.GRAY)
-                                                }
-                                        }
-                                    }
-
-                                    override fun onTextChanged(
-                                        s: CharSequence?,
-                                        start: Int,
-                                        before: Int,
-                                        count: Int
-                                    ) {
-                                        if (edtPassword.length() != 0) {
-                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                                                ?.apply {
-                                                    isEnabled = true
-                                                    setTextColor(Color.WHITE)
-                                                }
-                                        }
-                                    }
-
-                                    override fun afterTextChanged(s: Editable?) {
-                                        if (edtPassword.length() == 0) {
-                                            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                                                ?.apply {
-                                                    isEnabled = false
-                                                    setTextColor(Color.GRAY)
-                                                }
-                                        }
-                                    }
-                                })
-
-                                dialog.show()
-                                dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
-                                    isEnabled = false
-                                    setTextColor(Color.GRAY)
-                                }
-                                dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-                                    ?.setTextColor(Color.WHITE)
-                            } else {
-                                progress.setMessage("Espere...")
-                                progress.setCanceledOnTouchOutside(false)
-                                progress.show()
-                                getCredential(null, null, null, provider)
-                            }
-                        }
-                        .setNegativeButton("No", null)
-                        .show()
-                }
-                .setNegativeButton("No", null)
-                .show()
-        }
-    }
-
-    private fun setupLogout() {
-        btnLogout.setOnClickListener {
-            AlertDialog.Builder(ContextThemeWrapper(this, R.style.AlertDialogApp))
-                .setTitle("Cerrar sesión")
-                .setMessage("¿Está seguro de cerrar su sesión?")
-                .setCancelable(false)
-                .setPositiveButton("Si") { _, _ -> logOut(null) }
-                .setNegativeButton("No", null)
-                .show()
-        }
-    }
-
-    // endregion
-
-    // region Group / Logout
-
-    fun exitGroup() {
-
-        // listeners globales definidos en MainActivity
-//        MainActivity.listenerGroupBadge?.let {
-//            refGroupChat.child(repo.groupName)
-//                .removeEventListener(it)
-//        }
-//
-//        MainActivity.listenerMsgUnreadBadge?.let {
-//            val query: Query = refDatos.child(user.uid)
-//                .child(CHATWITHUNKNOWN)
-//                .orderByChild("noVisto")
-//                .startAt(1.0)
-//            query.removeEventListener(it)
-//        }
-
-        userSessionManager.performExitGroupDataCleanup()
-
-        PageAdapterGroup.Companion.valueEventListenerTitle?.let {
-            firebaseRefsContainer.refGroupUsers.child(userPreferencesRepository.groupName)
-                .removeEventListener(it)
-        }
-
-        ChatGroupFragment.Companion.listenerGroupChat?.let {
-            firebaseRefsContainer.refGroupChat.child(userPreferencesRepository.groupName)
-                .removeEventListener(it)
-        }
-
-
-
-//        MainActivity.layoutSettings?.visibility = View.GONE
-
-        invalidateOptionsMenu()
-
-        val newFragment = GroupsFragment()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.nav_host_fragment, newFragment)
-            .commit()
-
-        toolbar.setTitle(R.string.menu_groups)
-    }
-
-    suspend fun logOut(deleteUser: String?) {
-
-//        MainActivity.listenerToken?.let {
-//            firebaseRefsContainer.refCuentas.child(user.uid)
-//                .child("installId")
-//                .removeEventListener(it)
-//        }
-
-        EditProfileFragment.Companion.deleteProfilePreferences(this)
-
-        userSessionManager.logOutCleanup()
-    }
-
-    // endregion
-
-    // region Auth helpers
-
-    private fun getCredential(
-        password: String?,
-        newEmail: String?,
-        newPassword: String?,
-        deleteUser: String?
-    ) {
-        val credential: AuthCredential?
-
-        when {
-            provider == null && password != null -> {
-                val credential = EmailAuthProvider.getCredential(userSessionManager.user.email!!, password)
-                reAuthenticate(newEmail, newPassword, deleteUser, credential)
-            }
-
-            provider == "Facebook" -> {
-                val token = AccessToken.Companion.getCurrentAccessToken()
-                if (token != null) {
-                    val credential = FacebookAuthProvider.getCredential(token.token)
-                    reAuthenticate(newEmail, newPassword, deleteUser, credential)
-                }
-            }
-
-            provider == "Google" -> {
-                val acct = GoogleSignIn.getLastSignedInAccount(this)
-                if (acct != null) {
-                    val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
-                    reAuthenticate(newEmail, newPassword, deleteUser, credential)
-                }
-            }
-        }
-
-    }
-
-    private fun reAuthenticate(
-        newEmail: String?,
-        newPassword: String?,
-        deleteUser: String?,
-        credential: AuthCredential
-    ) {
-        userSessionManager.user.reauthenticate(credential)
-            .addOnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    progress.dismiss()
-                    if (provider == null) {
-                        Toast.makeText(
-                            this,
-                            "La contraseña es incorrecta",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        AlertDialog.Builder(
-                            ContextThemeWrapper(this, R.style.AlertDialogApp)
-                        )
-                            .setTitle("ShowErrorDialog")
-                            .setMessage("Se necesita un inicio de sesión reciente para eliminar la cuenta")
-                            .setCancelable(false)
-                            .setPositiveButton("Ok") { _, _ ->
-                                val zibeAppPrefs =
-                                    getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
-                                zibeAppPrefs.edit {
-                                    putBoolean("deleteUser", true)
-                                }
-                                logOut(deleteUser)
-                            }
-                            .show()
-                    }
-                } else {
-                    when {
-                        newEmail != null -> updateEmail(newEmail)
-                        newPassword != null -> updatePassword(newPassword)
-                        deleteUser != null -> deleteFirebaseUser(deleteUser)
-                    }
-                }
-            }
-    }
-
-    private fun deleteFirebaseUser(@Suppress("UNUSED_PARAMETER") deleteUser: String?) {
-        val zibeAppPrefs = getSharedPreferences("ZibeAppPrefs", MODE_PRIVATE)
-        zibeAppPrefs.edit {
-            putBoolean("deleteFirebaseAccount", true)
-        }
-
-        firebaseRefsContainer.refDatos.child(userSessionManager.myUid).removeValue()
-        firebaseRefsContainer.refCuentas.child(userSessionManager.myUid).removeValue()
-
-        FirebaseStorage.getInstance().reference
-            .child("Users/imgPerfil/${userSessionManager.myUid}.jpg")
-            .delete()
-
-        logOut(deleteUser)
-        userSessionManager.user.delete()
-    }
-
-    private fun updatePassword(newPassword: String) {
-        userSessionManager.user.updatePassword(newPassword)
-            .addOnCompleteListener { task ->
-                progress.dismiss()
-                if (task.isSuccessful) {
-                    Toast.makeText(
-                        this,
-                        "Datos actualizados correctamente",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    startActivity(Intent(this, SplashActivity::class.java))
-                    finish()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "La contraseña debe tener al menos seis caracteres",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-    }
-
-    private fun updateEmail(newEmail: String) {
-        userSessionManager.user.updateEmail(newEmail)
-            .addOnCompleteListener { task ->
-                progress.dismiss()
-                if (task.isSuccessful) {
-                    Toast.makeText(
-                        this,
-                        "Datos actualizados correctamente",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    startActivity(Intent(this, SplashActivity::class.java))
-                    finish()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Introduzca un e-mail válido",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-    }
-
-    private fun checkData(password: String?, newEmail: String?, newPassword: String?) {
-        if (password.isNullOrEmpty()) {
-            Toast.makeText(this, "Introduzca una contraseña", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (newEmail != null && newEmail.isEmpty()) {
-            Toast.makeText(this, "Introduzca un e-mail", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (newPassword != null && newPassword.isEmpty()) {
-            Toast.makeText(this, "Introduzca la nueva contraseña", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        progress.setMessage("Espere...")
-        progress.setCanceledOnTouchOutside(false)
-        progress.show()
-
-        getCredential(password, newEmail, newPassword, null)
-    }
-
-    // endregion
-
-    // region Lifecycle / Menu
-
-    override fun onPause() {
-        super.onPause()
-        settingsViewModel.setUserOffline()
+        observeState()
+        observeEvents()
     }
 
     override fun onResume() {
         super.onResume()
-        settingsViewModel.setUserOnline()
+        viewModel.setUserOnline()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            onBackPressedDispatcher.onBackPressed()
-            return true
+    override fun onPause() {
+        super.onPause()
+        viewModel.setUserOffline()
+    }
+
+    override fun onDestroy() {
+        progressDialog?.dismiss()
+        progressDialog = null
+        super.onDestroy()
+    }
+
+    // -------------------------
+    // Setup
+    // -------------------------
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.materialToolbar)
+        supportActionBar?.apply {
+            title = ""
+            setDisplayHomeAsUpEnabled(true)
         }
-        return super.onOptionsItemSelected(item)
+        binding.materialToolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
-    companion object {
-        private const val RC_SIGN_IN = 1 // hoy no se usa, lo dejamos por compatibilidad
+    private fun setupClicks() = with(binding) {
+        // Expand/collapse: decide el VM
+        btnChangeEmail.setOnClickListener { viewModel.onChangeEmailHeaderClicked() }
+        btnChangePassword.setOnClickListener { viewModel.onChangePasswordHeaderClicked() }
+
+        // Switches: decide el VM
+        linearNotifGrupales.setOnClickListener { switchGroupNotifications.performClick() }
+        linearNotifIndividuales.setOnClickListener { switchIndividualNotifications.performClick() }
+
+        switchGroupNotifications.setOnClickListener {
+            viewModel.onGroupNotificationsToggled(switchGroupNotifications.isChecked)
+        }
+        switchIndividualNotifications.setOnClickListener {
+            viewModel.onIndividualNotificationsToggled(switchIndividualNotifications.isChecked)
+        }
+
+        // Guardar: VM
+        btnSaveEmail.setOnClickListener {
+            viewModel.updateEmail(
+                password = edtPasswordEmail.text?.toString().orEmpty(),
+                newEmail = edtNewMail.text?.toString().orEmpty()
+            )
+        }
+        btnSavePass.setOnClickListener {
+            viewModel.updatePassword(
+                password = edtPasswordPass.text?.toString().orEmpty(),
+                newPassword = edtNewPass.text?.toString().orEmpty()
+            )
+        }
+
+        btnReport.setOnClickListener {
+            startActivity(Intent(this@SettingsActivity, ReportActivity::class.java))
+        }
+
+        btnLogout.setOnClickListener { showLogoutDialog() }
+        btnDeleteAccount.setOnClickListener { showDeleteAccountDialogFlow() }
     }
 
-    // endregion
+    private fun setupTextWatchers() = with(binding) {
+        btnSavePass.isEnabled = false
+        btnSaveEmail.isEnabled = false
+
+        edtNewPass.doOnTextChanged { text, _, _, _ ->
+            btnSavePass.isEnabled = (text?.length ?: 0) >= 6
+        }
+
+        val refreshEmailButtonState = {
+            val pass = edtPasswordEmail.text?.toString().orEmpty()
+            val mail = edtNewMail.text?.toString().orEmpty()
+            btnSaveEmail.isEnabled = pass.isNotBlank() && mail.isNotBlank() && mail.contains("@")
+        }
+
+        edtPasswordEmail.doOnTextChanged { _, _, _, _ -> refreshEmailButtonState() }
+        edtNewMail.doOnTextChanged { _, _, _, _ -> refreshEmailButtonState() }
+    }
+
+    // -------------------------
+    // Observers
+    // -------------------------
+
+    private fun observeState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    latestState = state
+
+                    binding.myEmail.text = state.emailDisplay
+
+                    binding.switchGroupNotifications.isChecked = state.groupNotificationsEnabled
+                    binding.switchIndividualNotifications.isChecked = state.individualNotificationsEnabled
+
+                    setEmailSectionExpanded(state.isEmailSectionExpanded)
+                    setPasswordSectionExpanded(state.isPasswordSectionExpanded)
+                }
+            }
+        }
+    }
+
+    private fun observeEvents() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+
+                        is SettingsUiEvent.ShowSnack -> {
+                            val snack = Snackbar.make(
+                                binding.root,
+                                event.message,
+                                Snackbar.LENGTH_LONG
+                            )
+                            snack.show()
+                        }
+
+                        is SettingsUiEvent.ShowProgress -> showProgressDialog(event.message)
+
+                        is SettingsUiEvent.HideProgress -> hideProgressDialog()
+
+                        is SettingsUiEvent.Navigate -> {
+                            startActivity(event.intent)
+                            if (event.finish) finish()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // -------------------------
+    // UI helpers
+    // -------------------------
+
+    private fun setEmailSectionExpanded(expanded: Boolean) = with(binding) {
+        linearChangeEmail.isVisible = expanded
+        arrowUpChangeEmail.isVisible = expanded
+        arrowDownChangeEmail.isGone = expanded
+    }
+
+    private fun setPasswordSectionExpanded(expanded: Boolean) = with(binding) {
+        linearChangePassword.isVisible = expanded
+        arrowUpChangePass.isVisible = expanded
+        arrowDownChangePass.isGone = expanded
+    }
+
+    private fun showLogoutDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Cerrar sesión")
+            .setMessage("¿Seguro quieres cerrar sesión?")
+            .setPositiveButton("Sí") { _, _ -> viewModel.logOut() }
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .show()
+    }
+
+    private fun showDeleteAccountDialogFlow() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("¿Seguro quiere eliminar su cuenta?")
+            .setMessage("Esta acción eliminará toda la información y no se podrá recuperar")
+            .setPositiveButton("Sí") { _, _ ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Atención")
+                    .setMessage("Si elimina la cuenta, no podrá recuperar sus datos")
+                    .setPositiveButton("Eliminar cuenta") { _, _ ->
+                        if (latestState.requiresPasswordForSensitiveActions) {
+                            showPasswordDialogForDelete()
+                        } else {
+                            viewModel.deleteAccount(passwordIfNeeded = null)
+                        }
+                    }
+                    .setNegativeButton(DIALOG_CANCEL, null)
+                    .show()
+            }
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .show()
+    }
+
+    private fun showPasswordDialogForDelete() {
+        val dialogBinding = DialogSetpasswordBinding.inflate(layoutInflater)
+
+        val alert = MaterialAlertDialogBuilder(this)
+            .setTitle("Introduzca su contraseña")
+            .setView(dialogBinding.root)
+            .setPositiveButton("Eliminar cuenta", null)
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .create()
+
+        alert.setOnShowListener {
+            val btn = alert.getButton(AlertDialog.BUTTON_POSITIVE)
+            btn.isEnabled = false
+
+            dialogBinding.edtPassword.doOnTextChanged { text, _, _, _ ->
+                btn.isEnabled = !text.isNullOrBlank()
+            }
+
+            btn.setOnClickListener {
+                viewModel.deleteAccount(passwordIfNeeded = dialogBinding.edtPassword.text?.toString())
+                alert.dismiss()
+            }
+        }
+
+        alert.show()
+    }
+
+    private fun showProgressDialog(message: String) {
+        if (progressDialog?.isShowing == true) return
+
+        val padding = dp(20)
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(padding, padding, padding, padding)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val indicator = CircularProgressIndicator(this).apply {
+            isIndeterminate = true
+        }
+
+        val tv = TextView(this).apply {
+            setPadding(dp(16), 0, 0, 0)
+            text = message
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        }
+
+        container.addView(indicator)
+        container.addView(tv)
+
+        progressDialog = MaterialAlertDialogBuilder(this)
+            .setCancelable(false)
+            .setView(container)
+            .create()
+
+        progressDialog?.show()
+    }
+
+    private fun hideProgressDialog() {
+        progressDialog?.dismiss()
+        progressDialog = null
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 }

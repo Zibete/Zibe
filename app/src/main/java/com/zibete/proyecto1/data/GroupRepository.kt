@@ -25,7 +25,7 @@ class GroupRepository @Inject constructor(
     private val userRepository: UserRepository
 ) {
 
-    private val myUid = userRepository.user.uid
+    private val myUid = userRepository.myUid
 
 
     // User de grupo deja de estar disponible
@@ -154,7 +154,7 @@ class GroupRepository @Inject constructor(
         snapshot.children.sumOf { it.childrenCount }.toInt()
 
     private suspend fun getSeenGroupCount(uid: String): Int {
-        val ds = firebaseRefsContainer.refDatos
+        val ds = firebaseRefsContainer.refData
             .child(uid)
             .child(NODE_CHATLIST)
             .child("msgReadGroup")
@@ -165,7 +165,7 @@ class GroupRepository @Inject constructor(
     }
 
     private suspend fun getUnreadGroupCount(uid: String): Int {
-        val ds = firebaseRefsContainer.refDatos
+        val ds = firebaseRefsContainer.refData
             .child(uid)
             .child(NODE_GROUP_CHAT)
             .orderByChild("noVisto")

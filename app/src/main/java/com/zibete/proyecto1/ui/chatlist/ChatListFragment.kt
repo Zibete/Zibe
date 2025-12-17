@@ -174,18 +174,15 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     private fun setupOptionMenu() {
         val menuHost = requireActivity() as MenuHost
-
         menuHost.addMenuProvider(
             object : MenuProvider {
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = Unit
-
                 override fun onPrepareMenu(menu: Menu) {
                     menu.findItem(R.id.action_settings)?.isVisible = true
                     menu.findItem(R.id.action_search)?.isVisible = true
                     menu.findItem(R.id.action_favorites)?.isVisible = true
                     menu.findItem(R.id.action_unblock_users)?.isVisible = true
                 }
-
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
             },
             viewLifecycleOwner,

@@ -3,19 +3,14 @@ package com.zibete.proyecto1.ui.main
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.R
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,13 +30,14 @@ enum class CurrentScreen {
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val sessionRepository: SessionRepository,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
-    private val myUid = userRepository.user.uid
+    private val myUid = userRepository.myUid
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -49,23 +45,29 @@ class MainViewModel @Inject constructor(
     private val _navEvents = MutableSharedFlow<MainNavEvent>()
     val navEvents: SharedFlow<MainNavEvent> = _navEvents.asSharedFlow()
 
-
-    // --- LOGICA DE SESION ---
-    private var myInstallId: String? = null
     private var installIdListener: ValueEventListener? = null
 
     init {
-        // Inicializar listeners
-        setupInstallIdAndFcm()
-
-        // Listeners --> Badges
         viewModelScope.launch {
+            // 1) Sesión activa get & set
+            val installId = sessionRepository.getLocalInstallId()
+            val fcmToken = sessionRepository.getLocalFcmToken()
+
+            sessionRepository.setActiveSession(
+                uid = myUid,
+                installId = installId,
+                fcmToken = fcmToken
+            )
+
+            // 2) Listener de sesión
+            checkSessionConflict(myUid, installId)
+
+            // 3) Listeners --> Badges
             userRepository.observeUnreadChats().collect { count ->
                 _uiState.update { it.copy(chatBadgeCount = count) }
             }
-        }
 
-        viewModelScope.launch {
+            // 4) Listeners --> Badges grupos
             if (!userPreferencesRepository.inGroup) {
                 groupRepository.observeUnreadGroup().collect { count ->
                     _uiState.update { it.copy(groupBadgeCount = count) }
@@ -75,23 +77,24 @@ class MainViewModel @Inject constructor(
     }
 
     // --- LOGICA DE SESIÓN (Install ID) ---
+    private fun checkSessionConflict(uid: String, installId: String) {
+        installIdListener?.let { sessionRepository.removeSessionListener(uid, it) }
 
-    private fun setupInstallIdAndFcm() {
-
-        FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                myInstallId = task.result
-                checkSessionConflict(myUid)
-            }
-        }
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                firebaseRefsContainer.refCuentas.child(myUid).child("fcmToken").setValue(task.result)
+        installIdListener = sessionRepository.observeSessionConflict(
+            uid = uid,
+            myInstallId = installId
+        ) {
+            viewModelScope.launch {
+                _navEvents.emit(MainNavEvent.ToSplashSessionConflict)
             }
         }
     }
 
     // --- FUNCIONES DE UI ---
+
+    fun emit(event: MainNavEvent) {
+        viewModelScope.launch { _navEvents.emit(event) }
+    }
 
     fun setScreen(screen: CurrentScreen) {
         _uiState.update { it.copy(currentScreen = screen) }
@@ -113,43 +116,22 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(toolbarTitle = title) }
     }
 
-    private fun checkSessionConflict(uid: String) {
-        val ref = firebaseRefsContainer.refCuentas.child(uid).child("installId")
-
-        installIdListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val remoteId = snapshot.getValue(String::class.java)
-                if (myInstallId != null && remoteId != null && remoteId != myInstallId) {
-                    viewModelScope.launch {
-                        _navEvents.emit(MainNavEvent.ToSplash)
-                    }
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        ref.addValueEventListener(installIdListener!!)
-    }
-
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
-            userRepository.updateLocation(location)
+            locationRepository.updateLocation(location)
         }
     }
 
-    fun onLogoutConfirmed() {
-        viewModelScope.launch {
-            val intent = userSessionManager.logOutCleanup()
-            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
-        }
-    }
+//    fun onLogoutConfirmed() {
+//        viewModelScope.launch {
+//            val intent = userSessionManager.logOutCleanup()
+//            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+//        }
+//    }
 
-    fun checkIfMustOpenEditProfile() {
-        if (!userPreferencesRepository.firstLoginDone) {
-            viewModelScope.launch {
-                _navEvents.emit(MainNavEvent.ToEditProfile)
-            }
-        }
+    fun isFirstLoginDone() {
+        if (!userPreferencesRepository.firstLoginDone) onEditProfileSelected()
     }
 
     fun onExitGroupConfirmed() {
@@ -260,12 +242,18 @@ class MainViewModel @Inject constructor(
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.BackFromEditProfile)
+
+
+
+
+                    _navEvents.emit(MainNavEvent.BackFromEditProfile())
                 }
             }
 
             CurrentScreen.CHAT,
-            CurrentScreen.USERS -> {
+            CurrentScreen.USERS,
+            CurrentScreen.FAVORITES,
+            CurrentScreen.GROUPS-> {
                 viewModelScope.launch {
                     _navEvents.emit(MainNavEvent.BackExitAppOrCloseSearch)
                 }
@@ -285,6 +273,13 @@ class MainViewModel @Inject constructor(
 
     fun onSetUserLastSeen(){
         viewModelScope.launch { userRepository.setUserLastSeen() }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        installIdListener?.let {
+            sessionRepository.removeSessionListener(myUid, it)
+        }
     }
 
     fun onToolbarItemSelected(itemId: Int) {

@@ -19,19 +19,20 @@ import javax.inject.Singleton
  */
 @Singleton
 class FirebaseRefsContainer @Inject constructor(
-    private val db: FirebaseDatabase,
+    private val firebaseDatabase: FirebaseDatabase,
     val storage: FirebaseStorage
 ) {
 
     // === Referencias a Usuarios ===
-    @Named("refUsuarios")     val refUsuarios: DatabaseReference = db.getReference("Usuarios")
-    @Named("refDatos")        val refDatos: DatabaseReference = refUsuarios.child("Datos")
-    @Named("refCuentas")      val refCuentas: DatabaseReference = refUsuarios.child("Cuentas")
+    @Named("refUsuarios")     val refUsers: DatabaseReference = firebaseDatabase.getReference("Usuarios")
+    @Named("refDatos")        val refData: DatabaseReference = refUsers.child("Datos")
+    @Named("refCuentas")      val refAccounts: DatabaseReference = refUsers.child("Cuentas")
 
     // === Referencias a Chats ===
-    @Named("refChatMessageRoot")    val refChatMessageRoot: DatabaseReference = db.getReference(NODE_CHATS)
+    @Named("refChatMessageRoot")    val refChatMessageRoot: DatabaseReference = firebaseDatabase.getReference(NODE_CHATS)
 
 
+    val refSessions = firebaseDatabase.reference.child("sessions")
 
 
     @Named("refChatMessageRoot")    val refChatMessageGroupsRoot: DatabaseReference = refChatMessageRoot.child(NODE_GROUP_CHAT)
@@ -42,13 +43,13 @@ class FirebaseRefsContainer @Inject constructor(
 //    @Named("refChatUnknown")  val refChatUnknown: DatabaseReference = refChatMessageRoot.child("Unknown")
 
     // === Referencias a Grupos ===
-    @Named("refGroupsRoot")   val refGroupsRoot: DatabaseReference = db.getReference("Groups")
+    @Named("refGroupsRoot")   val refGroupsRoot: DatabaseReference = firebaseDatabase.getReference("Groups")
     @Named("refGroupData")    val refGroupData: DatabaseReference = refGroupsRoot.child("Data")
     @Named("refGroupChat")    val refGroupChat: DatabaseReference = refGroupsRoot.child("Chat")
     @Named("refGroupUsers")   val refGroupUsers: DatabaseReference = refGroupsRoot.child("Users")
 
     // === Zibe ===
-    @Named("refZibe")         val refZibe: DatabaseReference = db.getReference("Zibe")
+    @Named("refZibe")         val refZibe: DatabaseReference = firebaseDatabase.getReference("Zibe")
 
     // === Storage ===
     @Named("firebaseStorage") val firebaseStorage: FirebaseStorage = storage

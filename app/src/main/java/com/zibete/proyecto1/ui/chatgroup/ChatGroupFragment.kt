@@ -103,10 +103,10 @@ class ChatGroupFragment : Fragment() {
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     private val storageReference: StorageReference = storage.reference
-    private val user = userRepository.user
+    private val myUid = userRepository.myUid
 
     private val refSendImages: StorageReference by lazy {
-        storageReference.child("ChatMessage/${user.uid}/")
+        storageReference.child("ChatMessage/${myUid}/")
     }
 
     // Launcher CropActivity
@@ -138,7 +138,7 @@ class ChatGroupFragment : Fragment() {
                         userPreferencesRepository.groupName.isNotEmpty()
                     ) {
                         val count = snapshot.childrenCount.toInt()
-                        FirebaseRefs.refDatos.child(user.uid)
+                        FirebaseRefs.refDatos.child(myUid)
                             .child(NODE_CHATLIST)
                             .child("msgReadGroup")
                             .setValue(count)
@@ -443,7 +443,7 @@ class ChatGroupFragment : Fragment() {
             stringMsg!!,
             dateFormat.format(c.time),
             userPreferencesRepository.userNameGroup,
-            user.uid,
+            myUid,
             msgType,
             userPreferencesRepository.userType
         )
@@ -468,7 +468,7 @@ class ChatGroupFragment : Fragment() {
                     for (snapshot in dataSnapshot.children) {
                         val userId =
                             snapshot.child("user_id").getValue(String::class.java) ?: continue
-                        if (userId == user.uid) continue
+                        if (userId == myUid) continue
 
                         FirebaseRefs.refCuentas.child(userId)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -497,7 +497,7 @@ class ChatGroupFragment : Fragment() {
                 put("novistos", "")
                 put("user", userPreferencesRepository.userNameGroup)
                 put("msg", msg)
-                put("id_user", user.uid)
+                put("id_user", myUid)
                 put("type", userPreferencesRepository.groupName)
             }
 

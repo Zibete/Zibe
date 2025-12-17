@@ -13,7 +13,7 @@
 
     <string name="registro">Registrarse</string>
     <string name="fin_registro">Finalizar registro</string>
-    <string name="fecha_nacimiento">Fecha de nacimiento</string>
+    <string name="birthDate">Fecha de nacimiento</string>
     <string name="Edad">Edad</string>
     <string name="description">¿Algo sobre vos?</string>
     <string name="Entrar">Entrar</string>
@@ -122,8 +122,8 @@
     <string name="version">2025</string>
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
-    <string name="notificaciones">Notificaciones</string>
-    <string name="guardar">Guardar</string>
+    <string name="notifications">Notificaciones</string>
+    <string name="save">Guardar</string>
     <string name="cerrar">cerrar</string>
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>

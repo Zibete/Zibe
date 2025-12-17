@@ -11,7 +11,8 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DatabaseReference
-import com.zibete.proyecto1.model.State
+import com.zibete.proyecto1.model.Status
+import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -32,7 +33,7 @@ class Notify : Service() {
     private var notificationAña: Notification? = null
     private val refEstado: DatabaseReference? =
         user?.let {
-            refDatos.child(it.uid).child("Estado")
+            refDatos.child(it.uid).child(NODE_STATUS)
         }
 
     override fun onCreate() {
@@ -52,7 +53,7 @@ class Notify : Service() {
 
         val estadoRef = refEstado
         if (estadoRef != null) {
-            val cState = State(
+            val cState = Status(
                 getString(R.string.online),
                 "",
                 ""
@@ -112,7 +113,7 @@ class Notify : Service() {
             val c = Calendar.getInstance()
             val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val cState = State(
+            val cState = Status(
                 getString(R.string.ultVez),
                 dateFormat.format(c.time),
                 timeFormat.format(c.time)

@@ -18,7 +18,7 @@ fun ZibeTheme(
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(
-        LocalZibeExtendedColors provides ZibeExtendedColorSet()
+        LocalZibeExtendedColors provides ZibeExtendedColors()
     ) {
         MaterialTheme(
             colorScheme = ZibeColorScheme,

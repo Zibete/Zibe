@@ -39,7 +39,7 @@ class ChatListViewModel @Inject constructor(
     private val myUid get() = userRepository.myUid
 
     private val chatRef
-        get() = firebaseRefsContainer.refDatos
+        get() = firebaseRefsContainer.refData
             .child(myUid)
             .child(NODE_CURRENT_CHAT)
 
@@ -147,7 +147,7 @@ class ChatListViewModel @Inject constructor(
 
     fun onMarkAsReadChatListClicked(userId: String, nodeType: String) {
         viewModelScope.launch {
-            userRepository.markAsReadChatList(userId, nodeType)
+            userRepository.toggleUnreadBadge(userId, nodeType)
         }
     }
 

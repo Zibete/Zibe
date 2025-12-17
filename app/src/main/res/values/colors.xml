@@ -24,10 +24,16 @@
 
 
 
+    <!-- colors.xml -->
+    <color name="zibe_red">#FF4C4C</color>
+    <color name="zibe_yellow">#FFD93B</color>
+    <color name="zibe_green">#4CAF50</color>
+    <color name="zibe_blue">#3A7BFF</color>
+
+
 
 
     <!-- COLORES PRINCIPALES -->
-    <color name="zibe_blue">#3A54BF</color>
     <color name="zibe_pink">#F6286D</color>
     <color name="zibe_purple">#8B3CFF</color>
     <color name="zibe_purple_dark">#6A28C8</color>
@@ -52,9 +58,6 @@
 
 
     <!-- ESTADOS -->
-    <color name="zibe_green">#3DF4AB</color>
-    <color name="zibe_red">#FF3366</color>
-    <color name="zibe_yellow">#FFDD57</color>
     <color name="zibe_shadow">#1A000000</color>
 
     <!-- NAVEGACIÓN -->
