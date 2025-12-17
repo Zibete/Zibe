@@ -18,6 +18,7 @@ import com.zibete.proyecto1.data.ChatChildEvent
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatMessage
@@ -67,6 +68,7 @@ class ChatViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val chatRepository: ChatRepository,
+    private val sessionRepository: SessionRepository
     ) : ViewModel() {
 
     val myUid = userRepository.myUid
@@ -207,14 +209,17 @@ class ChatViewModel @Inject constructor(
         val userName: String,
         val userType: Int = PUBLIC_USER,
         val userPhotoUrl: String,
-        val userToken: String = ""
+        val fcmToken: String = ""
     )
     lateinit var myIdentity: ChatIdentity
     lateinit var otherIdentity: ChatIdentity
 
     private suspend fun loadChatPublicProfiles() {
-        val profile = userRepository.getUserProfile(userId) ?: return
+        val profile = userRepository.getAccount(userId) ?: return
+
         _otherProfile.value = profile
+
+        val otherFcmToken = sessionRepository.getFcmToken(profile.id) ?: return
 
         myIdentity = ChatIdentity(
             userName = userRepository.myUserName,
@@ -224,7 +229,7 @@ class ChatViewModel @Inject constructor(
         otherIdentity = ChatIdentity(
             userName = profile.name,
             userPhotoUrl = profile.photoUrl,
-            userToken = profile.fcmToken
+            fcmToken = otherFcmToken
         )
 
         _headerState.value = ChatHeaderState.Loaded(
@@ -236,10 +241,14 @@ class ChatViewModel @Inject constructor(
 
 
     private suspend fun loadChatFromGroup() {
-        val profile = userRepository.getUserProfile(userId) ?: return
+        val profile = userRepository.getAccount(userId) ?: return
+
         _otherProfile.value = profile
 
+        val otherFcmToken = sessionRepository.getFcmToken(profile.id) ?: return
+
         val myUserGroup = groupRepository.getUserGroup(myUid, groupName)
+
         val otherUserGroup = groupRepository.getUserGroup(userId, groupName)
 
         myIdentity = if (myUserGroup?.type == ANONYMOUS_USER) {
@@ -265,7 +274,7 @@ class ChatViewModel @Inject constructor(
             ChatIdentity(
                 userName = profile.name,
                 userPhotoUrl = profile.photoUrl,
-                userToken = profile.fcmToken
+                fcmToken = otherFcmToken
             )
         }
 
@@ -524,7 +533,7 @@ class ChatViewModel @Inject constructor(
                     put("type", nodeType)
                 }
                 val json = JSONObject().apply {
-                    put("to", otherProfile.value?.fcmToken)
+                    put("to", otherIdentity.fcmToken)
                     put("priority", "high")
                     put("data", body)
                 }

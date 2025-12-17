@@ -34,7 +34,7 @@ import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
@@ -124,7 +124,7 @@ class EditProfileFragment : Fragment() {
             if (url.isNotBlank()) photoList.add(url) else return@setOnClickListener
 
             startActivity(
-                Intent(requireContext(), SlidePhotoActivity::class.java).apply {
+                Intent(requireContext(), PhotoViewerActivity::class.java).apply {
                     putExtra("photoList", photoList)
                 }
             )

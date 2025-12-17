@@ -205,24 +205,7 @@ class UserRepository @Inject constructor(
             .takeIf { it.exists() }
             ?.getValue(Users::class.java)
 
-    suspend fun findAccountsByFcmToken(token: String): DataSnapshot =
-        firebaseRefsContainer.refAccounts
-            .orderByChild(AccountKeys.FCM_TOKEN)
-            .equalTo(token)
-            .awaitSnapshot()
 
-    suspend fun setFcmToken(uid: String, token: String) {
-        myAccountRef(uid).child(AccountKeys.FCM_TOKEN).setValue(token).await()
-    }
-
-    suspend fun clearFcmTokenFromOtherAccounts(token: String, keepUid: String) {
-        val snapshot = findAccountsByFcmToken(token)
-        snapshot.children.forEach { child ->
-            if (child.key != keepUid) {
-                child.ref.child(AccountKeys.FCM_TOKEN).setValue("").await()
-            }
-        }
-    }
 
     // ============================================================
     // EDIT PROFILE (updates)
@@ -364,15 +347,6 @@ class UserRepository @Inject constructor(
         awaitClose { query.removeEventListener(listener) }
     }.flowOn(Dispatchers.IO)
 
-    // ============================================================
-    // PROFILE READ
-    // ============================================================
-
-    suspend fun getUserProfile(userId: String): Users? =
-        myAccountRef(userId)
-            .awaitSnapshot()
-            .takeIf { it.exists() }
-            ?.getValue(Users::class.java)
 
     // ============================================================
     // CHAT PHOTOS

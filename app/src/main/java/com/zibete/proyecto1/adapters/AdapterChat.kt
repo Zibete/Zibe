@@ -26,13 +26,22 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.target.Target
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.databinding.RowDateChatBinding
 import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.INFO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_SENDER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_RECEIVER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_RECEIVER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_RIGHT
@@ -53,7 +62,7 @@ class AdapterChat(
     private val myUid: String
 ) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF), View.OnCreateContextMenuListener {
 
-    private val photoList = arrayListOf<String?>()
+    private val photoList = arrayListOf<String>()
     private var positionForContext = 0
     private var handler: Handler? = null
     private var moveSeekBarThread: Runnable? = null
@@ -115,6 +124,7 @@ class AdapterChat(
     private fun bindInteractive(h: BaseMsgVH, chatMessage: ChatMessage, isMe: Boolean) {
         val selectedColor = ContextCompat.getColor(context, R.color.accent_transparent)
         val transparent = ContextCompat.getColor(context, R.color.transparent)
+        val position = photoList.indexOf(chatMessage.message)
 
         val selected = isSelected(chatMessage)
         h.bindingRoot.selectedItem.setBackgroundColor(if (selected) selectedColor else transparent)
@@ -122,11 +132,7 @@ class AdapterChat(
         // Click foto
         h.bindingRoot.imgPic?.setOnClickListener { v ->
             if (!hasSelection()) {
-                val i = Intent(v.context, SlidePhotoActivity::class.java)
-                    .putExtra("photoList", photoList)
-                    .putExtra("position", photoList.indexOf(chatMessage.message))
-                    .putExtra("rotation", 0)
-                v.context.startActivity(i)
+                PhotoViewerActivity.start(v.context, photoList, position)
             } else {
                 onClickToggleSelect(h, chatMessage)
             }
@@ -265,7 +271,7 @@ class AdapterChat(
         v: View?,
         menuInfo: ContextMenu.ContextMenuInfo?
     ) {
-        menu.add(Constants.FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.eliminar)
+        menu.add(FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.eliminar)
     }
 
     // ==== ViewHolders ====
@@ -549,17 +555,17 @@ class AdapterChat(
 
     // ==== Utils ====
     private fun Int?.isPhoto(): Boolean = when (this) {
-        Constants.MSG_PHOTO, Constants.MSG_PHOTO_RECEIVER_DLT, Constants.MSG_PHOTO_SENDER_DLT -> true
+        MSG_PHOTO, MSG_PHOTO_RECEIVER_DLT, MSG_PHOTO_SENDER_DLT -> true
         else -> false
     }
 
     private fun Int?.isText(): Boolean = when (this) {
-        Constants.MSG_TEXT, Constants.MSG_TEXT_RECEIVER_DLT, Constants.MSG_TEXT_SENDER_DLT -> true
+        MSG_TEXT, MSG_TEXT_RECEIVER_DLT, MSG_TEXT_SENDER_DLT -> true
         else -> false
     }
 
     private fun Int?.isAudio(): Boolean = when (this) {
-        Constants.MSG_AUDIO, Constants.MSG_AUDIO_RECEIVER_DLT, Constants.MSG_AUDIO_SENDER_DLT -> true
+        MSG_AUDIO, MSG_AUDIO_RECEIVER_DLT, MSG_AUDIO_SENDER_DLT -> true
         else -> false
     }
 

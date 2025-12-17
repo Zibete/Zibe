@@ -5,6 +5,7 @@ import com.google.firebase.storage.StorageReference
 
 object Constants {
 
+
     const val DEFAULT_PROFILE_PHOTO_URL =
         "https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8"
 
@@ -87,9 +88,14 @@ object Constants {
     const val ANONYMOUS_USER = 0
     const val PUBLIC_USER = 1
 
+    // ChatActivity
+
     const val EXTRA_USER_ID = "EXTRA_USER_ID"
     const val EXTRA_USER_IDS = "EXTRA_USER_IDS"
     const val EXTRA_START_INDEX = "EXTRA_START_INDEX"
+
+
+
 
     const val EXTRA_CHAT_ID = "userId"
     const val EXTRA_CHAT_NODE = "nodeType"

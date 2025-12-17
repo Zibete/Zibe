@@ -52,7 +52,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
@@ -298,14 +298,8 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         binding.photo.setOnClickListener {
-            val photoUrl = chatViewModel.otherProfile.value?.profilePhoto ?: return@setOnClickListener
-
-            val intent = Intent(this, SlidePhotoActivity::class.java).apply {
-                putExtra("photoList", arrayListOf(photoUrl))
-                putExtra("position", 0)
-                putExtra("rotation", 180)
-            }
-            startActivity(intent)
+            val photoUrl = chatViewModel.otherProfile.value?.photoUrl ?: return@setOnClickListener
+            PhotoViewerActivity.startSingle(this, photoUrl)
         }
 
         binding.buttonUnblockUser.setOnClickListener {
