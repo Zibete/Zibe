@@ -122,7 +122,7 @@
     <string name="version">2025</string>
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
-    <string name="notificaciones">Notificaciones</string>
+    <string name="notifications">Notificaciones</string>
     <string name="save">Guardar</string>
     <string name="cerrar">cerrar</string>
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>

@@ -46,7 +46,7 @@ class ReportActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        toolbar = findViewById(R.id.toolbar_ajustes) // Asegurate que en dialog_report sea MaterialToolbar
+        toolbar = findViewById(R.id.`@+id/material_toolbar`) // Asegurate que en dialog_report sea MaterialToolbar
         setSupportActionBar(toolbar)
 
         supportActionBar?.apply {

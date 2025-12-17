@@ -2,7 +2,7 @@ package com.zibete.proyecto1.model
 
 import com.google.firebase.database.PropertyName
 
-class State (
+class Status (
     @get:PropertyName("estado") @set:PropertyName("estado")
     var state: String = "",
     @get:PropertyName("fecha") @set:PropertyName("fecha")

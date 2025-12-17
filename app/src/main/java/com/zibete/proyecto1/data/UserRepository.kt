@@ -11,7 +11,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository.AccountKeys.BIRTHDAY
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.model.State
+import com.zibete.proyecto1.model.Status
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
@@ -510,7 +510,7 @@ class UserRepository @Inject constructor(
     // PRESENCE / STATUS
     // ============================================================
 
-    private suspend fun setPresence(state: State, isOnline: Boolean) = withContext(Dispatchers.IO) {
+    private suspend fun setPresence(state: Status, isOnline: Boolean) = withContext(Dispatchers.IO) {
         // /Datos/<uid>/Estado (texto + fecha/hora)
         myStatusRef().setValue(state).await()
         // /Cuentas/<uid>/isOnline (boolean)
@@ -518,20 +518,20 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun setUserActivityStatus(status: String) {
-        setPresence(State(status, "", ""), isOnline = true)
+        setPresence(Status(status, "", ""), isOnline = true)
     }
 
     suspend fun setUserOnline() {
-        setPresence(State(context.getString(R.string.online), "", ""), isOnline = true)
+        setPresence(Status(context.getString(R.string.online), "", ""), isOnline = true)
     }
 
     suspend fun setUserOffline() {
-        setPresence(State(context.getString(R.string.offline), "", ""), isOnline = false)
+        setPresence(Status(context.getString(R.string.offline), "", ""), isOnline = false)
     }
 
     suspend fun setUserLastSeen() {
         setPresence(
-            State(context.getString(R.string.ultVez), today(), time()),
+            Status(context.getString(R.string.ultVez), today(), time()),
             isOnline = false
         )
     }
@@ -593,7 +593,7 @@ class UserRepository @Inject constructor(
         return "${first}_${second}"
     }
 
-    suspend fun deleteMyAccountData() {
+    fun deleteMyAccountData() {
         firebaseRefsContainer.refData.child(myUid).removeValue()
         firebaseRefsContainer.refAccounts.child(myUid).removeValue()
         getProfilePhotoStoragePath().delete()

@@ -19,6 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.text.contains
 
 @Singleton
 class UserSessionManager @Inject constructor(
@@ -91,7 +92,7 @@ class UserSessionManager @Inject constructor(
     suspend fun logOutCleanup(): Intent {
 
         // 1. Limpieza de estado
-        userRepository.setUserLastSeen()
+        userRepository.setUserLastSeen() // TODO --> por ahora queda así: ult. vez aún con user eliminado
 
         // 2. Si está en grupo, realizar limpieza de grupo
         if (userPreferencesRepository.inGroup) {
@@ -126,8 +127,30 @@ class UserSessionManager @Inject constructor(
     }
 
 
-    fun deleteFirebaseUser() {
-        firebaseUser.delete()
+    suspend fun deleteFirebaseUser() {
+        firebaseUser.delete().await()
     }
+
+
+    enum class AuthProvider { PASSWORD, GOOGLE, FACEBOOK, OTHER }
+
+    fun authProvider(): AuthProvider {
+        val providers = firebaseUser.providerData.map { it.providerId }.toSet()
+        return when {
+            "password" in providers -> AuthProvider.PASSWORD
+            "google.com" in providers -> AuthProvider.GOOGLE
+            "facebook.com" in providers -> AuthProvider.FACEBOOK
+            else -> AuthProvider.OTHER
+        }
+    }
+
+    fun authProviderLabel(): String? = when (authProvider()) {
+        AuthProvider.GOOGLE -> "Google"
+        AuthProvider.FACEBOOK -> "Facebook"
+        else -> null
+    }
+
+
+
 
 }
