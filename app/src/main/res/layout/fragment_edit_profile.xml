@@ -113,7 +113,7 @@
                                         style="@style/Zibe.EditText"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:hint="@string/fecha_nacimiento"
+                                        android:hint="@string/birthDate"
                                         android:focusable="false"
                                         android:clickable="true"
                                         android:inputType="date"/>

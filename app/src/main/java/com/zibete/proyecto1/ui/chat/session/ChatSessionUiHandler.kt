@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.View
 import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.utils.UserMessageUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -34,8 +35,7 @@ object ChatSessionUiHandler {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha bloqueado a ${event.name}",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.SUCCESS
                 )
             }
 
@@ -54,8 +54,7 @@ object ChatSessionUiHandler {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha ocultado el chat",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.SUCCESS
                 )
             }
 
@@ -74,8 +73,7 @@ object ChatSessionUiHandler {
                 UserMessageUtils.showSnack(
                     root = root,
                     message = "Se ha desbloqueado a ${event.name}",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.SUCCESS
                 )
             }
 
@@ -112,8 +110,7 @@ object ChatSessionUiHandler {
                     } else {
                         "Mensaje eliminado"
                     },
-                    duration = Snackbar.LENGTH_SHORT,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.INFO
                 )
             }
 
@@ -122,8 +119,7 @@ object ChatSessionUiHandler {
                     root = root,
                     message =   if (event.enabled) "Notificaciones de ${event.name} activadas"
                     else "Notificaciones de ${event.name} desactivadas",
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.INFO
                 )
             }
 

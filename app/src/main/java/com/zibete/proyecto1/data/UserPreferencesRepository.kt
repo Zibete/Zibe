@@ -84,10 +84,6 @@ class UserPreferencesRepository @Inject constructor(
         get() = appPrefs.getBoolean("firstLoginDone", false)
         set(value) = appPrefs.edit { putBoolean("firstLoginDone", value) }
 
-//    var onboardingProfileDone: Boolean
-//        get() = appPrefs.getBoolean("onboardingProfileDone", false)
-//        set(value) = appPrefs.edit { putBoolean("onboardingProfileDone", value) }
-
     var deleteUser: Boolean
         get() = appPrefs.getBoolean("deleteUser", false)
         set(value) = appPrefs.edit { putBoolean("deleteUser", value) }

@@ -13,6 +13,15 @@ object Constants {
         const val FIRST_LOGIN_DONE = "flag_Splash"
     }
 
+
+
+    //EditProfile:
+    const val MSG_PROFILE_SAVED = "Perfil guardado con éxito"
+    const val MSG_PROFILE_SAVE_ERROR = "Error guardando perfil"
+    const val MSG_PROFILE_LOAD_ERROR = "No se pudo cargar el perfil"
+    const val MSG_CAMERA_ERROR = "No se pudo abrir la cámara"
+    const val MSG_CAMERA_PERMISSION_REQUIRED = "Necesitás otorgar permiso de cámara para sacar una foto."
+
     const val EXTRA_SESSION_CONFLICT = "extra_session_conflict"
 
 

@@ -5,9 +5,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-val LocalZibeExtendedColors = staticCompositionLocalOf { ZibeExtendedColorSet() }
+val LocalZibeExtendedColors = staticCompositionLocalOf { ZibeExtendedColors() }
 
-class ZibeExtendedColorSet(
+class ZibeExtendedColors(
 
     val snackbarSurface: Color = Color(0xFF1E2A38),
     val zibeGradientStart: Color = Color(0xFFFF3B93),

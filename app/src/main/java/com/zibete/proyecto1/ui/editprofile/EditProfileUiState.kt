@@ -15,5 +15,6 @@ data class EditProfileUiState(
     val photoPreviewUri: Uri? = null,  // foto seleccionada local (sin subir todavía)
     val deletePhoto: Boolean = false,  // marcar para volver a default
 
-    val saveEnabled: Boolean = false
+    val saveEnabled: Boolean = false,
+    val hasBirthDate: Boolean = false
 )

@@ -15,8 +15,10 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 /**
  * Utilidades centralizadas para mensajes al usuario:
@@ -31,29 +33,31 @@ object UserMessageUtils {
     fun showSnack(
         root: View,
         message: String,
+        type: ZibeSnackType? = null,
         duration: Int = Snackbar.LENGTH_SHORT,
-        @ColorRes bgColor: Int = R.color.colorC,
         actionText: String? = null,
-        action: ((View) -> Unit)? = null,
-        @DrawableRes iconRes: Int = 0
+        action: ((View) -> Unit)? = null
     ) {
+        val (bgColorRes, iconRes) = when (type) {
+            ZibeSnackType.SUCCESS -> R.color.zibe_green to R.drawable.ic_check_24
+            ZibeSnackType.ERROR   -> R.color.zibe_red to R.drawable.ic_baseline_cancel_24
+            ZibeSnackType.WARNING -> R.color.zibe_yellow to R.drawable.ic_warning_24
+            ZibeSnackType.INFO    -> R.color.zibe_blue to R.drawable.ic_info_24
+            null                  -> null to 0
+        }
+
         val snackbar = Snackbar.make(root, "", duration)
 
-        // ⚠️ IMPORTANTE:
-        // Ya NO se usa Snackbar.SnackbarLayout (restringido)
-        val snackbarView = snackbar.view
-        val parent = snackbarView as ViewGroup     // 👈 seguro, sin warnings
+        val parent = snackbar.view as ViewGroup
+        parent.setBackgroundColor(0x00000000)
 
-        parent.setBackgroundColor(0x00000000)       // fondo transparente
-
-        // Inflamos TU layout personalizado
         val customView = LayoutInflater.from(root.context)
             .inflate(R.layout.layout_snackbar_zibe, parent, false)
 
-        // --- Texto ---
+        // Texto
         customView.findViewById<TextView>(R.id.snack_text).text = message
 
-        // --- Ícono opcional ---
+        // Ícono
         val iv = customView.findViewById<ImageView>(R.id.snack_icon)
         if (iconRes != 0) {
             iv.visibility = View.VISIBLE
@@ -62,7 +66,7 @@ object UserMessageUtils {
             iv.visibility = View.GONE
         }
 
-        // --- Acción opcional ---
+        // Acción opcional
         val tvAction = customView.findViewById<TextView>(R.id.snack_action)
         if (actionText != null && action != null) {
             tvAction.visibility = View.VISIBLE
@@ -75,11 +79,12 @@ object UserMessageUtils {
             tvAction.visibility = View.GONE
         }
 
-        // --- Color de fondo de la card ---
-        customView.backgroundTintList =
-            ContextCompat.getColorStateList(root.context, bgColor)
+        // Fondo
+        bgColorRes?.let {
+            customView.backgroundTintList =
+                ContextCompat.getColorStateList(root.context, it)
+        }
 
-        // --- Remplazamos la vista del snackbar por la custom ---
         parent.removeAllViews()
         parent.addView(customView)
 
@@ -87,18 +92,6 @@ object UserMessageUtils {
     }
 
 
-    @JvmStatic
-    fun showInfo(root: View, message: String) {
-        showSnack(
-            root = root,
-            message = message,
-            duration = Snackbar.LENGTH_SHORT,
-            bgColor = R.color.colorC,
-            actionText = null,
-            action = null,
-            iconRes = R.drawable.ic_info_24
-        )
-    }
 
     // ========= DIÁLOGOS =========
 

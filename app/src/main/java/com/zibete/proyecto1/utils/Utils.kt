@@ -4,13 +4,16 @@ import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 object Utils {
 
-    private val locale = Locale.getDefault()
+    private var locale = Locale.getDefault()
+
 
 
     @JvmStatic
@@ -43,5 +46,30 @@ object Utils {
         SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS", locale).format(Date())
 
 
+    private val BIRTHDAY_FORMATTER: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("dd/MM/yyyy", locale)
+
+    fun millisToBirthDate(millis: Long, zoneId: ZoneId = ZoneId.systemDefault()): String {
+        val ld = Instant.ofEpochMilli(millis).atZone(zoneId).toLocalDate()
+        return ld.format(BIRTHDAY_FORMATTER)
+    }
+
+    fun birthDateToMillis(date: String, zoneId: ZoneId = ZoneId.systemDefault()): Long? {
+        return runCatching {
+            val ld = LocalDate.parse(date, BIRTHDAY_FORMATTER)
+            ld.atStartOfDay(zoneId).toInstant().toEpochMilli()
+        }.getOrNull()
+    }
+
+
+    class SimpleWatcher(
+        private val onChanged: (String) -> Unit
+    ) : android.text.TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+        override fun afterTextChanged(s: android.text.Editable?) = Unit
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            onChanged(s?.toString().orEmpty())
+        }
+    }
 
 }

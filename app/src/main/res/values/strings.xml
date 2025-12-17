@@ -13,7 +13,7 @@
 
     <string name="registro">Registrarse</string>
     <string name="fin_registro">Finalizar registro</string>
-    <string name="fecha_nacimiento">Fecha de nacimiento</string>
+    <string name="birthDate">Fecha de nacimiento</string>
     <string name="Edad">Edad</string>
     <string name="description">¿Algo sobre vos?</string>
     <string name="Entrar">Entrar</string>

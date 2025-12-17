@@ -126,11 +126,9 @@ class UserSessionManager @Inject constructor(
         firebaseUser.updateProfile(req).await()
     }
 
-
     suspend fun deleteFirebaseUser() {
         firebaseUser.delete().await()
     }
-
 
     enum class AuthProvider { PASSWORD, GOOGLE, FACEBOOK, OTHER }
 
@@ -149,8 +147,5 @@ class UserSessionManager @Inject constructor(
         AuthProvider.FACEBOOK -> "Facebook"
         else -> null
     }
-
-
-
 
 }

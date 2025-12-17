@@ -85,13 +85,16 @@ class MainViewModel @Inject constructor(
             myInstallId = installId
         ) {
             viewModelScope.launch {
-                userPreferencesRepository.
                 _navEvents.emit(MainNavEvent.ToSplashSessionConflict)
             }
         }
     }
 
     // --- FUNCIONES DE UI ---
+
+    fun emit(event: MainNavEvent) {
+        viewModelScope.launch { _navEvents.emit(event) }
+    }
 
     fun setScreen(screen: CurrentScreen) {
         _uiState.update { it.copy(currentScreen = screen) }
@@ -127,7 +130,7 @@ class MainViewModel @Inject constructor(
 //        }
 //    }
 
-    fun isOnboardingProfileDone() {
+    fun isFirstLoginDone() {
         if (!userPreferencesRepository.firstLoginDone) onEditProfileSelected()
     }
 
@@ -243,16 +246,7 @@ class MainViewModel @Inject constructor(
 
 
 
-
-
-
-
-
-
-
-
-
-                    _navEvents.emit(MainNavEvent.BackFromEditProfile)
+                    _navEvents.emit(MainNavEvent.BackFromEditProfile())
                 }
             }
 

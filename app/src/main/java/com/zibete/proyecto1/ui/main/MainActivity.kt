@@ -52,6 +52,7 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
@@ -114,7 +115,7 @@ class MainActivity : BaseToolbarActivity() {
 
         setupLocation()
 
-        mainViewModel.isOnboardingProfileDone()
+        mainViewModel.isFirstLoginDone()
 
         setupOnBackPressedDispatcher()
     }
@@ -350,6 +351,13 @@ class MainActivity : BaseToolbarActivity() {
                             }
 
                             is MainNavEvent.BackFromEditProfile -> {
+                                if (!event.message.isNullOrEmpty()) {
+                                    UserMessageUtils.showSnack(
+                                        root = binding.root,
+                                        message = event.message,
+                                        type = ZibeSnackType.SUCCESS
+                                    )
+                                }
                                 handleBackFromEditProfile()
                             }
 
@@ -375,6 +383,14 @@ class MainActivity : BaseToolbarActivity() {
                                     onConfirm = {
                                         mainViewModel.onExitGroupConfirmed()
                                     }
+                                )
+                            }
+
+                            is MainNavEvent.ShowMessage -> {
+                                UserMessageUtils.showSnack(
+                                    root = binding.root,
+                                    message = event.message,
+                                    type = event.type
                                 )
                             }
                         }
@@ -407,22 +423,11 @@ class MainActivity : BaseToolbarActivity() {
                 UserMessageUtils.showSnack(
                     root = binding.root,
                     message = "Guarde los cambios antes de salir",
-                    duration = Snackbar.LENGTH_SHORT,
-                    iconRes = R.drawable.ic_info_24
-                )
-                return
-            }
-            if (frag.isDateOfBirthSet()) {
-                UserMessageUtils.showSnack(
-                    root = binding.root,
-                    message = "Complete su fecha de nacimiento",
-                    duration = Snackbar.LENGTH_SHORT,
-                    iconRes = R.drawable.ic_info_24
+                    type = ZibeSnackType.WARNING
                 )
                 return
             }
         }
-
         mainViewModel.onChatTabSelected()
     }
 

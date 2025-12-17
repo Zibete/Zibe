@@ -174,7 +174,8 @@ class SettingsActivity : AppCompatActivity() {
                         }
 
                         is SettingsUiEvent.ShowProgress -> showProgressDialog(event.message)
-                        SettingsUiEvent.HideProgress -> hideProgressDialog()
+
+                        is SettingsUiEvent.HideProgress -> hideProgressDialog()
 
                         is SettingsUiEvent.Navigate -> {
                             startActivity(event.intent)
@@ -217,9 +218,9 @@ class SettingsActivity : AppCompatActivity() {
             .setMessage("Esta acción eliminará toda la información y no se podrá recuperar")
             .setPositiveButton("Sí") { _, _ ->
                 MaterialAlertDialogBuilder(this)
-                    .setTitle("¿Está completamente seguro?")
+                    .setTitle("Atención")
                     .setMessage("Si elimina la cuenta, no podrá recuperar sus datos")
-                    .setPositiveButton("Eliminar") { _, _ ->
+                    .setPositiveButton("Eliminar cuenta") { _, _ ->
                         if (latestState.requiresPasswordForSensitiveActions) {
                             showPasswordDialogForDelete()
                         } else {
@@ -239,7 +240,7 @@ class SettingsActivity : AppCompatActivity() {
         val alert = MaterialAlertDialogBuilder(this)
             .setTitle("Introduzca su contraseña")
             .setView(dialogBinding.root)
-            .setPositiveButton("Eliminar", null)
+            .setPositiveButton("Eliminar cuenta", null)
             .setNegativeButton(DIALOG_CANCEL, null)
             .create()
 
@@ -259,10 +260,6 @@ class SettingsActivity : AppCompatActivity() {
 
         alert.show()
     }
-
-    // -------------------------
-    // Non-deprecated progress
-    // -------------------------
 
     private fun showProgressDialog(message: String) {
         if (progressDialog?.isShowing == true) return

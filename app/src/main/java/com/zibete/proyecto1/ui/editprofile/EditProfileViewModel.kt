@@ -1,22 +1,21 @@
 package com.zibete.proyecto1.ui.editprofile
 
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepository.AccountKeys
 import com.zibete.proyecto1.data.UserSessionManager
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_LOAD_ERROR
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_SAVED
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_SAVE_ERROR
 import com.zibete.proyecto1.ui.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
-import com.zibete.proyecto1.utils.Utils
-import com.zibete.proyecto1.utils.Utils.dateTime
+import com.zibete.proyecto1.utils.Utils.calcAge
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,22 +24,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val userSessionManager: UserSessionManager,
-    private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    private val firebaseUser = userRepository.firebaseUser
     private val myUid = userRepository.myUid
-
-    private var myInstallId: String? = null
-    private var myFcmToken: String? = null
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -49,17 +42,20 @@ class EditProfileViewModel @Inject constructor(
     val events: SharedFlow<EditProfileUiEvent> = _events.asSharedFlow()
 
     fun load() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
 
-            launch {
-                runCatching { myInstallId = FirebaseInstallations.getInstance().id.await() }
-                runCatching { myFcmToken = FirebaseMessaging.getInstance().token.await() }
-            }
+        viewModelScope.launch {
+
+            _uiState.update { it.copy(isLoading = true) }
 
             runCatching {
 
-                val u = userRepository.getUserProfile(myUid) ?: return@launch
+                val u = userRepository.getUserProfile(myUid)
+
+                if (u == null) {
+                    _uiState.update { it.copy(isLoading = false) }
+                    onError(MSG_PROFILE_LOAD_ERROR)
+                    return@runCatching
+                }
 
                 _uiState.update {
                     it.copy(
@@ -67,16 +63,17 @@ class EditProfileViewModel @Inject constructor(
                         displayName = u.name,
                         description = u.description,
                         birthDate = u.birthDay,
-                        age = Utils.calcAge(u.birthDay),
+                        age = calcAge(u.birthDay),
                         photoUrl = u.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
-                        saveEnabled = false
+                        saveEnabled = false,
+                        hasBirthDate = u.birthDay.isNotBlank()
                     )
                 }
             }.onFailure { it ->
                 _uiState.update { it.copy(isLoading = false) }
-                _events.tryEmit(EditProfileUiEvent.ShowMessage(it.message ?: "Error cargando perfil"))
+                onError(it.message ?: ERR_ZIBE)
             }
         }
     }
@@ -95,12 +92,12 @@ class EditProfileViewModel @Inject constructor(
     }
 
     private fun computeAgeFromString(birthDay: String): Int {
-        return Utils.calcAge(birthDay)
+        return calcAge(birthDay)
     }
 
-    fun isOnboardingProfileDone () : Boolean { return userPreferencesRepository.onboardingProfileDone }
+    fun isFirstLoginDone () : Boolean { return userPreferencesRepository.firstLoginDone }
 
-    fun onboardingProfileDone () { userPreferencesRepository.onboardingProfileDone = true }
+    fun onFirstLoginDone () { userPreferencesRepository.firstLoginDone = true }
 
     fun onPhotoSelected(uri: Uri) {
         _uiState.update {
@@ -122,9 +119,7 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun onError(message: String) {
-        _events.tryEmit(EditProfileUiEvent.ShowMessage(message))
-    }
+
 
     fun onSaveClicked() {
         viewModelScope.launch {
@@ -148,10 +143,11 @@ class EditProfileViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
 
             runCatching {
+                // Resolver foto final
+                val originalPhotoUrl = state.photoUrl
+                var finalPhotoUrl = originalPhotoUrl
 
-                // 1) Resolver foto final
-                var finalPhotoUrl: String? = state.photoUrl
-
+                // 1) Subir/borrar foto
                 when {
                     state.deletePhoto -> {
                         userRepository.deleteProfilePhoto()
@@ -165,27 +161,18 @@ class EditProfileViewModel @Inject constructor(
                 }
 
                 // 2) Update Realtime DB (/Cuentas)
-
-                val updates = mutableMapOf<String, Any>(
+                val updates = mutableMapOf<String, Any?>(
                     AccountKeys.NAME to newName,
                     AccountKeys.BIRTHDAY to newBirthDate,
                     AccountKeys.AGE to age,
-                    AccountKeys.DESCRIPTION to newDescription,
-                    AccountKeys.CREATED_AT to dateTime()
+                    AccountKeys.DESCRIPTION to newDescription
                 )
 
-                finalPhotoUrl?.let { updates[AccountKeys.PHOTO_URL] = it }
-
-                myInstallId?.takeIf { it.isNotBlank() }?.let {
-                    updates["installId"] = it
-                    updates["token"] = it // mantengo tu comportamiento actual
+                if (finalPhotoUrl != null && finalPhotoUrl != originalPhotoUrl) {
+                    updates[AccountKeys.PHOTO_URL] = finalPhotoUrl
                 }
 
-                myFcmToken?.takeIf { it.isNotBlank() }?.let {
-                    updates["fcmToken"] = it
-                }
-
-                firebaseRefsContainer.refAccounts.child(myUid).updateChildren(updates).await()
+                userRepository.updateUserFields(updates)
 
                 _uiState.update {
                     it.copy(
@@ -203,11 +190,24 @@ class EditProfileViewModel @Inject constructor(
                     finalPhotoUrl
                 )
 
-                _events.tryEmit(EditProfileUiEvent.NavigateToSplash)
+                onBackToMain(MSG_PROFILE_SAVED)
+
             }.onFailure {
                 _uiState.update { it.copy(isSaving = false) }
-                onError("Error guardando perfil")
+                onError(MSG_PROFILE_SAVE_ERROR)
             }
         }
+    }
+
+    fun onBackToMain(message: String = "") {
+        viewModelScope.launch {
+            _events.emit(EditProfileUiEvent.OnBackToMain(message))
+        }
+    }
+
+    fun onError(message: String) {
+        _events.tryEmit(EditProfileUiEvent.ShowMessage(
+            message = message,
+            type = ZibeSnackType.ERROR))
     }
 }

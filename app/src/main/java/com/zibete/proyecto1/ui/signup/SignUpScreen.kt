@@ -52,6 +52,7 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import com.zibete.proyecto1.utils.Utils.millisToBirthDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -219,22 +220,17 @@ fun SignUpScreen(
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    val millis = datePickerState.selectedDateMillis
-                                    if (millis != null) {
-                                        val sdf =
-                                            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                                        birthday = sdf.format(Date(millis))
-                                    }
-                                    showDatePicker = false
+                            TextButton(onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val formatted = millisToBirthDate(millis)
+                                    birthday = formatted
                                 }
-                            ) { Text("OK") }
+                                showDatePicker = false
+                            }) { Text("OK") }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
-                                Text(DIALOG_CANCEL)
-                            }
+                                Text(DIALOG_CANCEL) }
                         }
                     ) {
                         DatePicker(state = datePickerState)

@@ -3,6 +3,7 @@ package com.zibete.proyecto1
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
@@ -35,11 +36,10 @@ class SlidePhotoActivity : AppCompatActivity() {
         val position = intent.getIntExtra("position", 0).coerceIn(0, (photoList.size - 1).coerceAtLeast(0))
         val rotationY = intent.getIntExtra("rotation", 0)
 
-        // Adapter con PhotoView + Coil
         val adapter = SliderPhotoAdapter(
             urls = photoList,
-            onLoadStart = { binding.progressbarImage.show() },
-            onLoadEnd = { binding.progressbarImage.hide() }
+            onLoadStart = { binding.progressbarImage.isVisible = true },
+            onLoadEnd = { binding.progressbarImage.isVisible = false }
         )
 
         binding.viewPager.adapter = adapter
@@ -59,7 +59,4 @@ class SlidePhotoActivity : AppCompatActivity() {
         lifecycleScope.launch { userRepository.setUserOnline() }
     }
 
-    // helpers cortos
-    private fun android.view.View.show() { this.visibility = android.view.View.VISIBLE }
-    private fun android.view.View.hide() { this.visibility = android.view.View.GONE }
 }

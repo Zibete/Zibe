@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.ui.main
 
 import android.content.Intent
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.editprofile.EditProfileUiEvent
 
 sealed class MainNavEvent {
     data object ToSplashSessionConflict : MainNavEvent()
@@ -14,7 +16,9 @@ sealed class MainNavEvent {
     // ------------------- Menu ---------------------
     data object ToSettings : MainNavEvent()
     data object ToEditProfile : MainNavEvent()
-    data object BackFromEditProfile : MainNavEvent()
+    data class BackFromEditProfile(
+        val message: String ?= "",
+    ) : MainNavEvent()
 
     // ------------------- Desde chat o grupos para volver al listado ---------------------
     data object BackToChat : MainNavEvent()
@@ -24,5 +28,10 @@ sealed class MainNavEvent {
     data class ToSplashAfterLogout(val intent: Intent) : MainNavEvent()
     data object BackExitAppOrCloseSearch : MainNavEvent()
     data class ConfirmExitGroup(val groupName: String) : MainNavEvent()
+
+    data class ShowMessage(
+        val message: String,
+        val type: ZibeSnackType? = ZibeSnackType.INFO
+    ) : MainNavEvent()
 
 }
