@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import com.facebook.login.LoginManager
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -19,7 +20,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.text.contains
 
 @Singleton
 class UserSessionManager @Inject constructor(
@@ -31,16 +31,56 @@ class UserSessionManager @Inject constructor(
     private val userRepository: UserRepository
 ) {
 
+    // --- Acceso seguro/nullable ---
+    val currentUser: FirebaseUser?
+        get() = firebaseAuth.currentUser
+
     val firebaseUser: FirebaseUser
         get() = checkNotNull(firebaseAuth.currentUser) {
-        "User must be logged in to access this property"
-    }
+            "User must be logged in to access this property"
+        }
 
     val myUid: String
         get() = firebaseUser.uid
 
+    fun hasSession(): Boolean = currentUser != null
+
     var latitude: Double = 0.0
     var longitude: Double = 0.0
+
+    // ================= AUTH API (centralizada) =================
+
+    suspend fun signInWithEmail(email: String, password: String) {
+        firebaseAuth.signInWithEmailAndPassword(email, password).await()
+    }
+
+    suspend fun signInWithCredential(credential: AuthCredential) {
+        firebaseAuth.signInWithCredential(credential).await()
+    }
+
+    suspend fun sendPasswordResetEmail(email: String) {
+        firebaseAuth.sendPasswordResetEmail(email).await()
+    }
+
+    suspend fun deleteFirebaseUser() {
+        firebaseUser.delete().await()
+    }
+
+    // ================= PROFILE (AUTH USER) =================
+
+    suspend fun updateAuthProfile(
+        userName: String,
+        photoUrl: String?
+    ) {
+        val req = UserProfileChangeRequest.Builder()
+            .setDisplayName(userName)
+            .apply { photoUrl?.let { photoUri = it.toUri() } }
+            .build()
+
+        firebaseUser.updateProfile(req).await()
+    }
+
+    // ================= GROUP EXIT CLEANUP =================
 
     fun performExitGroupDataCleanup() {
 
@@ -50,22 +90,16 @@ class UserSessionManager @Inject constructor(
         // Eliminar todos mis chats del grupo
         firebaseRefsContainer.refChatMessageGroupsRoot
             .addListenerForSingleValueEvent(object : ValueEventListener {
-
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     for (snapshot in dataSnapshot.children) {
                         val key = snapshot.key ?: continue
-
-                        if (key.contains(myUid)) {
-                            snapshot.ref.removeValue()
-                        }
+                        if (key.contains(myUid)) snapshot.ref.removeValue()
                     }
                 }
-
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onCancelled(error: DatabaseError) = Unit
             })
 
-
-        // 2. Notificación de Abandono al grupo
+        // Notificación de abandono
         val chatmsg = ChatsGroup(
             "abandonó la sala",
             now(),
@@ -79,56 +113,42 @@ class UserSessionManager @Inject constructor(
             .push()
             .setValue(chatmsg)
 
-        // 3. Eliminar usuario del nodo Users
+        // Eliminar usuario del nodo Users
         firebaseRefsContainer.refGroupUsers
             .child(userPreferencesRepository.groupName)
             .child(myUid)
             .removeValue()
 
-        // 4. Reset estado local (Repo)
-        userPreferencesRepository.resetGroupState() // Función que limpia el estado de grupo en el Repo
+        // Reset estado local
+        userPreferencesRepository.resetGroupState()
     }
+
+    // ================= LOGOUT CLEANUP =================
 
     suspend fun logOutCleanup(): Intent {
 
-        // 1. Limpieza de estado
-        userRepository.setUserLastSeen() // TODO --> por ahora queda así: ult. vez aún con user eliminado
+        // 1) Presencia
+        userRepository.setUserLastSeen()
 
-        // 2. Si está en grupo, realizar limpieza de grupo
+        // 2) Si está en grupo, limpieza de grupo
         if (userPreferencesRepository.inGroup) {
             performExitGroupDataCleanup()
         }
 
-        // 3. Limpieza de preferencias
+        // 3) Prefs
         userPreferencesRepository.clearAllData()
 
-        // 4. Cierre de sesión en Firebase y Facebook
+        // 4) Sign out
         firebaseAuth.signOut()
         loginManager.logOut()
 
-        // 5. Devolver Intent para navegación
+        // 5) Navegación
         return Intent(applicationContext, SplashActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         }
     }
 
-    suspend fun updateAuthProfile(
-        userName: String,
-        photoUrl: String?
-    ) {
-        val req = UserProfileChangeRequest.Builder()
-            .setDisplayName(userName)
-            .apply {
-                photoUrl?.let { photoUri = it.toUri() }
-            }
-            .build()
-
-        firebaseUser.updateProfile(req).await()
-    }
-
-    suspend fun deleteFirebaseUser() {
-        firebaseUser.delete().await()
-    }
+    // ================= PROVIDER TYPE =================
 
     enum class AuthProvider { PASSWORD, GOOGLE, FACEBOOK, OTHER }
 
@@ -147,5 +167,4 @@ class UserSessionManager @Inject constructor(
         AuthProvider.FACEBOOK -> "Facebook"
         else -> null
     }
-
 }
