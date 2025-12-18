@@ -94,6 +94,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")
 
+    // DataStore Preferences
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
 
     // -------------------------------
     // HILT (Versión 2.48 obligatoria para compatibilidad)

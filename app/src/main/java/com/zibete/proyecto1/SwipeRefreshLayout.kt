@@ -5,7 +5,7 @@ import android.util.AttributeSet
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
-class FixedSwipeRefreshLayout : SwipeRefreshLayout {
+class SwipeRefreshLayout : SwipeRefreshLayout {
     private var recyclerView: RecyclerView? = null
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)

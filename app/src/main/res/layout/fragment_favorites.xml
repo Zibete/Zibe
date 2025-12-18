@@ -6,7 +6,7 @@
     tools:context=".ui.favorites.FavoritesFragment"
     android:orientation="vertical">
 
-    <com.zibete.proyecto1.FixedSwipeRefreshLayout
+    <com.zibete.proyecto1.SwipeRefreshLayout
         android:id="@+id/favorite_swipe_refresh"
         android:orientation="vertical"
         android:layout_width="match_parent"
@@ -38,6 +38,6 @@
 
         </RelativeLayout>
 
-    </com.zibete.proyecto1.FixedSwipeRefreshLayout>
+    </com.zibete.proyecto1.SwipeRefreshLayout>
 
 </LinearLayout>

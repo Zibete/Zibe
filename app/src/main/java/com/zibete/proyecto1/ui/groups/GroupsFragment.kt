@@ -20,7 +20,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterGroups
 import com.zibete.proyecto1.databinding.DialogGoGroupBinding
@@ -127,7 +126,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                         is GroupsUiEvent.NavigateToGroupPager -> {
                             joinGroupDialog?.dismiss()
                             joinGroupDialog = null
-                            (activity as? MainActivity)?.mainViewModel?.onGroupJoinConfirmed()
+                            (activity as? MainActivity)?.mainViewModel?.toGroupDetail()
                         }
                     }
                 }

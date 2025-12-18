@@ -24,7 +24,7 @@ class FavoritesViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState
@@ -53,9 +53,7 @@ class FavoritesViewModel @Inject constructor(
 
                 if (!favListSnap.exists() || favListSnap.childrenCount == 0L) {
                     _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
-
-
-                    _events.emit(FavoritesUiEvent.ShowEmptyFavorites)
+                    showEmptyFavoritesMessage()
                     return@launch
                 }
 
@@ -79,7 +77,7 @@ class FavoritesViewModel @Inject constructor(
                             id = favUserId,
                             name = u.name,
                             age = Utils.calcAge(u.birthDay),
-                            profilePhoto = u.profilePhoto,
+                            profilePhoto = u.photoUrl,
                             isOnline = u.isOnline
                         )
                     }
@@ -87,9 +85,7 @@ class FavoritesViewModel @Inject constructor(
 
                 _uiState.update { it.copy(isLoading = false, favorites = result) }
 
-                if (result.isEmpty()) {
-                    _events.emit(FavoritesUiEvent.ShowEmptyFavorites)
-                }
+                if (result.isEmpty()) showEmptyFavoritesMessage()
 
             } catch (t: Throwable) {
                 _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
@@ -98,6 +94,12 @@ class FavoritesViewModel @Inject constructor(
                 )
                 )
             }
+        }
+    }
+
+    fun showEmptyFavoritesMessage() {
+        viewModelScope.launch {
+            _events.emit(FavoritesUiEvent.ShowMessage("Aún no hay favoritos"))
         }
     }
 }

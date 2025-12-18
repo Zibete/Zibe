@@ -51,12 +51,10 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.setUserOnline()
     }
 
     override fun onPause() {
         super.onPause()
-        viewModel.setUserOffline()
     }
 
     override fun onDestroy() {

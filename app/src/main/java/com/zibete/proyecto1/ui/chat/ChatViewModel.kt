@@ -19,6 +19,7 @@ import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatMessage
@@ -56,6 +57,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
@@ -64,19 +66,21 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext private val context: Context,
-    private val userPreferencesRepository: UserPreferencesRepository,
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val chatRepository: ChatRepository,
-    private val sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository,
+    private val userPreferencesDSRepository: UserPreferencesDSRepository
     ) : ViewModel() {
 
-    val myUid = userRepository.myUid
+    val myUid get() = userRepository.myUid
 
     val userId: String = savedStateHandle["userId"] ?: ""
     val nodeType: String = savedStateHandle["nodeType"] ?: NODE_CURRENT_CHAT// 0 = unknown 1 = normal // DEF = ChatWith
 
-    private val groupName = userPreferencesRepository.groupName
+    val groupName: String
+        get() = runBlocking { userPreferencesDSRepository.groupNameFlow.first() }
+
     // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
@@ -589,14 +593,6 @@ class ChatViewModel @Inject constructor(
 
     fun setUserActivityStatus(status: String) {
         viewModelScope.launch { userRepository.setUserActivityStatus(status) }
-    }
-
-    fun setUserOnline() {
-        viewModelScope.launch { userRepository.setUserOnline() }
-    }
-
-    fun setUserLastSeen(){
-        viewModelScope.launch { userRepository.setUserLastSeen() }
     }
 
     fun setActiveChat(activeChat: String){

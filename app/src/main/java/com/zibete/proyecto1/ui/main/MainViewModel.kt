@@ -5,18 +5,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -26,18 +36,24 @@ enum class CurrentScreen {
     CHAT, USERS, GROUPS, EDIT_PROFILE, FAVORITES, OTHER
 }
 
-// Eventos de una sola vez (para navegación o diálogos)
+
+
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesDSRepository: UserPreferencesDSRepository,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val presenceRepository: PresenceRepository
 ) : ViewModel() {
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
+
+    val groupContext: StateFlow<GroupContext?> =
+        userPreferencesDSRepository.groupContextFlow
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -48,8 +64,14 @@ class MainViewModel @Inject constructor(
     private var installIdListener: ValueEventListener? = null
 
     init {
+
+        // Iniciar presencia
         viewModelScope.launch {
-            // 1) Sesión activa get & set
+            presenceRepository.startPresence(myUid)
+        }
+
+        // 1) Setup sesión (una vez)
+        viewModelScope.launch {
             val installId = sessionRepository.getLocalInstallId()
             val fcmToken = sessionRepository.getLocalFcmToken()
 
@@ -59,22 +81,50 @@ class MainViewModel @Inject constructor(
                 fcmToken = fcmToken
             )
 
-            // 2) Listener de sesión
             checkSessionConflict(myUid, installId)
+        }
 
-            // 3) Listeners --> Badges
-            userRepository.observeUnreadChats().collect { count ->
-                _uiState.update { it.copy(chatBadgeCount = count) }
-            }
+        // 2) Badge chats (siempre)
+        viewModelScope.launch {
+            userRepository.observeUnreadChats()
+                .collect { count ->
+                    _uiState.update { it.copy(chatBadgeCount = count) }
+                }
+        }
 
-            // 4) Listeners --> Badges grupos
-            if (!userPreferencesRepository.inGroup) {
-                groupRepository.observeUnreadGroup().collect { count ->
+        // 3)  Badge grupos (siempre)
+        observeGroupBadges()
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun observeGroupBadges() {
+
+        viewModelScope.launch {
+            userPreferencesDSRepository.groupContextFlow
+                .flatMapLatest { groupContext ->
+                    if (groupContext == null) flowOf(0)
+                    else groupRepository.groupsBottomNavBadgeCount(groupContext.groupName)
+                }
+                .distinctUntilChanged()
+                .collect { count ->
                     _uiState.update { it.copy(groupBadgeCount = count) }
                 }
-            }
+        }
+
+        viewModelScope.launch {
+            userPreferencesDSRepository.groupContextFlow
+                .flatMapLatest { groupContext ->
+                    if (groupContext == null) flowOf(0)
+                    else groupRepository.groupTabUnreadCount(groupContext.groupName)
+                }
+                .distinctUntilChanged()
+                .collect { count ->
+                    _uiState.update { it.copy(groupTabUnreadCount = count) }
+                }
         }
     }
+
+
 
     // --- LOGICA DE SESIÓN (Install ID) ---
     private fun checkSessionConflict(uid: String, installId: String) {
@@ -123,15 +173,18 @@ class MainViewModel @Inject constructor(
         }
     }
 
-//    fun onLogoutConfirmed() {
-//        viewModelScope.launch {
-//            val intent = userSessionManager.logOutCleanup()
-//            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
-//        }
-//    }
+    fun onLogoutConfirmed() {
+        viewModelScope.launch {
+            val intent = userSessionManager.logOutCleanup()
+            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+        }
+    }
 
-    fun isFirstLoginDone() {
-        if (!userPreferencesRepository.firstLoginDone) onEditProfileSelected()
+    fun checkFirstLogin() {
+        viewModelScope.launch {
+            val done = userPreferencesDSRepository.firstLoginDoneFlow.first()
+            if (!done) onEditProfileSelected()
+        }
     }
 
     fun onExitGroupConfirmed() {
@@ -203,26 +256,29 @@ class MainViewModel @Inject constructor(
         showLayoutSettings(false)
 
         viewModelScope.launch {
-            if (!userPreferencesRepository.inGroup) {
-                _navEvents.emit(MainNavEvent.ToGroupsSelect)
-            } else {
-                showToolbar(true)
-                onGroupJoinConfirmed()
+            groupContext.collect { groupContext ->
+                val inGroup = groupContext?.inGroup ?: false
+                if (!inGroup) {
+                    toGroupsSelect()
+                } else {
+                    showToolbar(true)
+                    toGroupDetail()
+                }
             }
         }
     }
 
-    fun onGroupJoinConfirmed() {
+    fun toGroupDetail(){
         viewModelScope.launch {
-            _navEvents.emit(
-                MainNavEvent.ToGroupsDetail(
-                    groupName = userPreferencesRepository.groupName,
-                    userName = userPreferencesRepository.userNameGroup
-                )
-            )
+            _navEvents.emit(MainNavEvent.ToGroupDetail)
         }
     }
 
+    fun toGroupsSelect(){
+        viewModelScope.launch {
+            _navEvents.emit(MainNavEvent.ToGroupsSelect)
+        }
+    }
 
     fun onEditProfileSelected() {
         if (_uiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
@@ -242,10 +298,6 @@ class MainViewModel @Inject constructor(
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
-
-
-
-
                     _navEvents.emit(MainNavEvent.BackFromEditProfile())
                 }
             }
@@ -265,14 +317,6 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun onSetUserOnline(){
-        viewModelScope.launch { userRepository.setUserOnline() }
-    }
-
-    fun onSetUserLastSeen(){
-        viewModelScope.launch { userRepository.setUserLastSeen() }
     }
 
     override fun onCleared() {
@@ -297,9 +341,24 @@ class MainViewModel @Inject constructor(
 
             R.id.action_exit_group -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.ConfirmExitGroup(userPreferencesRepository.groupName))
+                    _navEvents.emit(MainNavEvent.ConfirmExitGroup)
                 }
             }
         }
     }
+
+    val groupName: StateFlow<String> =
+        userPreferencesDSRepository.groupContextFlow
+            .map { it?.groupName.orEmpty() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    val hasActiveFilter: StateFlow<Boolean> =
+        userPreferencesDSRepository.filterSwitchFlow
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+
+    fun myDisplayName(): String = userRepository.myUserName
+    fun myEmail(): String = userRepository.myEmail
+    fun myPhotoUrl(): String = userRepository.myUserName
+
 }

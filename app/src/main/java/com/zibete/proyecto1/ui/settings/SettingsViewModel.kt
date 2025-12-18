@@ -10,7 +10,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.data.UserSessionManager.AuthProvider
@@ -30,13 +30,17 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesDSRepository: UserPreferencesDSRepository,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val firebaseUser = userRepository.firebaseUser
-    
+
+    // -------------------------
+    // UI STATE
+    // -------------------------
+
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -45,13 +49,37 @@ class SettingsViewModel @Inject constructor(
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val events = _events.asSharedFlow()
-    
+
+    // -------------------------
+    // INIT
+    // -------------------------
+
     init {
-        refreshState()
+        refreshStaticState()
+        observePreferences()
     }
 
-    fun setUserOnline() = viewModelScope.launch { userRepository.setUserOnline() }
-    fun setUserOffline() = viewModelScope.launch { userRepository.setUserLastSeen() }
+    // -------------------------
+    // OBSERVERS (DataStore → UI)
+    // -------------------------
+
+    private fun observePreferences() {
+        viewModelScope.launch {
+            userPreferencesDSRepository.groupNotificationsFlow.collect { enabled ->
+                _uiState.update { it.copy(groupNotificationsEnabled = enabled) }
+            }
+        }
+
+        viewModelScope.launch {
+            userPreferencesDSRepository.individualNotificationsFlow.collect { enabled ->
+                _uiState.update { it.copy(individualNotificationsEnabled = enabled) }
+            }
+        }
+    }
+
+    // -------------------------
+    // UI ACTIONS
+    // -------------------------
 
     fun onChangeEmailHeaderClicked() {
         val state = _uiState.value
@@ -59,6 +87,7 @@ class SettingsViewModel @Inject constructor(
             emitSnack("No puedes cambiar el email porque iniciaste sesión con ${state.providerLabel}.")
             return
         }
+
         _uiState.update {
             it.copy(
                 isEmailSectionExpanded = !it.isEmailSectionExpanded,
@@ -73,6 +102,7 @@ class SettingsViewModel @Inject constructor(
             emitSnack("No puedes cambiar la contraseña porque iniciaste sesión con ${state.providerLabel}.")
             return
         }
+
         _uiState.update {
             it.copy(
                 isPasswordSectionExpanded = !it.isPasswordSectionExpanded,
@@ -82,57 +112,68 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onGroupNotificationsToggled(enabled: Boolean) {
-        userPreferencesRepository.groupNotifications = enabled
-        _uiState.update { it.copy(groupNotificationsEnabled = enabled) }
-        emitSnack(if (enabled) "Notificaciones grupales encendidas" else "Notificaciones grupales apagadas")
+        viewModelScope.launch {
+            userPreferencesDSRepository.setGroupNotifications(enabled)
+            emitSnack(
+                if (enabled) "Notificaciones grupales encendidas"
+                else "Notificaciones grupales apagadas"
+            )
+        }
     }
 
     fun onIndividualNotificationsToggled(enabled: Boolean) {
-        userPreferencesRepository.individualNotifications = enabled
-        _uiState.update { it.copy(individualNotificationsEnabled = enabled) }
-        emitSnack(if (enabled) "Notificaciones individuales encendidas" else "Notificaciones individuales apagadas")
+        viewModelScope.launch {
+            userPreferencesDSRepository.setIndividualNotifications(enabled)
+            emitSnack(
+                if (enabled) "Notificaciones individuales encendidas"
+                else "Notificaciones individuales apagadas"
+            )
+        }
     }
+
+    // -------------------------
+    // EMAIL / PASSWORD
+    // -------------------------
 
     fun updateEmail(password: String, newEmail: String) {
         viewModelScope.launch {
             val state = _uiState.value
+
             if (!state.canChangeCredentials) {
                 emitSnack("No puedes cambiar el email porque iniciaste sesión con ${state.providerLabel}.")
                 return@launch
             }
 
-            val email = newEmail.trim()
-            if (password.isBlank() || email.isBlank()) {
+            if (password.isBlank() || newEmail.isBlank()) {
                 emitSnack("No deje campos vacíos")
                 return@launch
             }
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+
+            if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
                 emitSnack("Introduzca un e-mail válido")
                 return@launch
             }
 
             emitProgress("Cambiando email...")
 
-            val okReauth = reauthenticate(AuthProvider.PASSWORD, password)
-            if (!okReauth) {
+            if (!reauthenticate(AuthProvider.PASSWORD, password)) {
                 emitHideProgress()
                 emitSnack("La contraseña es incorrecta")
                 return@launch
             }
 
-            runCatching { firebaseUser.updateEmail(email).await() }
+            runCatching { firebaseUser.updateEmail(newEmail).await() }
                 .onFailure {
                     emitHideProgress()
                     emitSnack("Error al actualizar email")
                     return@launch
                 }
 
-            // DB + cache local
-            runCatching { userRepository.updateEmail(email) }
+            userRepository.updateEmail(newEmail)
             userRepository.updateLocalProfile(
                 name = userRepository.myUserName,
                 photoUrl = userRepository.myProfilePhotoUrl,
-                email = email
+                email = newEmail
             )
 
             emitHideProgress()
@@ -144,24 +185,20 @@ class SettingsViewModel @Inject constructor(
     fun updatePassword(password: String, newPassword: String) {
         viewModelScope.launch {
             val state = _uiState.value
+
             if (!state.canChangeCredentials) {
                 emitSnack("No puedes cambiar la contraseña porque iniciaste sesión con ${state.providerLabel}.")
                 return@launch
             }
 
-            if (password.isBlank() || newPassword.isBlank()) {
-                emitSnack("No deje campos vacíos")
-                return@launch
-            }
-            if (newPassword.length < 6) {
+            if (password.isBlank() || newPassword.length < 6) {
                 emitSnack("La contraseña debe tener al menos seis caracteres")
                 return@launch
             }
 
             emitProgress("Cambiando contraseña...")
 
-            val okReauth = reauthenticate(AuthProvider.PASSWORD, password)
-            if (!okReauth) {
+            if (!reauthenticate(AuthProvider.PASSWORD, password)) {
                 emitHideProgress()
                 emitSnack("La contraseña es incorrecta")
                 return@launch
@@ -180,6 +217,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // -------------------------
+    // DELETE / LOGOUT
+    // -------------------------
+
     fun deleteAccount(passwordIfNeeded: String?) {
         viewModelScope.launch {
             emitProgress("Eliminando cuenta...")
@@ -188,34 +229,22 @@ class SettingsViewModel @Inject constructor(
             val requiresPassword = providerType == AuthProvider.PASSWORD
 
             if (requiresPassword) {
-                val pass = passwordIfNeeded.orEmpty()
-                if (pass.isBlank()) {
-                    emitHideProgress()
-                    emitSnack("Introduzca su contraseña")
-                    return@launch
-                }
-                val okReauth = reauthenticate(AuthProvider.PASSWORD, pass)
-                if (!okReauth) {
+                if (passwordIfNeeded.isNullOrBlank() ||
+                    !reauthenticate(AuthProvider.PASSWORD, passwordIfNeeded)
+                ) {
                     emitHideProgress()
                     emitSnack("La contraseña es incorrecta")
                     return@launch
                 }
-            } else {
-                // Best-effort para Google/Facebook: si falla, seguimos (comportamiento cercano al actual).
-                val okReauth = reauthenticate(providerType, null)
-                if (!okReauth) {
-                    emitSnack("No se pudo revalidar la sesión. Intentaré continuar…")
-                }
             }
 
-            // 1) Intentar borrar Auth (si falla, seguimos borrando datos igualmente)
             runCatching { userSessionManager.deleteFirebaseUser() }
                 .onFailure {
-                    emitSnack("No se pudo eliminar la cuenta. Por seguridad, volvé a iniciar sesión y reintentá")
+                    emitHideProgress()
+                    emitSnack("No se pudo eliminar la cuenta")
                     return@launch
                 }
 
-            // 2) Borrar DB + Storage
             runCatching { userRepository.deleteMyAccountData() }
                 .onFailure {
                     emitHideProgress()
@@ -224,9 +253,7 @@ class SettingsViewModel @Inject constructor(
                 }
 
             emitHideProgress()
-            // 3) Logout
             logOut()
-
         }
     }
 
@@ -238,16 +265,14 @@ class SettingsViewModel @Inject constructor(
     }
 
     // -------------------------
-    // Private
+    // INTERNAL HELPERS
     // -------------------------
 
-    private fun refreshState() {
+    private fun refreshStaticState() {
         val providerType = userSessionManager.authProvider()
-        
         val providerLabel = userSessionManager.authProviderLabel()
-        
-        val canChangeCredentials = providerType == AuthProvider.PASSWORD
-        
+        val canChange = providerType == AuthProvider.PASSWORD
+
         val emailBase = userRepository.myEmail
             .takeIf { it.isNotBlank() }
             ?: (firebaseUser.email ?: "")
@@ -261,16 +286,16 @@ class SettingsViewModel @Inject constructor(
             it.copy(
                 emailDisplay = display,
                 providerLabel = providerLabel,
-                canChangeCredentials = canChangeCredentials,
-                requiresPasswordForSensitiveActions = canChangeCredentials,
-                groupNotificationsEnabled = userPreferencesRepository.groupNotifications,
-                individualNotificationsEnabled = userPreferencesRepository.individualNotifications
+                canChangeCredentials = canChange,
+                requiresPasswordForSensitiveActions = canChange
             )
         }
     }
 
-
-    private suspend fun reauthenticate(authProvider: AuthProvider, password: String?): Boolean {
+    private suspend fun reauthenticate(
+        authProvider: AuthProvider,
+        password: String?
+    ): Boolean {
         val credential = when (authProvider) {
             AuthProvider.PASSWORD -> {
                 val email = firebaseUser.email.orEmpty()
@@ -315,3 +340,4 @@ class SettingsViewModel @Inject constructor(
         _events.tryEmit(SettingsUiEvent.Navigate(intent, finish = true))
     }
 }
+

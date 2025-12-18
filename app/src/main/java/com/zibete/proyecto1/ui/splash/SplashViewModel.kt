@@ -1,28 +1,27 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.utils.Utils.AppChecks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesDSRepository: UserPreferencesDSRepository,
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
     private val userSessionManager: UserSessionManager
@@ -42,31 +41,32 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
 
             if (isRetry) delay(150L)
+            delay(1000L) // delay visual
 
-            // Delay visual opcional
-            delay(1000L)
-
-            // 1) Conflicto de sesión externo (viene por Intent Extra)
-            val hasSessionConflict = savedStateHandle.get<Boolean>(EXTRA_SESSION_CONFLICT) ?: false
+            // 1) Conflicto de sesión externo
+            val hasSessionConflict =
+                savedStateHandle.get<Boolean>(EXTRA_SESSION_CONFLICT) ?: false
             if (hasSessionConflict) {
                 _events.emit(SplashUiEvent.ShowSessionConflictDialog)
                 return@launch
             }
 
-            // 2) Onboarding solo la primera vez
-            if (!userPreferencesRepository.onboardingDone) {
-                userPreferencesRepository.onboardingDone = true
+            // 2) Onboarding (solo una vez)
+            val onboardingDone =
+                userPreferencesDSRepository.onboardingDoneFlow.first()
+            if (!onboardingDone) {
+                userPreferencesDSRepository.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
 
-            // 3) Chequeo de internet
-            if (!hasInternetConnection(context)) {
+            // 3) Internet
+            if (!AppChecks.hasInternetConnection(context)) {
                 _events.emit(SplashUiEvent.ShowNoInternetDialog)
                 return@launch
             }
 
-            // 4) Sin usuario → Auth (fuente de verdad: UserSessionManager)
+            // 4) Sin usuario → Auth
             val currentUser = userSessionManager.currentUser
             if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
@@ -74,15 +74,15 @@ class SplashViewModel @Inject constructor(
             }
 
             // 5) Permisos de ubicación
-            if (!hasLocationPermission(context)) {
+            if (!AppChecks.hasLocationPermission(context)) {
                 _events.emit(SplashUiEvent.RequestLocationPermission)
                 return@launch
             }
 
-            // 6) Manejo de sesión (installId + fcmToken)
+            // 6) Sesión activa (installId + fcmToken)
             setActiveSession(currentUser.uid)
 
-            // 7) Continuar flujo normal
+            // 7) Continuar flujo
             updateUserFlow(currentUser.uid)
         }
     }
@@ -132,37 +132,20 @@ class SplashViewModel @Inject constructor(
     private suspend fun updateUserFlow(uid: String) {
         val snapshot = userRepository.getAccountSnapshot(uid)
 
-        // Usuario nuevo: crear nodo y marcar que falta completar perfil
+        // Usuario nuevo
         if (!snapshot.exists()) {
-            val firebaseUser = userSessionManager.currentUser
-            if (firebaseUser != null) {
-                userRepository.createUserNode(firebaseUser, "", "")
+            userSessionManager.currentUser?.let {
+                userRepository.createUserNode(it, "", "")
             }
-            userPreferencesRepository.firstLoginDone = false
+            userPreferencesDSRepository.setFirstLoginDone(false)
             _events.emit(SplashUiEvent.NavigateMain)
             return
         }
 
-        // Perfil incompleto → Main luego enviará a EditProfile
-        userPreferencesRepository.firstLoginDone = userRepository.hasBirthDate(uid)
+        // Perfil incompleto / completo
+        val hasBirthDate = userRepository.hasBirthDate(uid)
+        userPreferencesDSRepository.setFirstLoginDone(hasBirthDate)
+
         _events.emit(SplashUiEvent.NavigateMain)
-    }
-
-    // ============================================================
-    // HELPERS
-    // ============================================================
-
-    private fun hasInternetConnection(context: Context): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val caps = cm.getNetworkCapabilities(network) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
-    private fun hasLocationPermission(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 }

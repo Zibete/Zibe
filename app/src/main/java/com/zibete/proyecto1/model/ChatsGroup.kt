@@ -4,15 +4,15 @@ import com.google.firebase.database.PropertyName
 import java.io.Serializable
 
 data class ChatsGroup(
-    @get:PropertyName("mensaje") @set:PropertyName("mensaje")
+//    @get:PropertyName("mensaje") @set:PropertyName("mensaje")
     var message: String = "",
-    @get:PropertyName("date") @set:PropertyName("date")
+//    @get:PropertyName("date") @set:PropertyName("date")
     var dateTime: String = "",
     var name: String = "",
     var id: String = "",
-    @get:PropertyName("type_msg") @set:PropertyName("type_msg")
+//    @get:PropertyName("type_msg") @set:PropertyName("type_msg")
     var typeMsg: Int = 0,
-    @get:PropertyName("type_user") @set:PropertyName("type_user")
+//    @get:PropertyName("type_user") @set:PropertyName("type_user")
     var typeUser: Int = 0
 ) : Serializable {
 

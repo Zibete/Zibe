@@ -120,6 +120,10 @@ object Constants {
     const val KEY_USER_LAST_HOUR = "hora"
 
 
+    const val KEY_READ_GROUP_MESSAGES = "readGroupMessages"
+
+    const val KEY_UNREAD_GROUP_COUNT = "unreadGroupCount"
+
 
 
     const val NODE_USERS = "Users"
@@ -156,9 +160,9 @@ object Constants {
     const val CHAT_STATE_HIDE = "delete"
 
 
-    const val MSG_DELIVERY_STATUS = "wVisto"
-    const val MSG_RECEIVED_UNREAD = "noVisto"
-    const val MSG_SEEN_STATUS = "visto"
+    const val KEY_DELIVERY_STATUS = "wVisto"
+    const val KEY_RECEIVED_UNREAD = "noVisto"
+    const val KEY_SEEN_STATUS = "visto"
 
 
     const val MSG_DELIVERED = 1

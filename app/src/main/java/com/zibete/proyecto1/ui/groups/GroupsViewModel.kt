@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_GROUP
@@ -21,7 +22,7 @@ import kotlinx.coroutines.launch
 class GroupsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesDSRepository: UserPreferencesDSRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GroupsUiState())
@@ -57,20 +58,21 @@ class GroupsViewModel @Inject constructor(
         }
     }
 
-    private fun joinGroupAndNavigate(
+    private suspend fun joinGroupAndNavigate(
         groupName: String,
-        nick: String,
-        type: Int
+        userName: String,
+        userType: Int
     ) {
-        userPreferencesRepository.userNameGroup = nick
-        userPreferencesRepository.groupName = groupName
-        userPreferencesRepository.inGroup = true
-        userPreferencesRepository.userType = type
-        userPreferencesRepository.userDate = now()
+        userPreferencesDSRepository.setGroupSession(
+            groupName,
+            userName,
+            userType,
+            now()
+        )
 
         viewModelScope.launch {
-            groupRepository.sendJoinMessage(groupName, nick, type)
-            groupRepository.saveUserInGroup(groupName, nick, type)
+            groupRepository.sendJoinMessage(groupName, userName, userType)
+            groupRepository.saveUserInGroup(groupName, userName, userType)
             _events.emit(GroupsUiEvent.NavigateToGroupPager)
         }
     }
@@ -101,8 +103,8 @@ class GroupsViewModel @Inject constructor(
 
             joinGroupAndNavigate(
                 groupName = groupName,
-                nick = userRepository.myUserName,
-                type = PUBLIC_USER
+                userName = userRepository.myUserName,
+                userType = PUBLIC_USER
             )
         }
     }

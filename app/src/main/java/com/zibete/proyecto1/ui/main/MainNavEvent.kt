@@ -2,7 +2,6 @@ package com.zibete.proyecto1.ui.main
 
 import android.content.Intent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.editprofile.EditProfileUiEvent
 
 sealed class MainNavEvent {
     data object ToSplashSessionConflict : MainNavEvent()
@@ -11,8 +10,7 @@ sealed class MainNavEvent {
     data object ToChat : MainNavEvent()
     data object ToGroupsSelect : MainNavEvent()         // No está en grupo → ir a nav_groups
     data object ToFavorites : MainNavEvent()
-
-    data class ToGroupsDetail(val groupName: String, val userName: String) : MainNavEvent()
+    data object ToGroupDetail : MainNavEvent()
     // ------------------- Menu ---------------------
     data object ToSettings : MainNavEvent()
     data object ToEditProfile : MainNavEvent()
@@ -27,7 +25,10 @@ sealed class MainNavEvent {
     data object ToGroupsAfterExit : MainNavEvent()
     data class ToSplashAfterLogout(val intent: Intent) : MainNavEvent()
     data object BackExitAppOrCloseSearch : MainNavEvent()
-    data class ConfirmExitGroup(val groupName: String) : MainNavEvent()
+    data object ConfirmExitGroup : MainNavEvent()
+
+    data object ConfirmLogout : MainNavEvent()
+
 
     data class ShowMessage(
         val message: String,

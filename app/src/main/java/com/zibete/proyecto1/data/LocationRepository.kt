@@ -24,7 +24,7 @@ class LocationRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) {
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
 
     // ============================================================

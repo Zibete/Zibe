@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
@@ -32,7 +33,7 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesDSRepository: UserPreferencesDSRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 

@@ -36,7 +36,7 @@ class ChatListViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
-    private val myUid get() = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
     private val chatRef
         get() = firebaseRefsContainer.refData
