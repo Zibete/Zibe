@@ -49,7 +49,7 @@ class EditProfileViewModel @Inject constructor(
 
             runCatching {
 
-                val u = userRepository.getUserProfile(myUid)
+                val u = userRepository.getAccount(myUid)
 
                 if (u == null) {
                     _uiState.update { it.copy(isLoading = false) }

@@ -28,7 +28,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.FragmentProfileBinding
@@ -102,16 +102,11 @@ class ProfileFragment : BaseChatSessionFragment() {
         }
 
         binding.linearImageActivity.setOnClickListener {
-            val url = profileViewModel.uiState.value.profile?.profilePhoto
+            val url = profileViewModel.uiState.value.profile?.photoUrl
                 ?.takeIf { it.isNotBlank() }
                 ?: return@setOnClickListener
 
-            val intent = Intent(requireContext(), SlidePhotoActivity::class.java).apply {
-                putStringArrayListExtra("photoList", arrayListOf(url))
-                putExtra("position", 0)
-                putExtra("rotation", 180)
-            }
-            startActivity(intent)
+            PhotoViewerActivity.startSingle(requireContext(), url)
         }
 
         binding.menuGoChat.setOnClickListener { goChat() }
@@ -131,7 +126,7 @@ class ProfileFragment : BaseChatSessionFragment() {
                     val name = profile.name
                     val distance = profileViewModel.getDistanceToUser(profile)
                     val description = profile.description
-                    val photoUrl = profile.profilePhoto
+                    val photoUrl = profile.photoUrl
 
                     binding.ageView.text = age
                     binding.nameUser.text = name
@@ -327,8 +322,6 @@ class ProfileFragment : BaseChatSessionFragment() {
 
     }
 
-    // endregion
-
     private fun goChat() {
 
         val profile = profileViewModel.uiState.value.profile ?: return
@@ -346,12 +339,12 @@ class ProfileFragment : BaseChatSessionFragment() {
     }
 
     override fun onResume() {
-        super.onStart()
+        super.onResume()
         profileViewModel.setUserOnline()
     }
 
     override fun onPause() {
-        super.onStop()
+        super.onPause()
         profileViewModel.setUserLastSeen()
     }
 

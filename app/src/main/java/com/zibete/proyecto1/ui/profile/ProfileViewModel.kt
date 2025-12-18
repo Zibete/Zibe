@@ -61,7 +61,7 @@ class ProfileViewModel @Inject constructor(
 
             _uiState.update { it.copy(isLoading = true) }
 
-            val profile = userRepository.getUserProfile(userId)
+            val profile = userRepository.getAccount(userId)
 
             if (profile == null) {
                 _uiState.update { it.copy(isLoading = false) }

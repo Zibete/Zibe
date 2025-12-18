@@ -91,7 +91,7 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".SlidePhotoActivity"
+            android:name=".ui.media.PhotoViewerActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".ui.settings.SettingsActivity"

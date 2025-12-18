@@ -23,7 +23,7 @@ class SliderPhotoAdapter(
         return VH(binding)
     }
 
-    override fun getItemCount(): Int = urls.size.coerceAtLeast(1)
+    override fun getItemCount(): Int = urls.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
         val url = urls.getOrNull(position).orEmpty()

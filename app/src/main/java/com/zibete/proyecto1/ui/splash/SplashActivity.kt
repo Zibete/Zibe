@@ -141,10 +141,7 @@ class SplashActivity : ComponentActivity() {
                             val uiState by authViewModel.uiState.collectAsState()
 
                             LaunchedEffect(Unit) {
-                                authViewModel.initFromPrefs(
-                                    userPreferencesRepository.deleteUser,
-                                    userPreferencesRepository.deleteFirebaseAccount
-                                )
+                                authViewModel.initAfterDelete()
                             }
 
                             AuthScreen(

@@ -10,7 +10,7 @@ import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived.ViewHolderAdapterPhoto
 import com.zibete.proyecto1.utils.ZibeApp
 
@@ -60,11 +60,7 @@ class AdapterPhotoReceived(
             .into(holder.photoView)
 
         holder.photoView.setOnClickListener { v ->
-            val intent = Intent(context, SlidePhotoActivity::class.java)
-            intent.putExtra("photoList", photoList)
-            intent.putExtra("position", position)
-            intent.putExtra("rotation", 180)
-            v.context.startActivity(intent)
+            PhotoViewerActivity.start(context, photoList, position, 180)
         }
     }
 

@@ -44,7 +44,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.SlidePhotoActivity
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
@@ -53,9 +53,12 @@ import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
-import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
+import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.utils.FirebaseRefs
 import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONException
@@ -85,7 +88,7 @@ class ChatGroupFragment : Fragment() {
     private var mLayoutManager: LinearLayoutManager? = null
 
     private var progress: ProgressDialog? = null
-    private var msgType: Int = Constants.MSG_TEXT
+    private var msgType: Int = MSG_TEXT
     private var stringMsg: String? = null
 
     private var values: ContentValues? = null
@@ -177,9 +180,9 @@ class ChatGroupFragment : Fragment() {
 
         adapter = AdapterChatGroup(
             context = requireContext(),
-            maxSize = Constants.MAXCHATSIZE,
+            maxSize = MAXCHATSIZE,
             initialList = chatsArrayList, // Tu array actual
-            onImageClicked = { url -> navigateToPhoto(url) },
+            onImageClicked = { url -> PhotoViewerActivity.startSingle(requireContext(), url) },
             onUserSingleTap = { chat, view -> handleUserSingleTap(chat, view) },
             onUserDoubleTap = { chat, view -> handleUserDoubleTap(chat, view) }
         )
@@ -219,15 +222,15 @@ class ChatGroupFragment : Fragment() {
 
         // Ver foto a pantalla completa
         photo.setOnClickListener {
+
             if (!stringMsg.isNullOrEmpty()) {
                 photoList.clear()
                 photoList.add(stringMsg)
-                val intent = Intent(requireContext(), SlidePhotoActivity::class.java).apply {
-                    putExtra("photoList", photoList)
-                    putExtra("position", 0)
-                    putExtra("rotation", 180)
-                }
-                startActivity(intent)
+
+                PhotoViewerActivity.startSingle(
+                    context = requireContext(),
+                    photoUrl = stringMsg ?: return@setOnClickListener
+                )
             }
         }
 
@@ -410,7 +413,7 @@ class ChatGroupFragment : Fragment() {
         frameSendMsg.isVisible = false
         loadingPhoto.isVisible = false
         loadingButton.isVisible = false
-        msgType = Constants.MSG_TEXT
+        msgType = MSG_TEXT
         stringMsg = null
     }
 
@@ -420,12 +423,12 @@ class ChatGroupFragment : Fragment() {
     fun sendMessage() = with(binding) {
         val textForNotification: String
 
-        if (msgType == Constants.MSG_PHOTO) {
+        if (msgType == MSG_PHOTO) {
             // Para el receptor mostramos "Foto recibida"
             textForNotification = getString(R.string.photo_received)
             // La URL real ya la puso CropHelper/stringMsg
         } else {
-            msgType = Constants.MSG_TEXT
+            msgType = MSG_TEXT
             stringMsg = msg.text.toString().trim()
             textForNotification = stringMsg.orEmpty()
         }
@@ -455,7 +458,7 @@ class ChatGroupFragment : Fragment() {
             .addOnCompleteListener {
                 // Reset UI siempre
                 msg.setText("")
-                msgType = Constants.MSG_TEXT
+                msgType = MSG_TEXT
                 stringMsg = null
                 cancelPreviewPhoto()
                 loadingButton.isVisible = false
@@ -631,17 +634,7 @@ class ChatGroupFragment : Fragment() {
         takePictureLauncher.launch(imageUriCamera!!)
     }
 
-    // 1. Manejo de Foto
-    private fun navigateToPhoto(url: String) {
-        // Necesitas acceso a la lista completa de fotos si quieres swipe.
-        // Si la tienes a mano en el fragment, úsala. Si no, pasa solo esta.
-        val photoList = arrayListOf(url) // O filtra tu lista actual de chats buscando fotos
-        val intent = Intent(context, SlidePhotoActivity::class.java)
-            .putExtra("photoList", photoList)
-            .putExtra("position", 0)
-            .putExtra("rotation", 0)
-        startActivity(intent)
-    }
+    // ================== GESTOS USUARIO ==================
 
     // 2. Manejo de Single Tap (Ir a Perfil)
     private fun handleUserSingleTap(chat: ChatsGroup, view: View) {
@@ -717,7 +710,7 @@ class ChatGroupFragment : Fragment() {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
         currentUserId?.let { uid ->
             FirebaseRefs.refDatos.child(uid)
-                .child(Constants.NODE_GROUP_CHAT)
+                .child(NODE_GROUP_CHAT)
                 .child(chat.id)
                 .removeValue()
         }
