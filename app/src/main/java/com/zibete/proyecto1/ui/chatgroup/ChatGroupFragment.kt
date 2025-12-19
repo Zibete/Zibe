@@ -51,7 +51,7 @@
 //import com.zibete.proyecto1.data.UserSessionManager
 //import com.zibete.proyecto1.databinding.FragmentGroupBinding
 //import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-//import com.zibete.proyecto1.model.ChatsGroup
+//import com.zibete.proyecto1.model.ChatGroup
 //import com.zibete.proyecto1.ui.chat.ChatActivity
 //import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 //import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
@@ -83,7 +83,7 @@
 //    private lateinit var _binding: FragmentGroupBinding
 //    private val binding get() = _binding
 //
-//    private val chatsArrayList: ArrayList<ChatsGroup> = ArrayList()
+//    private val chatsArrayList: ArrayList<ChatGroup> = ArrayList()
 //    private var adapter: AdapterChatGroup? = null
 //    private var mLayoutManager: LinearLayoutManager? = null
 //
@@ -305,7 +305,7 @@
 //            ) {
 //                if (!dataSnapshot.exists() || !userPreferencesRepository.inGroup) return
 //
-//                val chat = dataSnapshot.getValue(ChatsGroup::class.java) ?: return
+//                val chat = dataSnapshot.getValue(ChatGroup::class.java) ?: return
 //                val fmt = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
 //
 //                val dateChat = try {
@@ -442,7 +442,7 @@
 //        val c = Calendar.getInstance()
 //        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss:SS")
 //
-//        val chatMsg = ChatsGroup(
+//        val chatMsg = ChatGroup(
 //            stringMsg!!,
 //            dateFormat.format(c.time),
 //            userPreferencesRepository.userNameGroup,
@@ -637,7 +637,7 @@
 //    // ================== GESTOS USUARIO ==================
 //
 //    // 2. Manejo de Single Tap (Ir a Perfil)
-//    private fun handleUserSingleTap(chat: ChatsGroup, view: View) {
+//    private fun handleUserSingleTap(chat: ChatGroup, view: View) {
 //        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 //
 //        if (chat.typeUser == 0) {
@@ -652,7 +652,7 @@
 //    }
 //
 //    // 3. Manejo de Double Tap (Lógica compleja de usuario disponible)
-//    private fun handleUserDoubleTap(chat: ChatsGroup, view: View) {
+//    private fun handleUserDoubleTap(chat: ChatGroup, view: View) {
 //        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 //        if (chat.id == currentUserId) return
 //
@@ -695,7 +695,7 @@
 //    }
 //
 //    // 4. Manejo de Usuario No Disponible (Helper)
-//    private fun handleUserUnavailable(chat: ChatsGroup, view: View, wasRemovedFromGroup: Boolean) {
+//    private fun handleUserUnavailable(chat: ChatGroup, view: View, wasRemovedFromGroup: Boolean) {
 //        val text = if (chat.typeUser == 0) {
 //            getString(R.string.user_not_available_fmt, chat.name)
 //        } else {
@@ -829,8 +829,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.Menu
@@ -856,22 +854,20 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatGroup
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentGroupBinding
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.utils.FirebaseRefs
@@ -880,9 +876,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.ParseException
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -898,7 +892,7 @@ class ChatGroupFragment : Fragment() {
 
     private val myUid: String get() = userRepository.myUid
 
-    private val chats = ArrayList<ChatsGroup>()
+    private val chats = ArrayList<ChatGroup>()
     private lateinit var layoutManager: LinearLayoutManager
     private var adapter: AdapterChatGroup? = null
 
@@ -1144,9 +1138,9 @@ class ChatGroupFragment : Fragment() {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 if (!snapshot.exists() || !userPreferencesRepository.inGroup) return
 
-                val chat = snapshot.getValue(ChatsGroup::class.java) ?: return
+                val chat = snapshot.getValue(ChatGroup::class.java) ?: return
 
-                val dateChat = try { fmt.parse(chat.dateTime) } catch (_: ParseException) { null }
+                val dateChat = try { fmt.parse(chat.date) } catch (_: ParseException) { null }
                 val dateUser = try { fmt.parse(userPreferencesRepository.userDate) } catch (_: ParseException) { null }
 
                 if (dateChat != null && dateUser != null && dateChat.after(dateUser)) {
@@ -1163,7 +1157,7 @@ class ChatGroupFragment : Fragment() {
         messagesListener = listener
         ref.addChildEventListener(listener)
 
-        // TODO: mover a repo -> groupRepo.observeGroupMessages(groupName): Flow<ChatsGroup>
+        // TODO: mover a repo -> groupRepo.observeGroupMessages(groupName): Flow<ChatGroup>
     }
 
     // ---------------- Send (text/photo) ----------------
@@ -1228,7 +1222,7 @@ class ChatGroupFragment : Fragment() {
 
     private suspend fun sendMessageInternal(message: String, type: Int) {
         val groupName = userPreferencesRepository.groupName
-        val chatMsg = ChatsGroup(
+        val chatMsg = ChatGroup(
             message,
             fmt.format(Calendar.getInstance().time),
             userPreferencesRepository.userNameGroup,
@@ -1402,27 +1396,27 @@ class ChatGroupFragment : Fragment() {
 
     // ---------------- User gestures (igual a tu lógica, pero sin globals) ----------------
 
-    private fun handleUserSingleTap(chat: ChatsGroup, view: View) {
+    private fun handleUserSingleTap(chat: ChatGroup, view: View) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
-        if (chat.typeUser == 0) {
+        if (chat.userType == 0) {
             showSnack(view, getString(R.string.perfil_incognito))
-        } else if (chat.id != currentUserId) {
+        } else if (chat.senderUid != currentUserId) {
             startActivity(
                 android.content.Intent(requireContext(), ProfileActivity::class.java)
-                    .putExtra(EXTRA_USER_ID, chat.id)
+                    .putExtra(EXTRA_USER_ID, chat.senderUid)
                     .addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             )
         }
     }
 
-    private fun handleUserDoubleTap(chat: ChatsGroup, view: View) {
+    private fun handleUserDoubleTap(chat: ChatGroup, view: View) {
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        if (chat.id == currentUserId) return
+        if (chat.senderUid == currentUserId) return
 
         val groupName = userPreferencesRepository.groupName
         FirebaseRefs.refGroupUsers.child(groupName)
-            .child(chat.id)
+            .child(chat.senderUid)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (!ds.exists()) {
@@ -1433,11 +1427,11 @@ class ChatGroupFragment : Fragment() {
                     val thisname = ds.child("user_name").getValue(String::class.java)
                     val type = ds.child("type").getValue(Int::class.java) ?: 0
 
-                    val allowed = if (type == 0) thisname == chat.name else chat.typeUser == 1
+                    val allowed = if (type == 0) thisname == chat.nameUser else chat.userType == 1
                     if (allowed) {
                         val intent = android.content.Intent(context, ChatActivity::class.java)
-                            .putExtra("unknownName", chat.name)
-                            .putExtra("idUserUnknown", chat.id)
+                            .putExtra("unknownName", chat.nameUser)
+                            .putExtra("idUserUnknown", chat.senderUid)
                             .addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                         startActivity(intent)
                     } else {
@@ -1451,13 +1445,13 @@ class ChatGroupFragment : Fragment() {
         // groupRepo.isGroupUserAvailable(groupName, chat.id) + validación allowed + navegación
     }
 
-    private fun handleUserUnavailable(chat: ChatsGroup, view: View) {
-        showSnack(view, getString(R.string.user_not_available_fmt, chat.name))
+    private fun handleUserUnavailable(chat: ChatGroup, view: View) {
+        showSnack(view, getString(R.string.user_not_available_fmt, chat.nameUser))
 
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         FirebaseRefs.refDatos.child(currentUserId)
-            .child(NODE_GROUP_CHAT)
-            .child(chat.id)
+            .child(NODE_GROUP_PRIVATE_DM)
+            .child(chat.senderUid)
             .removeValue()
 
         // TODO mover a repo -> userRepo.removeGroupChatWithUnknown(uid, chat.id)

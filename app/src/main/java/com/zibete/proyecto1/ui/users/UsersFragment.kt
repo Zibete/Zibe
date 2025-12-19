@@ -28,7 +28,7 @@ import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_OFF
 import com.zibete.proyecto1.ui.constants.DIALOG_FILTER_ON
@@ -120,7 +120,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
                 startActivity(
                     Intent(requireContext(), ChatActivity::class.java).apply {
                         putExtra(EXTRA_CHAT_ID, userId)
-                        putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
+                        putExtra(EXTRA_CHAT_NODE, NODE_DM)
                     }
                 ) },
             onProfileClicked = { selectedUser ->

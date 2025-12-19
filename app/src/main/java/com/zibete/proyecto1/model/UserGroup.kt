@@ -4,9 +4,7 @@ import com.google.firebase.database.PropertyName
 import java.io.Serializable
 
 data class UserGroup(
-    @get:PropertyName("user_id") @set:PropertyName("user_id")
     var userId: String = "",
-    @get:PropertyName("user_name") @set:PropertyName("user_name")
     var userName: String = "",
     var type: Int = 0
 ) : Comparable<UserGroup>, Serializable {

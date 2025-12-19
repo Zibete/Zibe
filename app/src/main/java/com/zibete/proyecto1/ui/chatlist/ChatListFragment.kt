@@ -21,13 +21,13 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -124,10 +124,10 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         registerForContextMenu(binding.rvChatlist)
     }
 
-    private fun openChat(chat: ChatWith) {
+    private fun openChat(chat: Conversation) {
         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
-            putExtra(EXTRA_CHAT_ID, chat.userId)
-            putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
+            putExtra(EXTRA_CHAT_ID, chat.otherId)
+            putExtra(EXTRA_CHAT_NODE, NODE_DM)
         }
         startActivity(intent)
     }
@@ -196,11 +196,11 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         val chat = adapterChatList.currentList.getOrNull(item.order) ?: return false
 
         when (item.itemId) {
-            1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.userId, NODE_CURRENT_CHAT)
-            2 -> chatListViewModel.onToggleNotificationsClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
-            3 -> chatListViewModel.onBlockClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
-            4 -> chatListViewModel.onHideClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
-            5 -> chatListViewModel.onDeleteClicked(chat.userId, chat.userName, NODE_CURRENT_CHAT)
+            1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
+            2 -> chatListViewModel.onToggleNotificationsClicked(chat.otherId, chat.otherName, NODE_DM)
+            3 -> chatListViewModel.onBlockClicked(chat.otherId, chat.otherName, NODE_DM)
+            4 -> chatListViewModel.onHideClicked(chat.otherId, chat.otherName, NODE_DM)
+            5 -> chatListViewModel.onDeleteClicked(chat.otherId, chat.otherName, NODE_DM)
         }
         return true
     }

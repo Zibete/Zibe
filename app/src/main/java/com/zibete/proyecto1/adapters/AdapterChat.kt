@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
@@ -83,14 +82,14 @@ class AdapterChat(
 
     private fun rebuildPhotoList() {
         photoList.clear()
-        currentList.forEach { if (it.type.isPhoto()) photoList.add(it.message) }
+        currentList.forEach { if (it.type.isPhoto()) photoList.add(it.content) }
     }
 
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         return when {
             item.type == INFO -> MSG_TYPE_MID
-            item.sender == myUid -> MSG_TYPE_RIGHT
+            item.senderUid == myUid -> MSG_TYPE_RIGHT
             else -> MSG_TYPE_LEFT
         }
     }
@@ -124,7 +123,7 @@ class AdapterChat(
     private fun bindInteractive(h: BaseMsgVH, chatMessage: ChatMessage, isMe: Boolean) {
         val selectedColor = ContextCompat.getColor(context, R.color.accent_transparent)
         val transparent = ContextCompat.getColor(context, R.color.transparent)
-        val position = photoList.indexOf(chatMessage.message)
+        val position = photoList.indexOf(chatMessage.content)
 
         val selected = isSelected(chatMessage)
         h.bindingRoot.selectedItem.setBackgroundColor(if (selected) selectedColor else transparent)
@@ -278,7 +277,7 @@ class AdapterChat(
 
     private class InfoVH(private val b: RowDateChatBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(model: ChatMessage) {
-            b.tvInfo.text = model.message.orEmpty()
+            b.tvInfo.text = model.content.orEmpty()
         }
     }
 
@@ -396,7 +395,7 @@ class AdapterChat(
                 bCommon.loadingPhoto?.visibility = View.VISIBLE
 
                 Glide.with(context)
-                    .load(model.message)
+                    .load(model.content)
                     .listener(object : com.bumptech.glide.request.RequestListener<Drawable> {
                         override fun onLoadFailed(
                             e: GlideException?,
@@ -428,7 +427,7 @@ class AdapterChat(
                 bCommon.linearMessagePhoto.visibility = View.GONE
                 bCommon.linearMessageMessage.visibility = View.VISIBLE
                 bCommon.linearMessageAudio.visibility = View.GONE
-                bCommon.tvMsg?.text = model.message.orEmpty()
+                bCommon.tvMsg?.text = model.content.orEmpty()
             }
 
             model.type.isAudio() -> {
@@ -489,7 +488,7 @@ class AdapterChat(
                 moveSeekBarThread?.run()
             }
             try {
-                setDataSource(chatMessage.message.orEmpty())
+                setDataSource(chatMessage.content.orEmpty())
                 prepare()
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -593,9 +592,9 @@ class AdapterChat(
             override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
                 return oldItem === newItem ||
                         (oldItem.date == newItem.date &&
-                                oldItem.sender == newItem.sender &&
+                                oldItem.senderUid == newItem.senderUid &&
                                 oldItem.type == newItem.type &&
-                                oldItem.message == newItem.message)
+                                oldItem.content == newItem.content)
             }
 
             override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean =

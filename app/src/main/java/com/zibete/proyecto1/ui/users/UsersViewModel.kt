@@ -64,7 +64,7 @@ class UsersViewModel @Inject constructor(
 
                     val user = child.getValue(Users::class.java) ?: continue
 
-                    user.age = Utils.calcAge(user.birthDay)
+                    user.age = Utils.calcAge(user.birthDate)
 
                     user.distanceMeters = locationRepository.getDistanceMeters(
                         userRepository.latitude,

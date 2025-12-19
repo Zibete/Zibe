@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.ui.profile
 
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 
 data class ProfileUiState(
     val profile: Users? = null,
@@ -10,7 +10,7 @@ data class ProfileUiState(
     val isFavorite: Boolean = false,
     val iBlockedUser: Boolean = false,
     val userBlockedMe: Boolean = false,
-    val chatState: String = NODE_CURRENT_CHAT, // Estado normal
+    val chatState: String = NODE_DM, // Estado normal
 )
 
 

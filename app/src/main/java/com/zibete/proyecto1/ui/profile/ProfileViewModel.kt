@@ -14,7 +14,7 @@ import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -53,7 +53,7 @@ class ProfileViewModel @Inject constructor(
     val photosFromChat: StateFlow<List<String>> = _photosFromChat.asStateFlow()
 
     val userStatus: StateFlow<UserStatus> = userRepository
-        .observeUserStatus(userId, NODE_CURRENT_CHAT)
+        .observeUserStatus(userId, NODE_DM)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserStatus.Offline)
 
     fun loadProfile(force: Boolean = false) {
@@ -77,7 +77,7 @@ class ProfileViewModel @Inject constructor(
                 chatState = userState
             )
 
-            val photos = userRepository.getChatPhotosWithUser(userId, NODE_CURRENT_CHAT)
+            val photos = userRepository.getChatPhotosWithUser(userId, NODE_DM)
             _photosFromChat.value = photos
 
             loadFavoriteAndBlockState()

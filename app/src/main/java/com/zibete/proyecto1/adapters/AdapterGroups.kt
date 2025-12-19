@@ -51,12 +51,12 @@ class AdapterGroups(
 
         fun bind(item: Groups) = with(binding) {
             tvTitle.text = item.name
-            tvDataGroup.text = item.data
+            tvDataGroup.text = item.description
             tvDataGroup.isSelected = true
             tvNumberPersons.text = item.users.toString()
 
             card.setOnClickListener {
-                if (item.groupType == Constants.PUBLIC_GROUP) {
+                if (item.type == Constants.PUBLIC_GROUP) {
                     onGroupClicked(item)
                 }
             }
@@ -73,13 +73,13 @@ class AdapterGroups(
             }
 
             if (PAYLOAD_GROUPS_DATA in changes) {
-                tvDataGroup.text = item.data
+                tvDataGroup.text = item.description
             }
 
             if (PAYLOAD_GROUPS_CATEGORY in changes) {
                 // si cambia categoría, puede afectar el click habilitado
                 card.setOnClickListener {
-                    if (item.groupType == Constants.PUBLIC_GROUP) {
+                    if (item.type == Constants.PUBLIC_GROUP) {
                         onGroupClicked(item)
                     }
                 }

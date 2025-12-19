@@ -7,13 +7,13 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.di.qualifiers.ApplicationScope
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.ui.constants.MSG_USER_JOINED
 import com.zibete.proyecto1.utils.Utils.dateTime
@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -53,7 +52,7 @@ class GroupRepository @Inject constructor(
 
         val refGroupPhotos =
             firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS/$NODE_GROUP_CHAT/$groupName/")
+                .child("$NODE_CHATS_ROOT/$NODE_GROUP_PRIVATE_DM/$groupName/")
                 .child("$PATH_PHOTOS/")
 
         return GroupRefs(
@@ -144,7 +143,7 @@ class GroupRepository @Inject constructor(
     private fun observeUnreadPrivateChatsInsideGroup(uid: String): Flow<Int> = callbackFlow {
         val ref = firebaseRefsContainer.refData
             .child(uid)
-            .child(NODE_GROUP_CHAT)
+            .child(NODE_GROUP_PRIVATE_DM)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -269,7 +268,7 @@ class GroupRepository @Inject constructor(
         nick: String,
         type: Int
     ) {
-        val chatMsg = ChatsGroup(
+        val chatMsg = ChatGroup(
             MSG_USER_JOINED,
             now(),
             nick,
@@ -319,7 +318,7 @@ class GroupRepository @Inject constructor(
 
         val group = Groups(
             name = groupName,
-            data = groupData,
+            description = groupData,
             myUid,
             groupType,
             users = 0,
@@ -364,13 +363,13 @@ class GroupRepository @Inject constructor(
     suspend fun removeMyGroupChatList(userId: String) {
         firebaseRefsContainer.refData
             .child(userId)
-            .child(NODE_GROUP_CHAT)
+            .child(NODE_GROUP_PRIVATE_DM)
             .removeValue()
             .await()
     }
 
     suspend fun removeMyPrivateGroupChats(userId: String) {
-        val snapshot = firebaseRefsContainer.refChatMessageGroupsRoot
+        val snapshot = firebaseRefsContainer.refChatsGroupDm
             .get()
             .await()
 
@@ -388,7 +387,7 @@ class GroupRepository @Inject constructor(
         userType: Int,
         userId: String
     ) {
-        val chatMsg = ChatsGroup(
+        val chatMsg = ChatGroup(
             MSG_USER_JOINED,
             now(),
             userName,

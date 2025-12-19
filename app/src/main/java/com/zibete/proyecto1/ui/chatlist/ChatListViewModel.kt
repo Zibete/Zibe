@@ -9,13 +9,13 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -41,7 +41,7 @@ class ChatListViewModel @Inject constructor(
     private val chatRef
         get() = firebaseRefsContainer.refData
             .child(myUid)
-            .child(NODE_CURRENT_CHAT)
+            .child(NODE_DM)
 
     private var chatListListener: ValueEventListener? = null
     private var observing = false
@@ -74,15 +74,15 @@ class ChatListViewModel @Inject constructor(
                     return
                 }
 
-                val all = snapshot.children.mapNotNull { it.getValue(ChatWith::class.java) }.toMutableList()
+                val all = snapshot.children.mapNotNull { it.getValue(Conversation::class.java) }.toMutableList()
 
                 updateDatesAndSort(all)
 
                 // Visible = (foto != EMPTY) y (estado == NODE_CURRENT_CHAT o estado == SILENT)
                 val visible = all.filter { chat ->
-                    val photo = chat.userPhoto
+                    val photo = chat.otherPhotoUrl
                     val state = chat.state
-                    photo != Constants.EMPTY && (state == NODE_CURRENT_CHAT || state == CHAT_STATE_SILENT)
+                    photo != Constants.EMPTY && (state == NODE_DM || state == CHAT_STATE_SILENT)
                 }
 
                 val q = _uiState.value.searchQuery
@@ -120,11 +120,11 @@ class ChatListViewModel @Inject constructor(
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun updateDatesAndSort(list: MutableList<ChatWith>) {
+    private fun updateDatesAndSort(list: MutableList<Conversation>) {
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
 
         list.forEach { chat ->
-            val dt = chat.dateTime
+            val dt = chat.lastDate
             if (dt.isNullOrBlank()) return@forEach
             try {
                 chat.date = format.parse(dt)
@@ -219,13 +219,13 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    private fun filterChats(chats: List<ChatWith>, query: String): List<ChatWith> {
+    private fun filterChats(chats: List<Conversation>, query: String): List<Conversation> {
         if (query.isBlank()) return chats
         val lower = query.trim().lowercase()
 
         return chats.filter { chat ->
-            val name = chat.userName.orEmpty().lowercase()
-            val id = chat.userId.orEmpty().lowercase()
+            val name = chat.otherName.orEmpty().lowercase()
+            val id = chat.otherId.orEmpty().lowercase()
             name.contains(lower) || id.contains(lower)
         }
     }

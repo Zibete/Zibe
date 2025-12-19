@@ -30,7 +30,6 @@ import com.bumptech.glide.request.target.Target
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.FragmentProfileBinding
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
@@ -39,12 +38,11 @@ import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ProfileFragment : BaseChatSessionFragment() {
@@ -120,7 +118,7 @@ class ProfileFragment : BaseChatSessionFragment() {
 
                     binding.swipeRefresh.isRefreshing = state.isLoading
 
-                    val age = Utils.calcAge(profile.birthDay).toString()
+                    val age = Utils.calcAge(profile.birthDate).toString()
                     val name = profile.name
                     val distance = profileViewModel.getDistanceToUser(profile)
                     val description = profile.description
@@ -291,22 +289,22 @@ class ProfileFragment : BaseChatSessionFragment() {
                     return when (item.itemId) {
 
                         R.id.action_notifications_off, R.id.action_notifications_on -> {
-                            profileViewModel.onToggleNotificationsClicked(NODE_CURRENT_CHAT)
+                            profileViewModel.onToggleNotificationsClicked(NODE_DM)
                             true
                         }
 
                         R.id.action_block -> {
-                            profileViewModel.onBlockClicked(NODE_CURRENT_CHAT)
+                            profileViewModel.onBlockClicked(NODE_DM)
                             true
                         }
 
                         R.id.action_unblock -> {
-                            profileViewModel.onUnblockClicked(NODE_CURRENT_CHAT)
+                            profileViewModel.onUnblockClicked(NODE_DM)
                             true
                         }
 
                         R.id.action_delete_chat -> {
-                            profileViewModel.onDeleteClicked(NODE_CURRENT_CHAT)
+                            profileViewModel.onDeleteClicked(NODE_DM)
                             true
                         }
 
@@ -326,7 +324,7 @@ class ProfileFragment : BaseChatSessionFragment() {
 
         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
             putExtra(EXTRA_CHAT_ID, profile.id)
-            putExtra(EXTRA_CHAT_NODE, NODE_CURRENT_CHAT)
+            putExtra(EXTRA_CHAT_NODE, NODE_DM)
         }
         startActivity(intent)
     }

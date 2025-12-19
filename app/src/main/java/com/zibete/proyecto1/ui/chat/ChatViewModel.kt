@@ -10,8 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.ChatChildEvent
@@ -20,15 +18,13 @@ import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
-import com.zibete.proyecto1.ui.constants.Constants.AUTH
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
@@ -38,7 +34,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
@@ -58,7 +54,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
 
@@ -76,7 +71,7 @@ class ChatViewModel @Inject constructor(
     val myUid get() = userRepository.myUid
 
     val userId: String = savedStateHandle["userId"] ?: ""
-    val nodeType: String = savedStateHandle["nodeType"] ?: NODE_CURRENT_CHAT// 0 = unknown 1 = normal // DEF = ChatWith
+    val nodeType: String = savedStateHandle["nodeType"] ?: NODE_DM// 0 = unknown 1 = normal // DEF = Conversation
 
     val groupName: String
         get() = runBlocking { userPreferencesDSRepository.groupNameFlow.first() }
@@ -131,7 +126,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun startGroupUserAvailability() {
-        if (nodeType != NODE_CURRENT_CHAT) {
+        if (nodeType != NODE_DM) {
             groupRepository.observeGroupUserAvailability(groupName, userId).collect { isAvailable ->
                 if (!isAvailable) {
                     _events.emit(
@@ -173,7 +168,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun sameMsg(a: ChatMessage, b: ChatMessage): Boolean {
-        return a.date == b.date && a.sender == b.sender  // ideal: usar key/id del nodo (mejor que date)
+        return a.date == b.date && a.senderUid == b.senderUid  // ideal: usar key/id del nodo (mejor que date)
     }
 
 
@@ -186,7 +181,7 @@ class ChatViewModel @Inject constructor(
 
         _chatRefs.value = chatRepository.buildChatRefs(userId, nodeType)
 
-        if (nodeType == NODE_CURRENT_CHAT) {
+        if (nodeType == NODE_DM) {
             loadChatPublicProfiles()
             applyChatStateForOneToOne()
         } else {
@@ -447,16 +442,16 @@ class ChatViewModel @Inject constructor(
     suspend fun sendMessage(
         msgType: Int,
         content: String,
-        timerText: String)
-    {
-
+        timerText: String
+    ) {
         if (content.isEmpty()) return
 
         val myChatWith = chatRepository.getChatWith(myUid, userId, nodeType)
-        val myState = myChatWith?.state?: nodeType
+        val myState = myChatWith?.state ?: nodeType
+
         val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
-        val otherState = otherChatWith?.state?: nodeType
-        val otherCountMsgReceivedUnread = otherChatWith?.msgReceivedUnread?: 0
+        val otherState = otherChatWith?.state ?: nodeType
+        val otherCountMsgReceivedUnread = otherChatWith?.unreadCount ?: 0
 
         if (otherState == CHAT_STATE_BLOQ) {
             _events.emit(
@@ -467,90 +462,70 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val otherActiveChat = chatRepository.getActiveChat()
+        val otherActiveChat = chatRepository.getActiveChat() // (esto es local en tu app)
         val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
+
         val now = now()
-        val date = if (timerText == "") now else "$now $timerText"
+        val date = if (timerText.isBlank()) now else "$now $timerText"
 
         val chatMessage = ChatMessage(
-            content,
-            date,
-            myUid,
-            msgType,
-            seen
+            content = content,
+            date = date,
+            senderUid = myUid,
+            type = msgType,
+            seen = seen
         )
 
+        // 1) Mensaje (esto dispara el trigger en Cloud Functions)
         chatRepository.pushMessageToChat(chatMessage)
 
-        //CHATWITH
-
+        // 2) Texto resumen para Conversation
         val (myMsg, otherMsg) = when (msgType) {
-            MSG_PHOTO -> {
-                context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
-            }
+            MSG_PHOTO -> context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
             MSG_AUDIO -> context.getString(R.string.audio_send) to context.getString(R.string.audio_received)
-            else -> {
-                content to content
-            }
+            else -> content to content
         }
 
-        val myNewChatWith = ChatWith(
-            myMsg,
-            date,
-            null,
-            myUid,
-            userId,
-            currentOtherName(),
-            otherIdentity.userPhotoUrl,
-            myState,
-            0,
-            0
+        // 3) Conversation mío
+        val myNewChatWith = Conversation(
+            lastContent = myMsg,
+            lastDate = date,
+            userId = myUid,
+            otherId = userId,
+            otherName = currentOtherName(),
+            otherPhotoUrl = otherIdentity.userPhotoUrl,
+            state = myState,
+            unreadCount = 0,
+            seen = seen
         )
+        chatRepository.saveChatWith(myUid, nodeType, userId, myNewChatWith)
 
-        chatRepository.saveChatWith(myUid,nodeType, userId, myNewChatWith)
-
+        // 4) Conversation del otro + contador unread (si no está activo en MI app)
+        //    OJO: antes tu “if” dependía de otherActiveChat (local), no del estado real del otro.
+        //    Igual lo dejo tal cual para no romper tu lógica actual.
         if (otherActiveChat != myUid + nodeType) {
-
             val countOtherMsgUnread = otherCountMsgReceivedUnread + 1
 
-            val otherNewChatWith = ChatWith(
-                otherMsg,
-                date,
-                null,
-                myUid,
-                myUid,
-                myIdentity.userName,
-                myIdentity.userPhotoUrl,
-                otherState,
-                countOtherMsgUnread,
-                1
+            val otherNewChatWith = Conversation(
+                lastContent = otherMsg,
+                lastDate = date,
+                userId = myUid,
+                otherId = myUid,
+                otherName = myIdentity.userName,
+                otherPhotoUrl = myIdentity.userPhotoUrl,
+                state = otherState,
+                unreadCount = countOtherMsgUnread
             )
-
             chatRepository.saveChatWith(userId, nodeType, myUid, otherNewChatWith)
 
-            if (otherState != CHAT_STATE_SILENT) {
-                val body = JSONObject().apply {
-                    put("novistos", countOtherMsgUnread)
-                    put("user", myIdentity.userName)
-                    put("msg", otherMsg)
-                    put("id_user", chatMessage.sender)
-                    put("type", nodeType)
-                }
-                val json = JSONObject().apply {
-                    put("to", otherIdentity.fcmToken)
-                    put("priority", "high")
-                    put("data", body)
-                }
-                val req = object : JsonObjectRequest(
-                    Method.POST, "https://fcm.googleapis.com/fcm/send", json, null, null
-                ) {
-                    override fun getHeaders(): MutableMap<String, String> = hashMapOf(
-                        "content-type" to "application/json",
-                        "authorization" to AUTH
-                    )
-                }
-                Volley.newRequestQueue(context).add(req)
-            }
+            // ✅ Antes: Volley mandaba el push.
+            // ✅ Ahora: Cloud Function lo manda cuando detecta el nuevo mensaje en RTDB,
+            //          siempre que otherState != CHAT_STATE_SILENT (esa lógica va al backend).
+            //
+            // (Opcional) Si querés “marcar” en DB datos extra para el push, podés guardar un nodo
+            // liviano, pero no es obligatorio si la Function arma el payload sola.
+            //
+            // chatRepository.markNotificationHint(...) // <- opcional
         }
 
         _chatState.update {
@@ -560,8 +535,8 @@ class ChatViewModel @Inject constructor(
                 pendingFileUrl = null
             )
         }
-
     }
+
 
     suspend fun onError(message: String) {
         _events.emit(ChatSessionUiEvent.ShowErrorDialog(
@@ -745,7 +720,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun currentOtherName(): String {
-        return if (nodeType == NODE_CURRENT_CHAT) {
+        return if (nodeType == NODE_DM) {
             val fromProfile = _otherProfile.value?.name
             if (!fromProfile.isNullOrBlank()) fromProfile else otherIdentity.userName
         } else {

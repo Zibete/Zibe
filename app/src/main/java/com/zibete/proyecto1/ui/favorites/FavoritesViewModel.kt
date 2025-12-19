@@ -76,7 +76,7 @@ class FavoritesViewModel @Inject constructor(
                         FavoriteUserUi(
                             id = favUserId,
                             name = u.name,
-                            age = Utils.calcAge(u.birthDay),
+                            age = Utils.calcAge(u.birthDate),
                             profilePhoto = u.photoUrl,
                             isOnline = u.isOnline
                         )

@@ -5,14 +5,7 @@ import android.content.Intent
 import androidx.core.net.toUri
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.*
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatsGroup
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.utils.Utils.now
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await

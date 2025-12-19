@@ -58,7 +58,7 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
@@ -158,7 +158,7 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun configureChatTitle() {
-        if (chatViewModel.nodeType == NODE_CURRENT_CHAT) {
+        if (chatViewModel.nodeType == NODE_DM) {
             binding.cardviewTitle.isVisible = false
         } else {
             binding.tvChatTitle.text =

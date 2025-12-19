@@ -10,32 +10,25 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository.AccountKeys.BIRTHDAY
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatWith
-import com.zibete.proyecto1.model.Status
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.EMPTY
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.KEY_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_STATE
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_UNREAD_COUNT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS
-import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_LAST_DATE
-import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_LAST_HOUR
-import com.zibete.proyecto1.ui.constants.Constants.KEY_USER_STATUS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
 import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.Utils.now
-import com.zibete.proyecto1.utils.Utils.time
-import com.zibete.proyecto1.utils.Utils.today
-import com.zibete.proyecto1.utils.Utils.yesterday
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -44,7 +37,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -128,7 +120,7 @@ class UserRepository @Inject constructor(
         myDataRef(uid).child(NODE_FAVORITE_LIST)
 
     private fun myCurrentChatRef(uid: String = myUid) =
-        myDataRef(uid).child(NODE_CURRENT_CHAT)
+        myDataRef(uid).child(NODE_DM)
 
     private fun myChatListUnreadRef(uid: String = myUid) =
         myDataRef(uid).child(NODE_CHATLIST).child(NODE_UNREAD_COUNT)
@@ -149,7 +141,7 @@ class UserRepository @Inject constructor(
     fun getProfilePhotoStoragePath(
         fileName: String = PROFILE_PHOTO
     ) = firebaseRefsContainer.firebaseStorage.reference
-        .child(NODE_USERS)
+        .child(NODE_USERS_ROOT)
         .child(myUid)
         .child(PATH_PROFILE_PHOTOS)
         .child(fileName)
@@ -248,7 +240,7 @@ class UserRepository @Inject constructor(
         val newUser = Users(
             id = firebaseUser.uid,
             name = firebaseUser.displayName.orEmpty(),
-            birthDay = birthDate,
+            birthDate = birthDate,
             createdAt = now(),
             age = Utils.calcAge(birthDate),
             email = email,
@@ -356,7 +348,7 @@ class UserRepository @Inject constructor(
 
     suspend fun getChatPhotosWithUser(userId: String, nodeType: String): List<String> {
         val chatId = chatRepository.getRefChatId(userId)
-        val refChat = firebaseRefsContainer.refChatMessageRoot
+        val refChat = firebaseRefsContainer.refChatsRoot
             .child(nodeType)
             .child(chatId)
 
@@ -436,7 +428,7 @@ class UserRepository @Inject constructor(
             .child(NODE_CHAT_STATE)
             .awaitSnapshot()
             .getValue(String::class.java)
-            ?: NODE_CURRENT_CHAT
+            ?: NODE_DM
     }
 
     suspend fun updateStateChatWith(
@@ -467,8 +459,8 @@ class UserRepository @Inject constructor(
         chatWithId: String,
         userName: String,
         newState: String
-    ): ChatWith {
-        return ChatWith(
+    ): Conversation {
+        return Conversation(
             "Chat vacío",
             now(),
             null,
@@ -529,7 +521,7 @@ class UserRepository @Inject constructor(
             val activeChatRef = firebaseRefsContainer.refData
                 .child(userId)
                 .child(NODE_CHATLIST)
-                .child(NODE_ACTIVE_CHAT)
+                .child(KEY_ACTIVE_CHAT)
 
             val lastSeenFormatter: (Long) -> String = { ms ->
                 // usa tu formatter correcto con Date(ms)

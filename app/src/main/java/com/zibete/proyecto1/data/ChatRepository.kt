@@ -8,7 +8,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
@@ -22,9 +22,9 @@ import com.zibete.proyecto1.ui.constants.Constants.KEY_SEEN_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.KEY_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_STATE
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
@@ -71,16 +71,16 @@ class ChatRepository @Inject constructor(
 
         val refAudios =
             firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS/$nodeType/$chatId/")
+                .child("$NODE_CHATS_ROOT/$nodeType/$chatId/")
                 .child("$PATH_AUDIOS/")
 
         val refPhotos =
             firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS/$nodeType/$chatId/")
+                .child("$NODE_CHATS_ROOT/$nodeType/$chatId/")
                 .child("$PATH_PHOTOS/")
 
         val refChat =
-            firebaseRefsContainer.refChatMessageRoot
+            firebaseRefsContainer.refChatsRoot
                 .child(nodeType)
                 .child(chatId)
 
@@ -88,13 +88,13 @@ class ChatRepository @Inject constructor(
             firebaseRefsContainer.refData
                 .child(myUid)
                 .child(NODE_CHATLIST)
-                .child(NODE_ACTIVE_CHAT)
+                .child(KEY_ACTIVE_CHAT)
 
         val refOtherActiveChat =
             firebaseRefsContainer.refData
                 .child(userId)
                 .child(NODE_CHATLIST)
-                .child(NODE_ACTIVE_CHAT)
+                .child(KEY_ACTIVE_CHAT)
 
         val refMyChatListItem =
             firebaseRefsContainer.refData
@@ -148,7 +148,7 @@ class ChatRepository @Inject constructor(
 
     suspend fun getMessageCountFor(userId: String, nodeType: String): Int {
         val chatId = getRefChatId(userId)
-        val refChat = firebaseRefsContainer.refChatMessageRoot.child(nodeType).child(chatId)
+        val refChat = firebaseRefsContainer.refChatsRoot.child(nodeType).child(chatId)
         return refChat.get().await().childrenCount.toInt()
     }
 
@@ -175,7 +175,7 @@ class ChatRepository @Inject constructor(
     suspend fun getActiveChat(
     ): String {
         return chatRefs.refOtherActiveChat
-            .child(NODE_ACTIVE_CHAT)
+            .child(KEY_ACTIVE_CHAT)
             .get()
             .await()
             .getValue(String::class.java)
@@ -184,11 +184,11 @@ class ChatRepository @Inject constructor(
 
     fun setActiveChat(value: String) {
         chatRefs.refMyActiveChat
-            .child(NODE_ACTIVE_CHAT)
+            .child(KEY_ACTIVE_CHAT)
             .setValue(value)
     }
 
-    suspend fun getChatWith(firstUid: String, secondUid: String, nodeType: String): ChatWith? {
+    suspend fun getChatWith(firstUid: String, secondUid: String, nodeType: String): Conversation? {
         val snapshot = firebaseRefsContainer.refData
             .child(firstUid)
             .child(nodeType)
@@ -196,14 +196,14 @@ class ChatRepository @Inject constructor(
             .get()
             .await()
 
-        return snapshot.getValue(ChatWith::class.java)
+        return snapshot.getValue(Conversation::class.java)
     }
 
     suspend fun saveChatWith(
         ownerUid: String,
         nodeType: String,
         otherUid: String,
-        chatWith: ChatWith
+        chatWith: Conversation
     ) {
         firebaseRefsContainer.refData
             .child(ownerUid)
@@ -332,7 +332,7 @@ class ChatRepository @Inject constructor(
                         snap.child("type").ref.setValue(MSG_PHOTO_SENDER_DLT).await()
 
                     MSG_PHOTO_RECEIVER_DLT -> {
-                        chatRefs.refPhotos.child(chat.message).delete().await()
+                        chatRefs.refPhotos.child(chat.content).delete().await()
                         snap.ref.removeValue().await()
                     }
 
@@ -340,7 +340,7 @@ class ChatRepository @Inject constructor(
                         snap.child("type").ref.setValue(MSG_AUDIO_SENDER_DLT).await()
 
                     MSG_AUDIO_RECEIVER_DLT -> {
-                        chatRefs.refAudios.child(chat.message).delete().await()
+                        chatRefs.refAudios.child(chat.content).delete().await()
                         snap.ref.removeValue().await()
                     }
                 }
@@ -356,7 +356,7 @@ class ChatRepository @Inject constructor(
                         snap.child("type").ref.setValue(MSG_PHOTO_RECEIVER_DLT).await()
 
                     MSG_PHOTO_SENDER_DLT -> {
-                        chatRefs.refPhotos.child(chat.message).delete().await()
+                        chatRefs.refPhotos.child(chat.content).delete().await()
                         snap.ref.removeValue().await()
                     }
 
@@ -364,7 +364,7 @@ class ChatRepository @Inject constructor(
                         snap.child("type").ref.setValue(MSG_AUDIO_RECEIVER_DLT).await()
 
                     MSG_AUDIO_SENDER_DLT -> {
-                        chatRefs.refAudios.child(chat.message).delete().await()
+                        chatRefs.refAudios.child(chat.content).delete().await()
                         snap.ref.removeValue().await()
                     }
                 }
@@ -384,7 +384,7 @@ class ChatRepository @Inject constructor(
 
         for (snap in data.children) {
             val chat = snap.getValue(ChatMessage::class.java) ?: continue
-            if (chat.sender == myUid) {
+            if (chat.senderUid == myUid) {
                 when (chat.type) {
                     MSG_TEXT_SENDER_DLT,
                     MSG_PHOTO_SENDER_DLT,
@@ -473,7 +473,7 @@ class ChatRepository @Inject constructor(
 
         val chatId = userRepository.getChatIdWith(otherUid)
 
-        val msgsDs = firebaseRefsContainer.refChatMessageRoot
+        val msgsDs = firebaseRefsContainer.refChatsRoot
             .child(nodeType) // NODE_CURRENT_CHAT
             .child(chatId)
             .orderByChild("date")

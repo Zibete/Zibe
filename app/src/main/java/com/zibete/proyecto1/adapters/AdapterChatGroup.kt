@@ -30,7 +30,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowGroupMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowGroupMsgRightBinding
 import com.zibete.proyecto1.databinding.RowNotifBinding
-import com.zibete.proyecto1.model.ChatsGroup
+import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
@@ -40,12 +40,12 @@ import com.zibete.proyecto1.utils.FirebaseRefs
 class AdapterChatGroup(
     private val context: Context,
     private val maxSize: Int,
-    initialList: List<ChatsGroup> = emptyList(),
+    initialList: List<ChatGroup> = emptyList(),
     // --- ACCIONES (CALLBACKS) ---
     private val onImageClicked: (url: String) -> Unit,
-    private val onUserSingleTap: (chat: ChatsGroup, view: View) -> Unit,
-    private val onUserDoubleTap: (chat: ChatsGroup, view: View) -> Unit
-) : ListAdapter<ChatsGroup, RecyclerView.ViewHolder>(DIFF),
+    private val onUserSingleTap: (chat: ChatGroup, view: View) -> Unit,
+    private val onUserDoubleTap: (chat: ChatGroup, view: View) -> Unit
+) : ListAdapter<ChatGroup, RecyclerView.ViewHolder>(DIFF),
     View.OnCreateContextMenuListener {
 
     private val mutableList = initialList.toMutableList()
@@ -58,7 +58,7 @@ class AdapterChatGroup(
 
     // ==== Public API ====
 
-    fun addChat(chat: ChatsGroup) {
+    fun addChat(chat: ChatGroup) {
         if (mutableList.size > maxSize) {
             mutableList.removeAt(0)
         }
@@ -71,8 +71,8 @@ class AdapterChatGroup(
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         return when {
-            item.typeMsg == 0 -> MSG_TYPE_MID
-            item.id == userId -> MSG_TYPE_RIGHT
+            item.type == 0 -> MSG_TYPE_MID
+            item.senderUid == userId -> MSG_TYPE_RIGHT
             else -> MSG_TYPE_LEFT
         }
     }
@@ -122,12 +122,12 @@ class AdapterChatGroup(
 
     // ==== Gestures Logic ====
 
-    private fun attachGestures(holder: BaseMsgVH, chat: ChatsGroup) {
-        if (chat.typeMsg == 0) return
+    private fun attachGestures(holder: BaseMsgVH, chat: ChatGroup) {
+        if (chat.type == 0) return
 
         val gd = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (chat.id == userId) return true
+                if (chat.senderUid == userId) return true
                 // Delegamos la lógica compleja al Fragment
                 onUserDoubleTap(chat, holder.itemView)
                 return true
@@ -150,10 +150,10 @@ class AdapterChatGroup(
     // ==== ViewHolders & Binding ====
 
     private class MidVH(private val b: RowNotifBinding) : RecyclerView.ViewHolder(b.root) {
-        fun bind(model: ChatsGroup) {
-            b.tvMsg.text = model.message
-            b.nameUser.text = model.name
-            b.horaMsg.text = model.dateTime.safeSub(11, 16)
+        fun bind(model: ChatGroup) {
+            b.tvMsg.text = model.content
+            b.nameUser.text = model.nameUser
+            b.horaMsg.text = model.date.safeSub(11, 16)
         }
     }
 
@@ -175,26 +175,26 @@ class AdapterChatGroup(
 
     private inner class RightVH(b: RowGroupMsgRightBinding) : BaseMsgVH(b.root) {
         override val binding = CommonMsgBinding(b.linearCardMsg, b.linearMensajeMsg, b.linearMensajePic, b.imgPic, b.loadingPhoto, b.tvMsg, b.horaMsg, b.imgUser, b.nameUser)
-        fun bind(model: ChatsGroup) = bindCommon(binding, model)
+        fun bind(model: ChatGroup) = bindCommon(binding, model)
     }
 
     private inner class LeftVH(b: RowGroupMsgLeftBinding) : BaseMsgVH(b.root) {
         override val binding = CommonMsgBinding(b.linearCardMsg, b.linearMensajeMsg, b.linearMensajePic, b.imgPic, b.loadingPhoto, b.tvMsg, b.horaMsg, b.imgUser, b.nameUser)
-        fun bind(model: ChatsGroup) = bindCommon(binding, model)
+        fun bind(model: ChatGroup) = bindCommon(binding, model)
     }
 
-    private fun bindCommon(b: CommonMsgBinding, chat: ChatsGroup) {
-        b.horaMsg.text = chat.dateTime.safeSub(11, 16)
+    private fun bindCommon(b: CommonMsgBinding, chat: ChatGroup) {
+        b.horaMsg.text = chat.date.safeSub(11, 16)
 
         // --- FOTO O TEXTO ---
         when {
-            chat.typeMsg.isPhoto() -> {
+            chat.type.isPhoto() -> {
                 b.linearMensajePic?.visibility = View.VISIBLE
                 b.linearMensajeMsg?.visibility = View.GONE
                 b.loadingPhoto?.visibility = View.VISIBLE
 
                 Glide.with(context)
-                    .load(chat.message)
+                    .load(chat.content)
                     .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(35)))
                     .listener(object : RequestListener<Drawable> {
 
@@ -221,31 +221,31 @@ class AdapterChatGroup(
                     .into(b.imgPic)
 
                 b.imgPic.setOnClickListener {
-                    onImageClicked(chat.message)
+                    onImageClicked(chat.content)
                 }
             }
-            chat.typeMsg.isText() -> {
+            chat.type.isText() -> {
                 b.linearMensajePic?.visibility = View.GONE
                 b.linearMensajeMsg?.visibility = View.VISIBLE
-                b.tvMsg.text = chat.message
+                b.tvMsg.text = chat.content
             }
         }
 
         // --- INFO DE USUARIO ---
         // TODO: En el futuro, mover esta carga de datos (FirebaseRefs) a un ViewModel y pasar solo datos listos.
-        if (chat.typeUser == 0) {
-            b.nameUser.text = if (chat.typeMsg == 0) chat.name else "${chat.name}:"
+        if (chat.userType == 0) {
+            b.nameUser.text = if (chat.type == 0) chat.nameUser else "${chat.nameUser}:"
             Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
         } else {
-            FirebaseRefs.refCuentas.child(chat.id).addListenerForSingleValueEvent(object : ValueEventListener {
+            FirebaseRefs.refCuentas.child(chat.senderUid).addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(ds: DataSnapshot) {
                     if (ds.exists()) {
                         val name = ds.child("nombre").getValue(String::class.java)
                         val foto = ds.child("foto").getValue(String::class.java)
-                        b.nameUser.text = if (chat.typeMsg == 0) name ?: chat.name else "${name ?: chat.name}:"
+                        b.nameUser.text = if (chat.type == 0) name ?: chat.nameUser else "${name ?: chat.nameUser}:"
                         Glide.with(context).load(foto).into(b.imgUser)
                     } else {
-                        b.nameUser.text = "${chat.name}:"
+                        b.nameUser.text = "${chat.nameUser}:"
                         Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
                     }
                 }
@@ -270,12 +270,12 @@ class AdapterChatGroup(
             return try { s.substring(start, end.coerceAtMost(s.length)) } catch (_: Exception) { "" }
         }
 
-        val DIFF = object : DiffUtil.ItemCallback<ChatsGroup>() {
-            override fun areItemsTheSame(oldItem: ChatsGroup, newItem: ChatsGroup): Boolean {
+        val DIFF = object : DiffUtil.ItemCallback<ChatGroup>() {
+            override fun areItemsTheSame(oldItem: ChatGroup, newItem: ChatGroup): Boolean {
                 // Usamos ID y tiempo como clave única compuesta
-                return oldItem.id == newItem.id && oldItem.dateTime == newItem.dateTime
+                return oldItem.senderUid == newItem.senderUid && oldItem.date == newItem.date
             }
-            override fun areContentsTheSame(oldItem: ChatsGroup, newItem: ChatsGroup): Boolean = oldItem == newItem
+            override fun areContentsTheSame(oldItem: ChatGroup, newItem: ChatGroup): Boolean = oldItem == newItem
         }
     }
 }

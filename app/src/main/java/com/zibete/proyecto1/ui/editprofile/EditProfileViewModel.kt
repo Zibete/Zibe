@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepository.AccountKeys
 import com.zibete.proyecto1.data.UserSessionManager
@@ -65,13 +64,13 @@ class EditProfileViewModel @Inject constructor(
                         isLoading = false,
                         displayName = u.name,
                         description = u.description,
-                        birthDate = u.birthDay,
-                        age = calcAge(u.birthDay),
+                        birthDate = u.birthDate,
+                        age = calcAge(u.birthDate),
                         photoUrl = u.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
                         saveEnabled = false,
-                        hasBirthDate = u.birthDay.isNotBlank()
+                        hasBirthDate = u.birthDate.isNotBlank()
                     )
                 }
             }.onFailure { it ->

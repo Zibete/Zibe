@@ -8,7 +8,7 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +57,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // =========================
         // 1) CHAT 1-1 (NODE_CURRENT_CHAT)
         // =========================
-        if (type == NODE_CURRENT_CHAT) {
+        if (type == NODE_DM) {
 
             val enabled = userPreferencesDSRepository.individualNotificationsFlow.first()
             if (!enabled) {

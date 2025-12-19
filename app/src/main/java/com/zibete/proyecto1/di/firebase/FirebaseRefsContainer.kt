@@ -3,20 +3,22 @@ package com.zibete.proyecto1.di.firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.APP_NAME
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_DATA
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_ROOT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_USERS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
+import com.zibete.proyecto1.ui.constants.Constants.NODE_SESSIONS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ACCOUNTS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_DATA
+import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ROOT
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-/**
- * Contenedor inyectable que agrupa todas las DatabaseReference utilizadas comúnmente
- * en la aplicación. Centraliza el acceso a Realtime Database y Storage.
- *
- * NOTA:
- * - `database` se expone para casos especiales como `.info/connected` (presencia).
- * - El resto de referencias mantiene compatibilidad total con el código existente.
- */
 @Singleton
 class FirebaseRefsContainer @Inject constructor(
     val firebaseDatabase: FirebaseDatabase,
@@ -24,56 +26,29 @@ class FirebaseRefsContainer @Inject constructor(
 ) {
 
     // ================= Usuarios =================
-
-    @Named("refUsuarios")
-    val refUsers: DatabaseReference =
-        firebaseDatabase.getReference("Usuarios")
-
-    @Named("refDatos")
-    val refData: DatabaseReference =
-        refUsers.child("Datos")
-
-    @Named("refCuentas")
-    val refAccounts: DatabaseReference =
-        refUsers.child("Cuentas")
+    val refUsers: DatabaseReference = firebaseDatabase.getReference(NODE_USERS_ROOT)
+        val refData: DatabaseReference = refUsers.child(NODE_USERS_DATA)
+        val refAccounts: DatabaseReference = refUsers.child(NODE_USERS_ACCOUNTS)
 
     // ================= Chats =================
 
-    @Named("refChatMessageRoot")
-    val refChatMessageRoot: DatabaseReference =
-        firebaseDatabase.getReference(NODE_CHATS)
-
-    @Named("refChatMessageGroupsRoot")
-    val refChatMessageGroupsRoot: DatabaseReference =
-        refChatMessageRoot.child(NODE_GROUP_CHAT)
+    val refChatsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_CHATS_ROOT)
+        val refChatsDm: DatabaseReference = refChatsRoot.child(NODE_DM)
+        val refChatsGroupDm: DatabaseReference = refChatsRoot.child(NODE_GROUP_PRIVATE_DM)
 
     // ================= Sesiones =================
 
-    val refSessions: DatabaseReference =
-        firebaseDatabase.reference.child("sessions")
+    val refSessions: DatabaseReference = firebaseDatabase.getReference(NODE_SESSIONS)
 
     // ================= Grupos =================
 
-    @Named("refGroupsRoot")
-    val refGroupsRoot: DatabaseReference =
-        firebaseDatabase.getReference("Groups")
-
-    @Named("refGroupData")
-    val refGroupData: DatabaseReference =
-        refGroupsRoot.child("Data")
-
-    @Named("refGroupChat")
-    val refGroupChat: DatabaseReference =
-        refGroupsRoot.child("Chat")
-
-    @Named("refGroupUsers")
-    val refGroupUsers: DatabaseReference =
-        refGroupsRoot.child("Users")
+    val refGroupsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_GROUPS_ROOT)
+        val refGroupData: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_DATA)
+        val refGroupChat: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_CHAT)
+        val refGroupUsers: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_USERS)
 
     // ================= Zibe =================
 
-    @Named("refZibe")
-    val refZibe: DatabaseReference =
-        firebaseDatabase.getReference("Zibe")
+    val refZibe: DatabaseReference = firebaseDatabase.getReference(APP_NAME)
 
 }

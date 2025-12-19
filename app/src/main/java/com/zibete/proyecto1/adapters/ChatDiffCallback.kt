@@ -2,11 +2,11 @@ package com.zibete.proyecto1.adapters
 
 import android.os.Bundle
 import androidx.recyclerview.widget.DiffUtil
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 
 class ChatDiffCallback(
-    private val newList: List<ChatWith>,
-    private val oldList: List<ChatWith>
+    private val newList: List<Conversation>,
+    private val oldList: List<Conversation>
 ) : DiffUtil.Callback() {
 
     override fun getOldListSize() = oldList.size
@@ -14,7 +14,7 @@ class ChatDiffCallback(
     override fun getNewListSize() = newList.size
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-        oldList[oldItemPosition].userId === newList[newItemPosition].userId
+        oldList[oldItemPosition].otherId === newList[newItemPosition].otherId
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
          oldList[oldItemPosition] == newList[newItemPosition]
@@ -24,10 +24,10 @@ class ChatDiffCallback(
         val newItem = newList[newPos]
 
         return Bundle().apply {
-            if (oldItem.userId != newItem.userId)
-                putString("id", newItem.userId)
+            if (oldItem.otherId != newItem.otherId)
+                putString("id", newItem.otherId)
 
-            if (oldItem.msgReceivedUnread != newItem.msgReceivedUnread)
+            if (oldItem.unreadCount != newItem.unreadCount)
                 putString("date", newItem.date.toString())
         }.takeIf { !it.isEmpty }
     }

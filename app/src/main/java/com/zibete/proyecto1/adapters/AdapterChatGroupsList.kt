@@ -21,24 +21,24 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refDatos
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 class AdapterChatGroupsList(
-    private val chatList: MutableList<ChatWith>,
+    private val chatList: MutableList<Conversation>,
     private val context: Context,
     // --- ACCIONES (Callbacks) ---
-    private val onChatClicked: (ChatWith) -> Unit,
-    private val onChatSeen: (ChatWith) -> Unit,       // Para marcar wVisto = 2
-    private val onMarkAsRead: (ChatWith) -> Unit      // Para la lógica de doble check (setMyDoubleCheck)
+    private val onChatClicked: (Conversation) -> Unit,
+    private val onChatSeen: (Conversation) -> Unit,       // Para marcar wVisto = 2
+    private val onMarkAsRead: (Conversation) -> Unit      // Para la lógica de doble check (setMyDoubleCheck)
 ) : RecyclerView.Adapter<AdapterChatGroupsList.ChatGroupViewHolder>(),
     Filterable,
     OnCreateContextMenuListener {
 
-    private val fullChatList: MutableList<ChatWith> = mutableListOf()
+    private val fullChatList: MutableList<Conversation> = mutableListOf()
 
     // Variables para el menú contextual
     private var menu1: String? = null
@@ -86,21 +86,21 @@ class AdapterChatGroupsList(
         onBindViewHolder(holder, position, mutableListOf())
 
     // -------- Bind Completo --------
-    private fun bindFull(holder: ChatGroupViewHolder, chat: ChatWith) {
+    private fun bindFull(holder: ChatGroupViewHolder, chat: Conversation) {
         val binding = holder.binding
 
         // 1. UI Básica
         applyCardState(binding, chat)
-        binding.tvUsuario1.text = chat.userName
+        binding.tvUsuario1.text = chat.otherName
         try {
-            Glide.with(context.applicationContext).load(chat.userPhoto).into(binding.imageUser1)
+            Glide.with(context.applicationContext).load(chat.otherPhotoUrl).into(binding.imageUser1)
         } catch (_: Exception) {}
 
         // 2. Estado Online (Visual)
 //        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
-        refDatos.child(chat.userId).child(Constants.NODE_GROUP_CHAT).child(user.uid)
+        refDatos.child(chat.otherId).child(Constants.NODE_GROUP_PRIVATE_DM).child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -121,7 +121,7 @@ class AdapterChatGroupsList(
             })
 
         // 4. Listener: No Vistos (Counter Visual)
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT).child(chat.userId).child("noVisto")
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_PRIVATE_DM).child(chat.otherId).child("noVisto")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val noVistos = snapshot.getValue(Int::class.java) ?: 0
@@ -132,14 +132,14 @@ class AdapterChatGroupsList(
             })
 
         // 5. Listener: Último Mensaje (Visual + Triggers)
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_CHAT).child(chat.userId)
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_PRIVATE_DM).child(chat.otherId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
 
                     if (binding.cardview.isVisible) {
-                        binding.ultMsg.text = chat.msg
-                        applyTextStyle(binding, chat.msg)
+                        binding.ultMsg.text = chat.lastContent
+                        applyTextStyle(binding, chat.lastContent)
                         setLastMsgTime(binding, chat)
 
                         // TRIGGER: Delegamos la lógica de marcar como leídos al Fragmento
@@ -165,9 +165,9 @@ class AdapterChatGroupsList(
         menu1 = if (binding.nuevoMsg.isVisible) context.getString(R.string.leido) else context.getString(R.string.noleido)
     }
 
-    private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
+    private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
         when (chat.state) {
-            Constants.NODE_GROUP_CHAT -> {
+            Constants.NODE_GROUP_PRIVATE_DM -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
@@ -176,7 +176,7 @@ class AdapterChatGroupsList(
                 binding.notifOff.isVisible = true
             }
             "bloq", "delete" -> binding.cardview.isVisible = false
-            else -> binding.cardview.isVisible = chat.userPhoto != Constants.EMPTY
+            else -> binding.cardview.isVisible = chat.otherPhotoUrl != Constants.EMPTY
         }
     }
 
@@ -224,13 +224,13 @@ class AdapterChatGroupsList(
         else binding.ultMsg.setTypeface(null, Typeface.NORMAL)
     }
 
-    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: ChatWith) {
+    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: Conversation) {
         val c = Calendar.getInstance()
         val dateFormat = SimpleDateFormat("dd/MM/yyyy")
-        val date = chat.dateTime.safeSub(0, 10)
+        val date = chat.lastDate.safeSub(0, 10)
 
         binding.horaUltMsg.text = when {
-            date == dateFormat.format(c.time) -> chat.dateTime.safeSub(11, 16)
+            date == dateFormat.format(c.time) -> chat.lastDate.safeSub(11, 16)
             date == dateFormat.format(Calendar.getInstance().apply { add(Calendar.DATE, -1) }.time) -> context.getString(R.string.yesterday)
             else -> date
         }
@@ -244,10 +244,10 @@ class AdapterChatGroupsList(
     private val filterChats = object : Filter() {
         override fun performFiltering(constraint: CharSequence?): FilterResults {
             val query = constraint?.toString()?.lowercase()?.trim().orEmpty()
-            val filtered: MutableList<ChatWith> = if (query.isEmpty()) {
+            val filtered: MutableList<Conversation> = if (query.isEmpty()) {
                 fullChatList.toMutableList()
             } else {
-                fullChatList.filter { it.userName.lowercase().contains(query) }.toMutableList()
+                fullChatList.filter { it.otherName.lowercase().contains(query) }.toMutableList()
             }
             filtered.sort()
             return FilterResults().apply { values = filtered }
@@ -255,7 +255,7 @@ class AdapterChatGroupsList(
 
         @Suppress("UNCHECKED_CAST")
         override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-            val newList = results?.values as? MutableList<ChatWith> ?: mutableListOf()
+            val newList = results?.values as? MutableList<Conversation> ?: mutableListOf()
             updateData(newList)
         }
     }
@@ -278,13 +278,13 @@ class AdapterChatGroupsList(
     // -------- Data Methods --------
     override fun getItemCount(): Int = chatList.size
 
-    fun addChats(chat: ChatWith) {
+    fun addChats(chat: Conversation) {
         chatList.add(chat)
         fullChatList.add(chat)
         notifyItemInserted(chatList.size - 1)
     }
 
-    fun deleteChat(chat: ChatWith) {
+    fun deleteChat(chat: Conversation) {
         val index = chatList.indexOf(chat)
         if (index != -1) {
             chatList.removeAt(index)
@@ -293,7 +293,7 @@ class AdapterChatGroupsList(
         }
     }
 
-    fun updateData(newList: List<ChatWith>) {
+    fun updateData(newList: List<Conversation>) {
         val diffCallback = ChatDiffCallback(oldList = chatList, newList = newList)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         chatList.clear()

@@ -24,7 +24,7 @@ import com.zibete.proyecto1.adapters.AdapterChatGroupsList
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.utils.FirebaseRefs.refChatUnknown
@@ -111,7 +111,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
         // Reset lista compartida
         chatsGroupArrayList.clear()
 
-        refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
+        refDatos.child(myUid).child(Constants.NODE_GROUP_PRIVATE_DM)
             .addChildEventListener(object : ChildEventListener {
 
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -120,7 +120,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                     // Solo agregamos si tiene foto (misma lógica original)
                     val photo = snapshot.child("wUserPhoto").getValue(String::class.java).orEmpty()
                     if (photo.isNotEmpty()) {
-                        val chat = snapshot.getValue(ChatWith::class.java) ?: return
+                        val chat = snapshot.getValue(Conversation::class.java) ?: return
                         adapterChatGroupsList.addChats(chat)
                         updateDatesAndSort(chatsGroupArrayList)
                     }
@@ -129,7 +129,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
+                    refDatos.child(myUid).child(Constants.NODE_GROUP_PRIVATE_DM)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(dataSnapshot: DataSnapshot) {
                                 if (!dataSnapshot.exists()) {
@@ -137,9 +137,9 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                                     return
                                 }
 
-                                val updatedList = ArrayList<ChatWith>()
+                                val updatedList = ArrayList<Conversation>()
                                 for (child in dataSnapshot.children) {
-                                    val chat = child.getValue(ChatWith::class.java)
+                                    val chat = child.getValue(Conversation::class.java)
                                     if (chat != null) updatedList.add(chat)
                                 }
 
@@ -154,7 +154,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                 }
 
                 override fun onChildRemoved(snapshot: DataSnapshot) {
-                    val chat = snapshot.getValue(ChatWith::class.java) ?: return
+                    val chat = snapshot.getValue(Conversation::class.java) ?: return
                     adapterChatGroupsList.deleteChat(chat)
                 }
 
@@ -164,11 +164,11 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     @SuppressLint("SimpleDateFormat")
-    private fun updateDatesAndSort(list: MutableList<ChatWith>) {
+    private fun updateDatesAndSort(list: MutableList<Conversation>) {
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
         list.forEach { chat ->
             try {
-                val parsed = format.parse(chat.dateTime)
+                val parsed = format.parse(chat.lastDate)
                 chat.date = parsed
             } catch (_: ParseException) {
             }
@@ -180,7 +180,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     private fun setupEmptyStateListener() {
 
-        refDatos.child(myUid).child(Constants.NODE_GROUP_CHAT)
+        refDatos.child(myUid).child(Constants.NODE_GROUP_PRIVATE_DM)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     if (dataSnapshot.exists()) {
@@ -188,7 +188,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                         for (snapshot in dataSnapshot.children) {
                             val state =
                                 snapshot.child("estado").getValue(String::class.java).orEmpty()
-                            if (state == Constants.NODE_GROUP_CHAT || state == "silent") {
+                            if (state == Constants.NODE_GROUP_PRIVATE_DM || state == "silent") {
                                 count++
                             }
                         }
@@ -243,30 +243,30 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     // 1. Manejo de Click Principal (Valida si sigue en grupo y navega)
-    private fun handleChatClick(chat: ChatWith) {
+    private fun handleChatClick(chat: Conversation) {
         // Usamos el repo para saber el grupo actual
         val groupName = userPreferencesRepository.groupName
 
-        refGroupUsers.child(groupName).child(chat.userId)
+        refGroupUsers.child(groupName).child(chat.otherId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
-                            putExtra("unknownName", chat.userName)
-                            putExtra("idUserUnknown", chat.userId)
+                            putExtra("unknownName", chat.otherName)
+                            putExtra("idUserUnknown", chat.otherId)
                         }
                         startActivity(intent)
                     } else {
                         Toast.makeText(
                             requireContext(),
-                            "Lo sentimos, ${chat.userName} ya no está disponible",
+                            "Lo sentimos, ${chat.otherName} ya no está disponible",
                             Toast.LENGTH_SHORT
                         ).show()
 
                         // Eliminamos el chat si el usuario ya no existe
                         refDatos.child(myUid)
-                            .child(Constants.NODE_GROUP_CHAT)
-                            .child(chat.userId)
+                            .child(Constants.NODE_GROUP_PRIVATE_DM)
+                            .child(chat.otherId)
                             .removeValue()
                     }
                 }
@@ -275,19 +275,19 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     }
 
     // 2. Marcar chat como visto (wVisto = 2)
-    private fun markChatAsSeen(chat: ChatWith) {
+    private fun markChatAsSeen(chat: Conversation) {
         refDatos.child(myUid)
-            .child(Constants.NODE_GROUP_CHAT)
-            .child(chat.userId)
+            .child(Constants.NODE_GROUP_PRIVATE_DM)
+            .child(chat.otherId)
             .child("wVisto")
             .setValue(2)
     }
 
     // 3. Lógica compleja de Doble Check (setMyDoubleCheck)
-    private fun processDoubleCheckLogic(chat: ChatWith) {
+    private fun processDoubleCheckLogic(chat: Conversation) {
         refDatos.child(myUid)
-            .child(Constants.NODE_GROUP_CHAT)
-            .child(chat.userId)
+            .child(Constants.NODE_GROUP_PRIVATE_DM)
+            .child(chat.otherId)
             .child("noVisto")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -301,7 +301,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                     }
 
                     // Intenta ruta 1: YO <--> EL
-                    val path1 = "${myUid} <---> ${chat.userId}"
+                    val path1 = "${myUid} <---> ${chat.otherId}"
                     refChatUnknown.child(path1).child("Mensajes")
                         .limitToLast(noVistos)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -310,7 +310,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
                                     markMessagesInNode(ds)
                                 } else {
                                     // Intenta ruta 2: EL <--> YO
-                                    val path2 = "${chat.userId} <---> ${myUid}"
+                                    val path2 = "${chat.otherId} <---> ${myUid}"
                                     refChatUnknown.child(path2).child("Mensajes")
                                         .limitToLast(noVistos)
                                         .addListenerForSingleValueEvent(object : ValueEventListener {
@@ -359,7 +359,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
 
     companion object {
         // Mantengo esta lista como fuente compartida (se pasa por referencia al adapter)
-        val chatsGroupArrayList: ArrayList<ChatWith> = ArrayList()
+        val chatsGroupArrayList: ArrayList<Conversation> = ArrayList()
     }
 
     // ---------- Ciclo de vida ----------

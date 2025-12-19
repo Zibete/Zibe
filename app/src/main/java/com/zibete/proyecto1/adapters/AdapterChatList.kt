@@ -15,14 +15,14 @@ import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
-import com.zibete.proyecto1.model.ChatWith
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.constants.Constants
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -34,8 +34,8 @@ import java.util.Locale
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
     private val userRepository: UserRepository,
-    private val onChatClicked: (ChatWith) -> Unit
-) : ListAdapter<ChatWith, AdapterChatList.ChatListViewHolder>(
+    private val onChatClicked: (Conversation) -> Unit
+) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(
     ChatListDiffCallback
 ), OnCreateContextMenuListener {
 
@@ -80,7 +80,7 @@ class AdapterChatList(
         super.onViewRecycled(holder)
     }
 
-    private fun bindPayload(holder: ChatListViewHolder, chat: ChatWith, payload: Any) {
+    private fun bindPayload(holder: ChatListViewHolder, chat: Conversation, payload: Any) {
         val changes = payload as? Set<*> ?: run {
             bindFull(holder, chat)
             return
@@ -90,11 +90,11 @@ class AdapterChatList(
         val ctx = b.root.context
 
         if ("state" in changes) applyCardState(b, chat)
-        if ("name" in changes) b.tvUsuario1.text = chat.userName?.takeIf { it.isNotBlank() }
+        if ("name" in changes) b.tvUsuario1.text = chat.otherName?.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
-        if ("photo" in changes) Glide.with(ctx).load(chat.userPhoto).into(b.imageUser1)
+        if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
         if ("msg" in changes) {
-            b.ultMsg.text = chat.msg.orEmpty()
+            b.ultMsg.text = chat.lastContent.orEmpty()
             applyLastMsgStyle(b)
         }
         if ("time" in changes) setLastMsgTime(b, chat)
@@ -105,26 +105,26 @@ class AdapterChatList(
         bindClicks(holder, chat)
     }
 
-    private fun bindFull(holder: ChatListViewHolder, chat: ChatWith) {
+    private fun bindFull(holder: ChatListViewHolder, chat: Conversation) {
         val b = holder.binding
         val ctx = b.root.context
 
         applyCardState(b, chat)
 
-        b.tvUsuario1.text = chat.userName?.takeIf { it.isNotBlank() }
+        b.tvUsuario1.text = chat.otherName?.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        Glide.with(ctx).load(chat.userPhoto).into(b.imageUser1)
+        Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
 
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
-            userRepository.observeUserStatus(chat.userId, NODE_CURRENT_CHAT)
+            userRepository.observeUserStatus(chat.otherId, NODE_DM)
                 .collectLatest { status ->
                     bindUserStatus(b, status)
                 }
         }
 
-        b.ultMsg.text = chat.msg.orEmpty()
+        b.ultMsg.text = chat.lastContent.orEmpty()
         applyLastMsgStyle(b)
         setLastMsgTime(b, chat)
         bindUnreadBadge(b, chat)
@@ -133,7 +133,7 @@ class AdapterChatList(
         bindClicks(holder, chat)
     }
 
-    private fun bindClicks(holder: ChatListViewHolder, chat: ChatWith) {
+    private fun bindClicks(holder: ChatListViewHolder, chat: Conversation) {
         val b = holder.binding
         val ctx = b.root.context
 
@@ -160,8 +160,8 @@ class AdapterChatList(
         }
     }
 
-    private fun bindUnreadBadge(binding: RowChatlistaBinding, chat: ChatWith) {
-        val noSeen = chat.msgReceivedUnread
+    private fun bindUnreadBadge(binding: RowChatlistaBinding, chat: Conversation) {
+        val noSeen = chat.unreadCount
         if (noSeen > 0) {
             binding.nuevoMsg.isVisible = true
             binding.nuevoMsg.text = noSeen.toString()
@@ -183,8 +183,8 @@ class AdapterChatList(
         binding.ultMsg.setTypeface(null, if (isMedia) Typeface.ITALIC else Typeface.NORMAL)
     }
 
-    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: ChatWith) {
-        val dt = chat.dateTime.orEmpty()
+    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: Conversation) {
+        val dt = chat.lastDate.orEmpty()
         if (dt.length < 10) {
             binding.horaUltMsg.text = ""
             return
@@ -203,12 +203,12 @@ class AdapterChatList(
         }
     }
 
-    private fun applyCardState(binding: RowChatlistaBinding, chat: ChatWith) {
+    private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
         val state = chat.state
-        val photo = chat.userPhoto
+        val photo = chat.otherPhotoUrl
 
         when (state) {
-            NODE_CURRENT_CHAT -> {
+            NODE_DM -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }
@@ -225,9 +225,9 @@ class AdapterChatList(
         }
     }
 
-    private fun bindChecks(binding: RowChatlistaBinding, chat: ChatWith) {
+    private fun bindChecks(binding: RowChatlistaBinding, chat: Conversation) {
         val myUid = userRepository.myUid
-        val senderId = chat.senderId
+        val senderId = chat.userId
         val seen = chat.seen
 
         if (senderId == myUid && seen != 0) {

@@ -22,8 +22,8 @@ object GroupsDiffCallback : DiffUtil.ItemCallback<Groups>() {
         val changed = mutableSetOf<String>()
 
         if (oldItem.users != newItem.users) changed += PAYLOAD_GROUPS_USERS
-        if (oldItem.data != newItem.data) changed += PAYLOAD_GROUPS_DATA
-        if (oldItem.groupType != newItem.groupType) changed += PAYLOAD_GROUPS_CATEGORY
+        if (oldItem.description != newItem.description) changed += PAYLOAD_GROUPS_DATA
+        if (oldItem.type != newItem.type) changed += PAYLOAD_GROUPS_CATEGORY
 
         return changed.takeIf { it.isNotEmpty() }
     }

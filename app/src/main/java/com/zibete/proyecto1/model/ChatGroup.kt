@@ -2,20 +2,22 @@ package com.zibete.proyecto1.model
 
 import java.io.Serializable
 
-data class ChatMessage(
+data class ChatGroup(
     var content: String = "",
     var date: String = "",
+    var nameUser: String = "", // <-- debería leer RTDB con senderUid?
     var senderUid: String = "",
     var type: Int = 0,
-    var seen: Int = 0
+    var userType: Int = 0 // <-- debería leer RTDB con senderUid?
+
 ) : Serializable {
 
     override fun equals(other: Any?): Boolean =
-        other is ChatMessage &&
+        other is ChatGroup &&
                 content == other.content &&
                 date == other.date &&
-                senderUid == other.senderUid
+                nameUser == other.nameUser
 
     override fun hashCode(): Int =
-        listOf(date, content, senderUid).hashCode()
+        listOf(date, content, nameUser).hashCode()
 }

@@ -2,6 +2,7 @@ package com.zibete.proyecto1.ui.constants
 
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import java.util.Date
 
 object Constants {
 
@@ -34,10 +35,7 @@ object Constants {
     const val PAYLOAD_ONLINE = "payload_online"
 
 
-    // ===============================
-// Sessions (Realtime DB)
-// ===============================
-    const val NODE_SESSIONS = "sessions"
+
 
     const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
     const val KEY_FCM_TOKEN = "fcmToken"
@@ -102,38 +100,155 @@ object Constants {
 
 
 
-    const val NODE_FAVORITE_LIST = "FavoriteList"
-    const val NODE_CHAT_MESSAGE = "ChatMessage"
-    const val NODE_CURRENT_CHAT = "ChatWith" // Chat entre perfiles públicos -->
-    const val NODE_CHATLIST = "ChatList"
 
-    const val NODE_STATUS = "Estado"
+
+
+    const val APP_NAME = "Zibe"
+
+
+    // ==============================
+    // Firebase RTDB Root Nodes
+    // ==============================
+    const val NODE_CHATS_ROOT = "Chats"
+    const val NODE_GROUPS_ROOT = "Groups"
+    const val NODE_USERS_ROOT = "Users"
+    const val NODE_SESSIONS = "Sessions"
+
+    // ==============================
+    // Chats node_type (under /Chats)
+    // ==============================
+    const val NODE_DM = "dm"                 // Chat 1 a 1
+    const val NODE_GROUP_PRIVATE_DM = "group_dm" // Chat privado dentro de un grupo
+
+    object ChatKeys {
+        const val CONTENT = "content"  // String message
+        const val DATE = "date"        // String DD/MM/YYYY HH:MM:SS
+        const val SENDER_UID = "senderUid"    // String uid
+        const val TYPE = "type"        // Int MSG_TEXT, MSG_PHOTO, MSG_AUDIO...
+        const val SEEN = "seen"        // Int MSG_DELIVERED, MSG_RECEIVED, MSG_SEEN
+    }
+
+    // ==============================
+    // Groups
+    // ==============================
+    const val NODE_GROUPS_USERS = "Users"
+    const val NODE_GROUPS_CHAT = "Chat"
+    const val NODE_GROUPS_DATA = "Data"
+
+    object GroupUserKeys {
+        const val TYPE = "type"             // Int ANONYMOUS_USER o PUBLIC_USER
+        const val USER_ID = "userId"        // String uid
+        const val USER_NAME = "userName"    // String userName
+    }
+
+    object GroupChatKeys {
+        const val CONTENT = "content"           // String message (legacy)
+        const val DATE = "date"                 // String DD/MM/YYYY HH:MM:SS
+        const val NAME_USER = "nameUser"
+        const val SENDER_UID = "senderUid"      // String uid sender
+        const val TYPE = "type"             // Int MSG_TEXT, MSG_PHOTO...
+        const val USER_TYPE = "userType"       // Int
+    }
+
+    object GroupDataKeys {
+        const val NAME = "name"        // String groupName
+        const val DESCRIPTION = "description" // String
+        const val CREATOR_UID = "creatorUid" // String uid
+        const val TYPE = "type"    // Int PUBLIC_GROUP o PRIVATE_GROUP
+        const val USERS = "users"      // Int count
+        const val CREATED_AT = "createdAt" // String DD/MM/YYYY HH:MM
+    }
+
+    // ==============================
+    // Users
+    // ==============================
+    const val NODE_USERS_ACCOUNTS = "Accounts"
+    const val NODE_USERS_DATA = "Data"
+
+    object AccountsKeys {
+        const val ID = "id"
+        const val NAME = "name"
+        const val BIRTHDATE = "birthDate"
+        const val CREATED_AT = "createdAt"
+        const val AGE = "age"
+        const val EMAIL = "email"
+        const val PHOTO_URL = "photoUrl"
+        const val IS_ONLINE = "isOnline"
+        const val DESCRIPTION = "description"
+        const val LATITUDE = "latitude"
+        const val LONGITUDE = "longitude"
+    }
+
+    // ==============================
+    // Users/Data
+    // ==============================
+    const val NODE_FAVORITE_LIST = "FavoriteList"
+    const val NODE_CHATLIST = "ChatList"
+    const val NODE_STATUS = "Status"
+
+    object ChatListKeys {
+        const val ACTIVE_CHAT = "Actual"
+        const val READ_GROUP_MESSAGES = "readGroupMessages"
+        const val UNREAD_GROUP_COUNT = "unreadGroupCount"
+    }
+
+    object StatusKeys {
+        const val STATUS = "status"
+        const val LAST_SEEN_MS = "lastSeenMs"
+    }
+
+    // Threads metadata under /Users/Data/{uid}/{NODE_DM or NODE_GROUP_PRIVATE_DM}/{otherId}
+    object ConversationKeys {
+        const val LAST_CONTENT = "lastContent"
+        const val LAST_DATE = "lastDate"
+        const val USER_ID = "userId"
+        const val OTHER_ID = "otherId"
+        const val OTHER_NAME = "otherName"
+        const val OTHER_PHOTO = "otherPhotoUrl"
+        const val STATE = "state"
+        const val UNREAD_COUNT = "unreadCount"
+        const val SEEN = "seen"
+    }
+
+
+    // ==============================
+    // Sessions
+    // ==============================
+    object SessionKeys {
+        const val FCM_TOKEN = "fcmToken"
+        const val ACTIVE_INSTALL_ID = "activeInstallId"
+    }
+
+    // ==============================
+    // FCM payload contract (data)
+    // ==============================
+    const val PAYLOAD_TYPE_DM = NODE_DM // "dm"
+    // Para grupos: data["type"] = groupName (recomendado)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     const val NODE_UNREAD_COUNT = "msgNoLeidos"
 
 
     const val NODE_CHAT_STATE = "estado"
-
-    const val KEY_USER_STATUS = "estado"
-    const val KEY_USER_LAST_DATE = "fecha"
-
-    const val KEY_USER_LAST_HOUR = "hora"
-
-
-    const val KEY_READ_GROUP_MESSAGES = "readGroupMessages"
-
-    const val KEY_UNREAD_GROUP_COUNT = "unreadGroupCount"
-
-
-
-    const val NODE_USERS = "Users"
-
-
-    const val NODE_CHATS = "Chats"
-    const val NODE_GROUP_CHAT = "Unknown" // Chat dentro de un grupo -> pero tambien puede ser dos perfiles publicos -- si el
-
-
-    const val NODE_ACTIVE_CHAT = "Actual"
 
     const val PATH_AUDIOS = "audios"
     const val PATH_PHOTOS = "photos"
