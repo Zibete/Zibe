@@ -347,7 +347,7 @@ class UserRepository @Inject constructor(
     // ============================================================
 
     suspend fun getChatPhotosWithUser(userId: String, nodeType: String): List<String> {
-        val chatId = chatRepository.getRefChatId(userId)
+        val chatId = chatRepository.getChatId(userId)
         val refChat = firebaseRefsContainer.refChatsRoot
             .child(nodeType)
             .child(chatId)
@@ -545,7 +545,7 @@ class UserRepository @Inject constructor(
                             .getValue(String::class.java)
                             .orEmpty()
 
-                        val expected = myUid + chatType
+                        val expected = chatRepository.buildActiveChatKey(userId, node)
 
                         if (currentChat == expected) {
                             trySend(base) // typing/recording real
@@ -569,10 +569,6 @@ class UserRepository @Inject constructor(
     // UTILS
     // ============================================================
 
-    fun getChatIdWith(otherUid: String): String {
-        val (first, second) = listOf(myUid, otherUid).sorted()
-        return "${first}_${second}"
-    }
 
     fun deleteMyAccountData() {
         firebaseRefsContainer.refData.child(myUid).removeValue()

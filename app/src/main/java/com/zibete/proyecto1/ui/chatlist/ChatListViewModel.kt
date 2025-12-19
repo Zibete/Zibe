@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -153,7 +154,7 @@ class ChatListViewModel @Inject constructor(
 
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val chatWith = chatRepository.getChatWith(myUid, userId, nodeType)
+            val chatWith = chatRepository.getConversation(myUid, userId, nodeType)
             val currentState = chatWith?.state
 
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
@@ -194,8 +195,8 @@ class ChatListViewModel @Inject constructor(
 
     fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val count = chatRepository.getMessageCountFor(userId, nodeType)
-
+            val chatRefs = chatRepository.buildChatRefs(userId, nodeType)
+            val count = chatRepository.getMessageCount(chatRefs)
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = userName,
@@ -203,7 +204,11 @@ class ChatListViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteChatFor(userId, nodeType, deleteMessages)
+                                val result = chatRepository.deleteMessages(
+                                    chatRefs = chatRefs,
+                                    selectedIds = null,
+                                    deleteMessages = deleteMessages
+                                )
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
                                 _events.emit(

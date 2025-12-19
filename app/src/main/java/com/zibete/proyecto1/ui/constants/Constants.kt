@@ -10,11 +10,6 @@ object Constants {
     const val DEFAULT_PROFILE_PHOTO_URL =
         "https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8"
 
-    object PrefKeys {
-        const val ONBOARDING_DONE = "onBoarding"
-        const val FIRST_LOGIN_DONE = "flag_Splash"
-    }
-
 
 
     //EditProfile:
@@ -37,14 +32,19 @@ object Constants {
 
 
 
-    const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
-    const val KEY_FCM_TOKEN = "fcmToken"
 
 
     const val PAYLOAD_GROUPS_USERS = "payload_users"
     const val PAYLOAD_GROUPS_DATA = "payload_data"
     const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
 
+    object PayloadKeys {
+        const val TYPE = ChatKeys.TYPE
+        const val OTHER_ID = ConversationKeys.OTHER_ID
+        const val OTHER_NAME = ConversationKeys.OTHER_NAME
+        const val CONTENT = ChatKeys.CONTENT
+        const val UNREAD_COUNT = ConversationKeys.UNREAD_COUNT
+    }
 
 
 
@@ -102,6 +102,15 @@ object Constants {
 
 
 
+
+
+
+
+//    const val NODE_UNREAD_COUNT = "msgNoLeidos"
+//    const val NODE_CHAT_STATE = "estado"
+
+//    const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
+//    const val KEY_FCM_TOKEN = "fcmToken"
 
     const val APP_NAME = "Zibe"
 
@@ -239,17 +248,6 @@ object Constants {
 
 
 
-
-
-
-
-
-
-    const val NODE_UNREAD_COUNT = "msgNoLeidos"
-
-
-    const val NODE_CHAT_STATE = "estado"
-
     const val PATH_AUDIOS = "audios"
     const val PATH_PHOTOS = "photos"
 
@@ -272,12 +270,12 @@ object Constants {
 
     const val CHAT_STATE_BLOQ = "bloq"
     const val CHAT_STATE_SILENT = "silent"
-    const val CHAT_STATE_HIDE = "delete"
+    const val CHAT_STATE_HIDE = "hide"
 
 
-    const val KEY_DELIVERY_STATUS = "wVisto"
-    const val KEY_RECEIVED_UNREAD = "noVisto"
-    const val KEY_SEEN_STATUS = "visto"
+//    const val KEY_DELIVERY_STATUS = "wVisto"
+//    const val KEY_RECEIVED_UNREAD = "noVisto"
+//    const val KEY_SEEN_STATUS = "visto"
 
 
     const val MSG_DELIVERED = 1

@@ -144,15 +144,16 @@ class ChatActivity : BaseChatSessionActivity() {
         adapter = AdapterChat(
             maxSize = MAXCHATSIZE,
             context = this,
-            hasSelection = { chatViewModel.chatState.value.selectedMessages.isNotEmpty() },
-            isSelected = { msg -> chatViewModel.chatState.value.selectedMessages.contains(msg) },
-            onSelectionChanged = { msg, selected ->
-                chatViewModel.onMessageSelectionChanged(msg, selected)
+            hasSelection = { chatViewModel.chatState.value.selectedIds.isNotEmpty() },
+            isSelected = { item -> chatViewModel.chatState.value.selectedIds.contains(item.id) },
+            onSelectionChanged = { item, selected ->
+                chatViewModel.onMessageSelectionChanged(item, selected)
             },
             myAudioAvatarUrl = chatViewModel.myIdentity.userPhotoUrl,
             otherAudioAvatarUrl = chatViewModel.otherProfile.value?.photoUrl,
             myUid = chatViewModel.myUid
         )
+
 
         binding.rvMsg.adapter = adapter
     }
@@ -226,11 +227,12 @@ class ChatActivity : BaseChatSessionActivity() {
                             chatViewModel.onPhotoPickerHandled()
                         }
 
-                        val selectionCount = state.selectedMessages.size
+                        val selectionCount = state.selectedIds.size
                         binding.linearDeleteMsg.isVisible = selectionCount > 1
                         binding.countDeleteMsg.text = selectionCount.toString()
                     }
                 }
+
 
                 launch {
                     chatViewModel.userStatus.collect { status ->
@@ -371,7 +373,8 @@ class ChatActivity : BaseChatSessionActivity() {
 
     override fun onResume() {
         super.onResume()
-        chatViewModel.setActiveChat(chatViewModel.userId + chatViewModel.nodeType)
+        val activeChatSting = chatViewModel.getActiveChatString()
+        chatViewModel.setActiveChat(activeChatSting)
     }
 
     override fun onDestroy() {

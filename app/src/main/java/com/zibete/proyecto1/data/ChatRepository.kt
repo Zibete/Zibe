@@ -8,24 +8,25 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.ui.constants.Constants.ChatKeys
+import com.zibete.proyecto1.ui.constants.Constants.ChatListKeys
+import com.zibete.proyecto1.ui.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_SENDER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.KEY_RECEIVED_UNREAD
+import com.zibete.proyecto1.ui.constants.Constants.MSG_RECEIVED
 import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
-import com.zibete.proyecto1.ui.constants.Constants.KEY_SEEN_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.KEY_ACTIVE_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_STATE
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import kotlinx.coroutines.channels.awaitClose
@@ -36,12 +37,12 @@ import javax.inject.Inject
 
 data class ChatRefs(
     val refAudios: StorageReference,
-    val refPhotos:StorageReference,
+    val refPhotos: StorageReference,
     val refChat: DatabaseReference,
     val refMyActiveChat: DatabaseReference,
     val refOtherActiveChat: DatabaseReference,
-    val refMyChatListItem: DatabaseReference,
-    val refOtherChatListItem: DatabaseReference
+    val refMyConversation: DatabaseReference,
+    val refOtherConversation: DatabaseReference
 )
 
 data class DeleteResult(
@@ -49,25 +50,25 @@ data class DeleteResult(
     val chatRemoved: Boolean
 )
 
+// ✅ Nuevo: events con item (incluye id)
 sealed class ChatChildEvent {
-    data class Added(val message: ChatMessage) : ChatChildEvent()
-    data class Changed(val message: ChatMessage) : ChatChildEvent()
-    data class Removed(val message: ChatMessage) : ChatChildEvent()
+    data class Added(val item: ChatMessageItem) : ChatChildEvent()
+    data class Changed(val item: ChatMessageItem) : ChatChildEvent()
+    data class Removed(val item: ChatMessageItem) : ChatChildEvent()
 }
-
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository,
-    private var chatRefs: ChatRefs
+    private val userRepository: UserRepository
 ) {
+    private val myUid: String get() = userRepository.myUid
 
     fun buildChatRefs(
-        userId: String,
+        otherUid: String,
         nodeType: String
     ): ChatRefs {
 
-        val chatId = getRefChatId(userId)
+        val chatId = getChatId(otherUid)
 
         val refAudios =
             firebaseRefsContainer.firebaseStorage.reference
@@ -88,26 +89,25 @@ class ChatRepository @Inject constructor(
             firebaseRefsContainer.refData
                 .child(myUid)
                 .child(NODE_CHATLIST)
-                .child(KEY_ACTIVE_CHAT)
+                .child(ChatListKeys.ACTIVE_CHAT)
 
         val refOtherActiveChat =
             firebaseRefsContainer.refData
-                .child(userId)
+                .child(otherUid)
                 .child(NODE_CHATLIST)
-                .child(KEY_ACTIVE_CHAT)
+                .child(ChatListKeys.ACTIVE_CHAT)
 
-        val refMyChatListItem =
+        val refMyConversation =
             firebaseRefsContainer.refData
                 .child(myUid)
                 .child(nodeType)
-                .child(userId)
+                .child(otherUid)
 
-        val refOtherChatListItem =
+        val refOtherConversation =
             firebaseRefsContainer.refData
-                .child(userId)
+                .child(otherUid)
                 .child(nodeType)
                 .child(myUid)
-
 
         return ChatRefs(
             refAudios = refAudios,
@@ -115,25 +115,38 @@ class ChatRepository @Inject constructor(
             refChat = refChat,
             refMyActiveChat = refMyActiveChat,
             refOtherActiveChat = refOtherActiveChat,
-            refMyChatListItem = refMyChatListItem,
-            refOtherChatListItem = refOtherChatListItem
+            refMyConversation = refMyConversation,
+            refOtherConversation = refOtherConversation
         )
     }
 
-    fun observeChatMessages(
-    ): Flow<ChatChildEvent> = callbackFlow {
+    fun getChatId(otherUid: String): String {
+        val (first, second) = listOf(myUid, otherUid).sorted()
+        return "${first}_${second}"
+    }
 
+    fun buildActiveChatKey(otherUid: String, nodeType: String): String {
+        return "${otherUid}_${nodeType}"
+    }
+
+    fun observeChatMessages(chatRefs: ChatRefs): Flow<ChatChildEvent> = callbackFlow {
         val listener = object : ChildEventListener {
+
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Added(it)) }
+                val id = snapshot.key ?: return
+                val msg = snapshot.getValue(ChatMessage::class.java) ?: return
+                trySend(ChatChildEvent.Added(ChatMessageItem(id, msg)))
             }
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Changed(it)) }
+                val id = snapshot.key ?: return
+                val msg = snapshot.getValue(ChatMessage::class.java) ?: return
+                trySend(ChatChildEvent.Changed(ChatMessageItem(id, msg)))
             }
 
             override fun onChildRemoved(snapshot: DataSnapshot) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Removed(it)) }
+                val id = snapshot.key ?: return
+                trySend(ChatChildEvent.Removed(ChatMessageItem(id, ChatMessage())))
             }
 
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) = Unit
@@ -144,51 +157,23 @@ class ChatRepository @Inject constructor(
         awaitClose { chatRefs.refChat.removeEventListener(listener) }
     }
 
-    private val myUid: String get() = userRepository.myUid
-
-    suspend fun getMessageCountFor(userId: String, nodeType: String): Int {
-        val chatId = getRefChatId(userId)
-        val refChat = firebaseRefsContainer.refChatsRoot.child(nodeType).child(chatId)
-        return refChat.get().await().childrenCount.toInt()
-    }
-
-    suspend fun deleteChatFor(userId: String, nodeType: String, deleteMessages: Boolean): DeleteResult {
-        // Reusar tu lógica actual: construimos refs "locales" y ejecutamos igual que antes
-        val refs = buildChatRefs(userId, nodeType)
-
-        // 👇 si querés reutilizar tu métod deleteMessages() actual, necesitás que opere sobre "refs"
-        // Como tu deleteMessages() usa `chatRefs`, la mínima corrección es:
-        // - Convertir `chatRefs` en `var` y asignarlo acá antes de llamar deleteMessages()
-
-        this.chatRefs = refs
-        return deleteMessages(selected = null, deleteMessages = deleteMessages)
-    }
-
-    fun getRefChatId(
-        userId: String
-    ): String {
-        val (first, second) = listOf(myUid, userId).sorted()
-        return "${first}_${second}"
-    }
-
-    // 1) Su actual: qué chat tiene abierto el OTRO usuario
-    suspend fun getActiveChat(
-    ): String {
+    suspend fun getActiveChat(chatRefs: ChatRefs): String {
         return chatRefs.refOtherActiveChat
-            .child(KEY_ACTIVE_CHAT)
             .get()
             .await()
             .getValue(String::class.java)
-            ?: ""   // default
+            ?: ""
     }
 
-    fun setActiveChat(value: String) {
-        chatRefs.refMyActiveChat
-            .child(KEY_ACTIVE_CHAT)
-            .setValue(value)
+    fun setActiveChat(chatRefs: ChatRefs, value: String) {
+        chatRefs.refMyActiveChat.setValue(value)
     }
 
-    suspend fun getChatWith(firstUid: String, secondUid: String, nodeType: String): Conversation? {
+    suspend fun getConversation(
+        firstUid: String,
+        secondUid: String,
+        nodeType: String
+    ): Conversation? {
         val snapshot = firebaseRefsContainer.refData
             .child(firstUid)
             .child(nodeType)
@@ -199,7 +184,7 @@ class ChatRepository @Inject constructor(
         return snapshot.getValue(Conversation::class.java)
     }
 
-    suspend fun saveChatWith(
+    suspend fun saveConversation(
         ownerUid: String,
         nodeType: String,
         otherUid: String,
@@ -213,20 +198,17 @@ class ChatRepository @Inject constructor(
             .await()
     }
 
-    suspend fun pushMessageToChat(
-        message: ChatMessage
-    ) {
+    suspend fun pushMessageToChat(chatRefs: ChatRefs, message: ChatMessage) {
         chatRefs.refChat.push().setValue(message).await()
     }
 
-    suspend fun uploadChatData(
+    suspend fun uploadMedia(
         uri: Uri,
         fileName: String,
         refData: StorageReference
     ): String? {
         return try {
-            val fileRef = refData
-                .child(fileName)
+            val fileRef = refData.child(fileName)
             fileRef.putFile(uri).await()
             fileRef.downloadUrl.await().toString()
         } catch (_: Exception) {
@@ -234,206 +216,205 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun markChatAsSeen(
-    ) {
+    suspend fun markChatAsSeen(chatRefs: ChatRefs) {
+        val refMyConversation = chatRefs.refMyConversation.get().await()
+        if (!refMyConversation.exists()) return
 
-        val dsMain = chatRefs.refMyChatListItem.get().await()
-        if (!dsMain.exists()) return
+        val unReadCount = refMyConversation
+            .child(ConversationKeys.UNREAD_COUNT)
+            .getValue(Int::class.java) ?: 0
 
-        val msgDescontar = dsMain.child(KEY_RECEIVED_UNREAD).getValue(Int::class.java) ?: 0
-        if (msgDescontar > 0) {
-            setDoubleCheckOnLastMessages(msgDescontar)
-        }
+        if (unReadCount > 0) setDoubleCheckOnLastMessages(chatRefs, unReadCount)
 
-        chatRefs.refMyChatListItem.child("wVisto").setValue(MSG_SEEN)  // Mensaje
-        chatRefs.refMyChatListItem.child(KEY_RECEIVED_UNREAD).setValue(0)  // Mensajes sin leer (card) = 0
+        chatRefs.refMyConversation.child(ConversationKeys.SEEN).setValue(MSG_SEEN)
+        chatRefs.refMyConversation.child(ConversationKeys.UNREAD_COUNT).setValue(0)
     }
 
     private suspend fun setDoubleCheckOnLastMessages(
-        count: Int
+        chatRefs: ChatRefs,
+        unReadCount: Int
     ) {
         val snapshot = chatRefs.refChat
-            .orderByChild("date")
-            .limitToLast(count)
+            .orderByChild(ChatKeys.DATE)
+            .limitToLast(unReadCount)
             .get()
             .await()
 
         if (!snapshot.exists()) return
 
         for (snap in snapshot.children) {
-            if (snap.hasChild(KEY_SEEN_STATUS)) {
-                snap.ref.child(KEY_SEEN_STATUS).setValue(3) // Tilde azul en los mensajes no leídos (count)
+            if (snap.hasChild(ChatKeys.SEEN)) {
+                snap.ref.child(ChatKeys.SEEN).setValue(MSG_SEEN)
             }
         }
     }
 
-
     suspend fun deleteMessages(
-        selected: List<ChatMessage>?,
+        chatRefs: ChatRefs,
+        selectedIds: List<String>?,
         deleteMessages: Boolean = true
     ): DeleteResult {
 
-        // Si es "ocultar chat" y no hay mensajes seleccionados → solo ocultar
-        if (!deleteMessages && selected == null) {
-            chatRefs.refMyChatListItem.child(NODE_CHAT_STATE).setValue(CHAT_STATE_HIDE).await()
+        // 0) Si es "ocultar chat" y no hay selección: solo ocultar conversación (no toca mensajes)
+        if (!deleteMessages && selectedIds == null) {
+            chatRefs.refMyConversation
+                .child(ConversationKeys.STATE)
+                .setValue(CHAT_STATE_HIDE)
+                .await()
+
             return DeleteResult(deletedCount = 0, chatRemoved = false)
         }
 
-        // Si selected es null, cargar todos los mensajes del chat
-        val messagesToDelete = selected ?: run {
+        // 1) Determinar ids a procesar
+        val idsToProcess: List<String> = selectedIds ?: run {
             val snap = chatRefs.refChat.get().await()
-            snap.children.mapNotNull { it.getValue(ChatMessage::class.java) }
+            snap.children.mapNotNull { it.key }
         }
 
-        // Borrar / marcar mensajes uno por uno
-        for (chat in messagesToDelete) {
-            val snap = chatRefs.refChat
-                .orderByChild("date")
-                .equalTo(chat.date)
-                .get()
-                .await()
+        // 2) Procesar cada mensaje por id
+        var processed = 0
+        for (id in idsToProcess) {
+            val msgSnap = chatRefs.refChat.child(id).get().await()
+            if (!msgSnap.exists()) continue
 
-            if (snap.exists()) {
-                iterateDelete(
-                    snap = snap,
-                    chat = chat
-                )
-            }
+            val type = msgSnap.child(ChatKeys.TYPE).getValue(Int::class.java) ?: continue
+            val senderUid = msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: continue
+            val content = msgSnap.child(ChatKeys.CONTENT).getValue(String::class.java).orEmpty()
+
+            processSoftDeleteOrRemove(
+                chatRefs = chatRefs,
+                msgRef = msgSnap.ref,
+                type = type,
+                senderUid = senderUid,
+                content = content
+            )
+            processed++
         }
 
-        // 2) Ver si hay que eliminar el nodo /Datos/myUid/CHATWITH/userId
-        val chatRemoved = removeChatWith(
-            selectedCount = messagesToDelete.size
-        )
+        // 3) Si quedó vacío (o all eliminado para mí), borrar conversación
+        val chatRemoved = removeConversationIfEmpty(chatRefs)
 
         return DeleteResult(
-            deletedCount = messagesToDelete.size,
+            deletedCount = processed,
             chatRemoved = chatRemoved
         )
     }
 
-    private suspend fun iterateDelete(
-        snap: DataSnapshot,
-        chat: ChatMessage
+    // ✅ Reemplaza iterateDelete: ya no iteramos por query, procesamos por msgRef directo
+    private suspend fun processSoftDeleteOrRemove(
+        chatRefs: ChatRefs,
+        msgRef: DatabaseReference,
+        type: Int,
+        senderUid: String,
+        content: String
     ) {
-        for (snap in snap.children) {
-            val type = snap.child("type").getValue(Int::class.java) ?: continue
-            val sender = snap.child("envia").getValue(String::class.java) ?: continue
 
-            if (sender == myUid) {
-                when (type) {
-                    MSG_TEXT ->
-                        snap.child("type").ref.setValue(MSG_TEXT_SENDER_DLT).await()
+        if (senderUid == myUid) {
+            when (type) {
+                MSG_TEXT -> msgRef.child(ChatKeys.TYPE).setValue(MSG_TEXT_SENDER_DLT).await()
+                MSG_PHOTO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_PHOTO_SENDER_DLT).await()
+                MSG_AUDIO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT).await()
 
-                    MSG_TEXT_RECEIVER_DLT ->
-                        snap.ref.removeValue().await()
+                MSG_TEXT_RECEIVER_DLT -> msgRef.removeValue().await()
 
-                    MSG_PHOTO ->
-                        snap.child("type").ref.setValue(MSG_PHOTO_SENDER_DLT).await()
-
-                    MSG_PHOTO_RECEIVER_DLT -> {
-                        chatRefs.refPhotos.child(chat.content).delete().await()
-                        snap.ref.removeValue().await()
-                    }
-
-                    MSG_AUDIO ->
-                        snap.child("type").ref.setValue(MSG_AUDIO_SENDER_DLT).await()
-
-                    MSG_AUDIO_RECEIVER_DLT -> {
-                        chatRefs.refAudios.child(chat.content).delete().await()
-                        snap.ref.removeValue().await()
-                    }
+                MSG_PHOTO_RECEIVER_DLT -> {
+                    deleteStorageByUrlIfPossible(content)
+                    msgRef.removeValue().await()
                 }
-            } else {
-                when (type) {
-                    MSG_TEXT ->
-                        snap.child("type").ref.setValue(MSG_TEXT_RECEIVER_DLT).await()
 
-                    MSG_TEXT_SENDER_DLT ->
-                        snap.ref.removeValue().await()
+                MSG_AUDIO_RECEIVER_DLT -> {
+                    deleteStorageByUrlIfPossible(content)
+                    msgRef.removeValue().await()
+                }
+            }
+        } else {
+            when (type) {
+                MSG_TEXT -> msgRef.child(ChatKeys.TYPE).setValue(MSG_TEXT_RECEIVER_DLT).await()
+                MSG_PHOTO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_PHOTO_RECEIVER_DLT).await()
+                MSG_AUDIO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT).await()
 
-                    MSG_PHOTO ->
-                        snap.child("type").ref.setValue(MSG_PHOTO_RECEIVER_DLT).await()
+                MSG_TEXT_SENDER_DLT -> msgRef.removeValue().await()
 
-                    MSG_PHOTO_SENDER_DLT -> {
-                        chatRefs.refPhotos.child(chat.content).delete().await()
-                        snap.ref.removeValue().await()
-                    }
+                MSG_PHOTO_SENDER_DLT -> {
+                    deleteStorageByUrlIfPossible(content)
+                    msgRef.removeValue().await()
+                }
 
-                    MSG_AUDIO ->
-                        snap.child("type").ref.setValue(MSG_AUDIO_RECEIVER_DLT).await()
-
-                    MSG_AUDIO_SENDER_DLT -> {
-                        chatRefs.refAudios.child(chat.content).delete().await()
-                        snap.ref.removeValue().await()
-                    }
+                MSG_AUDIO_SENDER_DLT -> {
+                    deleteStorageByUrlIfPossible(content)
+                    msgRef.removeValue().await()
                 }
             }
         }
     }
 
-    private suspend fun removeChatWith(
-        selectedCount: Int
-    ): Boolean {
-
-        val data = chatRefs.refChat.get().await()
-
-        val messages = data.childrenCount
-        var senderDeleted = 0L
-        var receiverDeleted = 0L
-
-        for (snap in data.children) {
-            val chat = snap.getValue(ChatMessage::class.java) ?: continue
-            if (chat.senderUid == myUid) {
-                when (chat.type) {
-                    MSG_TEXT_SENDER_DLT,
-                    MSG_PHOTO_SENDER_DLT,
-                    MSG_AUDIO_SENDER_DLT -> senderDeleted++
-                }
-            } else {
-                when (chat.type) {
-                    MSG_TEXT_RECEIVER_DLT,
-                    MSG_PHOTO_RECEIVER_DLT,
-                    MSG_AUDIO_RECEIVER_DLT -> receiverDeleted++
-                }
-            }
+    private suspend fun deleteStorageByUrlIfPossible(url: String) {
+        if (url.isBlank()) return
+        try {
+            firebaseRefsContainer.firebaseStorage.getReferenceFromUrl(url).delete().await()
+        } catch (_: Exception) {
+            // ignore: no existe / no es storage / permisos / etc.
         }
+    }
 
-        val count = messages - (senderDeleted + receiverDeleted + selectedCount)
-        if (count == 0L) {
 
-            chatRefs.refMyChatListItem
-                .removeValue()
-                .await()
+    suspend fun removeConversationIfEmpty(chatRefs: ChatRefs): Boolean {
+        val snapshot = chatRefs.refChat.get().await()
+        val total = snapshot.childrenCount.toInt()
 
+        if (total == 0) {
+            chatRefs.refMyConversation.removeValue().await()
             return true
         }
-        return false
+
+        var deletedCount = 0
+        snapshot.children.forEach { child ->
+            val type = child.child(ChatKeys.TYPE).getValue(Int::class.java) ?: return@forEach
+            val senderUid = child.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
+
+            if (senderUid == myUid) {
+                when (type) {
+                    MSG_TEXT_SENDER_DLT,
+                    MSG_PHOTO_SENDER_DLT,
+                    MSG_AUDIO_SENDER_DLT -> deletedCount++
+                }
+            } else {
+                when (type) {
+                    MSG_TEXT_RECEIVER_DLT,
+                    MSG_PHOTO_RECEIVER_DLT,
+                    MSG_AUDIO_RECEIVER_DLT -> deletedCount++
+                }
+            }
+        }
+
+        return if (total == deletedCount) {
+            chatRefs.refMyConversation.removeValue().await()
+            true
+        } else {
+            false
+        }
     }
 
-    suspend fun getMessageCount(): Int {
+    suspend fun getMessageCount(chatRefs: ChatRefs): Int {
         return chatRefs.refChat.get().await().childrenCount.toInt()
     }
 
-
-
-
-
-
-
-
-
-    // FCM
+    // -----------------------------------------------------
+    // Conversation
     data class UnreadSummary(
         val totalChats: Int,
         val totalUnread: Int
     )
 
-    suspend fun getUnreadSummaryForChats(myUid: String, nodeType: String): UnreadSummary {
+    suspend fun getUnreadSummaryForChats(
+        myUid: String,
+        nodeType: String
+    ): UnreadSummary {
+
         val ds = firebaseRefsContainer.refData
             .child(myUid)
             .child(nodeType)
-            .orderByChild("noVisto")
+            .orderByChild(ConversationKeys.UNREAD_COUNT)
             .startAt(1.0)
             .get()
             .await()
@@ -444,53 +425,53 @@ class ChatRepository @Inject constructor(
         val totalChats = ds.childrenCount.toInt()
 
         for (child in ds.children) {
-            totalUnread += child.child("noVisto").getValue(Int::class.java) ?: 0
+            totalUnread += child.child(ConversationKeys.UNREAD_COUNT).getValue(Int::class.java) ?: 0
         }
 
         return UnreadSummary(totalChats, totalUnread)
     }
 
-    suspend fun applyDoubleCheckForLatestUnread(myUid: String, otherUid: String, nodeType: String) {
-        // wVisto = 2
+    suspend fun applyDoubleCheckForLatestUnread(
+        myUid: String,
+        otherUid: String,
+        nodeType: String
+    ) {
         firebaseRefsContainer.refData
             .child(myUid)
             .child(nodeType)
             .child(otherUid)
-            .child("wVisto")
-            .setValue(2)
+            .child(ConversationKeys.SEEN)
+            .setValue(MSG_RECEIVED)
             .await()
 
-        val noVistosDs = firebaseRefsContainer.refData
+        val unSeenDs = firebaseRefsContainer.refData
             .child(myUid)
             .child(nodeType)
             .child(otherUid)
-            .child("noVisto")
+            .child(ConversationKeys.UNREAD_COUNT)
             .get()
             .await()
 
-        val noVistos = noVistosDs.getValue(Int::class.java) ?: 0
-        if (noVistos <= 0) return
+        val unSeen = unSeenDs.getValue(Int::class.java) ?: 0
+        if (unSeen <= 0) return
 
-        val chatId = userRepository.getChatIdWith(otherUid)
+        val chatId = getChatId(otherUid)
 
-        val msgsDs = firebaseRefsContainer.refChatsRoot
-            .child(nodeType) // NODE_CURRENT_CHAT
+        val messagesDs = firebaseRefsContainer.refChatsRoot
+            .child(nodeType)
             .child(chatId)
-            .orderByChild("date")
-            .limitToLast(noVistos)
+            .orderByChild(ChatKeys.DATE)
+            .limitToLast(unSeen)
             .get()
             .await()
 
-        if (!msgsDs.exists()) return
+        if (!messagesDs.exists()) return
 
-        for (msgSnap in msgsDs.children) {
-            val envia = msgSnap.child("envia").getValue(String::class.java)
-            if (envia != null && envia != myUid && msgSnap.hasChild("visto")) {
-                msgSnap.ref.child("visto").setValue(2).await()
+        for (msgSnap in messagesDs.children) {
+            val sender = msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java)
+            if (sender != null && sender != myUid && msgSnap.hasChild(ChatKeys.SEEN)) {
+                msgSnap.ref.child(ChatKeys.SEEN).setValue(MSG_RECEIVED).await()
             }
         }
     }
-
-
-
 }

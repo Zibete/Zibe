@@ -20,6 +20,7 @@ import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
@@ -146,20 +147,19 @@ class ChatViewModel @Inject constructor(
 
     fun startChatListeners() {
         viewModelScope.launch {
-            chatRepository.observeChatMessages().collect { event ->
+            val refs = requireChatRefs()
+            chatRepository.observeChatMessages(refs).collect { event ->
                 _chatState.update { state ->
                     when (event) {
                         is ChatChildEvent.Added -> state.copy(
-                            messages = (state.messages + event.message).takeLast(MAXCHATSIZE)
+                            messages = (state.messages + event.item).takeLast(MAXCHATSIZE)
                         )
-
                         is ChatChildEvent.Changed -> state.copy(
-                            messages = state.messages.map { if (sameMsg(it, event.message)) event.message else it }
+                            messages = state.messages.map { if (it.id == event.item.id) event.item else it }
                         )
-
                         is ChatChildEvent.Removed -> state.copy(
-                            messages = state.messages.filterNot { sameMsg(it, event.message) },
-                            selectedMessages = state.selectedMessages.filterNot { sameMsg(it, event.message) }.toSet()
+                            messages = state.messages.filterNot { it.id == event.item.id },
+                            selectedIds = state.selectedIds - event.item.id
                         )
                     }
                 }
@@ -173,7 +173,7 @@ class ChatViewModel @Inject constructor(
 
 
     private fun markMessagesAsSeenOnOpen() {
-        viewModelScope.launch { chatRepository.markChatAsSeen() }
+        viewModelScope.launch { chatRepository.markChatAsSeen(requireChatRefs()) }
     }
 
     private suspend fun setupChat() {
@@ -429,7 +429,7 @@ class ChatViewModel @Inject constructor(
                 else -> throw IllegalArgumentException(ERR_ZIBE)
             }
 
-            chatRepository.uploadChatData(
+            chatRepository.uploadMedia(
                 uri,
                 fileName,
                 refData
@@ -446,10 +446,10 @@ class ChatViewModel @Inject constructor(
     ) {
         if (content.isEmpty()) return
 
-        val myChatWith = chatRepository.getChatWith(myUid, userId, nodeType)
+        val myChatWith = chatRepository.getConversation(myUid, userId, nodeType)
         val myState = myChatWith?.state ?: nodeType
 
-        val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
+        val otherChatWith = chatRepository.getConversation(userId, myUid, nodeType)
         val otherState = otherChatWith?.state ?: nodeType
         val otherCountMsgReceivedUnread = otherChatWith?.unreadCount ?: 0
 
@@ -462,8 +462,11 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val otherActiveChat = chatRepository.getActiveChat() // (esto es local en tu app)
-        val seen = if (otherActiveChat != myUid + nodeType) MSG_DELIVERED else MSG_SEEN
+        val chatRefs = requireChatRefs()
+
+        val otherActiveChat = chatRepository.getActiveChat(chatRefs) // (esto es local en tu app)
+        val ourActiveChat = chatRepository.buildActiveChatKey(userId, nodeType)
+        val seen = if (otherActiveChat != ourActiveChat) MSG_DELIVERED else MSG_SEEN
 
         val now = now()
         val date = if (timerText.isBlank()) now else "$now $timerText"
@@ -477,7 +480,7 @@ class ChatViewModel @Inject constructor(
         )
 
         // 1) Mensaje (esto dispara el trigger en Cloud Functions)
-        chatRepository.pushMessageToChat(chatMessage)
+        chatRepository.pushMessageToChat(chatRefs, chatMessage)
 
         // 2) Texto resumen para Conversation
         val (myMsg, otherMsg) = when (msgType) {
@@ -498,7 +501,7 @@ class ChatViewModel @Inject constructor(
             unreadCount = 0,
             seen = seen
         )
-        chatRepository.saveChatWith(myUid, nodeType, userId, myNewChatWith)
+        chatRepository.saveConversation(myUid, nodeType, userId, myNewChatWith)
 
         // 4) Conversation del otro + contador unread (si no está activo en MI app)
         //    OJO: antes tu “if” dependía de otherActiveChat (local), no del estado real del otro.
@@ -516,7 +519,7 @@ class ChatViewModel @Inject constructor(
                 state = otherState,
                 unreadCount = countOtherMsgUnread
             )
-            chatRepository.saveChatWith(userId, nodeType, myUid, otherNewChatWith)
+            chatRepository.saveConversation(userId, nodeType, myUid, otherNewChatWith)
 
             // ✅ Antes: Volley mandaba el push.
             // ✅ Ahora: Cloud Function lo manda cuando detecta el nuevo mensaje en RTDB,
@@ -550,7 +553,7 @@ class ChatViewModel @Inject constructor(
 
     fun onSendPhotoClicked() {
         viewModelScope.launch {
-            val otherChatWith = chatRepository.getChatWith(userId, myUid, nodeType)
+            val otherChatWith = chatRepository.getConversation(userId, myUid, nodeType)
             val otherState = otherChatWith?.state ?: nodeType
             val otherName = otherProfile.value?.name
 
@@ -571,7 +574,11 @@ class ChatViewModel @Inject constructor(
     }
 
     fun setActiveChat(activeChat: String){
-        chatRepository.setActiveChat(activeChat)
+        chatRepository.setActiveChat(requireChatRefs(), activeChat)
+    }
+
+    fun getActiveChatString(): String{
+        return chatRepository.buildActiveChatKey(userId, nodeType)
     }
 
     // --- Acciones de menú ----------
@@ -579,7 +586,7 @@ class ChatViewModel @Inject constructor(
     fun onToggleNotificationsClicked() {
 
         viewModelScope.launch {
-            val chatWith = chatRepository.getChatWith(myUid,userId, nodeType)
+            val chatWith = chatRepository.getConversation(myUid,userId, nodeType)
             val currentState = chatWith?.state
             val userName = currentOtherName()
 
@@ -644,39 +651,34 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onMessageSelectionChanged(message: ChatMessage, isSelected: Boolean) {
-        _chatState.update { current ->
-            val currentSet = current.selectedMessages.toMutableSet()
-            if (isSelected) {
-                currentSet.add(message)
-            } else {
-                currentSet.remove(message)
-            }
-
-            current.copy(
-                selectedMessages = currentSet
-            )
+    fun onMessageSelectionChanged(item: ChatMessageItem, isSelected: Boolean) {
+        _chatState.update { s ->
+            val set = s.selectedIds.toMutableSet()
+            if (isSelected) set.add(item.id) else set.remove(item.id)
+            s.copy(selectedIds = set)
         }
     }
 
     fun clearSelection() {
-        _chatState.update { it.copy(selectedMessages = emptySet()) }
+        _chatState.update { it.copy(selectedIds = emptySet()) }
     }
 
+    private fun requireChatRefs(): ChatRefs =
+        _chatRefs.value ?: error("ChatRefs not initialized. Call setChatContext() first.")
 
     fun onDeleteSelectedMessages() {
-        val selected = _chatState.value.selectedMessages.toList()
-        if (selected.isEmpty()) return
+        val selectedIds = _chatState.value.selectedIds.toList()
+        if (selectedIds.isEmpty()) return
 
         viewModelScope.launch {
             try {
-                val result = chatRepository.deleteMessages(selected)
+                val result = chatRepository.deleteMessages(
+                    chatRefs = requireChatRefs(),
+                    selectedIds = selectedIds,
+                    deleteMessages = true
+                )
 
-                _chatState.update {
-                    it.copy(
-                        selectedMessages = emptySet()
-                    )
-                }
+                _chatState.update { it.copy(selectedIds = emptySet()) }
 
                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
 
@@ -695,7 +697,7 @@ class ChatViewModel @Inject constructor(
 
     fun onDeleteChatClicked() {
         viewModelScope.launch {
-            val count = chatRepository.getMessageCount()
+            val count = chatRepository.getMessageCount(requireChatRefs())
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = currentOtherName(),
@@ -703,7 +705,7 @@ class ChatViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteMessages(null, deleteMessages)
+                                val result = chatRepository.deleteMessages(requireChatRefs(), null, deleteMessages)
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
                                 _events.emit(

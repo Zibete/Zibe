@@ -151,7 +151,7 @@ class ProfileViewModel @Inject constructor(
         val userName = _uiState.value.profile?.name ?: return
 
         viewModelScope.launch {
-            val chatWith = chatRepository.getChatWith(myUid, userId, nodeType)
+            val chatWith = chatRepository.getConversation(myUid, userId, nodeType)
 
             val currentState = chatWith?.state
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
@@ -210,8 +210,8 @@ class ProfileViewModel @Inject constructor(
             if (_uiState.value.isLoading) return@launch
             val profile = _uiState.value.profile ?: return@launch
 
-            chatRepository.buildChatRefs(userId, nodeType)
-            val count = chatRepository.getMessageCount()
+            val chatRefs = chatRepository.buildChatRefs(userId, nodeType)
+            val count = chatRepository.getMessageCount(chatRefs)
 
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
@@ -220,7 +220,7 @@ class ProfileViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteMessages(null, deleteMessages)
+                                val result = chatRepository.deleteMessages(chatRefs, null, deleteMessages)
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
                                 _events.emit(ChatSessionUiEvent.ShowErrorDialog(e.message ?: ERR_ZIBE))
