@@ -36,7 +36,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.common.api.ApiException
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
@@ -63,14 +62,10 @@ import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 @Suppress("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
-
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-
 
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()

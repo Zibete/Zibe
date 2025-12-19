@@ -43,14 +43,9 @@ import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
-import com.zibete.proyecto1.PageAdapterGroup
+import com.zibete.proyecto1.GroupPagerFragment
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.databinding.ActivityMainBinding
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
@@ -68,17 +63,9 @@ import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-
-
 
 @AndroidEntryPoint
 class MainActivity : BaseToolbarActivity() {
-
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-    @Inject lateinit var userSessionManager: UserSessionManager
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var userRepository: UserRepository
 
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
@@ -115,7 +102,7 @@ class MainActivity : BaseToolbarActivity() {
 
         setupLocation()
 
-        mainViewModel.isFirstLoginDone()
+        mainViewModel.checkFirstLogin()
 
         setupOnBackPressedDispatcher()
     }
@@ -142,7 +129,7 @@ class MainActivity : BaseToolbarActivity() {
             usersViewModel.onFilterClicked()
         }
 
-        val hasActiveFilter = userPreferencesRepository.filterSwitch
+        val hasActiveFilter = mainViewModel.hasActiveFilter.value
 
         val colorRes = if (hasActiveFilter) R.color.accent else R.color.blanco
         filterButton?.setColorFilter(
@@ -158,7 +145,7 @@ class MainActivity : BaseToolbarActivity() {
         setSupportActionBar(materialToolbar)
 
         // Drawer
-        drawerLayout = binding.drawerLayout
+        drawerLayout = binding.drawerLayout // <-- donde configuro la accion?
         navigationView = binding.navView
 
         // Header Info
@@ -187,12 +174,13 @@ class MainActivity : BaseToolbarActivity() {
             ZibeApp.ScreenUtils.heightPx / 2
         )
 
-        tvUserName?.text = userRepository.myUserName
-        tvUserEmail?.text = userRepository.myEmail
-        Glide.with(this).load(userRepository.myProfilePhotoUrl).into(userImage)
+        tvUserName?.text = mainViewModel.myDisplayName()
+        tvUserEmail?.text = mainViewModel.myEmail()
+        Glide.with(this).load(mainViewModel.myPhotoUrl()).into(userImage)
 
         editProfileButton?.setOnClickListener { editProfileNavigation() }
     }
+
 
     private fun setupBadges() {
         // Chat Badge
@@ -254,6 +242,12 @@ class MainActivity : BaseToolbarActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                mainViewModel.groupName.collect { materialToolbar?.title = it }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Navegación
                 launch {
                     mainViewModel.navEvents.collect { event ->
@@ -281,22 +275,14 @@ class MainActivity : BaseToolbarActivity() {
                                 mainViewModel.onChatTabSelected()
                             }
 
-                            is MainNavEvent.ToGroupsDetail -> {
-
-                                userPreferencesRepository.groupName = event.groupName
-                                userPreferencesRepository.userNameGroup = event.userName
-                                userPreferencesRepository.inGroup = true
-
+                            is MainNavEvent.ToGroupDetail -> {
                                 mainViewModel.showToolbar(true)
                                 invalidateOptionsMenu()
 
-                                val newFragment = PageAdapterGroup()
-
                                 supportFragmentManager.beginTransaction()
-                                    .replace(R.id.nav_host_fragment, newFragment)
+                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
                                     .commit()
 
-                                materialToolbar?.title = event.groupName
                                 bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
                             }
 
@@ -377,11 +363,22 @@ class MainActivity : BaseToolbarActivity() {
                                 UserMessageUtils.confirm(
                                     context = this@MainActivity,
                                     title = DIALOG_EXIT,
-                                    message = "¿Desea abandonar ${event.groupName}?",
+                                    message = "¿Desea abandonar ${mainViewModel.groupName.value}?",
+                                    positiveText = DIALOG_ACCEPT,
+                                    negativeText = DIALOG_CANCEL,
+                                    onConfirm = { mainViewModel.onExitGroupConfirmed() }
+                                )
+                            }
+
+                            is MainNavEvent.ConfirmLogout -> {
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = "Cerrar sesión",
+                                    message = "¿Está seguro de cerrar su sesión?",
                                     positiveText = DIALOG_ACCEPT,
                                     negativeText = DIALOG_CANCEL,
                                     onConfirm = {
-                                        mainViewModel.onExitGroupConfirmed()
+                                        mainViewModel.onLogoutConfirmed()
                                     }
                                 )
                             }
@@ -430,19 +427,6 @@ class MainActivity : BaseToolbarActivity() {
         }
         mainViewModel.onChatTabSelected()
     }
-
-//    fun logout() {
-//        UserMessageUtils.confirm(
-//            context = this,
-//            title = "Cerrar sesión",
-//            message = "¿Está seguro de cerrar su sesión?",
-//            positiveText = DIALOG_ACCEPT,
-//            negativeText = DIALOG_CANCEL,
-//            onConfirm = {
-//                mainViewModel.onLogoutConfirmed()
-//            }
-//        )
-//    }
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -528,13 +512,11 @@ class MainActivity : BaseToolbarActivity() {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
-        mainViewModel.onSetUserOnline()
         startLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
-        mainViewModel.onSetUserLastSeen()
         stopLocationUpdates()
     }
 

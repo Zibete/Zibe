@@ -236,9 +236,9 @@ class EditProfileFragment : Fragment() {
     }
 
     private fun setupOnboarding() {
-        binding.linearOnBoardingProfile.isVisible = !editProfileViewModel.isFirstLoginDone()
+        binding.linearOnBoardingProfile.isVisible = !editProfileViewModel.checkFirstLogin()
 
-        if (!editProfileViewModel.isFirstLoginDone()) editProfileViewModel.onFirstLoginDone()
+        if (!editProfileViewModel.checkFirstLogin()) editProfileViewModel.markFirstLoginAsDone()
 
         binding.btnOk.setOnClickListener { binding.linearOnBoardingProfile.isVisible = false }
 

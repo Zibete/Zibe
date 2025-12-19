@@ -123,18 +123,9 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                 favoritesViewModel.events.collect { event ->
                     when (event) {
                         is FavoritesUiEvent.ShowMessage -> {
-                            UserMessageUtils.alert(
-                                context = requireContext(),
-                                message = event.message,
-                                onConfirm = {}
-                            )
-                        }
-                        is FavoritesUiEvent.ShowEmptyFavorites -> {
-                            UserMessageUtils.alert(
-                                context = requireContext(),
-                                message = "Aún no hay favoritos",
-                                onConfirm = {}
-                            )
+                            UserMessageUtils.showSnack(
+                                binding.root,
+                                event.message)
                         }
                     }
                 }

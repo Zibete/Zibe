@@ -162,8 +162,10 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
         dialogBinding.spinnerMinAge.adapter = spinnerAdapter
         dialogBinding.spinerMaxAge.adapter = spinnerAdapter
 
-        dialogBinding.switchAge.isChecked = usersViewModel.currentApplyAgeFilter()
-        dialogBinding.switchOnline.isChecked = usersViewModel.currentApplyOnlineFilter()
+        viewLifecycleOwner.lifecycleScope.launch {
+            dialogBinding.switchAge.isChecked = usersViewModel.currentApplyAgeFilter()
+            dialogBinding.switchOnline.isChecked = usersViewModel.currentApplyOnlineFilter()
+        }
 
         dialogBinding.spinnerMinAge.isEnabled = dialogBinding.switchAge.isChecked
         dialogBinding.spinerMaxAge.isEnabled = dialogBinding.switchAge.isChecked

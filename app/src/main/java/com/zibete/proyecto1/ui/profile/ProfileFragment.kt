@@ -49,8 +49,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ProfileFragment : BaseChatSessionFragment() {
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
-
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
@@ -169,7 +167,7 @@ class ProfileFragment : BaseChatSessionFragment() {
                     binding.menuGoChatGroup.isVisible = state.isGroupMatch
                     if (state.isGroupMatch) {
                         binding.menuGoChatGroup.labelText =
-                            getString(R.string.chat_private_in_group, userPreferencesRepository.groupName)
+                            getString(R.string.chat_private_in_group, profileViewModel.groupName)
                     }
 
                     // Favorito
@@ -336,16 +334,6 @@ class ProfileFragment : BaseChatSessionFragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        profileViewModel.setUserOnline()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        profileViewModel.setUserLastSeen()
     }
 
 }

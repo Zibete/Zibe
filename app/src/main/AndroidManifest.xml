@@ -81,9 +81,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-
         <!-- Activities -->
-
         <activity
             android:name=".ui.chat.ChatActivity"
             android:parentActivityName=".ui.main.MainActivity"
@@ -138,22 +136,16 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.MainActivity" />
 
-
-        <activity
-            android:name="com.canhub.cropper.CropImageActivity"
-            android:theme="@style/Base.Theme.AppCompat" />
-
-        <!-- FCM (Android 12+ requiere exported) -->
+        <!-- FCM -->
         <service
-            android:name=".FCM"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.RECEIVE"
-            android:stopWithTask="false">
+            android:name=".ZibeFirebaseMessagingService"
+            android:exported="false"
+            android:permission="com.google.android.c2dm.permission.RECEIVE">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </service>
+
 
     </application>
 </manifest>

@@ -23,18 +23,14 @@ import javax.inject.Inject
 @AndroidEntryPoint
 
 class ReportActivity : AppCompatActivity() {
-
     @Inject lateinit var userRepository: UserRepository
-
     @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var edtComentarios: TextInputEditText
     private lateinit var btnSend: MaterialButton
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +42,7 @@ class ReportActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        toolbar = findViewById(R.id.`@+id/material_toolbar`) // Asegurate que en dialog_report sea MaterialToolbar
+        toolbar = findViewById(R.id.material_toolbar) // Asegurate que en dialog_report sea MaterialToolbar
         setSupportActionBar(toolbar)
 
         supportActionBar?.apply {
@@ -110,11 +106,9 @@ class ReportActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        lifecycleScope.launch { userRepository.setUserLastSeen() }
     }
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { userRepository.setUserOnline() }
     }
 }

@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepository.AccountKeys
@@ -22,18 +23,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val userSessionManager: UserSessionManager,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesDSRepository: UserPreferencesDSRepository
 ) : ViewModel() {
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -95,9 +98,15 @@ class EditProfileViewModel @Inject constructor(
         return calcAge(birthDay)
     }
 
-    fun isFirstLoginDone () : Boolean { return userPreferencesRepository.firstLoginDone }
+    fun checkFirstLogin(): Boolean = runBlocking {
+        userPreferencesDSRepository.firstLoginDoneFlow.first()
+    }
 
-    fun onFirstLoginDone () { userPreferencesRepository.firstLoginDone = true }
+    fun markFirstLoginAsDone() {
+        viewModelScope.launch {
+            userPreferencesDSRepository.setFirstLoginDone(true)
+        }
+    }
 
     fun onPhotoSelected(uri: Uri) {
         _uiState.update {

@@ -52,11 +52,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.card.MaterialCardView
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterChat
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.ActivityChatBinding
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
@@ -64,6 +61,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -71,14 +69,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
-
-    // ===== DI =====
-    @Inject lateinit var firebaseRefsContainer: FirebaseRefsContainer
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
 
     // ===== VM / Binding =====
     private val chatViewModel: ChatViewModel by viewModels()
@@ -124,7 +117,7 @@ class ChatActivity : BaseChatSessionActivity() {
         setupScrollHelpers()
 
         resetUiState()
-        chatViewModel.setUserOnline()
+
 
         collectUiState()
         configureChatTitle()
@@ -157,7 +150,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 chatViewModel.onMessageSelectionChanged(msg, selected)
             },
             myAudioAvatarUrl = chatViewModel.myIdentity.userPhotoUrl,
-            otherAudioAvatarUrl = chatViewModel.otherProfile.value?.profilePhoto,
+            otherAudioAvatarUrl = chatViewModel.otherProfile.value?.photoUrl,
             myUid = chatViewModel.myUid
         )
 
@@ -169,7 +162,7 @@ class ChatActivity : BaseChatSessionActivity() {
             binding.cardviewTitle.isVisible = false
         } else {
             binding.tvChatTitle.text =
-                getString(R.string.chat_private_in_group, userPreferencesRepository.groupName)
+                getString(R.string.chat_private_in_group, chatViewModel.groupName)
             binding.cardviewTitle.isVisible = true
         }
     }
@@ -333,7 +326,7 @@ class ChatActivity : BaseChatSessionActivity() {
             override fun afterTextChanged(s: Editable?) {
                 if (binding.msg.text.isEmpty()) {
                     chatViewModel.onTextReady(false)
-                    chatViewModel.setUserOnline()
+                    chatViewModel.setUserActivityStatus(getString(R.string.online))
                 }
             }
         })
@@ -373,13 +366,11 @@ class ChatActivity : BaseChatSessionActivity() {
 
     override fun onPause() {
         super.onPause()
-        chatViewModel.setUserLastSeen()
         chatViewModel.setActiveChat("")
     }
 
     override fun onResume() {
         super.onResume()
-        chatViewModel.setUserOnline()
         chatViewModel.setActiveChat(chatViewModel.userId + chatViewModel.nodeType)
     }
 
@@ -705,7 +696,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         normalizeUiCancelRecordAudio()
-        chatViewModel.setUserOnline()
+        chatViewModel.setUserActivityStatus(getString(R.string.online))
     }
 
     private fun cancelRecordAudio() {
@@ -735,7 +726,7 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         normalizeUiCancelRecordAudio()
-        chatViewModel.setUserOnline()
+        chatViewModel.setUserActivityStatus(getString(R.string.online))
 
         runCatching {
             if (currentAudioUri != null) {

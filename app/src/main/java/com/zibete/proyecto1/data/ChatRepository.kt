@@ -16,9 +16,9 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_SENDER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.MSG_RECEIVED_UNREAD
+import com.zibete.proyecto1.ui.constants.Constants.KEY_RECEIVED_UNREAD
 import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
-import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN_STATUS
+import com.zibete.proyecto1.ui.constants.Constants.KEY_SEEN_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
@@ -62,51 +62,6 @@ class ChatRepository @Inject constructor(
     private var chatRefs: ChatRefs
 ) {
 
-    fun observeChatMessages(
-    ): Flow<ChatChildEvent> = callbackFlow {
-
-        val listener = object : ChildEventListener {
-            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Added(it)) }
-            }
-
-            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Changed(it)) }
-            }
-
-            override fun onChildRemoved(snapshot: DataSnapshot) {
-                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Removed(it)) }
-            }
-
-            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) = Unit
-            override fun onCancelled(error: DatabaseError) = Unit
-        }
-
-        chatRefs.refChat.addChildEventListener(listener)
-        awaitClose { chatRefs.refChat.removeEventListener(listener) }
-    }
-
-    private val myUid = userRepository.myUid
-
-    suspend fun getMessageCountFor(userId: String, nodeType: String): Int {
-        val chatId = getRefChatId(userId)
-        val refChat = firebaseRefsContainer.refChatMessageRoot.child(nodeType).child(chatId)
-        return refChat.get().await().childrenCount.toInt()
-    }
-
-    suspend fun deleteChatFor(userId: String, nodeType: String, deleteMessages: Boolean): DeleteResult {
-        // Reusar tu lógica actual: construimos refs "locales" y ejecutamos igual que antes
-        val refs = buildChatRefs(userId, nodeType)
-
-        // 👇 si querés reutilizar tu métod deleteMessages() actual, necesitás que opere sobre "refs"
-        // Como tu deleteMessages() usa `chatRefs`, la mínima corrección es:
-        // - Convertir `chatRefs` en `var` y asignarlo acá antes de llamar deleteMessages()
-
-        this.chatRefs = refs
-        return deleteMessages(selected = null, deleteMessages = deleteMessages)
-    }
-
-
     fun buildChatRefs(
         userId: String,
         nodeType: String
@@ -115,12 +70,12 @@ class ChatRepository @Inject constructor(
         val chatId = getRefChatId(userId)
 
         val refAudios =
-            firebaseRefsContainer.storage.reference
+            firebaseRefsContainer.firebaseStorage.reference
                 .child("$NODE_CHATS/$nodeType/$chatId/")
                 .child("$PATH_AUDIOS/")
 
         val refPhotos =
-            firebaseRefsContainer.storage.reference
+            firebaseRefsContainer.firebaseStorage.reference
                 .child("$NODE_CHATS/$nodeType/$chatId/")
                 .child("$PATH_PHOTOS/")
 
@@ -163,6 +118,50 @@ class ChatRepository @Inject constructor(
             refMyChatListItem = refMyChatListItem,
             refOtherChatListItem = refOtherChatListItem
         )
+    }
+
+    fun observeChatMessages(
+    ): Flow<ChatChildEvent> = callbackFlow {
+
+        val listener = object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Added(it)) }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Changed(it)) }
+            }
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+                snapshot.getValue(ChatMessage::class.java)?.let { trySend(ChatChildEvent.Removed(it)) }
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) = Unit
+            override fun onCancelled(error: DatabaseError) = Unit
+        }
+
+        chatRefs.refChat.addChildEventListener(listener)
+        awaitClose { chatRefs.refChat.removeEventListener(listener) }
+    }
+
+    private val myUid: String get() = userRepository.myUid
+
+    suspend fun getMessageCountFor(userId: String, nodeType: String): Int {
+        val chatId = getRefChatId(userId)
+        val refChat = firebaseRefsContainer.refChatMessageRoot.child(nodeType).child(chatId)
+        return refChat.get().await().childrenCount.toInt()
+    }
+
+    suspend fun deleteChatFor(userId: String, nodeType: String, deleteMessages: Boolean): DeleteResult {
+        // Reusar tu lógica actual: construimos refs "locales" y ejecutamos igual que antes
+        val refs = buildChatRefs(userId, nodeType)
+
+        // 👇 si querés reutilizar tu métod deleteMessages() actual, necesitás que opere sobre "refs"
+        // Como tu deleteMessages() usa `chatRefs`, la mínima corrección es:
+        // - Convertir `chatRefs` en `var` y asignarlo acá antes de llamar deleteMessages()
+
+        this.chatRefs = refs
+        return deleteMessages(selected = null, deleteMessages = deleteMessages)
     }
 
     fun getRefChatId(
@@ -241,13 +240,13 @@ class ChatRepository @Inject constructor(
         val dsMain = chatRefs.refMyChatListItem.get().await()
         if (!dsMain.exists()) return
 
-        val msgDescontar = dsMain.child(MSG_RECEIVED_UNREAD).getValue(Int::class.java) ?: 0
+        val msgDescontar = dsMain.child(KEY_RECEIVED_UNREAD).getValue(Int::class.java) ?: 0
         if (msgDescontar > 0) {
             setDoubleCheckOnLastMessages(msgDescontar)
         }
 
         chatRefs.refMyChatListItem.child("wVisto").setValue(MSG_SEEN)  // Mensaje
-        chatRefs.refMyChatListItem.child(MSG_RECEIVED_UNREAD).setValue(0)  // Mensajes sin leer (card) = 0
+        chatRefs.refMyChatListItem.child(KEY_RECEIVED_UNREAD).setValue(0)  // Mensajes sin leer (card) = 0
     }
 
     private suspend fun setDoubleCheckOnLastMessages(
@@ -262,8 +261,8 @@ class ChatRepository @Inject constructor(
         if (!snapshot.exists()) return
 
         for (snap in snapshot.children) {
-            if (snap.hasChild(MSG_SEEN_STATUS)) {
-                snap.ref.child(MSG_SEEN_STATUS).setValue(3) // Tilde azul en los mensajes no leídos (count)
+            if (snap.hasChild(KEY_SEEN_STATUS)) {
+                snap.ref.child(KEY_SEEN_STATUS).setValue(3) // Tilde azul en los mensajes no leídos (count)
             }
         }
     }
@@ -415,5 +414,83 @@ class ChatRepository @Inject constructor(
     suspend fun getMessageCount(): Int {
         return chatRefs.refChat.get().await().childrenCount.toInt()
     }
+
+
+
+
+
+
+
+
+
+    // FCM
+    data class UnreadSummary(
+        val totalChats: Int,
+        val totalUnread: Int
+    )
+
+    suspend fun getUnreadSummaryForChats(myUid: String, nodeType: String): UnreadSummary {
+        val ds = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(nodeType)
+            .orderByChild("noVisto")
+            .startAt(1.0)
+            .get()
+            .await()
+
+        if (!ds.exists()) return UnreadSummary(0, 0)
+
+        var totalUnread = 0
+        val totalChats = ds.childrenCount.toInt()
+
+        for (child in ds.children) {
+            totalUnread += child.child("noVisto").getValue(Int::class.java) ?: 0
+        }
+
+        return UnreadSummary(totalChats, totalUnread)
+    }
+
+    suspend fun applyDoubleCheckForLatestUnread(myUid: String, otherUid: String, nodeType: String) {
+        // wVisto = 2
+        firebaseRefsContainer.refData
+            .child(myUid)
+            .child(nodeType)
+            .child(otherUid)
+            .child("wVisto")
+            .setValue(2)
+            .await()
+
+        val noVistosDs = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(nodeType)
+            .child(otherUid)
+            .child("noVisto")
+            .get()
+            .await()
+
+        val noVistos = noVistosDs.getValue(Int::class.java) ?: 0
+        if (noVistos <= 0) return
+
+        val chatId = userRepository.getChatIdWith(otherUid)
+
+        val msgsDs = firebaseRefsContainer.refChatMessageRoot
+            .child(nodeType) // NODE_CURRENT_CHAT
+            .child(chatId)
+            .orderByChild("date")
+            .limitToLast(noVistos)
+            .get()
+            .await()
+
+        if (!msgsDs.exists()) return
+
+        for (msgSnap in msgsDs.children) {
+            val envia = msgSnap.child("envia").getValue(String::class.java)
+            if (envia != null && envia != myUid && msgSnap.hasChild("visto")) {
+                msgSnap.ref.child("visto").setValue(2).await()
+            }
+        }
+    }
+
+
 
 }

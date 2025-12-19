@@ -43,7 +43,7 @@ class ChatListGroupsFragment : Fragment(), SearchView.OnQueryTextListener {
     @Inject
     lateinit var userRepository: UserRepository
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
 
     private var _binding: FragmentChatListBinding? = null
     private val binding get() = _binding!!

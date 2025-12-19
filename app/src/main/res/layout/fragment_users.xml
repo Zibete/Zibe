@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context=".ui.users.UsersFragment">
 
-    <com.zibete.proyecto1.FixedSwipeRefreshLayout
+    <com.zibete.proyecto1.SwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:orientation="vertical"
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
             android:layout_height="match_parent">
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_chatlist"
+                android:id="@+id/rv_users"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
@@ -28,5 +28,5 @@
                 android:paddingHorizontal="150dp" />
         </RelativeLayout>
 
-    </com.zibete.proyecto1.FixedSwipeRefreshLayout>
+    </com.zibete.proyecto1.SwipeRefreshLayout>
 </FrameLayout>

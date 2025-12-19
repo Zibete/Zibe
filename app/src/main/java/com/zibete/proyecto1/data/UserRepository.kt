@@ -42,6 +42,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -57,6 +58,7 @@ class UserRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
     private val chatRepository: ChatRepository,
+    private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
 ) {
 
@@ -146,7 +148,7 @@ class UserRepository @Inject constructor(
 
     fun getProfilePhotoStoragePath(
         fileName: String = PROFILE_PHOTO
-    ) = firebaseRefsContainer.storage.reference
+    ) = firebaseRefsContainer.firebaseStorage.reference
         .child(NODE_USERS)
         .child(myUid)
         .child(PATH_PROFILE_PHOTOS)
@@ -481,82 +483,95 @@ class UserRepository @Inject constructor(
     }
 
     // ============================================================
-    // PRESENCE / STATUS
+    // PRESENCE / STATUS (nuevo)
     // ============================================================
 
-    private suspend fun setPresence(state: Status, isOnline: Boolean) = withContext(Dispatchers.IO) {
-        // /Datos/<uid>/Estado (texto + fecha/hora)
-        myStatusRef().setValue(state).await()
-        // /Cuentas/<uid>/isOnline (boolean)
-        myAccountRef().child(AccountKeys.IS_ONLINE).setValue(isOnline).await()
-    }
-
     suspend fun setUserActivityStatus(status: String) {
-        setPresence(Status(status, "", ""), isOnline = true)
+        presenceRepository.setActivityStatus(myUid, status)
     }
 
-    suspend fun setUserOnline() {
-        setPresence(Status(context.getString(R.string.online), "", ""), isOnline = true)
-    }
-
-    suspend fun setUserOffline() {
-        setPresence(Status(context.getString(R.string.offline), "", ""), isOnline = false)
-    }
-
+    // Opcional: si querés forzar lastSeen en logout (además de onDisconnect)
     suspend fun setUserLastSeen() {
-        setPresence(
-            Status(context.getString(R.string.ultVez), today(), time()),
-            isOnline = false
-        )
+        presenceRepository.setLastSeenNow(myUid)
     }
 
-    private fun DataSnapshot.toUserStatus(chatType: String): UserStatus {
+    private fun DataSnapshot.toUserStatus(
+        chatType: String,
+        lastSeenFormatter: (Long) -> String
+    ): UserStatus {
         if (!exists()) return UserStatus.Offline
 
-        val status = child(KEY_USER_STATUS).getValue(String::class.java)
-        val date = child(KEY_USER_LAST_DATE).getValue(String::class.java)
-        val hour = child(KEY_USER_LAST_HOUR).getValue(String::class.java)
+        val status = child("status").getValue(String::class.java).orEmpty()
+        val lastSeenMs = child("lastSeenMs").getValue(Long::class.java) ?: 0L
 
         if (status == context.getString(R.string.online)) return UserStatus.Online
 
         if (status == context.getString(R.string.typing) ||
             status == context.getString(R.string.recording)
         ) {
-            val currentChat = child(key!!)
-                .child("$NODE_CHATLIST/$NODE_ACTIVE_CHAT")
-                .getValue(String::class.java)
-
-            if (currentChat == myUid + chatType) {
-                return UserStatus.TypingOrRecording(status)
-            }
-            return UserStatus.Online
+            // La decisión final depende de si está chateando conmigo
+            // (esto se resuelve fuera con una lectura de ACTIVE_CHAT)
+            return UserStatus.TypingOrRecording(status)
         }
 
-        val lastSeenText = when (date) {
-            today() -> "Hoy a las $hour"
-            yesterday() -> "Ayer a las $hour"
-            else -> "$date a las $hour"
-        }
-        return UserStatus.LastSeen("Últ. vez $lastSeenText")
+        val lastSeenText = lastSeenFormatter(lastSeenMs)
+        return if (lastSeenText.isBlank()) UserStatus.Offline
+        else UserStatus.LastSeen("Últ. vez $lastSeenText")
     }
 
-    fun observeUserStatus(userId: String, chatType: String): Flow<UserStatus> = callbackFlow {
-        val ref = firebaseRefsContainer.refData
-            .child(userId)
-            .child(NODE_STATUS)
+    fun observeUserStatus(userId: String, chatType: String): kotlinx.coroutines.flow.Flow<UserStatus> =
+        kotlinx.coroutines.flow.callbackFlow {
 
-        val listener = ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.toUserStatus(chatType))
+            val statusRef = firebaseRefsContainer.refData
+                .child(userId)
+                .child(NODE_STATUS)
+
+            val activeChatRef = firebaseRefsContainer.refData
+                .child(userId)
+                .child(NODE_CHATLIST)
+                .child(NODE_ACTIVE_CHAT)
+
+            val lastSeenFormatter: (Long) -> String = { ms ->
+                // usa tu formatter correcto con Date(ms)
+                Utils.formatLastSeen(ms)
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
-        })
+            val listener = object : com.google.firebase.database.ValueEventListener {
+                override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
 
-        awaitClose { ref.removeEventListener(listener) }
-    }.flowOn(Dispatchers.IO)
+                    val base = snapshot.toUserStatus(chatType, lastSeenFormatter)
+
+                    // Si no es typing/recording, enviamos directo
+                    if (base !is UserStatus.TypingOrRecording) {
+                        trySend(base)
+                        return
+                    }
+
+                    // typing/recording: ver si está en el chat conmigo
+                    launch {
+                        val currentChat = activeChatRef.get().await()
+                            .getValue(String::class.java)
+                            .orEmpty()
+
+                        val expected = myUid + chatType
+
+                        if (currentChat == expected) {
+                            trySend(base) // typing/recording real
+                        } else {
+                            trySend(UserStatus.Online) // no está en mi chat: “online”
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                    close(error.toException())
+                }
+            }
+
+            statusRef.addValueEventListener(listener)
+            awaitClose { statusRef.removeEventListener(listener) }
+        }.flowOn(kotlinx.coroutines.Dispatchers.IO)
+
 
     // ============================================================
     // UTILS

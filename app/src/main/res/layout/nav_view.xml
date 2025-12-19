@@ -76,8 +76,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp"
-                android:tint="@color/white"
-                android:src="@drawable/ic_baseline_edit_24"/>
+                android:src="@drawable/ic_baseline_edit_24"
+                app:tint="@color/white" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </LinearLayout>

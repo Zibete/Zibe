@@ -2,30 +2,218 @@ package com.zibete.proyecto1.data
 
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.di.qualifiers.ApplicationScope
 import com.zibete.proyecto1.model.ChatsGroup
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
+import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.ui.constants.MSG_USER_JOINED
 import com.zibete.proyecto1.utils.Utils.dateTime
 import com.zibete.proyecto1.utils.Utils.now
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
+data class GroupRefs(
+    val refGroupChat: DatabaseReference,
+    val refGroupPhotos: StorageReference
+)
+
 class GroupRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    @ApplicationScope private val appScope: CoroutineScope
 ) {
 
-    private val myUid = userRepository.myUid
+    private val myUid: String get() = userRepository.myUid
+
+    fun buildGroupRefs(
+        groupName: String
+    ): GroupRefs {
+
+        val refGroupChat =
+            firebaseRefsContainer.refGroupChat
+                .child(groupName)
+
+        val refGroupPhotos =
+            firebaseRefsContainer.firebaseStorage.reference
+                .child("$NODE_CHATS/$NODE_GROUP_CHAT/$groupName/")
+                .child("$PATH_PHOTOS/")
+
+        return GroupRefs(
+            refGroupChat = refGroupChat,
+            refGroupPhotos = refGroupPhotos
+        )
+    }
+    // ---------- caches (1 listener por fuente) ----------
+// dentro de GroupRepository
+
+    // ---------- caches (1 listener por fuente) ----------
+    private val cacheGroupTotalByName = mutableMapOf<String, StateFlow<Int>>()
+
+    private val cacheGroupReadCount: StateFlow<Int> by lazy {
+        observeGroupReadCount(myUid)
+            .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
+    }
+
+    private val cacheUnreadPrivateChatsInsideGroup: StateFlow<Int> by lazy {
+        observeUnreadPrivateChatsInsideGroup(myUid)
+            .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
+    }
+
+// ========== PUBLIC API ==========
+
+    /** Badge Tab interno (NombreGrupo (X)) -> SOLO grupo */
+    fun groupTabUnreadCount(groupName: String): StateFlow<Int> =
+        observeGroupUnreadCount(groupName)
+            .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Single read (ideal para FCM / background) */
+    suspend fun groupTabUnreadCountOnce(groupName: String): Int {
+        // ⚠️ hoy es pesado si el grupo es grande, pero sirve hasta migrar a Meta/totalMessages
+        val total = firebaseRefsContainer.refGroupChat.child(groupName).get().await().childrenCount.toInt()
+        val read = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_CHATLIST)
+            .child("msgReadGroup")
+            .get().await()
+            .getValue(Int::class.java) ?: 0
+
+        return (total - read).coerceAtLeast(0)
+    }
+
+    /** Badge BottomNav "Grupos" -> grupo + privados (realtime exacto) */
+    fun groupsBottomNavBadgeCount(groupName: String): StateFlow<Int> =
+        combine(
+            observeGroupUnreadCount(groupName),
+            unreadPrivateChatsInsideGroup()
+        ) { unreadGroup, unreadPrivate ->
+            (unreadGroup + unreadPrivate).coerceAtLeast(0)
+        }.stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Realtime no vistos privados (por si lo necesitás directo) */
+    fun unreadPrivateChatsInsideGroup(): StateFlow<Int> = cacheUnreadPrivateChatsInsideGroup
+
+    /** Actualizar readCount (lo llama ChatGroupFragment cuando está visible) */
+    suspend fun setReadGroupMessages(uid: String, readCount: Int) {
+        firebaseRefsContainer.refData
+            .child(uid)
+            .child(NODE_CHATLIST)
+            .child("msgReadGroup")
+            .setValue(readCount)
+            .await()
+    }
+
+// ========== CORE FLOWS ==========
+
+    /** unread del grupo = totalGrupo - readCount */
+    private fun observeGroupUnreadCount(groupName: String): Flow<Int> =
+        combine(
+            groupTotalMsgCount(groupName),
+            groupReadCount()
+        ) { total, read ->
+            (total - read).coerceAtLeast(0)
+        }
+
+    /** total mensajes del grupo (realtime) */
+    private fun groupTotalMsgCount(groupName: String): StateFlow<Int> =
+        cacheGroupTotalByName.getOrPut(groupName) {
+            observeGroupTotalMsgCount(groupName)
+                .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
+        }
+
+    private fun groupReadCount(): StateFlow<Int> = cacheGroupReadCount
+
+    /** suma noVisto de chats privados dentro del nodo /Datos/<uid>/NODE_GROUP_CHAT */
+    private fun observeUnreadPrivateChatsInsideGroup(uid: String): Flow<Int> = callbackFlow {
+        val ref = firebaseRefsContainer.refData
+            .child(uid)
+            .child(NODE_GROUP_CHAT)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var total = 0
+                for (child in snapshot.children) {
+                    total += child.child("noVisto").getValue(Int::class.java) ?: 0
+                }
+                trySend(total.coerceAtLeast(0))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    private fun observeGroupReadCount(uid: String): Flow<Int> = callbackFlow {
+        val ref = firebaseRefsContainer.refData
+            .child(uid)
+            .child(NODE_CHATLIST)
+            .child("msgReadGroup")
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val read = snapshot.getValue(Int::class.java) ?: 0
+                trySend(read.coerceAtLeast(0))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    /**
+     * ⚠️ Hoy esto “cuenta children” del chat => puede ser pesado.
+     * Próximo paso pro: reemplazar por /Groups/Meta/{groupName}/totalMessages (contador).
+     */
+    private fun observeGroupTotalMsgCount(groupName: String): Flow<Int> = callbackFlow {
+        val ref = firebaseRefsContainer.refGroupChat.child(groupName)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trySend(snapshot.childrenCount.toInt().coerceAtLeast(0))
+            }
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // User de grupo deja de estar disponible
@@ -115,73 +303,6 @@ class GroupRepository @Inject constructor(
             .await()
     }
 
-    fun observeUnreadGroup(): Flow<Int> = callbackFlow {
-        val query = firebaseRefsContainer.refGroupChat.parent
-        if (query == null) {
-            trySend(0)
-            close()
-            return@callbackFlow
-        }
-
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.exists()) {
-                    trySend(0)
-                    return
-                }
-
-                launch {
-                    val totalMsgCount = getTotalMsgCount(snapshot)
-                    val seen = getSeenGroupCount(myUid)
-                    val unread = getUnreadGroupCount(myUid)
-
-                    val totalBadge = (totalMsgCount - seen) + unread
-                    trySend(if (totalBadge > 0) totalBadge else 0)
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
-        }
-
-        query.addValueEventListener(listener)
-        awaitClose { query.removeEventListener(listener) }
-    }
-
-
-    private fun getTotalMsgCount(snapshot: DataSnapshot): Int =
-        snapshot.children.sumOf { it.childrenCount }.toInt()
-
-    private suspend fun getSeenGroupCount(uid: String): Int {
-        val ds = firebaseRefsContainer.refData
-            .child(uid)
-            .child(NODE_CHATLIST)
-            .child("msgReadGroup")
-            .get()
-            .await()
-
-        return ds.getValue(Int::class.java) ?: 0
-    }
-
-    private suspend fun getUnreadGroupCount(uid: String): Int {
-        val ds = firebaseRefsContainer.refData
-            .child(uid)
-            .child(NODE_GROUP_CHAT)
-            .orderByChild("noVisto")
-            .startAt(1.0)
-            .get()
-            .await()
-
-        var count = 0
-        if (ds.exists()) {
-            for (child in ds.children) {
-                count += child.child("noVisto").getValue(Int::class.java) ?: 0
-            }
-        }
-        return count
-    }
-
     suspend fun isGroupNameInUse(name: String): Boolean {
         val snapshot = firebaseRefsContainer.refGroupData
             .child(name)
@@ -239,7 +360,58 @@ class GroupRepository @Inject constructor(
         return groupsList
     }
 
+    // Eliminar chat de grupo al salir
+    suspend fun removeMyGroupChatList(userId: String) {
+        firebaseRefsContainer.refData
+            .child(userId)
+            .child(NODE_GROUP_CHAT)
+            .removeValue()
+            .await()
+    }
 
+    suspend fun removeMyPrivateGroupChats(userId: String) {
+        val snapshot = firebaseRefsContainer.refChatMessageGroupsRoot
+            .get()
+            .await()
 
+        for (child in snapshot.children) {
+            val key = child.key ?: continue
+            if (key.contains(userId)) {
+                child.ref.removeValue().await()
+            }
+        }
+    }
 
+    suspend fun sendLeaveGroupMessage(
+        groupName: String,
+        userName: String,
+        userType: Int,
+        userId: String
+    ) {
+        val chatMsg = ChatsGroup(
+            MSG_USER_JOINED,
+            now(),
+            userName,
+            userId,
+            MSG_TYPE_MID,
+            userType
+        )
+
+        firebaseRefsContainer.refGroupChat
+            .child(groupName)
+            .push()
+            .setValue(chatMsg)
+            .await()
+    }
+
+    suspend fun removeUserFromGroup(
+        groupName: String,
+        userId: String
+    ) {
+        firebaseRefsContainer.refGroupUsers
+            .child(groupName)
+            .child(userId)
+            .removeValue()
+            .await()
+    }
 }
