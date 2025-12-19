@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -61,34 +62,53 @@ class GroupRepository @Inject constructor(
         )
     }
     // ---------- caches (1 listener por fuente) ----------
+// dentro de GroupRepository
+
+    // ---------- caches (1 listener por fuente) ----------
     private val cacheGroupTotalByName = mutableMapOf<String, StateFlow<Int>>()
+
     private val cacheGroupReadCount: StateFlow<Int> by lazy {
         observeGroupReadCount(myUid)
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
     }
-    private val cachePrivateUnreadCount: StateFlow<Int> by lazy {
-        observePrivateUnreadCount(myUid)
+
+    private val cacheUnreadPrivateChatsInsideGroup: StateFlow<Int> by lazy {
+        observeUnreadPrivateChatsInsideGroup(myUid)
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
     }
 
-    // ========== PUBLIC API ==========
+// ========== PUBLIC API ==========
 
     /** Badge Tab interno (NombreGrupo (X)) -> SOLO grupo */
     fun groupTabUnreadCount(groupName: String): StateFlow<Int> =
         observeGroupUnreadCount(groupName)
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    /** Single read (ideal para FCM / background) */
+    suspend fun groupTabUnreadCountOnce(groupName: String): Int {
+        // ⚠️ hoy es pesado si el grupo es grande, pero sirve hasta migrar a Meta/totalMessages
+        val total = firebaseRefsContainer.refGroupChat.child(groupName).get().await().childrenCount.toInt()
+        val read = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_CHATLIST)
+            .child("msgReadGroup")
+            .get().await()
+            .getValue(Int::class.java) ?: 0
+
+        return (total - read).coerceAtLeast(0)
+    }
+
     /** Badge BottomNav "Grupos" -> grupo + privados (realtime exacto) */
     fun groupsBottomNavBadgeCount(groupName: String): StateFlow<Int> =
         combine(
             observeGroupUnreadCount(groupName),
-            privateUnreadCount()
+            unreadPrivateChatsInsideGroup()
         ) { unreadGroup, unreadPrivate ->
             (unreadGroup + unreadPrivate).coerceAtLeast(0)
         }.stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    /** Realtime no vistos privados (por si lo necesitás directo en otra pantalla) */
-    fun privateUnreadCount(): StateFlow<Int> = cachePrivateUnreadCount
+    /** Realtime no vistos privados (por si lo necesitás directo) */
+    fun unreadPrivateChatsInsideGroup(): StateFlow<Int> = cacheUnreadPrivateChatsInsideGroup
 
     /** Actualizar readCount (lo llama ChatGroupFragment cuando está visible) */
     suspend fun setReadGroupMessages(uid: String, readCount: Int) {
@@ -100,7 +120,7 @@ class GroupRepository @Inject constructor(
             .await()
     }
 
-    // ========== CORE FLOWS (reutilizables) ==========
+// ========== CORE FLOWS ==========
 
     /** unread del grupo = totalGrupo - readCount */
     private fun observeGroupUnreadCount(groupName: String): Flow<Int> =
@@ -118,11 +138,10 @@ class GroupRepository @Inject constructor(
                 .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
         }
 
-    /** readCount del grupo (realtime) */
     private fun groupReadCount(): StateFlow<Int> = cacheGroupReadCount
 
-    /** suma noVisto de chats privados (realtime) */
-    private fun observePrivateUnreadCount(uid: String): Flow<Int> = callbackFlow {
+    /** suma noVisto de chats privados dentro del nodo /Datos/<uid>/NODE_GROUP_CHAT */
+    private fun observeUnreadPrivateChatsInsideGroup(uid: String): Flow<Int> = callbackFlow {
         val ref = firebaseRefsContainer.refData
             .child(uid)
             .child(NODE_GROUP_CHAT)
@@ -164,9 +183,12 @@ class GroupRepository @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
+    /**
+     * ⚠️ Hoy esto “cuenta children” del chat => puede ser pesado.
+     * Próximo paso pro: reemplazar por /Groups/Meta/{groupName}/totalMessages (contador).
+     */
     private fun observeGroupTotalMsgCount(groupName: String): Flow<Int> = callbackFlow {
-        val groupRefs = buildGroupRefs(groupName)
-        val ref = groupRefs.refGroupChat // /GroupChat/{groupName}
+        val ref = firebaseRefsContainer.refGroupChat.child(groupName)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -180,6 +202,7 @@ class GroupRepository @Inject constructor(
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener) }
     }
+
 
 
 
@@ -391,5 +414,4 @@ class GroupRepository @Inject constructor(
             .removeValue()
             .await()
     }
-
 }

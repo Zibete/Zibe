@@ -9,7 +9,6 @@ import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CURRENT_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_CHAT
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,51 +48,120 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         data: Map<String, String>,
         myUid: String
     ) {
-        val novistos = data["novistos"].orEmpty()
+        val novistos = data["novistos"].orEmpty() // puede venir vacío
         val userName = data["user"] ?: return
         val msg = data["msg"].orEmpty()
         val otherUid = data["id_user"] ?: return
         val type = data["type"] ?: return
 
-        // type == NODE_CURRENT_CHAT => chat 1-1
+        // =========================
+        // 1) CHAT 1-1 (NODE_CURRENT_CHAT)
+        // =========================
         if (type == NODE_CURRENT_CHAT) {
 
             val enabled = userPreferencesDSRepository.individualNotificationsFlow.first()
             if (!enabled) {
-                // igual marcamos visto (doble check) si corresponde
+                // Si el usuario desactivó notificaciones individuales:
+                // igual aplicamos doble-check si corresponde, pero NO notificamos.
                 chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, type)
                 return
             }
 
+            // Resumen real (fuente de verdad: Firebase)
             val summary = chatRepository.getUnreadSummaryForChats(myUid, type)
 
-            if (summary.totalChats > 1) {
-                val title = "${summary.totalUnread} mensajes de ${summary.totalChats} chats"
-                val text = "$userName: $msg"
-                notificationHelper.showMessageNotification(title, text)
-            } else {
-                val title = if (novistos == "1") "Nuevo mensaje de $userName" else "$novistos mensajes de $userName"
-                notificationHelper.showMessageNotification(title, msg)
-            }
+            // Si tu chatId es uid1_uid2 ordenado:
+            val chatId = userRepository.getChatIdWith(otherUid)
 
-            // marcar doble check (si aplica)
+            notificationHelper.showChatSummaryNotification(
+                summary = summary,
+                lastSenderName = userName,
+                lastMessage = msg,
+                conversationId = chatId
+            )
+
             chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, type)
             return
+
+//            val totalChats = summary.totalChats.coerceAtLeast(0)
+//            val totalUnread = summary.totalUnread.coerceAtLeast(0)
+//
+//            // --- Títulos posibles (equivalentes a tu lógica legacy) ---
+//            // A) Varios chats con mensajes sin leer => "X mensajes de Y chats"
+//            if (totalChats > 1 && totalUnread > 0) {
+//                val title = "$totalUnread mensajes de $totalChats chats"
+//                val text = "$userName: $msg"
+//                notificationHelper.showMessageNotification(title, text)
+//
+//                chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, type)
+//                return
+//            }
+//
+//            // B) Un solo chat
+//            // - Si novistos viene => usamos ese valor como “mensajes de X”
+//            // - Si no viene => caemos al totalUnread del repo
+//            val unreadForThisChat = novistos.toIntOrNull()?.coerceAtLeast(0)
+//                ?: totalUnread.coerceAtLeast(0)
+//
+//            // B1) Primer mensaje / 1 sin leer => "Nuevo mensaje de X"
+//            // B2) Varios => "N mensajes de X"
+//            val title = when {
+//                unreadForThisChat <= 1 -> "Nuevo mensaje de $userName"
+//                else -> "$unreadForThisChat mensajes de $userName"
+//
+//
+//            //  Texto:
+//            //  - Legacy: si era 1 chat -> msg puro
+//            //  - Pero es más consistente: "user: msg" para que se entienda en lockscreen.
+//            //  Si querés mantener exacto legacy, cambiá `text` por `msg`.
+//            val text = "$userName: $msg"
+//            notificationHelper.showMessageNotification(title, text)
+//
+//            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, type)
+//            return
         }
 
-        // Si no es NODE_CURRENT_CHAT, en tu payload "type" te queda como nombre de grupo
+        // =========================
+        // 2) GRUPO (type = groupName en tu payload)
+        // =========================
         val groupName = type
 
-        val groupNotificationsEnabled = userPreferencesDSRepository.groupNotificationsFlow.first()
-        if (!groupNotificationsEnabled) return
+        val groupEnabled = userPreferencesDSRepository.groupNotificationsFlow.first()
+        if (!groupEnabled) return
 
+        // Si el user está actualmente dentro de ese mismo grupo, NO notificamos (como antes)
         val ctx = userPreferencesDSRepository.groupContextFlow.first()
         val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
 
-        if (!isInActiveGroup) {
-            val title = "Nuevo mensaje de $groupName"
-            val text = "$userName: $msg"
-            notificationHelper.showMessageNotification(title, text)
-        }
+        if (isInActiveGroup) return
+
+        val unread = groupRepository.groupTabUnreadCountOnce(groupName)
+        notificationHelper.showGroupNotification(
+            groupName = groupName,
+            unreadCount = unread,
+            lastSenderName = userName,
+            lastMessage = msg
+        )
+
+//        // Conteo de no leídos del grupo (para títulos “(N)”)
+//        // Si tu repo todavía no lo tiene, crealo:
+//        // fun groupUnreadCount(groupName: String): Int
+//        val groupUnreadCount = try {
+//            groupRepository.groupTabUnreadCountOnce(groupName) // <--- CREAR en GroupRepository (single read)
+//        } catch (_: Throwable) {
+//            0
+//        }
+//
+//        // --- Títulos posibles (grupo) ---
+//        // A) Si sabemos cantidad => "N mensajes de <grupo>"
+//        // B) Si no sabemos => "Nuevo mensaje de <grupo>"
+//        val title = when {
+//            groupUnreadCount > 1 -> "$groupUnreadCount mensajes de $groupName"
+//            groupUnreadCount == 1 -> "Nuevo mensaje de $groupName"
+//            else -> "Nuevo mensaje de $groupName"
+//        }
+//
+//        val text = "$userName: $msg"
+//        notificationHelper.showMessageNotification(title, text)
     }
 }
