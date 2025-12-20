@@ -39,8 +39,6 @@ data class ChatRefs(
     val refAudios: StorageReference,
     val refPhotos: StorageReference,
     val refChat: DatabaseReference,
-    val refMyActiveChat: DatabaseReference,
-    val refOtherActiveChat: DatabaseReference,
     val refMyConversation: DatabaseReference,
     val refOtherConversation: DatabaseReference
 )
@@ -85,18 +83,6 @@ class ChatRepository @Inject constructor(
                 .child(nodeType)
                 .child(chatId)
 
-        val refMyActiveChat =
-            firebaseRefsContainer.refData
-                .child(myUid)
-                .child(NODE_CHATLIST)
-                .child(ChatListKeys.ACTIVE_CHAT)
-
-        val refOtherActiveChat =
-            firebaseRefsContainer.refData
-                .child(otherUid)
-                .child(NODE_CHATLIST)
-                .child(ChatListKeys.ACTIVE_CHAT)
-
         val refMyConversation =
             firebaseRefsContainer.refData
                 .child(myUid)
@@ -113,8 +99,6 @@ class ChatRepository @Inject constructor(
             refAudios = refAudios,
             refPhotos = refPhotos,
             refChat = refChat,
-            refMyActiveChat = refMyActiveChat,
-            refOtherActiveChat = refOtherActiveChat,
             refMyConversation = refMyConversation,
             refOtherConversation = refOtherConversation
         )
@@ -157,17 +141,9 @@ class ChatRepository @Inject constructor(
         awaitClose { chatRefs.refChat.removeEventListener(listener) }
     }
 
-    suspend fun getActiveChat(chatRefs: ChatRefs): String {
-        return chatRefs.refOtherActiveChat
-            .get()
-            .await()
-            .getValue(String::class.java)
-            ?: ""
-    }
 
-    fun setActiveChat(chatRefs: ChatRefs, value: String) {
-        chatRefs.refMyActiveChat.setValue(value)
-    }
+
+
 
     suspend fun getConversation(
         firstUid: String,
@@ -278,7 +254,8 @@ class ChatRepository @Inject constructor(
             if (!msgSnap.exists()) continue
 
             val type = msgSnap.child(ChatKeys.TYPE).getValue(Int::class.java) ?: continue
-            val senderUid = msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: continue
+            val senderUid =
+                msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: continue
             val content = msgSnap.child(ChatKeys.CONTENT).getValue(String::class.java).orEmpty()
 
             processSoftDeleteOrRemove(
@@ -370,7 +347,8 @@ class ChatRepository @Inject constructor(
         var deletedCount = 0
         snapshot.children.forEach { child ->
             val type = child.child(ChatKeys.TYPE).getValue(Int::class.java) ?: return@forEach
-            val senderUid = child.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
+            val senderUid =
+                child.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
 
             if (senderUid == myUid) {
                 when (type) {

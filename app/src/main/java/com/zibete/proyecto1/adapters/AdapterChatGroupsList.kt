@@ -100,7 +100,7 @@ class AdapterChatGroupsList(
 //        UserRepository.stateUser(context, chat.userId, binding.iconConectado, binding.iconDesconectado, binding.tvEstado, Constants.CHATWITHUNKNOWN)
 
         // 3. Listener: Estado "Visto" (Visual)
-        refDatos.child(chat.otherId).child(Constants.NODE_GROUP_PRIVATE_DM).child(user.uid)
+        refDatos.child(chat.otherId).child(Constants.NODE_GROUP_DM).child(user.uid)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
@@ -121,7 +121,7 @@ class AdapterChatGroupsList(
             })
 
         // 4. Listener: No Vistos (Counter Visual)
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_PRIVATE_DM).child(chat.otherId).child("noVisto")
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_DM).child(chat.otherId).child("noVisto")
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val noVistos = snapshot.getValue(Int::class.java) ?: 0
@@ -132,7 +132,7 @@ class AdapterChatGroupsList(
             })
 
         // 5. Listener: Último Mensaje (Visual + Triggers)
-        refDatos.child(user.uid).child(Constants.NODE_GROUP_PRIVATE_DM).child(chat.otherId)
+        refDatos.child(user.uid).child(Constants.NODE_GROUP_DM).child(chat.otherId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) return
@@ -167,7 +167,7 @@ class AdapterChatGroupsList(
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
         when (chat.state) {
-            Constants.NODE_GROUP_PRIVATE_DM -> {
+            Constants.NODE_GROUP_DM -> {
                 binding.cardview.isVisible = true
                 binding.notifOff.isVisible = false
             }

@@ -31,7 +31,7 @@ import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.INFO
+import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_SENDER_DLT
@@ -89,7 +89,7 @@ class AdapterChat(
     override fun getItemViewType(position: Int): Int {
         val msg = getItem(position).message
         return when {
-            msg.type == INFO -> MSG_TYPE_MID
+            msg.type == MSG_INFO -> MSG_TYPE_MID
             msg.senderUid == myUid -> MSG_TYPE_RIGHT
             else -> MSG_TYPE_LEFT
         }

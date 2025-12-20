@@ -1,8 +1,6 @@
 package com.zibete.proyecto1.ui.groups
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -34,6 +32,7 @@ import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -167,13 +166,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
         dialogBinding.btnStartAnonymousChat.isEnabled = false
 
-        dialogBinding.edtNick.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun afterTextChanged(s: Editable?) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                dialogBinding.btnStartAnonymousChat.isEnabled =
-                    dialogBinding.edtNick.text?.isNotEmpty() == true
-            }
+        dialogBinding.edtNick.addTextChangedListener(Utils.SimpleWatcher { text ->
+            dialogBinding.btnStartAnonymousChat.isEnabled = text.isNotEmpty()
         })
 
         joinGroupDialog = MaterialAlertDialogBuilder(requireContext())
@@ -212,18 +206,14 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         Glide.with(requireContext()).load(photoUrl).into(dialogBinding.userImage)
         dialogBinding.btnCreateNewChat.isEnabled = false
 
-        val watcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun afterTextChanged(s: Editable?) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                dialogBinding.btnCreateNewChat.isEnabled =
-                    dialogBinding.edtNameNewGroup.text?.isNotEmpty() == true &&
-                            dialogBinding.edtDataNewGroup.text?.isNotEmpty() == true
-            }
+        val validate = { _: String ->
+            dialogBinding.btnCreateNewChat.isEnabled =
+                dialogBinding.edtNameNewGroup.text?.isNotEmpty() == true &&
+                        dialogBinding.edtDataNewGroup.text?.isNotEmpty() == true
         }
 
-        dialogBinding.edtNameNewGroup.addTextChangedListener(watcher)
-        dialogBinding.edtDataNewGroup.addTextChangedListener(watcher)
+        dialogBinding.edtNameNewGroup.addTextChangedListener(Utils.SimpleWatcher(validate))
+        dialogBinding.edtDataNewGroup.addTextChangedListener(Utils.SimpleWatcher(validate))
 
         joinGroupDialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)

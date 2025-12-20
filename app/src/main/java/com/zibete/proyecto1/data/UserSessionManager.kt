@@ -88,23 +88,21 @@ class UserSessionManager @Inject constructor(
         val groupName = groupContext.groupName
 
         // 1) Eliminar mi lista de chats del grupo
-        groupRepository.removeMyGroupChatList(myUid)
+        groupRepository.removeMyGroupChatList()
 
         // 2) Eliminar mis chats privados dentro del grupo
-        groupRepository.removeMyPrivateGroupChats(myUid)
+        groupRepository.removeMyPrivateGroupChats()
 
         // 3) Enviar mensaje de abandono
         groupRepository.sendLeaveGroupMessage(
             groupName = groupName,
             userName = groupContext.userName,
-            userType = groupContext.userType,
-            userId = myUid
+            userType = groupContext.userType
         )
 
         // 4) Eliminar usuario del grupo
         groupRepository.removeUserFromGroup(
-            groupName = groupName,
-            userId = myUid
+            groupName = groupName
         )
 
         // 5) Reset estado local (DataStore)

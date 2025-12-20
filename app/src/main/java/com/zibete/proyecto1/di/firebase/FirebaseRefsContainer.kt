@@ -7,16 +7,15 @@ import com.zibete.proyecto1.ui.constants.Constants.APP_NAME
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_CHAT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_DATA
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_META
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUPS_USERS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_SESSIONS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ACCOUNTS
 import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_DATA
 import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ROOT
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 @Singleton
@@ -34,7 +33,7 @@ class FirebaseRefsContainer @Inject constructor(
 
     val refChatsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_CHATS_ROOT)
         val refChatsDm: DatabaseReference = refChatsRoot.child(NODE_DM)
-        val refChatsGroupDm: DatabaseReference = refChatsRoot.child(NODE_GROUP_PRIVATE_DM)
+        val refChatsGroupDm: DatabaseReference = refChatsRoot.child(NODE_GROUP_DM)
 
     // ================= Sesiones =================
 
@@ -43,7 +42,7 @@ class FirebaseRefsContainer @Inject constructor(
     // ================= Grupos =================
 
     val refGroupsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_GROUPS_ROOT)
-        val refGroupData: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_DATA)
+        val refGroupMeta: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_META)
         val refGroupChat: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_CHAT)
         val refGroupUsers: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_USERS)
 

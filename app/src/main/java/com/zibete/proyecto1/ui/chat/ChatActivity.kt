@@ -304,7 +304,7 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.linearNameUser.setOnClickListener { v ->
             startActivity(
                 Intent(v.context, ProfileActivity::class.java)
-                    .putExtra(EXTRA_USER_ID, chatViewModel.userId)
+                    .putExtra(EXTRA_USER_ID, chatViewModel.otherUid)
                     .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             )
         }
@@ -366,15 +366,16 @@ class ChatActivity : BaseChatSessionActivity() {
 
     // ==================================== Lifecycle ====================================
 
-    override fun onPause() {
-        super.onPause()
-        chatViewModel.setActiveChat("")
+    // ChatActivity.kt (ONSTART / ONSTOP) - DM y group_dm
+
+    override fun onStart() {
+        super.onStart()
+        chatViewModel.onThreadScreenStarted()
     }
 
-    override fun onResume() {
-        super.onResume()
-        val activeChatSting = chatViewModel.getActiveChatString()
-        chatViewModel.setActiveChat(activeChatSting)
+    override fun onStop() {
+        chatViewModel.onThreadScreenStopped()
+        super.onStop()
     }
 
     override fun onDestroy() {
@@ -383,7 +384,7 @@ class ChatActivity : BaseChatSessionActivity() {
             try { player.stop() } catch (_: Exception) {}
             AdapterChat.mediaPlayer = null
         }
-        chatViewModel.setActiveChat("")
+        chatViewModel.onThreadScreenStopped()
     }
 
     // ==================================== Menu ====================================

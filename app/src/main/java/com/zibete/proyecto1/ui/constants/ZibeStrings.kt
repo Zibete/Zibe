@@ -19,6 +19,8 @@ const val SIGNUP_ERR_EXCEPTION = "El usuario no pudo ser creado."
 
 const val MSG_USER_JOINED = "se unió a la sala"
 
+const val MSG_USER_LEAVED = "abandonó la sala"
+
 const val NO_INTERNET = "No hay conexión a Internet en este momento"
 
 const val DELETE_ACCOUNT = "La cuenta ha sido eliminada"

@@ -29,6 +29,8 @@ import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_DELIVERED
@@ -67,12 +69,12 @@ class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val sessionRepository: SessionRepository,
     private val userPreferencesDSRepository: UserPreferencesDSRepository
-    ) : ViewModel() {
+) : ViewModel() {
 
     val myUid get() = userRepository.myUid
 
-    val userId: String = savedStateHandle["userId"] ?: ""
-    val nodeType: String = savedStateHandle["nodeType"] ?: NODE_DM// 0 = unknown 1 = normal // DEF = Conversation
+    val otherUid: String = savedStateHandle[EXTRA_CHAT_ID] ?: ""
+    val nodeType: String = savedStateHandle[EXTRA_CHAT_NODE] ?: NODE_DM
 
     val groupName: String
         get() = runBlocking { userPreferencesDSRepository.groupNameFlow.first() }
@@ -80,24 +82,30 @@ class ChatViewModel @Inject constructor(
     // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
+
     // ------------------------------------------------------------------------------------------------------------------------
     private val _headerState = MutableStateFlow<ChatHeaderState>(ChatHeaderState.Loading)
     val headerState: StateFlow<ChatHeaderState> = _headerState.asStateFlow()
+
     // ------------------------------------------------------------------------------------------------------------------------
     private val _otherProfile = MutableStateFlow<Users?>(null)
     val otherProfile: StateFlow<Users?> = _otherProfile
+
     // ------------------------------------------------------------------------------------------------------------------------
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages
+
     // ------------------------------------------------------------------------------------------------------------------------
     // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = userRepository
-        .observeUserStatus(userId, nodeType)
+        .observeUserStatus(otherUid, nodeType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
+
     // ------------------------------------------------------------------------------------------------------------------------
     // Referencias del chat (para mensajes, storage, etc.)
     private val _chatRefs = MutableStateFlow<ChatRefs?>(null)
     val chatRefs: StateFlow<ChatRefs?> = _chatRefs.asStateFlow()
+
     // ------------------------------------------------------------------------------------------------------------------------
     private val _chatState = MutableStateFlow(ChatState())
     val chatState: StateFlow<ChatState> = _chatState
@@ -128,7 +136,7 @@ class ChatViewModel @Inject constructor(
 
     private suspend fun startGroupUserAvailability() {
         if (nodeType != NODE_DM) {
-            groupRepository.observeGroupUserAvailability(groupName, userId).collect { isAvailable ->
+            groupRepository.observeGroupUserAvailability(groupName, otherUid).collect { isAvailable ->
                 if (!isAvailable) {
                     _events.emit(
                         ChatSessionUiEvent.OtherUserNoLongerAvailable(
@@ -154,9 +162,11 @@ class ChatViewModel @Inject constructor(
                         is ChatChildEvent.Added -> state.copy(
                             messages = (state.messages + event.item).takeLast(MAXCHATSIZE)
                         )
+
                         is ChatChildEvent.Changed -> state.copy(
                             messages = state.messages.map { if (it.id == event.item.id) event.item else it }
                         )
+
                         is ChatChildEvent.Removed -> state.copy(
                             messages = state.messages.filterNot { it.id == event.item.id },
                             selectedIds = state.selectedIds - event.item.id
@@ -179,7 +189,7 @@ class ChatViewModel @Inject constructor(
     private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
 
-        _chatRefs.value = chatRepository.buildChatRefs(userId, nodeType)
+        _chatRefs.value = chatRepository.buildChatRefs(otherUid, nodeType)
 
         if (nodeType == NODE_DM) {
             loadChatPublicProfiles()
@@ -192,7 +202,7 @@ class ChatViewModel @Inject constructor(
     // Aplica notificaciones / bloqueo solo para chats 1 a 1
     private suspend fun applyChatStateForOneToOne() {
 
-        val state = userRepository.getChatStateWith(userId, nodeType)
+        val state = userRepository.getChatStateWith(otherUid, nodeType)
         val notificationsEnabled = (state != CHAT_STATE_SILENT)
         val isBlocked = (state == CHAT_STATE_BLOQ)
 
@@ -210,11 +220,12 @@ class ChatViewModel @Inject constructor(
         val userPhotoUrl: String,
         val fcmToken: String = ""
     )
+
     lateinit var myIdentity: ChatIdentity
     lateinit var otherIdentity: ChatIdentity
 
     private suspend fun loadChatPublicProfiles() {
-        val profile = userRepository.getAccount(userId) ?: return
+        val profile = userRepository.getAccount(otherUid) ?: return
 
         _otherProfile.value = profile
 
@@ -240,7 +251,7 @@ class ChatViewModel @Inject constructor(
 
 
     private suspend fun loadChatFromGroup() {
-        val profile = userRepository.getAccount(userId) ?: return
+        val profile = userRepository.getAccount(otherUid) ?: return
 
         _otherProfile.value = profile
 
@@ -248,7 +259,7 @@ class ChatViewModel @Inject constructor(
 
         val myUserGroup = groupRepository.getUserGroup(myUid, groupName)
 
-        val otherUserGroup = groupRepository.getUserGroup(userId, groupName)
+        val otherUserGroup = groupRepository.getUserGroup(otherUid, groupName)
 
         myIdentity = if (myUserGroup?.type == ANONYMOUS_USER) {
             ChatIdentity(
@@ -407,12 +418,12 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onPhotoReady(url: String, state: Boolean) {
-         _chatState.update {
-             it.copy(
-                 photoReady = state,
-                 pendingFileUrl = url
-             )
-         }
+        _chatState.update {
+            it.copy(
+                photoReady = state,
+                pendingFileUrl = url
+            )
+        }
     }
 
     // =========================================================================
@@ -446,10 +457,10 @@ class ChatViewModel @Inject constructor(
     ) {
         if (content.isEmpty()) return
 
-        val myChatWith = chatRepository.getConversation(myUid, userId, nodeType)
+        val myChatWith = chatRepository.getConversation(myUid, otherUid, nodeType)
         val myState = myChatWith?.state ?: nodeType
 
-        val otherChatWith = chatRepository.getConversation(userId, myUid, nodeType)
+        val otherChatWith = chatRepository.getConversation(otherUid, myUid, nodeType)
         val otherState = otherChatWith?.state ?: nodeType
         val otherCountMsgReceivedUnread = otherChatWith?.unreadCount ?: 0
 
@@ -462,13 +473,8 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val chatRefs = requireChatRefs()
-
-        val otherActiveChat = chatRepository.getActiveChat(chatRefs) // (esto es local en tu app)
-        val ourActiveChat = chatRepository.buildActiveChatKey(userId, nodeType)
-        val seen = if (otherActiveChat != ourActiveChat) MSG_DELIVERED else MSG_SEEN
-
         val now = now()
+
         val date = if (timerText.isBlank()) now else "$now $timerText"
 
         val chatMessage = ChatMessage(
@@ -476,8 +482,10 @@ class ChatViewModel @Inject constructor(
             date = date,
             senderUid = myUid,
             type = msgType,
-            seen = seen
+            seen = MSG_DELIVERED
         )
+
+        val chatRefs = requireChatRefs()
 
         // 1) Mensaje (esto dispara el trigger en Cloud Functions)
         chatRepository.pushMessageToChat(chatRefs, chatMessage)
@@ -489,47 +497,31 @@ class ChatViewModel @Inject constructor(
             else -> content to content
         }
 
-        // 3) Conversation mío
+        // 3) Conversations
         val myNewChatWith = Conversation(
             lastContent = myMsg,
             lastDate = date,
             userId = myUid,
-            otherId = userId,
+            otherId = otherUid,
             otherName = currentOtherName(),
             otherPhotoUrl = otherIdentity.userPhotoUrl,
             state = myState,
             unreadCount = 0,
-            seen = seen
+            seen = MSG_DELIVERED
         )
-        chatRepository.saveConversation(myUid, nodeType, userId, myNewChatWith)
+        chatRepository.saveConversation(myUid, nodeType, otherUid, myNewChatWith)
 
-        // 4) Conversation del otro + contador unread (si no está activo en MI app)
-        //    OJO: antes tu “if” dependía de otherActiveChat (local), no del estado real del otro.
-        //    Igual lo dejo tal cual para no romper tu lógica actual.
-        if (otherActiveChat != myUid + nodeType) {
-            val countOtherMsgUnread = otherCountMsgReceivedUnread + 1
-
-            val otherNewChatWith = Conversation(
-                lastContent = otherMsg,
-                lastDate = date,
-                userId = myUid,
-                otherId = myUid,
-                otherName = myIdentity.userName,
-                otherPhotoUrl = myIdentity.userPhotoUrl,
-                state = otherState,
-                unreadCount = countOtherMsgUnread
-            )
-            chatRepository.saveConversation(userId, nodeType, myUid, otherNewChatWith)
-
-            // ✅ Antes: Volley mandaba el push.
-            // ✅ Ahora: Cloud Function lo manda cuando detecta el nuevo mensaje en RTDB,
-            //          siempre que otherState != CHAT_STATE_SILENT (esa lógica va al backend).
-            //
-            // (Opcional) Si querés “marcar” en DB datos extra para el push, podés guardar un nodo
-            // liviano, pero no es obligatorio si la Function arma el payload sola.
-            //
-            // chatRepository.markNotificationHint(...) // <- opcional
-        }
+        val otherNewConversation = Conversation(
+            lastContent = otherMsg,
+            lastDate = date,
+            userId = myUid,
+            otherId = myUid,
+            otherName = myIdentity.userName,
+            otherPhotoUrl = myIdentity.userPhotoUrl,
+            state = otherState,
+            unreadCount = otherCountMsgReceivedUnread + 1
+        )
+        chatRepository.saveConversation(otherUid, nodeType,myUid,otherNewConversation)
 
         _chatState.update {
             it.copy(
@@ -540,11 +532,12 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-
     suspend fun onError(message: String) {
-        _events.emit(ChatSessionUiEvent.ShowErrorDialog(
-            message = message
-        ))
+        _events.emit(
+            ChatSessionUiEvent.ShowErrorDialog(
+                message = message
+            )
+        )
     }
 
     fun onPhotoPickerHandled() {
@@ -553,7 +546,7 @@ class ChatViewModel @Inject constructor(
 
     fun onSendPhotoClicked() {
         viewModelScope.launch {
-            val otherChatWith = chatRepository.getConversation(userId, myUid, nodeType)
+            val otherChatWith = chatRepository.getConversation(otherUid, myUid, nodeType)
             val otherState = otherChatWith?.state ?: nodeType
             val otherName = otherProfile.value?.name
 
@@ -573,20 +566,12 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { userRepository.setUserActivityStatus(status) }
     }
 
-    fun setActiveChat(activeChat: String){
-        chatRepository.setActiveChat(requireChatRefs(), activeChat)
-    }
-
-    fun getActiveChatString(): String{
-        return chatRepository.buildActiveChatKey(userId, nodeType)
-    }
-
     // --- Acciones de menú ----------
 
     fun onToggleNotificationsClicked() {
 
         viewModelScope.launch {
-            val chatWith = chatRepository.getConversation(myUid,userId, nodeType)
+            val chatWith = chatRepository.getConversation(myUid, otherUid, nodeType)
             val currentState = chatWith?.state
             val userName = currentOtherName()
 
@@ -596,7 +581,7 @@ class ChatViewModel @Inject constructor(
                 CHAT_STATE_SILENT
             }
 
-            userRepository.updateStateChatWith(userId, userName, nodeType, newState)
+            userRepository.updateStateChatWith(otherUid, userName, nodeType, newState)
             val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
 
             // Actualizar header
@@ -618,7 +603,12 @@ class ChatViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmBlock(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_BLOQ)
+                        userRepository.updateStateChatWith(
+                            otherUid,
+                            userName,
+                            nodeType,
+                            CHAT_STATE_BLOQ
+                        )
                         _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
                         _headerState.update { current ->
                             (current as? ChatHeaderState.Loaded)?.copy(
@@ -638,7 +628,7 @@ class ChatViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmUnblock(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(userId, userName, nodeType, nodeType)
+                        userRepository.updateStateChatWith(otherUid, userName, nodeType, nodeType)
                         _events.emit(ChatSessionUiEvent.ShowUnblockSuccess(userName))
                         _headerState.update { current ->
                             (current as? ChatHeaderState.Loaded)?.copy(
@@ -705,7 +695,11 @@ class ChatViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteMessages(requireChatRefs(), null, deleteMessages)
+                                val result = chatRepository.deleteMessages(
+                                    requireChatRefs(),
+                                    null,
+                                    deleteMessages
+                                )
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
                                 _events.emit(
@@ -727,6 +721,21 @@ class ChatViewModel @Inject constructor(
             if (!fromProfile.isNullOrBlank()) fromProfile else otherIdentity.userName
         } else {
             otherIdentity.userName
+        }
+    }
+
+    fun onThreadScreenStarted() {
+        viewModelScope.launch {
+            userRepository.setActiveThread(
+                otherUid = otherUid,
+                nodeType = nodeType
+            )
+        }
+    }
+
+    fun onThreadScreenStopped() {
+        viewModelScope.launch {
+            userRepository.clearActiveThread()
         }
     }
 

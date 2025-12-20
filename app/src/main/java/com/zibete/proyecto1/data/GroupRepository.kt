@@ -1,21 +1,26 @@
+// GroupRepository.kt (REPLACE FULL)  - Meta/totalMessages + readGroupMessages + unread privados
+
 package com.zibete.proyecto1.data
 
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
+import com.google.firebase.database.Transaction.Handler
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.di.qualifiers.ApplicationScope
 import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
+import com.zibete.proyecto1.ui.constants.Constants.ChatListKeys
+import com.zibete.proyecto1.ui.constants.Constants.ConversationKeys
+import com.zibete.proyecto1.ui.constants.Constants.GroupMetaKeys
+import com.zibete.proyecto1.ui.constants.Constants.GroupUserKeys
+import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.ui.constants.MSG_USER_JOINED
+import com.zibete.proyecto1.ui.constants.MSG_USER_LEAVED
 import com.zibete.proyecto1.utils.Utils.dateTime
 import com.zibete.proyecto1.utils.Utils.now
 import kotlinx.coroutines.CoroutineScope
@@ -26,8 +31,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 data class GroupRefs(
     val refGroupChat: DatabaseReference,
@@ -39,65 +47,141 @@ class GroupRepository @Inject constructor(
     private val userRepository: UserRepository,
     @ApplicationScope private val appScope: CoroutineScope
 ) {
-
     private val myUid: String get() = userRepository.myUid
 
-    fun buildGroupRefs(
-        groupName: String
-    ): GroupRefs {
+    private fun groupChatRef(groupName: String) =
+        firebaseRefsContainer.refGroupChat
+            .child(groupName)
 
-        val refGroupChat =
-            firebaseRefsContainer.refGroupChat
-                .child(groupName)
+    private fun readGroupMessagesRef() =
+        userRepository.chatListRef()
+            .child(ChatListKeys.READ_GROUP_MESSAGES)
+
+    fun buildGroupRefs(groupName: String): GroupRefs {
+        val refGroupChat = groupChatRef(groupName)
 
         val refGroupPhotos =
             firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS_ROOT/$NODE_GROUP_PRIVATE_DM/$groupName/")
-                .child("$PATH_PHOTOS/")
+                .child(NODE_CHATS_ROOT)
+                .child(NODE_GROUP_DM)
+                .child(groupName)
+                .child(PATH_PHOTOS)
 
         return GroupRefs(
             refGroupChat = refGroupChat,
             refGroupPhotos = refGroupPhotos
         )
     }
-    // ---------- caches (1 listener por fuente) ----------
-// dentro de GroupRepository
 
-    // ---------- caches (1 listener por fuente) ----------
+    private fun groupMetaRef(groupName: String): DatabaseReference =
+        firebaseRefsContainer.refGroupMeta.child(groupName)
+
+    private fun totalMessagesRef(groupName: String): DatabaseReference =
+        groupMetaRef(groupName).child(GroupMetaKeys.TOTAL_MESSAGES)
+
+    suspend fun getTotalMessagesOnce(groupName: String): Int {
+        return totalMessagesRef(groupName).get().await().getValue(Int::class.java) ?: 0
+    }
+
+    fun observeTotalMessages(groupName: String): Flow<Int> = callbackFlow {
+        val totalMessagesRef = totalMessagesRef(groupName)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trySend(snapshot.getValue(Int::class.java) ?: 0)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+
+        totalMessagesRef.addValueEventListener(listener)
+        awaitClose { totalMessagesRef.removeEventListener(listener) }
+    }
+
+    private suspend fun DatabaseReference.incrementInt(delta: Int = 1): Int =
+        suspendCancellableCoroutine { cont ->
+            runTransaction(object : Handler {
+                override fun doTransaction(currentData: MutableData): Transaction.Result {
+                    val curAny = currentData.value
+
+                    val cur = (curAny as? Number)?.toLong() ?: 0L
+
+                    val next = cur + delta
+                    currentData.value = next
+                    return Transaction.success(currentData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    snapshot: DataSnapshot?
+                ) {
+                    if (error != null) {
+                        cont.resumeWithException(error.toException())
+                        return
+                    }
+                    val value = snapshot?.getValue(Long::class.java)?.toInt()
+                        ?: snapshot?.getValue(Int::class.java)
+                        ?: 0
+                    cont.resume(value)
+                }
+            })
+        }
+
+    suspend fun incrementTotalMessages(groupName: String): Int =
+        totalMessagesRef(groupName).incrementInt(1)
+
+    suspend fun ensureGroupMeta(groupName: String) {
+        val snap = groupMetaRef(groupName).get().await()
+        if (!snap.exists()) {
+            groupMetaRef(groupName).setValue(
+                mapOf(GroupMetaKeys.TOTAL_MESSAGES to 0)
+            ).await()
+        } else {
+            val totalSnap = snap.child(GroupMetaKeys.TOTAL_MESSAGES)
+            if (!totalSnap.exists()) {
+                totalMessagesRef(groupName).setValue(0).await()
+            }
+        }
+    }
+
+    suspend fun pushGroupMessage(groupName: String, chatMsg: ChatGroup) {
+        ensureGroupMeta(groupName)
+        groupChatRef(groupName)
+            .push()
+            .setValue(chatMsg)
+            .await()
+
+        incrementTotalMessages(groupName)
+    }
+
+    // ---------- caches ----------
     private val cacheGroupTotalByName = mutableMapOf<String, StateFlow<Int>>()
 
     private val cacheGroupReadCount: StateFlow<Int> by lazy {
-        observeGroupReadCount(myUid)
+        observeGroupReadCount()
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
     }
 
     private val cacheUnreadPrivateChatsInsideGroup: StateFlow<Int> by lazy {
-        observeUnreadPrivateChatsInsideGroup(myUid)
+        observeUnreadPrivateChatsInsideGroup()
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
     }
 
-// ========== PUBLIC API ==========
-
-    /** Badge Tab interno (NombreGrupo (X)) -> SOLO grupo */
     fun groupTabUnreadCount(groupName: String): StateFlow<Int> =
         observeGroupUnreadCount(groupName)
             .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    /** Single read (ideal para FCM / background) */
     suspend fun groupTabUnreadCountOnce(groupName: String): Int {
-        // ⚠️ hoy es pesado si el grupo es grande, pero sirve hasta migrar a Meta/totalMessages
-        val total = firebaseRefsContainer.refGroupChat.child(groupName).get().await().childrenCount.toInt()
-        val read = firebaseRefsContainer.refData
-            .child(myUid)
-            .child(NODE_CHATLIST)
-            .child("msgReadGroup")
-            .get().await()
+        val total = getTotalMessagesOnce(groupName)
+        val read = readGroupMessagesRef().get().await()
             .getValue(Int::class.java) ?: 0
 
         return (total - read).coerceAtLeast(0)
     }
 
-    /** Badge BottomNav "Grupos" -> grupo + privados (realtime exacto) */
     fun groupsBottomNavBadgeCount(groupName: String): StateFlow<Int> =
         combine(
             observeGroupUnreadCount(groupName),
@@ -106,22 +190,19 @@ class GroupRepository @Inject constructor(
             (unreadGroup + unreadPrivate).coerceAtLeast(0)
         }.stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
 
-    /** Realtime no vistos privados (por si lo necesitás directo) */
     fun unreadPrivateChatsInsideGroup(): StateFlow<Int> = cacheUnreadPrivateChatsInsideGroup
 
-    /** Actualizar readCount (lo llama ChatGroupFragment cuando está visible) */
-    suspend fun setReadGroupMessages(uid: String, readCount: Int) {
-        firebaseRefsContainer.refData
-            .child(uid)
-            .child(NODE_CHATLIST)
-            .child("msgReadGroup")
+    suspend fun setReadGroupMessages(readCount: Int) {
+        readGroupMessagesRef()
             .setValue(readCount)
             .await()
     }
 
-// ========== CORE FLOWS ==========
+    suspend fun syncReadGroupMessagesToTotal(groupName: String) {
+        val total = getTotalMessagesOnce(groupName)
+        setReadGroupMessages(total)
+    }
 
-    /** unread del grupo = totalGrupo - readCount */
     private fun observeGroupUnreadCount(groupName: String): Flow<Int> =
         combine(
             groupTotalMsgCount(groupName),
@@ -130,29 +211,27 @@ class GroupRepository @Inject constructor(
             (total - read).coerceAtLeast(0)
         }
 
-    /** total mensajes del grupo (realtime) */
     private fun groupTotalMsgCount(groupName: String): StateFlow<Int> =
         cacheGroupTotalByName.getOrPut(groupName) {
-            observeGroupTotalMsgCount(groupName)
+            observeTotalMessages(groupName)
                 .stateIn(appScope, SharingStarted.WhileSubscribed(5_000), 0)
         }
 
     private fun groupReadCount(): StateFlow<Int> = cacheGroupReadCount
 
-    /** suma noVisto de chats privados dentro del nodo /Datos/<uid>/NODE_GROUP_CHAT */
-    private fun observeUnreadPrivateChatsInsideGroup(uid: String): Flow<Int> = callbackFlow {
-        val ref = firebaseRefsContainer.refData
-            .child(uid)
-            .child(NODE_GROUP_PRIVATE_DM)
+    private fun observeUnreadPrivateChatsInsideGroup(): Flow<Int> = callbackFlow {
+        val ref = userRepository.dataRef()
+            .child(NODE_GROUP_DM)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 var total = 0
                 for (child in snapshot.children) {
-                    total += child.child("noVisto").getValue(Int::class.java) ?: 0
+                    total += child.child(ConversationKeys.UNREAD_COUNT).getValue(Int::class.java) ?: 0
                 }
                 trySend(total.coerceAtLeast(0))
             }
+
             override fun onCancelled(error: DatabaseError) {
                 close(error.toException())
             }
@@ -162,17 +241,15 @@ class GroupRepository @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    private fun observeGroupReadCount(uid: String): Flow<Int> = callbackFlow {
-        val ref = firebaseRefsContainer.refData
-            .child(uid)
-            .child(NODE_CHATLIST)
-            .child("msgReadGroup")
+    private fun observeGroupReadCount(): Flow<Int> = callbackFlow {
+        val ref = readGroupMessagesRef()
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val read = snapshot.getValue(Int::class.java) ?: 0
                 trySend(read.coerceAtLeast(0))
             }
+
             override fun onCancelled(error: DatabaseError) {
                 close(error.toException())
             }
@@ -182,55 +259,16 @@ class GroupRepository @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    /**
-     * ⚠️ Hoy esto “cuenta children” del chat => puede ser pesado.
-     * Próximo paso pro: reemplazar por /Groups/Meta/{groupName}/totalMessages (contador).
-     */
-    private fun observeGroupTotalMsgCount(groupName: String): Flow<Int> = callbackFlow {
-        val ref = firebaseRefsContainer.refGroupChat.child(groupName)
-
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.childrenCount.toInt().coerceAtLeast(0))
-            }
-            override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
-            }
-        }
-
-        ref.addValueEventListener(listener)
-        awaitClose { ref.removeEventListener(listener) }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // User de grupo deja de estar disponible
-    fun observeGroupUserAvailability(
-        groupName: String,
-        userId: String
-    ): Flow<Boolean> = callbackFlow {
-
-        val ref = firebaseRefsContainer.refGroupUsers
+    fun groupUsersRef(groupName: String) =
+        firebaseRefsContainer.refGroupUsers
             .child(groupName)
+    fun observeGroupUserAvailability(groupName: String, userId: String): Flow<Boolean> = callbackFlow {
+        val ref = groupUsersRef(groupName)
             .child(userId)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(ds: DataSnapshot) {
-
-                val isAvailable = ds.exists()
-
-                trySend(isAvailable)
+                trySend(ds.exists())
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -243,8 +281,7 @@ class GroupRepository @Inject constructor(
     }
 
     suspend fun getUserGroup(userId: String, groupName: String): UserGroup? =
-        firebaseRefsContainer.refGroupUsers
-            .child(groupName)
+        groupUsersRef(groupName)
             .child(userId)
             .get()
             .await()
@@ -252,70 +289,45 @@ class GroupRepository @Inject constructor(
             ?.getValue(UserGroup::class.java)
 
     suspend fun isNickInUse(groupName: String, nick: String): Boolean {
-        val snapshot = firebaseRefsContainer.refGroupUsers
-            .child(groupName)
-            .get()
-            .await()
+        val snapshot = groupUsersRef(groupName).get().await()
 
         return snapshot.children.any { child ->
-            val name = child.child("user_name").getValue(String::class.java)
+            val name = child.child(GroupUserKeys.USER_NAME).getValue(String::class.java)
             name == nick
         }
     }
 
-    suspend fun sendJoinMessage(
-        groupName: String,
-        nick: String,
-        type: Int
-    ) {
+    suspend fun sendJoinMessage(groupName: String, nick: String, type: Int) {
         val chatMsg = ChatGroup(
             MSG_USER_JOINED,
             now(),
             nick,
             myUid,
-            MSG_TYPE_MID,
+            MSG_INFO,
             type
         )
-
-        firebaseRefsContainer.refGroupChat
-            .child(groupName)
-            .push()
-            .setValue(chatMsg)
-            .await()
+        pushGroupMessage(groupName, chatMsg)
     }
 
-    suspend fun saveUserInGroup(
-        groupName: String,
-        nick: String,
-        type: Int
-    ) {
+    suspend fun saveUserInGroup(groupName: String, nick: String, type: Int) {
         val userGroup = UserGroup(
             userId = myUid,
             userName = nick,
             type = type
         )
 
-        firebaseRefsContainer.refGroupUsers
-            .child(groupName)
+        groupUsersRef(groupName)
             .child(myUid)
             .setValue(userGroup)
             .await()
     }
 
-    suspend fun isGroupNameInUse(name: String): Boolean {
-        val snapshot = firebaseRefsContainer.refGroupData
-            .child(name)
-            .get()
-            .await()
+    suspend fun isGroupNameInUse(groupName: String): Boolean {
+        val snapshot = groupMetaRef(groupName).get().await()
         return snapshot.exists()
     }
 
-    suspend fun createGroup(
-        groupName: String,
-        groupData: String,
-        groupType: Int
-    ) {
-
+    suspend fun createGroup(groupName: String, groupData: String, groupType: Int) {
         val group = Groups(
             name = groupName,
             description = groupData,
@@ -325,30 +337,24 @@ class GroupRepository @Inject constructor(
             dateTime()
         )
 
-        firebaseRefsContainer.refGroupData
-            .child(groupName)
+        groupMetaRef(groupName)
             .setValue(group)
             .await()
+
+        ensureGroupMeta(groupName)
     }
 
     suspend fun getGroups(): List<Groups> {
-        val snapshot = firebaseRefsContainer.refGroupData
-            .get()
-            .await()
-
+        val snapshot = firebaseRefsContainer.refGroupMeta.get().await()
         if (!snapshot.exists()) return emptyList()
 
         val groupsList = mutableListOf<Groups>()
 
         for (groupSnap in snapshot.children) {
             val group = groupSnap.getValue(Groups::class.java) ?: continue
+            val groupName = groupSnap.child(GroupMetaKeys.NAME).getValue(String::class.java) ?: group.name
 
-            // nombre del grupo
-            val name = groupSnap.child("name").getValue(String::class.java) ?: group.name
-
-            // contar usuarios del grupo
-            val usersSnap = firebaseRefsContainer.refGroupUsers
-                .child(name)
+            val usersSnap = groupUsersRef(groupName)
                 .get()
                 .await()
 
@@ -359,20 +365,15 @@ class GroupRepository @Inject constructor(
         return groupsList
     }
 
-    // Eliminar chat de grupo al salir
-    suspend fun removeMyGroupChatList(userId: String) {
-        firebaseRefsContainer.refData
-            .child(userId)
-            .child(NODE_GROUP_PRIVATE_DM)
+    suspend fun removeMyGroupChatList() {
+        userRepository.dataRef()
+            .child(NODE_GROUP_DM)
             .removeValue()
             .await()
     }
 
-    suspend fun removeMyPrivateGroupChats(userId: String) {
-        val snapshot = firebaseRefsContainer.refChatsGroupDm
-            .get()
-            .await()
-
+    suspend fun removeMyPrivateGroupChats(userId: String = myUid) {
+        val snapshot = firebaseRefsContainer.refChatsGroupDm.get().await()
         for (child in snapshot.children) {
             val key = child.key ?: continue
             if (key.contains(userId)) {
@@ -381,34 +382,20 @@ class GroupRepository @Inject constructor(
         }
     }
 
-    suspend fun sendLeaveGroupMessage(
-        groupName: String,
-        userName: String,
-        userType: Int,
-        userId: String
-    ) {
+    suspend fun sendLeaveGroupMessage(groupName: String, userName: String, userType: Int, userId: String = myUid) {
         val chatMsg = ChatGroup(
-            MSG_USER_JOINED,
+            MSG_USER_LEAVED,
             now(),
             userName,
             userId,
             MSG_TYPE_MID,
             userType
         )
-
-        firebaseRefsContainer.refGroupChat
-            .child(groupName)
-            .push()
-            .setValue(chatMsg)
-            .await()
+        pushGroupMessage(groupName, chatMsg)
     }
 
-    suspend fun removeUserFromGroup(
-        groupName: String,
-        userId: String
-    ) {
-        firebaseRefsContainer.refGroupUsers
-            .child(groupName)
+    suspend fun removeUserFromGroup(groupName: String, userId: String = myUid) {
+        groupUsersRef(groupName)
             .child(userId)
             .removeValue()
             .await()

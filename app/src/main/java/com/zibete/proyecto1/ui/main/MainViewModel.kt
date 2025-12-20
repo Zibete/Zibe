@@ -63,12 +63,13 @@ class MainViewModel @Inject constructor(
 
     private var installIdListener: ValueEventListener? = null
 
-    init {
-
-        // Iniciar presencia
+    fun startPresence(){
         viewModelScope.launch {
-            presenceRepository.startPresence(myUid)
+            presenceRepository.startPresence()
         }
+    }
+
+    init {
 
         // 1) Setup sesión (una vez)
         viewModelScope.launch {

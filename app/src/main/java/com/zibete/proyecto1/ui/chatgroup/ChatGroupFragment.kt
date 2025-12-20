@@ -867,7 +867,7 @@ import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_PRIVATE_DM
+import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.utils.FirebaseRefs
@@ -1450,7 +1450,7 @@ class ChatGroupFragment : Fragment() {
 
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         FirebaseRefs.refDatos.child(currentUserId)
-            .child(NODE_GROUP_PRIVATE_DM)
+            .child(NODE_GROUP_DM)
             .child(chat.senderUid)
             .removeValue()
 
