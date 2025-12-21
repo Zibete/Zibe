@@ -48,7 +48,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
+import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
@@ -105,7 +105,7 @@ fun AuthScreen(
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost = {
-            ZibeSnackbarHost(hostState = snackbarHostState)
+            ZibeSnackHost(hostState = snackbarHostState)
         },
     ) { innerPadding ->
         Box(

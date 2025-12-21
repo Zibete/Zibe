@@ -1,23 +1,33 @@
 package com.zibete.proyecto1.model
 
 import java.io.Serializable
+sealed class GroupChatChildEvent {
+    data class Added(val item: GroupChatItem) : GroupChatChildEvent()
+    data class Changed(val item: GroupChatItem) : GroupChatChildEvent()
+    data class Removed(val item: GroupChatItem) : GroupChatChildEvent()
+}
+
+data class GroupChatItem(
+    val id: String,
+    val message: ChatGroup
+)
 
 data class ChatGroup(
     var content: String = "",
-    var date: String = "",
-    var nameUser: String = "", // <-- debería leer RTDB con senderUid?
+    var timestamp: Long = 0,
+    var nameUser: String = "",
     var senderUid: String = "",
-    var type: Int = 0,
-    var userType: Int = 0 // <-- debería leer RTDB con senderUid?
+    var chatType: Int = 0,
+    var userType: Int = 0
 
 ) : Serializable {
 
     override fun equals(other: Any?): Boolean =
         other is ChatGroup &&
                 content == other.content &&
-                date == other.date &&
+                timestamp == other.timestamp &&
                 nameUser == other.nameUser
 
     override fun hashCode(): Int =
-        listOf(date, content, nameUser).hashCode()
+        listOf(timestamp, content, nameUser).hashCode()
 }

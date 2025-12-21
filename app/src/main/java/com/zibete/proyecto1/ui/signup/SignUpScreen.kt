@@ -45,7 +45,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeSnackbarHost
+import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
@@ -56,9 +56,6 @@ import com.zibete.proyecto1.utils.Utils.millisToBirthDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,15 +74,15 @@ fun SignUpScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         signUpEvents.collect { event ->
             when (event) {
-                is SignUpUiEvent.ShowSnackbar -> {
+                is SignUpUiEvent.ShowSnack -> {
                     scope.launch {
-                        snackbarHostState.showZibeMessage(
+                        snackHostState.showZibeMessage(
                             type = event.type,
                             message = event.message
                         )
@@ -102,7 +99,7 @@ fun SignUpScreen(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         snackbarHost = {
-            ZibeSnackbarHost(hostState = snackbarHostState)
+            ZibeSnackHost(hostState = snackHostState)
         },
         topBar = {
             ZibeToolbar(

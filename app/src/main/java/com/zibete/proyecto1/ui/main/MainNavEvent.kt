@@ -10,7 +10,7 @@ sealed class MainNavEvent {
     data object ToChat : MainNavEvent()
     data object ToGroupsSelect : MainNavEvent()         // No está en grupo → ir a nav_groups
     data object ToFavorites : MainNavEvent()
-    data object ToGroupDetail : MainNavEvent()
+    data object ToGroupHost : MainNavEvent()
     // ------------------- Menu ---------------------
     data object ToSettings : MainNavEvent()
     data object ToEditProfile : MainNavEvent()

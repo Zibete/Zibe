@@ -122,10 +122,10 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             )
                         }
 
-                        is GroupsUiEvent.NavigateToGroupPager -> {
+                        is GroupsUiEvent.NavigateToGroupHost -> {
                             joinGroupDialog?.dismiss()
                             joinGroupDialog = null
-                            (activity as? MainActivity)?.mainViewModel?.toGroupDetail()
+                            (activity as? MainActivity)?.mainViewModel?.toGroupHost()
                         }
                     }
                 }

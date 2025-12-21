@@ -48,7 +48,7 @@ suspend fun SnackbarHostState.showZibeMessage(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ZibeSnackbarHost(
+fun ZibeSnackHost(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
@@ -134,7 +134,7 @@ fun ZibeSnackbarHost(
 
 @Preview(device = "spec:width=1280dp,height=800dp,dpi=240")
 @Composable
-fun PreviewZibeSnackbar() {
+fun PreviewZibeSnack() {
     val state = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -142,7 +142,7 @@ fun PreviewZibeSnackbar() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ZibeSnackbarHost(
+        ZibeSnackHost(
             hostState = state,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -159,7 +159,7 @@ fun PreviewPixel7() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ZibeSnackbarHost(
+        ZibeSnackHost(
             hostState = state,
             modifier = Modifier.align(Alignment.BottomCenter)
         )

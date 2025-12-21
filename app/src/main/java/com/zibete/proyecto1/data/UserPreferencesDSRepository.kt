@@ -3,9 +3,6 @@ package com.zibete.proyecto1.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -17,8 +14,7 @@ data class GroupContext(
     val inGroup: Boolean,
     val groupName: String,
     val userName: String,
-    val userType: Int,
-    val userDate: String
+    val userType: Int
 )
 
 @Singleton
@@ -43,8 +39,7 @@ class UserPreferencesDSRepository @Inject constructor(
                     inGroup = true,
                     groupName = groupName,
                     userName = prefs[Keys.USER_NAME_GROUP].orEmpty(),
-                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER,
-                    userDate = prefs[Keys.USER_DATE].orEmpty()
+                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER
                 )
             }
             .distinctUntilChanged()
@@ -64,15 +59,13 @@ class UserPreferencesDSRepository @Inject constructor(
     suspend fun setGroupSession(
         groupName: String,
         userName: String,
-        userType: Int,
-        userDate: String
+        userType: Int
     ) {
         dataStore.edit { prefs ->
             prefs[Keys.IN_GROUP] = true
             prefs[Keys.GROUP_NAME] = groupName
             prefs[Keys.USER_NAME_GROUP] = userName
             prefs[Keys.USER_TYPE] = userType
-            prefs[Keys.USER_DATE] = userDate
         }
     }
 
@@ -82,19 +75,6 @@ class UserPreferencesDSRepository @Inject constructor(
             prefs[Keys.GROUP_NAME] = ""
             prefs[Keys.USER_NAME_GROUP] = ""
             prefs[Keys.USER_TYPE] = PUBLIC_USER
-            prefs[Keys.USER_DATE] = ""
-            prefs[Keys.READ_GROUP_MSG] = 0
-        }
-    }
-
-    val readGroupMsgFlow: Flow<Int> =
-        dataStore.data
-            .map { it[Keys.READ_GROUP_MSG] ?: 0 }
-            .distinctUntilChanged()
-
-    suspend fun setReadGroupMsg(value: Int) {
-        dataStore.edit { prefs ->
-            prefs[Keys.READ_GROUP_MSG] = value
         }
     }
 

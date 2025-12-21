@@ -5,7 +5,7 @@ sealed interface GroupsUiEvent {
 
     data class GroupNameInUse(val name: String) : GroupsUiEvent
 
-    object NavigateToGroupPager : GroupsUiEvent
+    object NavigateToGroupHost : GroupsUiEvent
 
     data class ShowMessage(val message: String?) : GroupsUiEvent
 

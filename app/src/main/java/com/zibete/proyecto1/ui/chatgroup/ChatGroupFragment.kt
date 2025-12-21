@@ -1140,7 +1140,7 @@ class ChatGroupFragment : Fragment() {
 
                 val chat = snapshot.getValue(ChatGroup::class.java) ?: return
 
-                val dateChat = try { fmt.parse(chat.date) } catch (_: ParseException) { null }
+                val dateChat = try { fmt.parse(chat.timestamp) } catch (_: ParseException) { null }
                 val dateUser = try { fmt.parse(userPreferencesRepository.userDate) } catch (_: ParseException) { null }
 
                 if (dateChat != null && dateUser != null && dateChat.after(dateUser)) {

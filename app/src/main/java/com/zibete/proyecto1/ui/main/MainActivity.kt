@@ -23,7 +23,6 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
@@ -44,7 +43,6 @@ import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
-import com.zibete.proyecto1.GroupPagerFragment
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
@@ -56,6 +54,7 @@ import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment
+import com.zibete.proyecto1.ui.groups.host.GroupHostFragment
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
@@ -276,12 +275,13 @@ class MainActivity : BaseToolbarActivity() {
                                 mainViewModel.onChatTabSelected()
                             }
 
-                            is MainNavEvent.ToGroupDetail -> {
+                            is MainNavEvent.ToGroupHost -> {
                                 mainViewModel.showToolbar(true)
                                 invalidateOptionsMenu()
 
                                 supportFragmentManager.beginTransaction()
-                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
+                                    .replace(R.id.nav_host_fragment, GroupHostFragment())
+//                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
                                     .commit()
 
                                 bottomNavigationView?.selectedItemId = R.id.navBottomGrupos

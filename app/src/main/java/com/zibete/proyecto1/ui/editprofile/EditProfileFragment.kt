@@ -38,8 +38,8 @@ import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
-import com.zibete.proyecto1.ui.constants.Constants.MSG_CAMERA_ERROR
-import com.zibete.proyecto1.ui.constants.Constants.MSG_CAMERA_PERMISSION_REQUIRED
+import com.zibete.proyecto1.ui.constants.MSG_CAMERA_ERROR
+import com.zibete.proyecto1.ui.constants.MSG_CAMERA_PERMISSION_REQUIRED
 import com.zibete.proyecto1.ui.constants.SIGNUP_PROFILE_MESSAGE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainNavEvent

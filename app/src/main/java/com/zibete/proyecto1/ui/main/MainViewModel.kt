@@ -63,6 +63,15 @@ class MainViewModel @Inject constructor(
 
     private var installIdListener: ValueEventListener? = null
 
+//    val groupBadgeCount: StateFlow<Int> =
+//        uiState.map { it.groupBadgeCount }
+//            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+//
+//    val groupTabUnreadCount: StateFlow<Int> =
+//        uiState.map { it.groupTabUnreadCount }
+//            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+
     fun startPresence(){
         viewModelScope.launch {
             presenceRepository.startPresence()
@@ -116,7 +125,7 @@ class MainViewModel @Inject constructor(
             userPreferencesDSRepository.groupContextFlow
                 .flatMapLatest { groupContext ->
                     if (groupContext == null) flowOf(0)
-                    else groupRepository.groupTabUnreadCount(groupContext.groupName)
+                    else groupRepository.groupChatUnreadCount(groupContext.groupName)
                 }
                 .distinctUntilChanged()
                 .collect { count ->
@@ -263,15 +272,15 @@ class MainViewModel @Inject constructor(
                     toGroupsSelect()
                 } else {
                     showToolbar(true)
-                    toGroupDetail()
+                    toGroupHost()
                 }
             }
         }
     }
 
-    fun toGroupDetail(){
+    fun toGroupHost(){
         viewModelScope.launch {
-            _navEvents.emit(MainNavEvent.ToGroupDetail)
+            _navEvents.emit(MainNavEvent.ToGroupHost)
         }
     }
 

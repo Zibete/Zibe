@@ -21,6 +21,7 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.databinding.PagerGroupsChatBinding
 import com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.NO_INTERNET
 import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.utils.UserMessageUtils
 import com.zibete.proyecto1.utils.Utils.AppChecks
@@ -59,50 +60,22 @@ class GroupPagerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Loader visible al inicio
-        binding.linearProgressBar.isVisible = true
-        binding.progressBar.isVisible = true
+        // TEMP: Groups UI legacy disabled while migrating to Compose/VP2
+        binding.linearProgressBar.isVisible = false
+        binding.progressBar.isVisible = false
+        binding.viewPager.isVisible = false
+        binding.tabLayout.isVisible = false
 
-        // Adapter + Tabs
-        binding.viewPager.adapter = MyPagerAdapter(childFragmentManager)
-        binding.tabLayout.setupWithViewPager(binding.viewPager)
-
-        // Arranca mostrando tab 3 (lista chat) como tu versión
-        binding.viewPager.currentItem = 2
-
-        // Conexión + transición a la pestaña central
-        startNetworkCheck()
-
-
-
-
-
-
-
-
-
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.uiState.collect { state ->
-                    binding.tabLayout.setBadgeText(
-                        2, // Tab de "chat" es el índice 2
-                        state.groupBadgeCount.takeIf { it > 0 }?.toString()
-                    )
-                }
-            }
-        }
-
-        val groupName = userPreferencesRepository.groupName
-        binding.tabLayout.setBadgeText(
-            2,
-            groupRepository.groupTabUnreadCount(groupName).toString()
+        UserMessageUtils.showSnack(
+            root = binding.root,
+            message = "Sección en migración. Próximamente disponible.",
+            type = ZibeSnackType.INFO,
+            duration = Snackbar.LENGTH_LONG,
+            actionText = "Volver",
+            action = { requireActivity().onBackPressedDispatcher.onBackPressed() }
         )
-
-        // Badge interno del tab (no vistos)
-
-//        observeUnreadBadgeForTab()
     }
+
 
     // ========== Network + loader ==========
 
@@ -124,7 +97,7 @@ class GroupPagerFragment : Fragment() {
 
                 UserMessageUtils.showSnack(
                     root = binding.viewPager,
-                    message = "No hay conexión a Internet. Por favor, verificá tu conexión.",
+                    message = NO_INTERNET,
                     type = ZibeSnackType.ERROR,
                     duration = Snackbar.LENGTH_INDEFINITE,
                     actionText = "Reintentar",

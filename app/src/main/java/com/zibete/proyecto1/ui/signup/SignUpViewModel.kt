@@ -93,7 +93,7 @@ class SignUpViewModel @Inject constructor(
 
                 // 5) Éxito
                 _events.emit(
-                    SignUpUiEvent.ShowSnackbar(
+                    SignUpUiEvent.ShowSnack(
                         message = SIGNUP_MSG_SUCCESS,
                         type = ZibeSnackType.SUCCESS
                     )
@@ -122,7 +122,7 @@ class SignUpViewModel @Inject constructor(
                 }
 
                 _events.emit(
-                    SignUpUiEvent.ShowSnackbar(
+                    SignUpUiEvent.ShowSnack(
                         message = userMessage,
                         type = type
                     )
@@ -149,7 +149,7 @@ class SignUpViewModel @Inject constructor(
         suspend fun warn(msg: String): Boolean {
             _uiState.update { it.copy(isLoading = false) }
             _events.emit(
-                SignUpUiEvent.ShowSnackbar(
+                SignUpUiEvent.ShowSnack(
                     message = msg,
                     type = ZibeSnackType.WARNING
                 )

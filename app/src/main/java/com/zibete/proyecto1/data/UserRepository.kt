@@ -519,8 +519,12 @@ class UserRepository @Inject constructor(
 
                     val otherAt = activeThreadRef(otherUid).get().await()
 
-                    val node = otherAt.child(ActiveThreadKeys.NODE_TYPE).getValue(String::class.java).orEmpty()
-                    val other = otherAt.child(ActiveThreadKeys.OTHER_UID).getValue(String::class.java).orEmpty()
+                    val node =
+                        otherAt.child(ActiveThreadKeys.NODE_TYPE).getValue(String::class.java)
+                            .orEmpty()
+                    val other =
+                        otherAt.child(ActiveThreadKeys.OTHER_UID).getValue(String::class.java)
+                            .orEmpty()
 
                     val matches = when (nodeType) {
                         NODE_DM ->
@@ -554,18 +558,6 @@ class UserRepository @Inject constructor(
         firebaseRefsContainer.refAccounts.child(myUid).removeValue().await()
         runCatching { getProfilePhotoStoragePath().delete().await() }
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     suspend fun setActiveThread(otherUid: String, nodeType: String) {

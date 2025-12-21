@@ -71,7 +71,7 @@ class AdapterChatGroup(
     override fun getItemViewType(position: Int): Int {
         val item = getItem(position)
         return when {
-            item.type == 0 -> MSG_TYPE_MID
+            item.chatType == 0 -> MSG_TYPE_MID
             item.senderUid == userId -> MSG_TYPE_RIGHT
             else -> MSG_TYPE_LEFT
         }
@@ -123,7 +123,7 @@ class AdapterChatGroup(
     // ==== Gestures Logic ====
 
     private fun attachGestures(holder: BaseMsgVH, chat: ChatGroup) {
-        if (chat.type == 0) return
+        if (chat.chatType == 0) return
 
         val gd = GestureDetector(context, object : SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -153,7 +153,7 @@ class AdapterChatGroup(
         fun bind(model: ChatGroup) {
             b.tvMsg.text = model.content
             b.nameUser.text = model.nameUser
-            b.horaMsg.text = model.date.safeSub(11, 16)
+            b.horaMsg.text = model.timestamp.safeSub(11, 16)
         }
     }
 
@@ -184,11 +184,11 @@ class AdapterChatGroup(
     }
 
     private fun bindCommon(b: CommonMsgBinding, chat: ChatGroup) {
-        b.horaMsg.text = chat.date.safeSub(11, 16)
+        b.horaMsg.text = chat.timestamp.safeSub(11, 16)
 
         // --- FOTO O TEXTO ---
         when {
-            chat.type.isPhoto() -> {
+            chat.chatType.isPhoto() -> {
                 b.linearMensajePic?.visibility = View.VISIBLE
                 b.linearMensajeMsg?.visibility = View.GONE
                 b.loadingPhoto?.visibility = View.VISIBLE
@@ -224,7 +224,7 @@ class AdapterChatGroup(
                     onImageClicked(chat.content)
                 }
             }
-            chat.type.isText() -> {
+            chat.chatType.isText() -> {
                 b.linearMensajePic?.visibility = View.GONE
                 b.linearMensajeMsg?.visibility = View.VISIBLE
                 b.tvMsg.text = chat.content
@@ -234,7 +234,7 @@ class AdapterChatGroup(
         // --- INFO DE USUARIO ---
         // TODO: En el futuro, mover esta carga de datos (FirebaseRefs) a un ViewModel y pasar solo datos listos.
         if (chat.userType == 0) {
-            b.nameUser.text = if (chat.type == 0) chat.nameUser else "${chat.nameUser}:"
+            b.nameUser.text = if (chat.chatType == 0) chat.nameUser else "${chat.nameUser}:"
             Glide.with(context).load(context.getString(R.string.URL_PHOTO_DEF)).into(b.imgUser)
         } else {
             FirebaseRefs.refCuentas.child(chat.senderUid).addListenerForSingleValueEvent(object : ValueEventListener {
@@ -242,7 +242,7 @@ class AdapterChatGroup(
                     if (ds.exists()) {
                         val name = ds.child("nombre").getValue(String::class.java)
                         val foto = ds.child("foto").getValue(String::class.java)
-                        b.nameUser.text = if (chat.type == 0) name ?: chat.nameUser else "${name ?: chat.nameUser}:"
+                        b.nameUser.text = if (chat.chatType == 0) name ?: chat.nameUser else "${name ?: chat.nameUser}:"
                         Glide.with(context).load(foto).into(b.imgUser)
                     } else {
                         b.nameUser.text = "${chat.nameUser}:"
@@ -273,7 +273,7 @@ class AdapterChatGroup(
         val DIFF = object : DiffUtil.ItemCallback<ChatGroup>() {
             override fun areItemsTheSame(oldItem: ChatGroup, newItem: ChatGroup): Boolean {
                 // Usamos ID y tiempo como clave única compuesta
-                return oldItem.senderUid == newItem.senderUid && oldItem.date == newItem.date
+                return oldItem.senderUid == newItem.senderUid && oldItem.timestamp == newItem.timestamp
             }
             override fun areContentsTheSame(oldItem: ChatGroup, newItem: ChatGroup): Boolean = oldItem == newItem
         }

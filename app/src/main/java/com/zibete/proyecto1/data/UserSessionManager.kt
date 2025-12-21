@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.core.net.toUri
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.*
+import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
+import com.zibete.proyecto1.ui.constants.MSG_USER_LEAVED
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -94,10 +96,12 @@ class UserSessionManager @Inject constructor(
         groupRepository.removeMyPrivateGroupChats()
 
         // 3) Enviar mensaje de abandono
-        groupRepository.sendLeaveGroupMessage(
+        groupRepository.sendGroupMessage(
             groupName = groupName,
             userName = groupContext.userName,
-            userType = groupContext.userType
+            userType = groupContext.userType,
+            chatType = MSG_INFO,
+            content = MSG_USER_LEAVED
         )
 
         // 4) Eliminar usuario del grupo

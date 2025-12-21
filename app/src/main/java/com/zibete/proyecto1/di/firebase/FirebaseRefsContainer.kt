@@ -20,20 +20,19 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseRefsContainer @Inject constructor(
-    val firebaseDatabase: FirebaseDatabase,
-    val firebaseStorage: FirebaseStorage
+    val firebaseDatabase: FirebaseDatabase, val firebaseStorage: FirebaseStorage
 ) {
 
     // ================= Usuarios =================
     val refUsers: DatabaseReference = firebaseDatabase.getReference(NODE_USERS_ROOT)
-        val refData: DatabaseReference = refUsers.child(NODE_USERS_DATA)
-        val refAccounts: DatabaseReference = refUsers.child(NODE_USERS_ACCOUNTS)
+    val refData: DatabaseReference = refUsers.child(NODE_USERS_DATA)
+    val refAccounts: DatabaseReference = refUsers.child(NODE_USERS_ACCOUNTS)
 
     // ================= Chats =================
 
     val refChatsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_CHATS_ROOT)
-        val refChatsDm: DatabaseReference = refChatsRoot.child(NODE_DM)
-        val refChatsGroupDm: DatabaseReference = refChatsRoot.child(NODE_GROUP_DM)
+    val refChatsDm: DatabaseReference = refChatsRoot.child(NODE_DM)
+    val refChatsGroupDm: DatabaseReference = refChatsRoot.child(NODE_GROUP_DM)
 
     // ================= Sesiones =================
 
@@ -42,9 +41,9 @@ class FirebaseRefsContainer @Inject constructor(
     // ================= Grupos =================
 
     val refGroupsRoot: DatabaseReference = firebaseDatabase.getReference(NODE_GROUPS_ROOT)
-        val refGroupMeta: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_META)
-        val refGroupChat: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_CHAT)
-        val refGroupUsers: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_USERS)
+    val refGroupMeta: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_META)
+    val refGroupChat: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_CHAT)
+    val refGroupUsers: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_USERS)
 
     // ================= Zibe =================
 

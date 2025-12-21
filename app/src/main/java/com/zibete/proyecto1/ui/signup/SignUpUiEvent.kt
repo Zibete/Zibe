@@ -4,7 +4,7 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 
 sealed class SignUpUiEvent {
 
-    data class ShowSnackbar(
+    data class ShowSnack(
         val message: String,
         val type: ZibeSnackType
     ) : SignUpUiEvent()

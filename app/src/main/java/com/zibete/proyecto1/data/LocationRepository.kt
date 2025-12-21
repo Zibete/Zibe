@@ -1,11 +1,10 @@
 package com.zibete.proyecto1.data
 
-import android.content.Context
 import android.location.Location
-import com.zibete.proyecto1.data.UserRepository.AccountKeys
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys.LATITUDE
+import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys.LONGITUDE
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -34,8 +33,8 @@ class LocationRepository @Inject constructor(
     suspend fun updateLocation(location: Location) {
         userRepository.updateUserFields(
             mapOf(
-                AccountKeys.LATITUDE to location.latitude,
-                AccountKeys.LONGITUDE to location.longitude
+                LATITUDE to location.latitude,
+                LONGITUDE to location.longitude
             )
         )
     }

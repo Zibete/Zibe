@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.ui.constants.MSG_USER_JOINED
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -42,7 +42,7 @@ class GroupsViewModel @Inject constructor(
             }
 
             try {
-                val groupsList = groupRepository.getGroups()
+                val groupsList = groupRepository.getAllGroups()
                 val sorted = groupsList.sortedBy { it.name.lowercase() }
 
                 _uiState.update {
@@ -63,17 +63,12 @@ class GroupsViewModel @Inject constructor(
         userName: String,
         userType: Int
     ) {
-        userPreferencesDSRepository.setGroupSession(
-            groupName,
-            userName,
-            userType,
-            now()
-        )
+        userPreferencesDSRepository.setGroupSession(groupName, userName, userType)
 
         viewModelScope.launch {
-            groupRepository.sendJoinMessage(groupName, userName, userType)
             groupRepository.saveUserInGroup(groupName, userName, userType)
-            _events.emit(GroupsUiEvent.NavigateToGroupPager)
+            groupRepository.sendGroupMessage(groupName, userName, userType, MSG_INFO, MSG_USER_JOINED)
+            _events.emit(GroupsUiEvent.NavigateToGroupHost)
         }
     }
 
@@ -97,8 +92,8 @@ class GroupsViewModel @Inject constructor(
 
             groupRepository.createGroup(
                 groupName = groupName,
-                groupData = groupData,
-                groupType = PUBLIC_GROUP
+                groupType = PUBLIC_GROUP,
+                groupDescription = groupData
             )
 
             joinGroupAndNavigate(

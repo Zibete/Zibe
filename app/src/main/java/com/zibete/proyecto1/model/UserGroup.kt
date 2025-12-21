@@ -4,9 +4,10 @@ import com.google.firebase.database.PropertyName
 import java.io.Serializable
 
 data class UserGroup(
-    var userId: String = "",
-    var userName: String = "",
-    var type: Int = 0
+    val userId: String = "",
+    val userName: String = "",
+    val type: Int = 0,
+    val joinedAtMs: Long = 0L
 ) : Comparable<UserGroup>, Serializable {
 
     override fun compareTo(other: UserGroup): Int =
