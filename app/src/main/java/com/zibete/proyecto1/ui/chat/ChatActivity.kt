@@ -57,7 +57,7 @@ import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
+import com.zibete.proyecto1.ui.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
@@ -142,7 +142,7 @@ class ChatActivity : BaseChatSessionActivity() {
         binding.rvMsg.layoutManager = layoutManager
 
         adapter = AdapterChat(
-            maxSize = MAXCHATSIZE,
+            maxSize = MAX_CHAT_SIZE,
             context = this,
             hasSelection = { chatViewModel.chatState.value.selectedIds.isNotEmpty() },
             isSelected = { item -> chatViewModel.chatState.value.selectedIds.contains(item.id) },

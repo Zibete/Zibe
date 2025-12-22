@@ -863,7 +863,7 @@ import com.zibete.proyecto1.databinding.FragmentGroupBinding
 import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
+import com.zibete.proyecto1.ui.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
@@ -980,7 +980,7 @@ class ChatGroupFragment : Fragment() {
 
         adapter = AdapterChatGroup(
             context = requireContext(),
-            maxSize = MAXCHATSIZE,
+            maxSize = MAX_CHAT_SIZE,
             initialList = chats,
             onImageClicked = { url -> PhotoViewerActivity.startSingle(requireContext(), url) },
             onUserSingleTap = { chat, v -> handleUserSingleTap(chat, v) },

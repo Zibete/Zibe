@@ -232,8 +232,8 @@ class MainActivity : BaseToolbarActivity() {
                     layoutSettings?.isVisible = state.layoutSettingsVisible
                     bottomNavigationView?.isVisible = state.bottomNavVisible
                     // Badges
-                    badgeDrawableChat?.isVisible = state.chatBadgeCount > 0
-                    badgeDrawableChat?.number = state.chatBadgeCount
+                    badgeDrawableChat?.isVisible = state.chatListBadgeCount > 0
+                    badgeDrawableChat?.number = state.chatListBadgeCount
                     badgeDrawableGroup?.isVisible = state.groupBadgeCount > 0
                     badgeDrawableGroup?.number = state.groupBadgeCount
                 }

@@ -12,13 +12,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.data.ChatChildEvent
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
@@ -31,11 +31,10 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.ui.constants.Constants.MAXCHATSIZE
+import com.zibete.proyecto1.ui.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
-import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
@@ -59,6 +58,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import javax.inject.Inject
+import kotlin.collections.filterNot
+import kotlin.collections.map
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -136,7 +137,7 @@ class ChatViewModel @Inject constructor(
 
     private suspend fun startGroupUserAvailability() {
         if (nodeType != NODE_DM) {
-            groupRepository.observeGroupUserAvailability(groupName, otherUid).collect { isAvailable ->
+            groupRepository.observeIsUserInGroup(groupName, otherUid).collect { isAvailable ->
                 if (!isAvailable) {
                     _events.emit(
                         ChatSessionUiEvent.OtherUserNoLongerAvailable(
@@ -160,7 +161,7 @@ class ChatViewModel @Inject constructor(
                 _chatState.update { state ->
                     when (event) {
                         is ChatChildEvent.Added -> state.copy(
-                            messages = (state.messages + event.item).takeLast(MAXCHATSIZE)
+                            messages = (state.messages + event.item).takeLast(MAX_CHAT_SIZE)
                         )
 
                         is ChatChildEvent.Changed -> state.copy(

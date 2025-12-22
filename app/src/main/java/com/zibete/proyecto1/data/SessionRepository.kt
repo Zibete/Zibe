@@ -5,8 +5,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.constants.Constants.KEY_ACTIVE_INSTALL_ID
-import com.zibete.proyecto1.ui.constants.Constants.KEY_FCM_TOKEN
+import com.zibete.proyecto1.ui.constants.Constants.SessionKeys
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,10 +27,10 @@ class SessionRepository @Inject constructor(
         firebaseRefsContainer.refSessions.child(uid)
 
     private fun refInstallId(uid: String) =
-        refSession(uid).child(KEY_ACTIVE_INSTALL_ID)
+        refSession(uid).child(SessionKeys.ACTIVE_INSTALL_ID)
 
     private fun refFcmToken(uid: String) =
-        refSession(uid).child(KEY_FCM_TOKEN)
+        refSession(uid).child(SessionKeys.FCM_TOKEN)
 
     // ============================================================
     // READ
@@ -51,7 +50,7 @@ class SessionRepository @Inject constructor(
 
     suspend fun findSessionsByFcmToken(token: String): DataSnapshot {
         return firebaseRefsContainer.refSessions
-            .orderByChild(KEY_FCM_TOKEN)
+            .orderByChild(SessionKeys.FCM_TOKEN)
             .equalTo(token)
             .get()
             .await()
@@ -67,11 +66,11 @@ class SessionRepository @Inject constructor(
         fcmToken: String?
     ) {
         val data = mutableMapOf<String, Any>(
-            KEY_ACTIVE_INSTALL_ID to installId
+            SessionKeys.ACTIVE_INSTALL_ID to installId
         )
 
         if (!fcmToken.isNullOrBlank()) {
-            data[KEY_FCM_TOKEN] = fcmToken
+            data[SessionKeys.FCM_TOKEN] = fcmToken
         }
 
         refSession(uid)

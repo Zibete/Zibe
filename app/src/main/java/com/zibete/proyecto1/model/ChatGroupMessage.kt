@@ -1,13 +1,14 @@
 package com.zibete.proyecto1.model
 
 import java.io.Serializable
-sealed class GroupChatChildEvent {
-    data class Added(val item: GroupChatItem) : GroupChatChildEvent()
-    data class Changed(val item: GroupChatItem) : GroupChatChildEvent()
-    data class Removed(val item: GroupChatItem) : GroupChatChildEvent()
+
+sealed interface GroupChatChildEvent {
+    data class Added(val item: ChatGroupItem) : GroupChatChildEvent
+    data class Changed(val item: ChatGroupItem) : GroupChatChildEvent
+    data class Removed(val id: ChatGroupItem) : GroupChatChildEvent
 }
 
-data class GroupChatItem(
+data class ChatGroupItem(
     val id: String,
     val message: ChatGroup
 )

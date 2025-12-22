@@ -101,12 +101,12 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
         if (isInActiveGroup) return
 
-        val unread = groupRepository.groupTabUnreadCountOnce(groupName)
         notificationHelper.showGroupNotification(
             groupName = groupName,
-            unreadCount = unread,
+            unreadCount = payloadUnreadCount, // viene del push
             lastSenderName = otherName,
             lastMessage = content
         )
+
     }
 }

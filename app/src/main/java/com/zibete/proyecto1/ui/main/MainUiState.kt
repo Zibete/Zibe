@@ -7,8 +7,10 @@ data class MainUiState(
     val toolbarTitle: String = "",
     val currentScreen: CurrentScreen = CurrentScreen.OTHER,
 
-    val chatBadgeCount: Int = 0,
+    val chatListBadgeCount: Int = 0,
     val groupBadgeCount: Int = 0,
 
-    val groupTabUnreadCount: Int = 0
-)
+    val unreadGroupChatCount: Int = 0,
+    val unreadPrivateMessagesCount: Int = 0,
+
+    )

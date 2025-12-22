@@ -8,12 +8,11 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.GroupChatChildEvent
-import com.zibete.proyecto1.model.GroupChatItem
+import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
-import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -34,7 +33,7 @@ class GroupHostViewModel @Inject constructor(
     private val userPreferencesDSRepository: UserPreferencesDSRepository
 ) : ViewModel() {
 
-//    private val myUid get() = userRepository.myUid
+    val myUid get() = userRepository.myUid
 
     private val _uiState = MutableStateFlow(GroupHostUiState())
     val uiState = _uiState.asStateFlow()
@@ -88,27 +87,26 @@ class GroupHostViewModel @Inject constructor(
                 when (event) {
                     is GroupChatChildEvent.Added -> onMessageAdded(event.item)
                     is GroupChatChildEvent.Changed -> onMessageChanged(event.item)
-                    is GroupChatChildEvent.Removed -> onMessageRemoved(event.item)
-                    else -> {}
+                    is GroupChatChildEvent.Removed -> onMessageRemoved(event.id)
                 }
             }
         }
     }
 
-    private fun onMessageAdded(item: GroupChatItem) {
+    private fun onMessageAdded(item: ChatGroupItem) {
         _uiState.update { state ->
             state.copy(messages = (state.messages + item).takeLast(state.maxChatSize))
         }
         markReadIfChatVisible()
     }
 
-    private fun onMessageChanged(item: GroupChatItem) {
+    private fun onMessageChanged(item: ChatGroupItem) {
         _uiState.update { st ->
             st.copy(messages = st.messages.map { if (it.id == item.id) item else it })
         }
     }
 
-    private fun onMessageRemoved(item: GroupChatItem) {
+    private fun onMessageRemoved(item: ChatGroupItem) {
         _uiState.update { st ->
             st.copy(messages = st.messages.filterNot { it.id == item.id })
         }
@@ -120,8 +118,8 @@ class GroupHostViewModel @Inject constructor(
     }
 
     fun tryHandleBack(): Boolean {
-        val st = _uiState.value
-        return if (st.selectedTab != GroupHostTab.GROUP_CHAT) {
+        val state = _uiState.value
+        return if (state.selectedTab != GroupHostTab.GROUP_CHAT) {
             onTabSelected(GroupHostTab.GROUP_CHAT)
             true
         } else {
@@ -131,12 +129,15 @@ class GroupHostViewModel @Inject constructor(
 
     private fun markReadIfChatVisible() {
         val state = _uiState.value
+
         if (state.selectedTab != GroupHostTab.GROUP_CHAT) return
 
+        val groupContext = uiState.value.groupContext ?: return
+
+        val groupName = groupContext.groupName
+
         viewModelScope.launch {
-            groupRepository.setReadGroupMessages(
-                readCount = state.totalMessages
-            )
+            groupRepository.markGroupAsRead(groupName)
         }
     }
 

@@ -3,6 +3,7 @@ package com.zibete.proyecto1.di.firebase
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.ui.constants.Constants.APP_NAME
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
@@ -20,7 +21,8 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseRefsContainer @Inject constructor(
-    val firebaseDatabase: FirebaseDatabase, val firebaseStorage: FirebaseStorage
+    val firebaseDatabase: FirebaseDatabase,
+    val firebaseStorage: FirebaseStorage
 ) {
 
     // ================= Usuarios =================
@@ -48,5 +50,13 @@ class FirebaseRefsContainer @Inject constructor(
     // ================= Zibe =================
 
     val refZibe: DatabaseReference = firebaseDatabase.getReference(APP_NAME)
+
+    // ================= Storage ==================
+
+    val storageReference: StorageReference = firebaseStorage.reference
+    val storageChatsRef: StorageReference = storageReference.child(NODE_CHATS_ROOT)
+    val storageUsersRef: StorageReference = storageReference.child(NODE_USERS_ROOT)
+    val storageGroupChatRef: StorageReference = storageReference.child(NODE_GROUPS_ROOT)
+
 
 }

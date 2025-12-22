@@ -148,7 +148,7 @@ object Constants {
     // ==============================
     // Message Types & States
     // ==============================
-    const val MAXCHATSIZE = 10000
+    const val MAX_CHAT_SIZE = 10_000
 
     const val MSG_TYPE_LEFT: Int = 1
     const val MSG_TYPE_MID: Int = 0
@@ -215,6 +215,7 @@ object Constants {
     const val PROFILE_PHOTO = "profile.jpg"
     const val EXTENSION_AUDIO = ".m4a"
     const val EXTENSION_IMAGE = ".jpg"
+    const val KEY_SEPARATOR = "_"
 
     // ==============================
     // Groups Logic (Sub-nodes)

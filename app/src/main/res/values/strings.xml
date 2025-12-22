@@ -52,9 +52,14 @@
 
     <string name="menu_edit_profile">Editar Perfil</string>
 
-    <string name="menu_groups">Salas</string>
+    <string name="menu_groups">Grupos</string>
     <string name="menu_users">Personas</string>
     <string name="menu_chat">Chat</string>
+
+    <string name="tab_group_users">Personas</string>
+    <string name="tab_group_chat">Chat</string>
+    <string name="tab_group_chats">Privados</string>
+
 
     <string name="menu_unblock_users">Desbloquear usuarios</string>
     <string name="menu_favorites">Favoritos</string>

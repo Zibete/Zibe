@@ -5,8 +5,10 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
@@ -49,11 +51,7 @@ data class DeleteResult(
 )
 
 // ✅ Nuevo: events con item (incluye id)
-sealed class ChatChildEvent {
-    data class Added(val item: ChatMessageItem) : ChatChildEvent()
-    data class Changed(val item: ChatMessageItem) : ChatChildEvent()
-    data class Removed(val item: ChatMessageItem) : ChatChildEvent()
-}
+
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
@@ -69,13 +67,13 @@ class ChatRepository @Inject constructor(
         val chatId = getChatId(otherUid)
 
         val refAudios =
-            firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS_ROOT/$nodeType/$chatId/")
+            firebaseRefsContainer.storageChatsRef
+                .child("$nodeType/$chatId/")
                 .child("$PATH_AUDIOS/")
 
         val refPhotos =
-            firebaseRefsContainer.firebaseStorage.reference
-                .child("$NODE_CHATS_ROOT/$nodeType/$chatId/")
+            firebaseRefsContainer.storageChatsRef
+                .child("$nodeType/$chatId/")
                 .child("$PATH_PHOTOS/")
 
         val refChat =
@@ -140,10 +138,6 @@ class ChatRepository @Inject constructor(
         chatRefs.refChat.addChildEventListener(listener)
         awaitClose { chatRefs.refChat.removeEventListener(listener) }
     }
-
-
-
-
 
     suspend fun getConversation(
         firstUid: String,

@@ -2,8 +2,8 @@ package com.zibete.proyecto1.ui.groups.host
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -11,7 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.model.GroupChatItem
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import kotlinx.coroutines.launch
@@ -22,12 +23,14 @@ fun GroupChatTab(
     onSendText: (String) -> Unit,
     onSendPhoto: (Uri) -> Unit
 ) {
+
+
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
     var text by remember { mutableStateOf("") }
 
-    val picker = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) onSendPhoto(uri)
     }
 
@@ -55,7 +58,6 @@ fun GroupChatTab(
                     key = { idx -> state.messages[idx].id }
                 ) { idx ->
                     GroupChatRow(
-                        myUid = state.myUid,
                         item = state.messages[idx]
                     )
                     Spacer(Modifier.height(8.dp))
@@ -80,12 +82,23 @@ fun GroupChatTab(
                 singleLine = true
             )
 
+            val picker = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.PickVisualMedia(),
+                onResult = { uri -> /* ... */ }
+            )
+
             IconButton(
                 enabled = !state.isSending,
-                onClick = { picker.launch(PickVisualMedia.Request(ImageOnly)) }
+                onClick = {
+                    picker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
             ) {
                 Text("📷")
             }
+
+
 
             Button(
                 enabled = !state.isSending && text.isNotBlank(),
@@ -103,13 +116,15 @@ fun GroupChatTab(
 
 @Composable
 private fun GroupChatRow(
-    myUid: String,
-    item: GroupChatItem
+    item: ChatGroupItem
 ) {
-    val m = item.message
-    val isMine = m.senderUid == myUid
+    val message = item.message
 
-    val who = if (m.nameUser.isBlank()) "?" else m.nameUser
+    val groupHostViewModel: GroupHostViewModel = hiltViewModel()
+
+    val isMine = message.senderUid == groupHostViewModel.myUid
+
+    val who = message.nameUser.ifBlank { "?" }
     val header = if (isMine) "Yo ($who)" else who
 
     Card(Modifier.fillMaxWidth()) {
@@ -117,14 +132,17 @@ private fun GroupChatRow(
             Text(header)
             Spacer(Modifier.height(4.dp))
 
-            when (m.chatType) {
-                MSG_PHOTO -> Text("📷 foto: ${m.content}")
-                MSG_TEXT -> Text(m.content)
-                else -> Text(m.content)
+            when (message.chatType) {
+                MSG_PHOTO -> Text("📷 foto: ${message.content}")
+                MSG_TEXT -> Text(message.content)
+                else -> Text(message.content)
             }
 
             Spacer(Modifier.height(6.dp))
-            Text(m.timestamp, style = MaterialTheme.typography.labelSmall)
+            Text(
+                text = message.timestamp.toString(),
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }

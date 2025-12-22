@@ -5,6 +5,7 @@ import android.net.Uri
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
@@ -33,7 +34,6 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
 import com.zibete.proyecto1.utils.Utils
@@ -131,10 +131,13 @@ class UserRepository @Inject constructor(
             .child(NODE_CLIENT_DATA)
             .child(NODE_ACTIVE_VIEW)
 
-    fun chatListRef(uid: String = myUid) =
+    private fun chatListRef(uid: String = myUid) =
         firebaseRefsContainer.refData.child(uid)
             .child(NODE_CLIENT_DATA)
             .child(NODE_CHATLIST)
+
+    private fun readGroupMessagesRef(uid: String = myUid): DatabaseReference =
+        chatListRef(uid).child(ChatListKeys.READ_GROUP_MESSAGES)
 
     private fun activeThreadRef(uid: String = myUid) =
         activeViewRef(uid).child(ActiveViewKeys.ACTIVE_THREAD)
@@ -145,8 +148,7 @@ class UserRepository @Inject constructor(
 
     fun getProfilePhotoStoragePath(
         fileName: String = PROFILE_PHOTO
-    ) = firebaseRefsContainer.firebaseStorage.reference
-        .child(NODE_USERS_ROOT)
+    ) = firebaseRefsContainer.storageUsersRef
         .child(myUid)
         .child(PATH_PROFILE_PHOTOS)
         .child(fileName)
@@ -325,7 +327,7 @@ class UserRepository @Inject constructor(
     // UNREAD CHATS (Flow)  - suma unreadCount
     // ============================================================
 
-    fun observeUnreadChats(nodeType: String = NODE_DM): Flow<Int> = callbackFlow {
+    fun observeUnreadChatList(nodeType: String = NODE_DM): Flow<Int> = callbackFlow {
         // OLD: orderByChild("noVisto")
         val query = conversationsRootRef(myUid, nodeType)
             .orderByChild(ConversationKeys.UNREAD_COUNT)
@@ -574,15 +576,13 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun setReadGroupMessages(readCount: Int) {
-        chatListRef()
-            .child(ChatListKeys.READ_GROUP_MESSAGES)
+        readGroupMessagesRef()
             .setValue(readCount)
             .await()
     }
 
     suspend fun getReadGroupMessages(): Int {
-        return chatListRef()
-            .child(ChatListKeys.READ_GROUP_MESSAGES)
+        return readGroupMessagesRef()
             .get()
             .await()
             .getValue(Int::class.java) ?: 0

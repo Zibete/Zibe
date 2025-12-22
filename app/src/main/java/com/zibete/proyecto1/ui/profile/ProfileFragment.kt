@@ -244,7 +244,7 @@ class ProfileFragment : BaseChatSessionFragment() {
 
         adapterPhotoReceived = AdapterPhotoReceived(
             receivedPhotos,
-            Constants.MAXCHATSIZE,
+            Constants.MAX_CHAT_SIZE,
             requireContext()
         )
 

@@ -96,9 +96,9 @@ class MainViewModel @Inject constructor(
 
         // 2) Badge chats (siempre)
         viewModelScope.launch {
-            userRepository.observeUnreadChats()
+            userRepository.observeUnreadChatList()
                 .collect { count ->
-                    _uiState.update { it.copy(chatBadgeCount = count) }
+                    _uiState.update { it.copy(chatListBadgeCount = count) }
                 }
         }
 
@@ -109,11 +109,12 @@ class MainViewModel @Inject constructor(
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun observeGroupBadges() {
 
+        // Badge bottom nav = (unread chat grupo) + (unread privados dentro de grupo)
         viewModelScope.launch {
             userPreferencesDSRepository.groupContextFlow
-                .flatMapLatest { groupContext ->
-                    if (groupContext == null) flowOf(0)
-                    else groupRepository.groupsBottomNavBadgeCount(groupContext.groupName)
+                .flatMapLatest { ctx ->
+                    if (ctx == null) flowOf(0)
+                    else groupRepository.unreadGroupBadgeCount(ctx.groupName)
                 }
                 .distinctUntilChanged()
                 .collect { count ->
@@ -121,18 +122,34 @@ class MainViewModel @Inject constructor(
                 }
         }
 
+        // Badge tab chat de grupo
         viewModelScope.launch {
             userPreferencesDSRepository.groupContextFlow
-                .flatMapLatest { groupContext ->
-                    if (groupContext == null) flowOf(0)
-                    else groupRepository.groupChatUnreadCount(groupContext.groupName)
+                .flatMapLatest { ctx ->
+                    if (ctx == null) flowOf(0)
+                    else groupRepository.observeUnreadGroupChat(ctx.groupName)
                 }
                 .distinctUntilChanged()
                 .collect { count ->
-                    _uiState.update { it.copy(groupTabUnreadCount = count) }
+                    _uiState.update { it.copy(unreadGroupChatCount = count) }
+                }
+        }
+
+        // Badge privados dentro del grupo
+        viewModelScope.launch {
+            userPreferencesDSRepository.groupContextFlow
+                .flatMapLatest { ctx ->
+                    if (ctx == null) flowOf(0)
+                    else groupRepository.observeUnreadPrivateMessages()
+                    // ⚠️ Si querés que sea “solo del grupo actual”, tu repo tiene que filtrar por groupName.
+                }
+                .distinctUntilChanged()
+                .collect { count ->
+                    _uiState.update { it.copy(unreadPrivateMessagesCount = count) }
                 }
         }
     }
+
 
 
 
