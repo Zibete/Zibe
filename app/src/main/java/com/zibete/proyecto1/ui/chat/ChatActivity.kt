@@ -348,8 +348,7 @@ class ChatActivity : BaseChatSessionActivity() {
                     binding.linearDate.isVisible = true
                     binding.rvMsg.removeCallbacks(hideDateRunnable)
                     binding.rvMsg.postDelayed(hideDateRunnable, 2000)
-                    val date = adapter.getDate(first)
-                    binding.tvDate.text = date
+                    binding.tvDate.text = adapter.getDateChat(first)
                 } else {
                     binding.linearBack.isVisible = false
                     binding.linearDate.isVisible = false
@@ -641,8 +640,8 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
-        val elapsedMs = SystemClock.elapsedRealtime() - recordStartElapsed
-        val tooShort = elapsedMs < 1000L
+        val audioDurationMs = SystemClock.elapsedRealtime() - recordStartElapsed
+        val tooShort = audioDurationMs < 1000L
 
         try {
             mediaRecorder?.apply {
@@ -689,12 +688,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 return@launch
             }
 
-            val totalSeconds = elapsedMs / 1000
-            val mm = (totalSeconds / 60).toInt().toString().padStart(2, '0')
-            val ss = (totalSeconds % 60).toInt().toString().padStart(2, '0')
-            val duration = "$mm:$ss"
-
-            chatViewModel.onSendAudio(url, duration)
+            chatViewModel.onSendAudio(url, audioDurationMs)
 
             runCatching { contentResolver.delete(localUri, null, null) }
         }

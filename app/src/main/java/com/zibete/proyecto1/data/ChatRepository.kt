@@ -1,11 +1,12 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatChildEvent
@@ -13,8 +14,7 @@ import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
-import com.zibete.proyecto1.ui.constants.Constants.ChatKeys
-import com.zibete.proyecto1.ui.constants.Constants.ChatListKeys
+import com.zibete.proyecto1.ui.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.ui.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
@@ -27,8 +27,6 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import kotlinx.coroutines.channels.awaitClose
@@ -55,9 +53,16 @@ data class DeleteResult(
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository
+    private val firebaseAuth: FirebaseAuth
 ) {
-    private val myUid: String get() = userRepository.myUid
+
+    val firebaseUser: FirebaseUser
+        get() = checkNotNull(firebaseAuth.currentUser) {
+            "User must be logged in to access this property"
+        }
+
+    val myUid: String
+        get() = firebaseUser.uid
 
     fun buildChatRefs(
         otherUid: String,
@@ -205,7 +210,7 @@ class ChatRepository @Inject constructor(
         unReadCount: Int
     ) {
         val snapshot = chatRefs.refChat
-            .orderByChild(ChatKeys.DATE)
+            .orderByChild(ChatMessageKeys.CREATED_AT)
             .limitToLast(unReadCount)
             .get()
             .await()
@@ -213,8 +218,8 @@ class ChatRepository @Inject constructor(
         if (!snapshot.exists()) return
 
         for (snap in snapshot.children) {
-            if (snap.hasChild(ChatKeys.SEEN)) {
-                snap.ref.child(ChatKeys.SEEN).setValue(MSG_SEEN)
+            if (snap.hasChild(ChatMessageKeys.SEEN)) {
+                snap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_SEEN)
             }
         }
     }
@@ -247,10 +252,10 @@ class ChatRepository @Inject constructor(
             val msgSnap = chatRefs.refChat.child(id).get().await()
             if (!msgSnap.exists()) continue
 
-            val type = msgSnap.child(ChatKeys.TYPE).getValue(Int::class.java) ?: continue
+            val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: continue
             val senderUid =
-                msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: continue
-            val content = msgSnap.child(ChatKeys.CONTENT).getValue(String::class.java).orEmpty()
+                msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java) ?: continue
+            val content = msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java).orEmpty()
 
             processSoftDeleteOrRemove(
                 chatRefs = chatRefs,
@@ -282,9 +287,9 @@ class ChatRepository @Inject constructor(
 
         if (senderUid == myUid) {
             when (type) {
-                MSG_TEXT -> msgRef.child(ChatKeys.TYPE).setValue(MSG_TEXT_SENDER_DLT).await()
-                MSG_PHOTO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_PHOTO_SENDER_DLT).await()
-                MSG_AUDIO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT).await()
+                MSG_TEXT -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_SENDER_DLT).await()
+                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_SENDER_DLT).await()
+                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT).await()
 
                 MSG_TEXT_RECEIVER_DLT -> msgRef.removeValue().await()
 
@@ -300,9 +305,9 @@ class ChatRepository @Inject constructor(
             }
         } else {
             when (type) {
-                MSG_TEXT -> msgRef.child(ChatKeys.TYPE).setValue(MSG_TEXT_RECEIVER_DLT).await()
-                MSG_PHOTO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_PHOTO_RECEIVER_DLT).await()
-                MSG_AUDIO -> msgRef.child(ChatKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT).await()
+                MSG_TEXT -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_RECEIVER_DLT).await()
+                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_RECEIVER_DLT).await()
+                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT).await()
 
                 MSG_TEXT_SENDER_DLT -> msgRef.removeValue().await()
 
@@ -340,9 +345,9 @@ class ChatRepository @Inject constructor(
 
         var deletedCount = 0
         snapshot.children.forEach { child ->
-            val type = child.child(ChatKeys.TYPE).getValue(Int::class.java) ?: return@forEach
+            val type = child.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: return@forEach
             val senderUid =
-                child.child(ChatKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
+                child.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
 
             if (senderUid == myUid) {
                 when (type) {
@@ -432,7 +437,7 @@ class ChatRepository @Inject constructor(
         val messagesDs = firebaseRefsContainer.refChatsRoot
             .child(nodeType)
             .child(chatId)
-            .orderByChild(ChatKeys.DATE)
+            .orderByChild(ChatMessageKeys.CREATED_AT)
             .limitToLast(unSeen)
             .get()
             .await()
@@ -440,9 +445,9 @@ class ChatRepository @Inject constructor(
         if (!messagesDs.exists()) return
 
         for (msgSnap in messagesDs.children) {
-            val sender = msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java)
-            if (sender != null && sender != myUid && msgSnap.hasChild(ChatKeys.SEEN)) {
-                msgSnap.ref.child(ChatKeys.SEEN).setValue(MSG_RECEIVED).await()
+            val sender = msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
+            if (sender != null && sender != myUid && msgSnap.hasChild(ChatMessageKeys.SEEN)) {
+                msgSnap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_RECEIVED).await()
             }
         }
     }

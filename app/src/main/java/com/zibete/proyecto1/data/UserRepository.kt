@@ -2,6 +2,7 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -18,7 +19,7 @@ import com.zibete.proyecto1.ui.constants.Constants.StatusKeys
 import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.ui.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.ui.constants.Constants.ActiveViewKeys
-import com.zibete.proyecto1.ui.constants.Constants.ChatKeys
+import com.zibete.proyecto1.ui.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.ui.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.ui.constants.Constants.ConversationKeys
 
@@ -28,7 +29,7 @@ import com.zibete.proyecto1.ui.constants.Constants.EMPTY
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_VIEW
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
@@ -36,8 +37,9 @@ import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
-import com.zibete.proyecto1.utils.Utils
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.utils.TimeUtils.formatLastSeen
+import com.zibete.proyecto1.utils.TimeUtils.now
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -57,8 +59,8 @@ private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await()
 @Singleton
 class UserRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userSessionManager: UserSessionManager,
     private val chatRepository: ChatRepository,
+    private val firebaseAuth: FirebaseAuth,
     private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
 ) {
@@ -66,9 +68,23 @@ class UserRepository @Inject constructor(
     // ============================================================
     // SESSION (cache local)
     // ============================================================
+    val currentUser: FirebaseUser?
+        get() = firebaseAuth.currentUser
 
-    val myUid get() = userSessionManager.myUid
-    val firebaseUser get() = userSessionManager.firebaseUser
+    val firebaseUser: FirebaseUser
+        get() = checkNotNull(firebaseAuth.currentUser) {
+            "User must be logged in to access this property"
+        }
+
+    val myUid: String
+        get() = firebaseUser.uid
+
+
+
+
+
+//    val myUid get() = userSessionManager.myUid
+//    val firebaseUser get() = userSessionManager.firebaseUser
 
     var myUserName: String = ""
         private set
@@ -85,13 +101,7 @@ class UserRepository @Inject constructor(
         myEmail = email
     }
 
-    val latitude: Double get() = userSessionManager.latitude
-    val longitude: Double get() = userSessionManager.longitude
 
-    fun updateMyLocation(lat: Double, lon: Double) {
-        userSessionManager.latitude = lat
-        userSessionManager.longitude = lon
-    }
 
     // ============================================================
     // Refs helpers (RTDB)
@@ -134,7 +144,7 @@ class UserRepository @Inject constructor(
     private fun chatListRef(uid: String = myUid) =
         firebaseRefsContainer.refData.child(uid)
             .child(NODE_CLIENT_DATA)
-            .child(NODE_CHATLIST)
+            .child(NODE_CHAT_LIST)
 
     private fun readGroupMessagesRef(uid: String = myUid): DatabaseReference =
         chatListRef(uid).child(ChatListKeys.READ_GROUP_MESSAGES)
@@ -246,7 +256,7 @@ class UserRepository @Inject constructor(
             name = firebaseUser.displayName.orEmpty(),
             birthDate = birthDate,
             createdAt = now(),
-            age = Utils.calcAge(birthDate),
+            age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate),
             email = email,
             photoUrl = photoUrl,
             isOnline = true,
@@ -364,9 +374,9 @@ class UserRepository @Inject constructor(
 
         fun collectFrom(snapshot: DataSnapshot) {
             snapshot.children.forEach { msgSnap ->
-                val type = msgSnap.child(ChatKeys.TYPE).getValue(Int::class.java)
-                val senderUid = msgSnap.child(ChatKeys.SENDER_UID).getValue(String::class.java)
-                val content = msgSnap.child(ChatKeys.CONTENT).getValue(String::class.java)
+                val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java)
+                val senderUid = msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
+                val content = msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java)
 
                 // mantenemos tu regla: fotos enviadas por el otro
                 if (!senderUid.isNullOrBlank() && senderUid != myUid) {
@@ -439,7 +449,7 @@ class UserRepository @Inject constructor(
 
         // OLD: "wUserPhoto" / EMPTY
         val photo =
-            snapshot.child(ConversationKeys.OTHER_PHOTO).getValue(String::class.java).orEmpty()
+            snapshot.child(ConversationKeys.OTHER_PHOTO_URL).getValue(String::class.java).orEmpty()
         if (photo == EMPTY) {
             chatRef.removeValue().await()
             return
@@ -455,8 +465,7 @@ class UserRepository @Inject constructor(
     ): Conversation {
         return Conversation(
             lastContent = "Chat vacío",
-            lastDate = now(),
-            date = null, // no firebase
+            lastMessageAt = now(),
             userId = myUid,
             otherId = otherUid,
             otherName = otherName,
@@ -510,7 +519,7 @@ class UserRepository @Inject constructor(
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
 
-                val base = snapshot.toUserStatus { ms -> Utils.formatLastSeen(ms) }
+                val base = snapshot.toUserStatus { ms -> formatLastSeen(ms, context) }
 
                 if (base !is UserStatus.TypingOrRecording) {
                     trySend(base)

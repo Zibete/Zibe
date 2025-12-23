@@ -13,7 +13,7 @@ object ChatListDiffCallback : DiffUtil.ItemCallback<Conversation>() {
         return oldItem.otherName == newItem.otherName &&
                 oldItem.otherPhotoUrl == newItem.otherPhotoUrl &&
                 oldItem.lastContent == newItem.lastContent &&
-                oldItem.lastDate == newItem.lastDate &&
+                oldItem.lastMessageAt == newItem.lastMessageAt &&
                 oldItem.unreadCount == newItem.unreadCount &&
                 oldItem.seen == newItem.seen &&
                 oldItem.userId == newItem.userId &&
@@ -26,7 +26,7 @@ object ChatListDiffCallback : DiffUtil.ItemCallback<Conversation>() {
         if (oldItem.otherName != newItem.otherName) changed += "name"
         if (oldItem.otherPhotoUrl != newItem.otherPhotoUrl) changed += "photo"
         if (oldItem.lastContent != newItem.lastContent) changed += "msg"
-        if (oldItem.lastDate != newItem.lastDate) changed += "time"
+        if (oldItem.lastMessageAt != newItem.lastMessageAt) changed += "time"
         if (oldItem.unreadCount != newItem.unreadCount) changed += "unread"
         if (oldItem.seen != newItem.seen || oldItem.userId != newItem.userId) changed += "checks"
         if (oldItem.state != newItem.state) changed += "state"

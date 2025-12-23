@@ -12,6 +12,7 @@ import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Chronometer
 import android.widget.ImageView
 import android.widget.SeekBar
 import androidx.core.content.ContextCompat
@@ -31,10 +32,10 @@ import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_AUDIO_SENDER_DLT
+import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
@@ -45,9 +46,11 @@ import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_LEFT
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.ui.constants.Constants.MSG_TYPE_RIGHT
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
-import com.zibete.proyecto1.utils.Utils.today
-import com.zibete.proyecto1.utils.Utils.yesterday
+import com.zibete.proyecto1.utils.TimeUtils
+import com.zibete.proyecto1.utils.TimeUtils.formatHour
+import com.zibete.proyecto1.utils.Utils
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.widthPx
+import de.hdodenhof.circleimageview.CircleImageView
 import java.io.IOException
 
 class AdapterChat(
@@ -101,9 +104,11 @@ class AdapterChat(
             MSG_TYPE_MID -> InfoVH(RowDateChatBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
+
             MSG_TYPE_RIGHT -> RightVH(RowMsgRightBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
+
             else -> LeftVH(RowMsgLeftBinding.inflate(inf, parent, false)).also {
                 it.itemView.setOnCreateContextMenuListener(this)
             }
@@ -124,7 +129,11 @@ class AdapterChat(
         positionForContext = position
     }
 
-    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+    override fun onCreateContextMenu(
+        menu: ContextMenu,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
         menu.add(FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.eliminar)
     }
     // endregion
@@ -132,11 +141,12 @@ class AdapterChat(
     // region ViewHolders
     private class InfoVH(private val b: RowDateChatBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(msg: ChatMessage) {
-            b.tvInfo.text = msg.content.orEmpty()
+            b.tvInfo.text = msg.content
         }
     }
 
-    private inner class RightVH(private val b: RowMsgRightBinding) : RecyclerView.ViewHolder(b.root) {
+    private inner class RightVH(private val b: RowMsgRightBinding) :
+        RecyclerView.ViewHolder(b.root) {
         private var mediaState: MediaState = MediaState.NOT_STARTED
 
         fun bind(item: ChatMessageItem) {
@@ -150,11 +160,14 @@ class AdapterChat(
 
             // selection bg
             b.selectedItem.setBackgroundColor(
-                ContextCompat.getColor(context, if (isSelected(item)) R.color.accent_transparent else R.color.transparent)
+                ContextCompat.getColor(
+                    context,
+                    if (isSelected(item)) R.color.accent_transparent else R.color.transparent
+                )
             )
 
             // time
-            b.horaMsg.text = msg.date.safeSub(11, 16)
+            b.horaMsg.text = formatHour(msg.createdAt)
 
             // click + long click
             wireSelection(
@@ -169,8 +182,9 @@ class AdapterChat(
             // content render
             when {
                 msg.type.isText() -> {
-                    b.tvMsg.text = msg.content.orEmpty()
+                    b.tvMsg.text = msg.content
                 }
+
                 msg.type.isPhoto() -> {
                     renderPhoto(
                         image = b.imgPic,
@@ -179,6 +193,7 @@ class AdapterChat(
                         url = msg.content.orEmpty()
                     )
                 }
+
                 msg.type.isAudio() -> {
                     renderAudio(
                         isMe = true,
@@ -208,10 +223,13 @@ class AdapterChat(
             b.linearMensajeAudio.isVisible = msg.type.isAudio()
 
             b.selectedItem.setBackgroundColor(
-                ContextCompat.getColor(context, if (isSelected(item)) R.color.accent_transparent else R.color.transparent)
+                ContextCompat.getColor(
+                    context,
+                    if (isSelected(item)) R.color.accent_transparent else R.color.transparent
+                )
             )
 
-            b.horaMsg.text = msg.date.safeSub(11, 16)
+            b.horaMsg.text = formatHour(msg.createdAt)
 
             wireSelection(
                 item = item,
@@ -227,6 +245,7 @@ class AdapterChat(
                 msg.type.isText() -> {
                     b.tvMsg.text = msg.content.orEmpty()
                 }
+
                 msg.type.isPhoto() -> {
                     renderPhoto(
                         image = b.imgPic,
@@ -235,6 +254,7 @@ class AdapterChat(
                         url = msg.content.orEmpty()
                     )
                 }
+
                 msg.type.isAudio() -> {
                     renderAudio(
                         isMe = false,
@@ -334,8 +354,12 @@ class AdapterChat(
             1 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = false
-                b.checked.setColorFilter(ContextCompat.getColor(context, R.color.blanco), PorterDuff.Mode.SRC_IN)
+                b.checked.setColorFilter(
+                    ContextCompat.getColor(context, R.color.blanco),
+                    PorterDuff.Mode.SRC_IN
+                )
             }
+
             2 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = true
@@ -343,6 +367,7 @@ class AdapterChat(
                 b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             }
+
             3 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = true
@@ -350,6 +375,7 @@ class AdapterChat(
                 b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             }
+
             else -> {
                 b.checked.isVisible = false
                 b.checked2.isVisible = false
@@ -396,21 +422,34 @@ class AdapterChat(
         msg: ChatMessage,
         icPlayPause: ImageView,
         seekBar: SeekBar,
-        tvTimer: android.widget.Chronometer,
-        circle: de.hdodenhof.circleimageview.CircleImageView,
+        tvTimer: Chronometer,
+        circle: CircleImageView,
         getState: () -> MediaState,
         setState: (MediaState) -> Unit
     ) {
         Glide.with(context).load(avatarUrl).into(circle)
 
-        tvTimer.text = msg.date.safeSub(23, 28)
+        tvTimer.text = TimeUtils.formatAudioDuration(msg.audioDurationMs)
+
         seekBar.progress = 0
         seekBar.max = 0
-        icPlayPause.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_baseline_play_arrow_24))
+        icPlayPause.setImageDrawable(
+            ContextCompat.getDrawable(
+                context,
+                R.drawable.ic_baseline_play_arrow_24
+            )
+        )
 
         icPlayPause.setOnClickListener {
             when (getState()) {
-                MediaState.NOT_STARTED -> playAudio(msg.content.orEmpty(), icPlayPause, seekBar, tvTimer, setState)
+                MediaState.NOT_STARTED -> playAudio(
+                    msg.content.orEmpty(),
+                    icPlayPause,
+                    seekBar,
+                    tvTimer,
+                    setState
+                )
+
                 MediaState.PLAY -> pauseAudio(icPlayPause, seekBar, tvTimer, msg, setState)
                 MediaState.PAUSE -> continueAudio(icPlayPause, tvTimer, setState)
             }
@@ -424,6 +463,7 @@ class AdapterChat(
                     tvTimer.base = SystemClock.elapsedRealtime() - progress
                 }
             }
+
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
@@ -435,7 +475,7 @@ class AdapterChat(
         url: String,
         icPlayPause: ImageView,
         seekBar: SeekBar,
-        tvTimer: android.widget.Chronometer,
+        tvTimer: Chronometer,
         setState: (MediaState) -> Unit
     ) {
         mediaPlayer?.let { onCompletion(icPlayPause, seekBar, tvTimer, setState) }
@@ -456,7 +496,12 @@ class AdapterChat(
         mediaPlayer = MediaPlayer().apply {
             setOnCompletionListener { onCompletion(icPlayPause, seekBar, tvTimer, setState) }
             setOnPreparedListener {
-                icPlayPause.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_baseline_pause_24))
+                icPlayPause.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        context,
+                        R.drawable.ic_baseline_pause_24
+                    )
+                )
                 seekTo(mediaSelectedMs.toInt())
                 start()
                 tvTimer.base = SystemClock.elapsedRealtime() - mediaSelectedMs
@@ -476,7 +521,7 @@ class AdapterChat(
 
     private fun continueAudio(
         icPlayPause: ImageView,
-        tvTimer: android.widget.Chronometer,
+        tvTimer: Chronometer,
         setState: (MediaState) -> Unit
     ) {
         setState(MediaState.PLAY)
@@ -488,13 +533,18 @@ class AdapterChat(
         }
         tvTimer.start()
         mediaPlayer?.start()
-        icPlayPause.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_baseline_pause_24))
+        icPlayPause.setImageDrawable(
+            ContextCompat.getDrawable(
+                context,
+                R.drawable.ic_baseline_pause_24
+            )
+        )
     }
 
     private fun pauseAudio(
         icPlayPause: ImageView,
         seekBar: SeekBar,
-        tvTimer: android.widget.Chronometer,
+        tvTimer: Chronometer,
         msg: ChatMessage,
         setState: (MediaState) -> Unit
     ) {
@@ -503,29 +553,41 @@ class AdapterChat(
         chronStateSave = SystemClock.elapsedRealtime()
 
         tvTimer.stop()
-        tvTimer.text = msg.date.safeSub(23, 28)
-
+        tvTimer.text = TimeUtils.formatAudioDuration(msg.audioDurationMs)
         mediaPlayer?.pause()
         seekBar.progress = mediaPlayer?.currentPosition ?: 0
 
-        icPlayPause.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_baseline_play_arrow_24))
+        icPlayPause.setImageDrawable(
+            ContextCompat.getDrawable(
+                context,
+                R.drawable.ic_baseline_play_arrow_24
+            )
+        )
     }
 
     private fun onCompletion(
         icPlayPause: ImageView,
         seekBar: SeekBar,
-        tvTimer: android.widget.Chronometer,
+        tvTimer: Chronometer,
         setState: (MediaState) -> Unit
     ) {
         setState(MediaState.NOT_STARTED)
-        icPlayPause.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_baseline_play_arrow_24))
+        icPlayPause.setImageDrawable(
+            ContextCompat.getDrawable(
+                context,
+                R.drawable.ic_baseline_play_arrow_24
+            )
+        )
         tvTimer.stop()
 
         handler?.removeCallbacks(moveSeekBarThread ?: return)
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
 
-        try { mediaPlayer?.stop() } catch (_: Exception) {}
+        try {
+            mediaPlayer?.stop()
+        } catch (_: Exception) {
+        }
         mediaPlayer?.release()
         mediaPlayer = null
 
@@ -534,15 +596,12 @@ class AdapterChat(
     // endregion
 
     // region Public helpers
-    fun getDate(position: Int): String {
-        val date = getItemOrNull(position)?.message?.date?.safeSub(0, 10) ?: return ""
+    fun getDateChat(position: Int): String {
+        val millis = getItemOrNull(position)?.message?.createdAt ?: return ""
 
-        return when (date) {
-            today() -> context.getString(R.string.today)
-            yesterday() -> context.getString(R.string.yesterday)
-            else -> date
-        }
+        return TimeUtils.formatDateChatTimestamp(millis, context)
     }
+
     // endregion
 
     // region Utils
@@ -565,7 +624,11 @@ class AdapterChat(
         val s = this ?: return ""
         if (start < 0 || end <= start || start >= s.length) return ""
         val e = end.coerceAtMost(s.length)
-        return try { s.substring(start, e) } catch (_: Exception) { "" }
+        return try {
+            s.substring(start, e)
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     private fun getItemOrNull(position: Int): ChatMessageItem? =
@@ -575,13 +638,20 @@ class AdapterChat(
     private enum class MediaState { NOT_STARTED, PLAY, PAUSE }
 
     companion object {
-        @JvmField var mediaPlayer: MediaPlayer? = null
+        @JvmField
+        var mediaPlayer: MediaPlayer? = null
 
         val DIFF = object : DiffUtil.ItemCallback<ChatMessageItem>() {
-            override fun areItemsTheSame(oldItem: ChatMessageItem, newItem: ChatMessageItem): Boolean =
+            override fun areItemsTheSame(
+                oldItem: ChatMessageItem,
+                newItem: ChatMessageItem
+            ): Boolean =
                 oldItem.id == newItem.id
 
-            override fun areContentsTheSame(oldItem: ChatMessageItem, newItem: ChatMessageItem): Boolean =
+            override fun areContentsTheSame(
+                oldItem: ChatMessageItem,
+                newItem: ChatMessageItem
+            ): Boolean =
                 oldItem.message == newItem.message
         }
     }

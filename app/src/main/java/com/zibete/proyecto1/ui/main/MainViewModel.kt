@@ -202,6 +202,7 @@ class MainViewModel @Inject constructor(
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
+            userRepository.setUserLastSeen()
             val intent = userSessionManager.logOutCleanup()
             _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
         }

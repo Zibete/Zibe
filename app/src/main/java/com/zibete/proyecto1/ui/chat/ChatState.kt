@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.ui.chat
 
-import com.zibete.proyecto1.model.ChatMessage
+import android.net.Uri
 import com.zibete.proyecto1.model.ChatMessageItem
 
 data class ChatState(

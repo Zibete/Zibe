@@ -185,11 +185,4 @@ object UserMessageUtils {
     }
 
 
-    /**
-     * Muestra un Toast con el mensaje dado estilo Zibe.
-     */
-    private fun toast(ctx: Context, msg: String) {
-        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
-    }
-
 }

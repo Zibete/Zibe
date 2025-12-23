@@ -8,6 +8,7 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
@@ -34,6 +35,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val userRepository: UserRepository,
+    private val userSessionManager: UserSessionManager,
     private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
     private val locationRepository: LocationRepository,
@@ -87,8 +89,8 @@ class ProfileViewModel @Inject constructor(
 
     fun getDistanceToUser(profile: Users): String {
         val distanceMeters = locationRepository.getDistanceMeters(
-            userRepository.latitude,
-            userRepository.longitude,
+            userSessionManager.latitude,
+            userSessionManager.longitude,
             profile.latitude,
             profile.longitude
         )

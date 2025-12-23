@@ -101,12 +101,12 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
         if (isInActiveGroup) return
 
-        notificationHelper.showGroupNotification(
-            groupName = groupName,
-            unreadCount = payloadUnreadCount, // viene del push
-            lastSenderName = otherName,
-            lastMessage = content
-        )
+//        notificationHelper.showGroupNotification(
+//            groupName = groupName,
+//            unreadCount = payloadUnreadCount, // viene del push
+//            lastSenderName = otherName,
+//            lastMessage = content
+//        )
 
     }
 }

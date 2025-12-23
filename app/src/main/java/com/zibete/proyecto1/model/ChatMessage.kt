@@ -13,7 +13,8 @@ data class ChatMessageItem(
 )
 data class ChatMessage(
     var content: String = "",
-    var date: String = "",
+    var createdAt: Long = 0L,
+    var audioDurationMs: Long = 0L,
     var senderUid: String = "",
     var type: Int = 0,
     var seen: Int = 0
@@ -22,9 +23,10 @@ data class ChatMessage(
     override fun equals(other: Any?): Boolean =
         other is ChatMessage &&
                 content == other.content &&
-                date == other.date &&
+                createdAt == other.createdAt &&
                 senderUid == other.senderUid
 
     override fun hashCode(): Int =
-        listOf(date, content, senderUid).hashCode()
+        listOf(createdAt, content, senderUid).hashCode()
 }
+

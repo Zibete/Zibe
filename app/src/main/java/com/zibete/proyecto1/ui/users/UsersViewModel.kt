@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.utils.Utils
+import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ import javax.inject.Inject
 class UsersViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val userSessionManager: UserSessionManager,
     val locationRepository: LocationRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
@@ -64,11 +66,11 @@ class UsersViewModel @Inject constructor(
 
                     val user = child.getValue(Users::class.java) ?: continue
 
-                    user.age = Utils.calcAge(user.birthDate)
+                    user.age = ageCalculator(user.birthDate)
 
                     user.distanceMeters = locationRepository.getDistanceMeters(
-                        userRepository.latitude,
-                        userRepository.longitude,
+                        userSessionManager.latitude,
+                        userSessionManager.longitude,
                         user.latitude,
                         user.longitude
                     )

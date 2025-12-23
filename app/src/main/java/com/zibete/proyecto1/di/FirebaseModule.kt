@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.di
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -12,6 +13,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object FirebaseModule {
+
+    @Provides
+    @Singleton
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
 
     @Provides @Singleton
     fun provideFirebaseDatabase(): FirebaseDatabase = FirebaseDatabase.getInstance()

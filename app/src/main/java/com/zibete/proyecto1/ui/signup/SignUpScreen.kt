@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.signup
 
+import android.provider.Settings.Global.getString
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -52,7 +53,9 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.utils.Utils.millisToBirthDate
+import com.zibete.proyecto1.utils.TimeUtils.isoToMillis
+import com.zibete.proyecto1.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.utils.TimeUtils.millisToIso
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -70,7 +73,7 @@ fun SignUpScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    var birthday by rememberSaveable { mutableStateOf("") }
+    var birthDate by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
@@ -190,14 +193,14 @@ fun SignUpScreen(
                 // FECHA DE NACIMIENTO
                 Box {
                     ZibeInputField(
-                        value = birthday,
+                        value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
                         onValueChange = { },
-                        label = "Fecha de nacimiento",
+                        label = stringResource(R.string.birthDate),
                         modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar_24),
-                                contentDescription = "Fecha de nacimiento",
+                                contentDescription = stringResource(R.string.birthDate),
                                 tint = colorResource(id = R.color.zibe_text_muted)
                             )
                         },
@@ -212,15 +215,18 @@ fun SignUpScreen(
                 }
 
                 if (showDatePicker) {
-                    val datePickerState = rememberDatePickerState()
+                    val datePickerState = rememberDatePickerState(
+                        initialSelectedDateMillis = birthDate
+                            .takeIf { it.isNotBlank() }
+                            ?.let { isoToMillis(it) }
+                    )
 
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
                             TextButton(onClick = {
-                                datePickerState.selectedDateMillis?.let { millis ->
-                                    val formatted = millisToBirthDate(millis)
-                                    birthday = formatted
+                                datePickerState.selectedDateMillis?.let { ms ->
+                                    birthDate = millisToIso(ms)
                                 }
                                 showDatePicker = false
                             }) { Text("OK") }
@@ -269,7 +275,7 @@ fun SignUpScreen(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     text = stringResource(R.string.finalizar_registro),
-                    onClick = { onRegister(email, password, name, birthday, description) },
+                    onClick = { onRegister(email, password, name, birthDate, description) },
                     enabled = !isLoading,
                     isLoading = isLoading
                 )

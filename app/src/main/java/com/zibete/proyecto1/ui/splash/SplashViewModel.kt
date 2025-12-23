@@ -114,6 +114,7 @@ class SplashViewModel @Inject constructor(
 
     fun onLogoutRequested() {
         viewModelScope.launch {
+            userRepository.setUserLastSeen()
             val intent = userSessionManager.logOutCleanup()
             _events.emit(SplashUiEvent.Navigate(intent))
         }

@@ -5,8 +5,8 @@ import android.graphics.Typeface
 import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.view.View.OnCreateContextMenuListener
+import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
@@ -23,13 +23,12 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.utils.TimeUtils
+import com.zibete.proyecto1.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
@@ -90,7 +89,7 @@ class AdapterChatList(
         val ctx = b.root.context
 
         if ("state" in changes) applyCardState(b, chat)
-        if ("name" in changes) b.tvUsuario1.text = chat.otherName?.takeIf { it.isNotBlank() }
+        if ("name" in changes) b.tvUsuario1.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
         if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
         if ("msg" in changes) {
@@ -111,7 +110,7 @@ class AdapterChatList(
 
         applyCardState(b, chat)
 
-        b.tvUsuario1.text = chat.otherName?.takeIf { it.isNotBlank() }
+        b.tvUsuario1.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
 
         Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
@@ -124,7 +123,7 @@ class AdapterChatList(
                 }
         }
 
-        b.ultMsg.text = chat.lastContent.orEmpty()
+        b.ultMsg.text = chat.lastContent
         applyLastMsgStyle(b)
         setLastMsgTime(b, chat)
         bindUnreadBadge(b, chat)
@@ -183,25 +182,17 @@ class AdapterChatList(
         binding.ultMsg.setTypeface(null, if (isMedia) Typeface.ITALIC else Typeface.NORMAL)
     }
 
-    private fun setLastMsgTime(binding: RowChatlistaBinding, chat: Conversation) {
-        val dt = chat.lastDate.orEmpty()
-        if (dt.length < 10) {
-            binding.horaUltMsg.text = ""
-            return
-        }
-
-        val datePart = dt.substring(0, 10)
-        val today = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Calendar.getInstance().time)
-
-        val yesterdayCal = Calendar.getInstance().apply { add(Calendar.DATE, -1) }
-        val yesterday = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(yesterdayCal.time)
-
-        binding.horaUltMsg.text = when {
-            datePart == today -> if (dt.length >= 16) dt.substring(11, 16) else ""
-            datePart == yesterday -> binding.root.context.getString(R.string.yesterday)
-            else -> datePart
-        }
+    private fun setLastMsgTime(
+        binding: RowChatlistaBinding,
+        chat: Conversation
+    ) {
+        binding.horaUltMsg.text =
+            TimeUtils.formatConversationTimestamp(
+                ms = chat.lastMessageAt,
+                context = binding.root.context
+            )
     }
+
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
         val state = chat.state

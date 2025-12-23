@@ -10,7 +10,7 @@ data class Groups(
     var creatorUid: String = "",
     var type: Int = 0,
     var users: Int = 0,
-    var createdAt: String? = null,
+    var createdAt: Long = 0L,
     var totalMessages: Int = 0
 
 ) : Comparable<Groups>, Serializable {

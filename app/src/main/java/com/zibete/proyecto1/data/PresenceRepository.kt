@@ -1,13 +1,19 @@
 package com.zibete.proyecto1.data
 
 import android.content.Context
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Status
+import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CLIENT_DATA
+import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
+import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ACCOUNTS
 import com.zibete.proyecto1.ui.constants.Constants.StatusKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
@@ -18,20 +24,33 @@ import javax.inject.Singleton
 class PresenceRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository
+    private val firebaseAuth: FirebaseAuth
 ) {
 
     private var connectedListener: ValueEventListener? = null
 
+    private val myUid: String
+        get() = checkNotNull(firebaseAuth.currentUser) { "User must be logged in" }.uid
+
     private fun refConnected() =
         firebaseRefsContainer.firebaseDatabase.getReference(".info/connected")
 
+    private fun statusRef(): DatabaseReference =
+        firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_CLIENT_DATA)
+            .child(NODE_STATUS)
+
+    private fun accountIsOnlineRef(): DatabaseReference =
+        firebaseRefsContainer.refUsers
+            .child(NODE_USERS_ACCOUNTS)
+            .child(myUid)
+            .child(AccountsKeys.IS_ONLINE)
+
     suspend fun startPresence() {
         val connectedRef = refConnected()
-
-        val statusRef = userRepository.statusRef()
-
-        val accountOnlineRef = userRepository.accountIsOnlineRef()
+        val statusRef = statusRef()
+        val accountOnlineRef = accountIsOnlineRef()
 
         statusRef.onDisconnect().setValue(
             mapOf(
@@ -42,7 +61,6 @@ class PresenceRepository @Inject constructor(
 
         accountOnlineRef.onDisconnect().setValue(false).await()
 
-        // ---- ONLINE al conectar ----
         if (connectedListener != null) return
 
         val listener = object : ValueEventListener {
@@ -75,18 +93,18 @@ class PresenceRepository @Inject constructor(
     }
 
     suspend fun setActivityStatus(activity: String) {
-        userRepository.statusRef().setValue(Status(activity, 0L)).await()
-        userRepository.accountIsOnlineRef().setValue(true).await()
+        statusRef().setValue(Status(activity, 0L)).await()
+        accountIsOnlineRef().setValue(true).await()
     }
 
     suspend fun setLastSeenNow() {
-        userRepository.statusRef().setValue(
+        statusRef().setValue(
             mapOf(
                 StatusKeys.STATUS to context.getString(R.string.ultVez),
                 StatusKeys.LAST_SEEN_MS to ServerValue.TIMESTAMP
             )
         ).await()
-        userRepository.accountIsOnlineRef().setValue(false).await()
+        accountIsOnlineRef().setValue(false).await()
     }
 
 }

@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,8 +53,8 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -136,32 +135,33 @@ fun AuthScreen(
                             top = 0.dp)
                 )
 
-                // GOOGLE
-                SocialButton(
-                    text = "Continuar con Google",
-                    iconRes = R.drawable.ic_google,
-                    onClick = onGoogleClick
-                )
-
-                // FACEBOOK
-                SocialButton(
-                    text = "Continuar con Facebook",
-                    iconRes = R.drawable.ic_facebook,
-                    onClick = onFacebookClick
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(id = R.string.or_use_your_account),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = zibeColors.mutedText,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // Si no está marcada para eliminación, mostramos login normal
                 if (!deleteUser) {
+
+                    // GOOGLE
+                    SocialButton(
+                        text = "Continuar con Google",
+                        iconRes = R.drawable.ic_google,
+                        onClick = onGoogleClick
+                    )
+
+                    // FACEBOOK
+                    SocialButton(
+                        text = "Continuar con Facebook",
+                        iconRes = R.drawable.ic_facebook,
+                        onClick = onFacebookClick
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = stringResource(id = R.string.or_use_your_account),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = zibeColors.mutedText,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // EMAIL
                     ZibeInputField(
                         value = email,
@@ -265,21 +265,24 @@ fun AuthScreen(
                         )
                     }
                 } else {
+
                     // Modo "reactivar cuenta"
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = onDoNotDelete) {
-                        Text(
-                            text = stringResource(id = R.string.dont_delete_account),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = onDeleteAccount) {
-                        Text(
-                            text = stringResource(id = R.string.delete_account),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+
+                    ZibeButton(
+                        text = stringResource(id = R.string.dont_delete_account),
+                        onClick = { onDoNotDelete() },
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                        enabled = !isLoading,
+                        isLoading = isLoading
+                    )
+                    ZibeButton(
+                        text = stringResource(id = R.string.delete_account),
+                        onClick = { onDeleteAccount() },
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                        enabled = !isLoading,
+                        isLoading = isLoading
+                    )
+
                 }
             }
 

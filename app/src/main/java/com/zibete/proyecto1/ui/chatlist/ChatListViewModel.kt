@@ -77,7 +77,7 @@ class ChatListViewModel @Inject constructor(
 
                 val all = snapshot.children.mapNotNull { it.getValue(Conversation::class.java) }.toMutableList()
 
-                updateDatesAndSort(all)
+                all.sort()
 
                 // Visible = (foto != EMPTY) y (estado == NODE_CURRENT_CHAT o estado == SILENT)
                 val visible = all.filter { chat ->
@@ -118,23 +118,6 @@ class ChatListViewModel @Inject constructor(
                 filteredChats = filtered
             )
         }
-    }
-
-    @SuppressLint("SimpleDateFormat")
-    private fun updateDatesAndSort(list: MutableList<Conversation>) {
-        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-
-        list.forEach { chat ->
-            val dt = chat.lastDate
-            if (dt.isNullOrBlank()) return@forEach
-            try {
-                chat.date = format.parse(dt)
-            } catch (_: ParseException) {
-            }
-        }
-
-        // Respeta tu Comparable si existe (como venías usando)
-        list.sort()
     }
 
     override fun onCleared() {

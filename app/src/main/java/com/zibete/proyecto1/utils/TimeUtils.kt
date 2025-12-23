@@ -1,87 +1,98 @@
 package com.zibete.proyecto1.utils
 
-import android.text.Editable
-import android.text.TextWatcher
-import java.time.*
+import android.content.Context
+import com.zibete.proyecto1.R
+import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 object TimeUtils {
 
-    private val locale = Locale.getDefault()
-    private val zone = ZoneId.systemDefault()
+    private val UI_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    // Formateadores reutilizables (Evitan recolector de basura constante)
-    private val dayFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", locale)
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", locale)
-    private val fullFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", locale)
-    private val preciseFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss:SSS", locale)
+    private val UI_HOUR_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-    // --- LÓGICA DE EDAD ---
-
-    @JvmStatic
-    fun calcAge(birthDay: String?): Int {
-        return runCatching {
-            val fechaNac = LocalDate.parse(birthDay, dayFormatter)
-            Period.between(fechaNac, LocalDate.now()).years
-        }.getOrDefault(0)
+    fun ageCalculator(birthDateIso: String): Int {
+        val birth = LocalDate.parse(birthDateIso) // ISO-8601 (yyyy-MM-dd)
+        val today = LocalDate.now()
+        return Period.between(birth, today).years
     }
 
-    // --- FECHAS COMO STRING (Para UI o Logs) ---
+    fun formatConversationTimestamp(ms: Long, context: Context): String {
+        if (ms <= 0L) return ""
 
-    fun today(): String = LocalDate.now().format(dayFormatter)
-
-    fun time(): String = LocalTime.now().format(timeFormatter)
-
-    fun dateTime(): String = LocalDateTime.now().format(fullFormatter)
-
-    fun yesterday(): String = LocalDate.now().minusDays(1).format(dayFormatter)
-
-    fun now(): String = LocalDateTime.now().format(preciseFormatter)
-
-    // --- CONVERSORES MILIS <-> FECHA ---
-
-    fun millisToBirthDate(millis: Long): String {
-        return Instant.ofEpochMilli(millis).atZone(zone).toLocalDate().format(dayFormatter)
+        return when {
+            isToday(ms) -> formatHour(ms)
+            isYesterday(ms) -> context.getString(R.string.yesterday)
+            else -> formatUiDate(ms)
+        }
     }
 
-    fun birthDateToMillis(date: String): Long? {
-        return runCatching {
-            LocalDate.parse(date, dayFormatter).atStartOfDay(zone).toInstant().toEpochMilli()
+    fun formatDateChatTimestamp(ms: Long, context: Context): String {
+        if (ms <= 0L) return ""
+
+        return when {
+            isToday(ms) -> context.getString(R.string.today)
+            isYesterday(ms) -> context.getString(R.string.yesterday)
+            else -> formatUiDate(ms)
+        }
+    }
+
+    fun formatAudioDuration(ms: Long): String {
+        val totalSeconds = ms / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return "%d:%02d".format(minutes, seconds)
+    }
+
+    fun zoneId(): ZoneId = ZoneId.systemDefault()
+
+    fun zonedDateTime(millis: Long): ZonedDateTime =
+        Instant.ofEpochMilli(millis).atZone(zoneId())
+
+    fun isToday(ms: Long): Boolean =
+        zonedDateTime(ms).toLocalDate() == LocalDate.now(zoneId())
+
+    fun isYesterday(ms: Long): Boolean =
+        zonedDateTime(ms).toLocalDate() == LocalDate.now(zoneId()).minusDays(1)
+
+    fun formatHour(ms: Long): String =
+        UI_HOUR_FORMATTER.format(zonedDateTime(ms))
+
+    fun formatUiDate(ms: Long): String =
+        UI_DATE_FORMATTER.format(zonedDateTime(ms))
+
+    fun isoToUiDate(iso: String): String =
+        LocalDate.parse(iso).format(UI_DATE_FORMATTER)
+
+    fun formatLastSeen(ms: Long, context: Context): String {
+        if (ms <= 0L) return ""
+
+        val date = formatUiDate(ms)
+        val time = formatHour(ms)
+
+        return context.getString(R.string.last_seen_format, date, time)
+    }
+
+    fun isoToMillis(isoDate: String): Long? =
+        runCatching {
+            LocalDate.parse(isoDate) // ISO yyyy-MM-dd
+                .atStartOfDay(zoneId())
+                .toInstant()
+                .toEpochMilli()
         }.getOrNull()
+
+    fun millisToIso(ms: Long): String {
+        return Instant.ofEpochMilli(ms)
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+            .toString() // yyyy-MM-dd
     }
 
-    // --- FORMATOS ESPECIALES PARA CHAT ---
-
-    fun formatLastSeen(lastSeenMs: Long): String {
-        if (lastSeenMs <= 0L) return ""
-
-        val ldt = Instant.ofEpochMilli(lastSeenMs).atZone(zone).toLocalDateTime()
-        val date = ldt.toLocalDate()
-        val today = LocalDate.now()
-
-        val datePart = when (date) {
-            today -> "Hoy"
-            today.minusDays(1) -> "Ayer"
-            else -> date.format(dayFormatter)
-        }
-
-        return "$datePart a las ${ldt.format(timeFormatter)}"
-    }
-
-    /**
-     * Ideal para la lista de chats: muestra solo hora si es hoy,
-     * "Ayer" si fue ayer, o la fecha si es más antiguo.
-     */
-    fun formatChatTimestamp(ms: Long): String {
-        val msgDate = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
-        val today = LocalDate.now()
-
-        return when (msgDate) {
-            today -> Instant.ofEpochMilli(ms).atZone(zone).format(timeFormatter)
-            today.minusDays(1) -> "Ayer"
-            else -> msgDate.format(dayFormatter)
-        }
-    }
+    fun now(): Long = System.currentTimeMillis()
 
 }

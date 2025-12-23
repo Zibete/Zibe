@@ -95,7 +95,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     // ---------- UI inicial ----------
 
     private fun setupInitialUi() = with(binding) {
-        binding.rvChatlist.isVisible = true
+        binding.rv.isVisible = true
         linearOnBoardingChatList.isVisible = false
         progressbar2.isVisible = true
 
@@ -115,13 +115,13 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
             onChatClicked = ::openChat
         )
 
-        binding.rvChatlist.apply {
+        binding.rv.apply {
             layoutManager = this@ChatListFragment.layoutManager
             adapter = adapterChatList
             setHasFixedSize(true)
         }
 
-        registerForContextMenu(binding.rvChatlist)
+        registerForContextMenu(binding.rv)
     }
 
     private fun openChat(chat: Conversation) {
@@ -135,7 +135,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     // ---------- Empty state / onboarding ----------
 
     private fun showOnBoarding() = with(binding) {
-        binding.rvChatlist.isVisible = false
+        binding.rv.isVisible = false
         linearOnBoardingChatList.isVisible = true
 
         lottieChatLeft.playAnimation()
@@ -146,7 +146,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     }
 
     private fun showChatList() = with(binding) {
-        binding.rvChatlist.isVisible = true
+        binding.rv.isVisible = true
         linearOnBoardingChatList.isVisible = false
 
         lottieChatLeft.cancelAnimation()
@@ -168,7 +168,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     private fun setScrollbar() {
         val b = _binding ?: return
         if (::adapterChatList.isInitialized && adapterChatList.itemCount > 0) {
-            b.rvChatlist.scrollToPosition(adapterChatList.itemCount - 1)
+            b.rv.scrollToPosition(adapterChatList.itemCount - 1)
         }
     }
 

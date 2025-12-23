@@ -200,12 +200,12 @@ class SplashActivity : ComponentActivity() {
                             SignUpScreen(
                                 onBack = { navController.popBackStack() },
 
-                                onRegister = { email, pass, name, birthday, description ->
+                                onRegister = { email, pass, name, birthDate, description ->
                                     signUpViewModel.onRegister(
                                         email = email,
                                         password = pass,
                                         name = name,
-                                        birthDate = birthday,
+                                        birthDate = birthDate,
                                         description = description
                                     )
                                 },
@@ -286,7 +286,7 @@ class SplashActivity : ComponentActivity() {
                     splashViewModel.events.collect { event ->
                         when (event) {
 
-                            is SplashUiEvent.ShowSnackbar ->
+                            is SplashUiEvent.ShowSnack ->
                                 snackHostState.showZibeMessage(event.type, event.message)
 
                             is SplashUiEvent.ShowNoInternetDialog ->

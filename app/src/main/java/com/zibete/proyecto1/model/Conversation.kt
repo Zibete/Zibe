@@ -5,8 +5,7 @@ import java.util.Date
 
 data class Conversation(
     var lastContent: String = "",
-    var lastDate: String = "",
-    var date: Date? = null, // No Firebase property
+    var lastMessageAt: Long = 0L,
     var userId: String = "",
     var otherId: String = "",
     var otherName: String = "",
@@ -16,8 +15,9 @@ data class Conversation(
     var seen: Int = 0
 ) : Comparable<Conversation>, Serializable {
 
-    override fun compareTo(other: Conversation): Int =
-        compareValuesBy(this, other, { it.date }) // orden por fecha
+    override fun compareTo(other: Conversation): Int {
+        return other.lastMessageAt.compareTo(this.lastMessageAt)
+    }
 
     fun clone(): Conversation = this.copy()
 }

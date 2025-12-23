@@ -11,6 +11,7 @@ import com.google.firebase.database.ServerValue
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.di.qualifiers.ApplicationScope
 import com.zibete.proyecto1.model.ChatGroup
 import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.ChatGroupItem
@@ -24,11 +25,11 @@ import com.zibete.proyecto1.ui.constants.Constants.GroupMetaKeys
 import com.zibete.proyecto1.ui.constants.Constants.GroupUserKeys
 import com.zibete.proyecto1.ui.constants.Constants.KEY_SEPARATOR
 import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHATLIST
+import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
-import com.zibete.proyecto1.utils.Utils.dateTime
+import com.zibete.proyecto1.utils.TimeUtils.now
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -47,7 +48,7 @@ import kotlin.coroutines.resumeWithException
 class GroupRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userRepository: UserRepository,
-    private val appScope: CoroutineScope
+    @ApplicationScope private val appScope: CoroutineScope
 ) {
     private val myUid: String get() = userRepository.myUid
 
@@ -270,7 +271,7 @@ class GroupRepository @Inject constructor(
     private fun chatListRef(uid: String = myUid) =
         firebaseRefsContainer.refData.child(uid)
             .child(NODE_CLIENT_DATA)
-            .child(NODE_CHATLIST)
+            .child(NODE_CHAT_LIST)
 
     // Read / Unread
     suspend fun markGroupAsRead(groupName: String) {
@@ -454,7 +455,7 @@ class GroupRepository @Inject constructor(
             creatorUid = creatorUid,
             type = groupType,
             users = 0,
-            createdAt = dateTime()
+            createdAt = now()
         )
 
         groupMetaRef(groupName)

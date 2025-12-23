@@ -83,8 +83,8 @@ class AdapterUsers(
             onProfileClicked: (Users) -> Unit
         ) {
             // Imagen
-            if (u.profilePhoto.isNotBlank()) {
-                Glide.with(b.root).load(u.profilePhoto).into(b.avatarImage)
+            if (u.photoUrl.isNotBlank()) {
+                Glide.with(b.root).load(u.photoUrl).into(b.avatarImage)
             } else {
                 b.avatarImage.setImageDrawable(null)
             }
@@ -127,8 +127,8 @@ class AdapterUsers(
                 b.userDescription.text = u.description
             }
             if (payload.containsKey(PAYLOAD_PHOTO_URL)) {
-                if (u.profilePhoto.isNotBlank()) {
-                    Glide.with(b.root).load(u.profilePhoto).into(b.avatarImage)
+                if (u.photoUrl.isNotBlank()) {
+                    Glide.with(b.root).load(u.photoUrl).into(b.avatarImage)
                 } else {
                     b.avatarImage.setImageDrawable(null)
                 }

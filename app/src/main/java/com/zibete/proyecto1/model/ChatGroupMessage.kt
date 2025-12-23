@@ -15,7 +15,7 @@ data class ChatGroupItem(
 
 data class ChatGroup(
     var content: String = "",
-    var timestamp: Long = 0,
+    var timestamp: Long = 0L,
     var nameUser: String = "",
     var senderUid: String = "",
     var chatType: Int = 0,

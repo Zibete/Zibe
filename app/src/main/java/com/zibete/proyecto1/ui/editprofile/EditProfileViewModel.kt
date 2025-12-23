@@ -15,7 +15,8 @@ import com.zibete.proyecto1.ui.constants.MSG_PROFILE_LOAD_ERROR
 import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVED
 import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVE_ERROR
 import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
-import com.zibete.proyecto1.utils.Utils.calcAge
+import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.utils.TimeUtils.isoToUiDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +64,7 @@ class EditProfileViewModel @Inject constructor(
                         displayName = u.name,
                         description = u.description,
                         birthDate = u.birthDate,
-                        age = calcAge(u.birthDate),
+                        age = ageCalculator(u.birthDate),
                         photoUrl = u.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
@@ -86,13 +87,9 @@ class EditProfileViewModel @Inject constructor(
         _uiState.update { it.copy(description = value, saveEnabled = true) }
     }
 
-    fun onBirthDateChanged(birthDay: String) {
-        val age = computeAgeFromString(birthDay)
-        _uiState.update { it.copy(birthDate = birthDay, age = age, saveEnabled = true) }
-    }
-
-    private fun computeAgeFromString(birthDay: String): Int {
-        return calcAge(birthDay)
+    fun onBirthDateChanged(birthDate: String) {
+        val age = ageCalculator(birthDate)
+        _uiState.update { it.copy(birthDate = birthDate, age = age, saveEnabled = true) }
     }
 
     suspend fun isFirstLoginDone(): Boolean {
@@ -139,7 +136,7 @@ class EditProfileViewModel @Inject constructor(
                 return@launch
             }
 
-            val age = computeAgeFromString(newBirthDate)
+            val age = ageCalculator(newBirthDate)
 
             if (age < 18) {
                 onError(ERR_UNDER_AGE)
@@ -204,6 +201,12 @@ class EditProfileViewModel @Inject constructor(
             }
         }
     }
+
+    val birthDateUi: String
+        get() = _uiState.value.birthDate
+            .takeIf { it.isNotBlank() }
+            ?.let { iso -> isoToUiDate(iso) }
+            .orEmpty()
 
     fun onBackToMain(message: String = "") {
         viewModelScope.launch {

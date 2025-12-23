@@ -21,7 +21,7 @@ import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_INVALID_PASSWORD
 import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_NAME_REQUIRED
 import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_UNEXPECTED_PREFIX
 import com.zibete.proyecto1.ui.constants.SIGNUP_MSG_SUCCESS
-import com.zibete.proyecto1.utils.Utils
+import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,7 +134,7 @@ class SignUpViewModel @Inject constructor(
     }
 
     private fun isAdult(birthStr: String): Boolean = try {
-        Utils.calcAge(birthStr) >= 18
+        ageCalculator(birthStr) >= 18
     } catch (_: Exception) {
         false
     }
@@ -143,7 +143,7 @@ class SignUpViewModel @Inject constructor(
         email: String,
         password: String,
         name: String,
-        birthday: String
+        birthDate: String
     ): Boolean {
 
         suspend fun warn(msg: String): Boolean {
@@ -160,8 +160,8 @@ class SignUpViewModel @Inject constructor(
         if (email.isBlank()) return warn(ERR_EMAIL_REQUIRED)
         if (password.isBlank()) return warn(ERR_PASSWORD_REQUIRED)
         if (name.isBlank()) return warn(SIGNUP_ERR_NAME_REQUIRED)
-        if (birthday.isBlank()) return warn(SIGNUP_ERR_BIRTHDAY_REQUIRED)
-        if (!isAdult(birthday)) return warn(ERR_UNDER_AGE)
+        if (birthDate.isBlank()) return warn(SIGNUP_ERR_BIRTHDAY_REQUIRED)
+        if (!isAdult(birthDate)) return warn(ERR_UNDER_AGE)
 
         return true
     }

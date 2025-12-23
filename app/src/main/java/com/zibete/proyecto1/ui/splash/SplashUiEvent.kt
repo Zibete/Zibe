@@ -16,7 +16,7 @@ sealed class SplashUiEvent {
     object RequestLocationPermission : SplashUiEvent()
     object NavigateOnBoarding : SplashUiEvent()
 
-    data class ShowSnackbar(
+    data class ShowSnack(
         val message: String,
         val type: ZibeSnackType
     ) : SplashUiEvent()

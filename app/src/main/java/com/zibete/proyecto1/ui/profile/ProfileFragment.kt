@@ -39,7 +39,7 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
-import com.zibete.proyecto1.utils.Utils
+import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -118,7 +118,7 @@ class ProfileFragment : BaseChatSessionFragment() {
 
                     binding.swipeRefresh.isRefreshing = state.isLoading
 
-                    val age = Utils.calcAge(profile.birthDate).toString()
+                    val age = ageCalculator(profile.birthDate).toString()
                     val name = profile.name
                     val distance = profileViewModel.getDistanceToUser(profile)
                     val description = profile.description

@@ -44,7 +44,7 @@ object Constants {
     const val NODE_CLIENT_DATA = "ClientData"
     const val NODE_STATUS = "Status"
     const val NODE_ACTIVE_VIEW = "ActiveView"
-    const val NODE_CHATLIST = "ChatList"
+    const val NODE_CHAT_LIST = "ChatList"
     const val NODE_USERS_ACCOUNTS = "Accounts"
     const val NODE_USERS_DATA = "Data"
     const val NODE_FAVORITE_LIST = "FavoriteList"
@@ -71,9 +71,10 @@ object Constants {
         const val UNREAD_GROUP_COUNT = "unreadGroupCount"
     }
 
-    object ChatKeys {
+    object ChatMessageKeys {
         const val CONTENT = "content"
-        const val DATE = "date"
+        const val CREATED_AT = "createdAt"
+        const val AUDIO_DURATION_MS = "audioDurationMs"
         const val SENDER_UID = "senderUid"
         const val TYPE = "type"
         const val SEEN = "seen"
@@ -130,11 +131,11 @@ object Constants {
 
     object ConversationKeys {
         const val LAST_CONTENT = "lastContent"
-        const val LAST_DATE = "lastDate"
+        const val LAST_MESSAGE_AT = "lastMessageAt"
         const val USER_ID = "userId"
         const val OTHER_ID = "otherId"
         const val OTHER_NAME = "otherName"
-        const val OTHER_PHOTO = "otherPhotoUrl"
+        const val OTHER_PHOTO_URL = "otherPhotoUrl"
         const val STATE = "state"
         const val UNREAD_COUNT = "unreadCount"
         const val SEEN = "seen"
@@ -199,10 +200,10 @@ object Constants {
     const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
 
     object PayloadKeys {
-        const val TYPE = ChatKeys.TYPE
+        const val TYPE = ChatMessageKeys.TYPE
         const val OTHER_ID = ConversationKeys.OTHER_ID
         const val OTHER_NAME = ConversationKeys.OTHER_NAME
-        const val CONTENT = ChatKeys.CONTENT
+        const val CONTENT = ChatMessageKeys.CONTENT
         const val UNREAD_COUNT = ConversationKeys.UNREAD_COUNT
     }
 

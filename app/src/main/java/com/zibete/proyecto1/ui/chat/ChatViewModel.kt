@@ -41,7 +41,7 @@ import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.ui.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
-import com.zibete.proyecto1.utils.Utils.now
+import com.zibete.proyecto1.utils.TimeUtils.now
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -178,10 +178,9 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun sameMsg(a: ChatMessage, b: ChatMessage): Boolean {
-        return a.date == b.date && a.senderUid == b.senderUid  // ideal: usar key/id del nodo (mejor que date)
+    private fun sameMsg(a: ChatMessageItem, b: ChatMessageItem): Boolean {
+        return a.id == b.id
     }
-
 
     private fun markMessagesAsSeenOnOpen() {
         viewModelScope.launch { chatRepository.markChatAsSeen(requireChatRefs()) }
@@ -389,24 +388,22 @@ class ChatViewModel @Inject constructor(
     suspend fun onSendText(text: String) {
         sendMessage(
             msgType = MSG_TEXT,
-            content = text,
-            timerText = ""
+            content = text
         )
     }
 
     suspend fun onSendPhoto(url: String) {
         sendMessage(
             msgType = MSG_PHOTO,
-            content = url,
-            timerText = ""
+            content = url
         )
     }
 
-    suspend fun onSendAudio(url: String, duration: String) {
+    suspend fun onSendAudio(url: String, audioDurationMs: Long) {
         sendMessage(
             msgType = MSG_AUDIO,
             content = url,
-            timerText = duration
+            audioDurationMs = audioDurationMs
         )
     }
 
@@ -454,16 +451,16 @@ class ChatViewModel @Inject constructor(
     suspend fun sendMessage(
         msgType: Int,
         content: String,
-        timerText: String
+        audioDurationMs: Long = 0L
     ) {
         if (content.isEmpty()) return
 
-        val myChatWith = chatRepository.getConversation(myUid, otherUid, nodeType)
-        val myState = myChatWith?.state ?: nodeType
+        val myConversation = chatRepository.getConversation(myUid, otherUid, nodeType)
+        val myState = myConversation?.state ?: nodeType
 
-        val otherChatWith = chatRepository.getConversation(otherUid, myUid, nodeType)
-        val otherState = otherChatWith?.state ?: nodeType
-        val otherCountMsgReceivedUnread = otherChatWith?.unreadCount ?: 0
+        val otherConversation = chatRepository.getConversation(otherUid, myUid, nodeType)
+        val otherState = otherConversation?.state ?: nodeType
+        val otherCountMsgReceivedUnread = otherConversation?.unreadCount ?: 0
 
         if (otherState == CHAT_STATE_BLOQ) {
             _events.emit(
@@ -474,13 +471,12 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        val now = now()
-
-        val date = if (timerText.isBlank()) now else "$now $timerText"
+        val lastMessageAt = now()
 
         val chatMessage = ChatMessage(
             content = content,
-            date = date,
+            createdAt = lastMessageAt,
+            audioDurationMs = audioDurationMs,
             senderUid = myUid,
             type = msgType,
             seen = MSG_DELIVERED
@@ -501,7 +497,7 @@ class ChatViewModel @Inject constructor(
         // 3) Conversations
         val myNewChatWith = Conversation(
             lastContent = myMsg,
-            lastDate = date,
+            lastMessageAt = lastMessageAt,
             userId = myUid,
             otherId = otherUid,
             otherName = currentOtherName(),
@@ -514,7 +510,7 @@ class ChatViewModel @Inject constructor(
 
         val otherNewConversation = Conversation(
             lastContent = otherMsg,
-            lastDate = date,
+            lastMessageAt = lastMessageAt,
             userId = myUid,
             otherId = myUid,
             otherName = myIdentity.userName,

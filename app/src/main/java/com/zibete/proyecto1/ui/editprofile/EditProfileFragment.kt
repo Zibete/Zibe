@@ -44,9 +44,9 @@ import com.zibete.proyecto1.ui.constants.SIGNUP_PROFILE_MESSAGE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainNavEvent
 import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.utils.TimeUtils.isoToMillis
+import com.zibete.proyecto1.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.utils.Utils
-import com.zibete.proyecto1.utils.Utils.birthDateToMillis
-import com.zibete.proyecto1.utils.Utils.millisToBirthDate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -165,7 +165,7 @@ class EditProfileFragment : Fragment() {
                         binding.btnSave.isEnabled = state.saveEnabled && !state.isSaving
 
                         binding.edtNameUser.setTextIfChanged(state.displayName)
-                        binding.datePickerBirthDay.setTextIfChanged(state.birthDate)
+                        binding.datePickerBirthDay.setTextIfChanged(editProfileViewModel.birthDateUi)
                         binding.edtDesc.setTextIfChanged(state.description)
 
                         binding.tvEdad.text = state.age?.toString().orEmpty()
@@ -322,14 +322,15 @@ class EditProfileFragment : Fragment() {
             .setCalendarConstraints(constraints)
             .setTheme(R.style.ZibeDatePickerOverlay)
             .setSelection(
-                birthDateToMillis(editProfileViewModel.uiState.value.birthDate)
+                editProfileViewModel.uiState.value.birthDate
+                    .let { iso -> isoToMillis(iso) }
                     ?: MaterialDatePicker.todayInUtcMilliseconds()
             )
             .build()
 
         picker.addOnPositiveButtonClickListener { millis ->
-            val formatted = millisToBirthDate(millis)
-            editProfileViewModel.onBirthDateChanged(formatted)
+            val isoDate = millisToIso(millis)
+            editProfileViewModel.onBirthDateChanged(isoDate)
         }
 
         picker.show(parentFragmentManager, "ZIBE_BIRTHDATE_PICKER")

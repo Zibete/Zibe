@@ -9,8 +9,8 @@ import java.util.Objects
 data class Users(
     var id: String = "",
     var name: String = "",
-    var birthDate: String = "",
-    var createdAt: String = "",
+    var birthDate: String = "", // yyyy-MM-dd
+    var createdAt: Long = 0L,  // epoch millis
     var age: Int = 0,
     var email: String = "",
     var photoUrl: String = "",

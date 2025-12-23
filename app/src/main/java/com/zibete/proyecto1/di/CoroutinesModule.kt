@@ -1,4 +1,3 @@
-// di/CoroutinesModule.kt
 package com.zibete.proyecto1.di
 
 import com.zibete.proyecto1.di.qualifiers.ApplicationScope
@@ -7,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
@@ -17,5 +17,6 @@ object CoroutinesModule {
     @Provides
     @Singleton
     @ApplicationScope
-    fun provideApplicationScope(): CoroutineScope = CoroutineScope(SupervisorJob())
+    fun provideApplicationScope(): CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }

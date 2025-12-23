@@ -20,8 +20,7 @@ class UserSessionManager @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseAuth: FirebaseAuth,
     private val loginManager: LoginManager,
-    private val groupRepository: GroupRepository,
-    private val userRepository: UserRepository
+    private val groupRepository: GroupRepository
 ) {
 
     // ---------------------------------------------------------------------------------------------
@@ -43,6 +42,14 @@ class UserSessionManager @Inject constructor(
 
     var latitude: Double = 0.0
     var longitude: Double = 0.0
+
+//    val latitude: Double get() = latitude
+//    val longitude: Double get() = longitude
+
+    fun updateMyLocation(lat: Double, lon: Double) {
+        latitude = lat
+        longitude = lon
+    }
 
     // ---------------------------------------------------------------------------------------------
     // AUTH API
@@ -119,9 +126,6 @@ class UserSessionManager @Inject constructor(
     // ---------------------------------------------------------------------------------------------
 
     suspend fun logOutCleanup(): Intent {
-
-        // 1) Presencia
-        userRepository.setUserLastSeen()
 
         // 2) Limpieza de grupo si corresponde
         val inGroup = userPreferencesRepository.inGroupFlow.first()

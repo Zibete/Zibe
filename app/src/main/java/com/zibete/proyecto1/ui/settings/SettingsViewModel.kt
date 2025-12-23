@@ -247,6 +247,7 @@ class SettingsViewModel @Inject constructor(
 
     fun logOut() {
         viewModelScope.launch {
+            userRepository.setUserLastSeen()
             val intent = userSessionManager.logOutCleanup()
             _events.tryEmit(SettingsUiEvent.Navigate(intent, finish = true))
         }

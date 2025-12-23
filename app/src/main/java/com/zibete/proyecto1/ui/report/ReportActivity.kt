@@ -11,6 +11,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.database.ServerValue
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -81,27 +82,29 @@ class ReportActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val dateKey = Utils.now()
+            val ref = firebaseRefsContainer.refZibe
+                .child("Comentarios")
+                .push() // 🔑 key única (mejor que now())
 
-            // Guarda datos del usuario
-            firebaseRefsContainer.refZibe.child("Comentarios").child(dateKey).apply {
-                child("ID").setValue(myUid)
+            ref.apply {
+                child("id").setValue(myUid)
                 child("nombre").setValue(userRepository.myUserName)
                 child("email").setValue(userRepository.myEmail)
                 child("mensaje").setValue(mensaje)
+                child("createdAt").setValue(ServerValue.TIMESTAMP)
             }
 
-            // Dialog Material
             MaterialAlertDialogBuilder(this)
                 .setTitle("¡Mensaje enviado!")
                 .setMessage("¡Muchas gracias! El mensaje ha sido enviado a nuestro equipo de soporte.")
                 .setCancelable(false)
-                .setPositiveButton("OK") { _: DialogInterface, _: Int ->
+                .setPositiveButton("OK") { _, _ ->
                     startActivity(Intent(this, SplashActivity::class.java))
                     finish()
                 }
                 .show()
         }
+
     }
 
     override fun onPause() {

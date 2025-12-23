@@ -25,7 +25,7 @@ object UsersDiffCallback : DiffUtil.ItemCallback<Users>() {
         if (oldItem.name != newItem.name) diff.putBoolean(PAYLOAD_NAME, true)
         if (oldItem.age != newItem.age) diff.putBoolean(PAYLOAD_AGE, true)
         if (oldItem.description != newItem.description) diff.putBoolean(PAYLOAD_DESCRIPTION, true)
-        if (oldItem.profilePhoto != newItem.profilePhoto) diff.putBoolean(PAYLOAD_PHOTO_URL, true)
+        if (oldItem.photoUrl != newItem.photoUrl) diff.putBoolean(PAYLOAD_PHOTO_URL, true)
         if (oldItem.isOnline != newItem.isOnline) diff.putBoolean(PAYLOAD_ONLINE, newItem.isOnline)
 
         return if (diff.isEmpty) null else diff
