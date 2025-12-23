@@ -16,7 +16,7 @@ import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
@@ -69,7 +69,7 @@ class ChatViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val chatRepository: ChatRepository,
     private val sessionRepository: SessionRepository,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     val myUid get() = userRepository.myUid
@@ -78,7 +78,7 @@ class ChatViewModel @Inject constructor(
     val nodeType: String = savedStateHandle[EXTRA_CHAT_NODE] ?: NODE_DM
 
     val groupName: String
-        get() = runBlocking { userPreferencesDSRepository.groupNameFlow.first() }
+        get() = runBlocking { userPreferencesRepository.groupNameFlow.first() }
 
     // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()

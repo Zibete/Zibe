@@ -5,7 +5,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
 import com.zibete.proyecto1.ui.constants.Constants.PayloadKeys
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject lateinit var userPreferencesDSRepository: UserPreferencesDSRepository
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var chatRepository: ChatRepository
     @Inject lateinit var groupRepository: GroupRepository
@@ -60,7 +60,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // =========================
         if (nodeType == NODE_DM) {
 
-            val enabled = userPreferencesDSRepository.individualNotificationsFlow.first()
+            val enabled = userPreferencesRepository.individualNotificationsFlow.first()
             if (!enabled) {
                 // Si el usuario desactivó notificaciones individuales:
                 // igual aplicamos doble-check si corresponde, pero NO notificamos.
@@ -92,11 +92,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // =========================
         val groupName = nodeType
 
-        val groupEnabled = userPreferencesDSRepository.groupNotificationsFlow.first()
+        val groupEnabled = userPreferencesRepository.groupNotificationsFlow.first()
         if (!groupEnabled) return
 
         // Si el user está actualmente dentro de ese mismo grupo, NO notificamos (como antes)
-        val ctx = userPreferencesDSRepository.groupContextFlow.first()
+        val ctx = userPreferencesRepository.groupContextFlow.first()
         val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
 
         if (isInActiveGroup) return

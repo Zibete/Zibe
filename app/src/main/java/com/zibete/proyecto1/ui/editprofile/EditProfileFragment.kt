@@ -236,16 +236,26 @@ class EditProfileFragment : Fragment() {
     }
 
     private fun setupOnboarding() {
-        binding.linearOnBoardingProfile.isVisible = !editProfileViewModel.checkFirstLogin()
 
-        if (!editProfileViewModel.checkFirstLogin()) editProfileViewModel.markFirstLoginAsDone()
+        viewLifecycleOwner.lifecycleScope.launch {
 
-        binding.btnOk.setOnClickListener { binding.linearOnBoardingProfile.isVisible = false }
+            val isFirstLoginDone = editProfileViewModel.isFirstLoginDone()
+
+            if (!isFirstLoginDone) {
+                binding.linearOnBoardingProfile.isVisible = true
+                editProfileViewModel.markFirstLoginAsDone()
+            }
+        }
+
+        binding.btnOk.setOnClickListener {
+            binding.linearOnBoardingProfile.isVisible = false
+        }
 
         binding.linearOnBoardingProfile.setOnClickListener {
             binding.linearOnBoardingProfile.isVisible = false
         }
     }
+
 
     private fun startCamera() {
         runCatching {

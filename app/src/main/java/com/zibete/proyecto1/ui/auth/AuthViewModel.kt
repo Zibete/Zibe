@@ -9,11 +9,9 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
@@ -31,9 +29,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -44,15 +41,12 @@ class AuthViewModel @Inject constructor(
     val events = _events.asSharedFlow()
 
     fun initAfterDelete() {
-        val deleteUser = userPreferencesRepository.deleteUser
-        val deleteFirebaseAccount = userPreferencesRepository.deleteFirebaseAccount
 
-        _uiState.update { it.copy(deleteUser = deleteUser) }
-
-        if (deleteFirebaseAccount) {
-            showMessage(DELETE_ACCOUNT, ZibeSnackType.INFO, stopLoading = false)
-            viewModelScope.launch { _events.emit(AuthUiEvent.ClearDeletePrefs) }
+        viewModelScope.launch {
+            val deleteUser = userPreferencesRepository.getDeleteUser()
+            _uiState.update { it.copy(deleteUser = deleteUser) }
         }
+
     }
 
     // ================= EMAIL / PASSWORD =================
@@ -65,7 +59,10 @@ class AuthViewModel @Inject constructor(
             runCatching {
                 userSessionManager.signInWithEmail(email, password)
             }.onFailure { e ->
-                showMessage(getAuthErrorMessage(e), ZibeSnackType.ERROR)
+                showMessage(
+                    message = getAuthErrorMessage(e),
+                    type = ZibeSnackType.ERROR
+                )
             }.onSuccess {
                 handleAuthSuccess()
             }
@@ -77,8 +74,8 @@ class AuthViewModel @Inject constructor(
     fun onResetPassword(email: String) {
         if (email.isBlank()) {
             showMessage(
-                "Por favor, ingresá tu email para reestablecer la contraseña",
-                ZibeSnackType.WARNING,
+                message = "Por favor, ingresá tu email para reestablecer la contraseña",
+                type = ZibeSnackType.WARNING,
                 stopLoading = false
             )
             return
@@ -90,11 +87,14 @@ class AuthViewModel @Inject constructor(
             runCatching {
                 userSessionManager.sendPasswordResetEmail(email)
             }.onSuccess {
-                showMessage("Instrucciones enviadas a $email", ZibeSnackType.SUCCESS)
+                showMessage(
+                    message = "Instrucciones enviadas a $email",
+                    type = ZibeSnackType.SUCCESS
+                )
             }.onFailure {
                 showMessage(
-                    "No pudimos enviar el correo a $email. Verificá que esté correcto.",
-                    ZibeSnackType.ERROR
+                    message = "No pudimos enviar el correo a $email. Verificá que esté correcto.",
+                    type = ZibeSnackType.ERROR
                 )
             }
         }
@@ -104,7 +104,10 @@ class AuthViewModel @Inject constructor(
 
     fun onGoogleAccountReceived(account: GoogleSignInAccount?) {
         if (account == null) {
-            showMessage("No se pudo iniciar con Google (account nulo)", ZibeSnackType.ERROR)
+            showMessage(
+                message = "No se pudo iniciar con Google (account nulo)",
+                type = ZibeSnackType.ERROR
+            )
             return
         }
 
@@ -116,7 +119,10 @@ class AuthViewModel @Inject constructor(
             runCatching {
                 userSessionManager.signInWithCredential(credential)
             }.onFailure { e ->
-                showMessage(getAuthErrorMessage(e), ZibeSnackType.ERROR)
+                showMessage(
+                    message = getAuthErrorMessage(e),
+                    type = ZibeSnackType.ERROR
+                )
             }.onSuccess {
                 handleAuthSuccess()
             }
@@ -134,7 +140,10 @@ class AuthViewModel @Inject constructor(
             runCatching {
                 userSessionManager.signInWithCredential(credential)
             }.onFailure { e ->
-                showMessage(getAuthErrorMessage(e), ZibeSnackType.ERROR)
+                showMessage(
+                    message = getAuthErrorMessage(e),
+                    type = ZibeSnackType.ERROR
+                )
             }.onSuccess {
                 handleAuthSuccess()
             }
@@ -145,51 +154,69 @@ class AuthViewModel @Inject constructor(
 
     private fun handleAuthSuccess() {
         val user = userSessionManager.currentUser
+
         if (user == null) {
             showMessage(ERR_ZIBE, ZibeSnackType.ERROR)
             return
         }
 
         viewModelScope.launch {
-            if (_uiState.value.deleteUser) {
-                deleteCurrentUser(user.uid)
-            } else {
-                _uiState.update { it.copy(isLoading = false) }
-                _events.emit(AuthUiEvent.NavigateToSplash)
-            }
+            _uiState.update { it.copy(isLoading = false) }
+            _events.emit(AuthUiEvent.NavigateToSplash)
         }
     }
 
-    private suspend fun deleteCurrentUser(uid: String) {
-        runCatching {
-            // 1) RTDB (tus nodos)
-            firebaseRefsContainer.refData.child(uid).removeValue()
-            firebaseRefsContainer.refAccounts.child(uid).removeValue()
+    fun onDeleteAccountClicked(){
+        _uiState.update { it.copy(isLoading = true) }
 
-            // 2) Storage (usa tu repo, no FirebaseStorage.getInstance())
-            runCatching { userRepository.getProfilePhotoStoragePath().delete() }
-
-            // 3) Auth (centralizado)
-            userSessionManager.deleteFirebaseUser()
-
-        }.onFailure {
-            showMessage("No se pudo eliminar la cuenta. Intentá nuevamente.", ZibeSnackType.ERROR)
-            return
+        viewModelScope.launch {
+            runCatching { userSessionManager.deleteFirebaseUser() }
+                .onFailure {
+                    showMessage(
+                        message = "No se pudo eliminar la cuenta. Intentá nuevamente.",
+                        type = ZibeSnackType.ERROR
+                    )
+                    return@launch
+                }
         }
 
-        _uiState.update { it.copy(isLoading = false, deleteUser = false) }
+        viewModelScope.launch {
+            runCatching { userRepository.deleteMyAccountData() }
+                .onFailure {
+                    showMessage(
+                        message = "Error eliminando datos de la cuenta",
+                        type = ZibeSnackType.ERROR
+                    )
+                    return@launch
+                }
+        }
 
-        // Avisar + limpiar prefs
-        showMessage(DELETE_ACCOUNT, ZibeSnackType.INFO, stopLoading = false)
-        _events.emit(AuthUiEvent.ClearDeletePrefs)
+        showMessage(
+            message = DELETE_ACCOUNT,
+            type = ZibeSnackType.INFO,
+            stopLoading = false
+        )
+
+        setDeleteUser(deleteUser = false)
+    }
+
+    fun setDeleteUser(deleteUser: Boolean){
+        viewModelScope.launch {
+            userPreferencesRepository.setDeleteUser(deleteUser)
+            _uiState.update { it.copy(deleteUser = deleteUser, isLoading = false) }
+        }
     }
 
     // ================= DO NOT DELETE =================
 
     fun onDoNotDeleteClicked() {
-        _uiState.update { it.copy(deleteUser = false) }
-        showMessage(DO_NOT_DELETE_ACCOUNT, ZibeSnackType.INFO, stopLoading = false)
-        viewModelScope.launch { _events.emit(AuthUiEvent.ClearDeletePrefs) }
+        showMessage(
+            message = DO_NOT_DELETE_ACCOUNT,
+            type = ZibeSnackType.INFO,
+            stopLoading = false
+        )
+
+        setDeleteUser(false)
     }
 
     // ================= HELPERS =================
@@ -200,7 +227,7 @@ class AuthViewModel @Inject constructor(
         stopLoading: Boolean = true
     ) {
         if (stopLoading) _uiState.update { it.copy(isLoading = false) }
-        viewModelScope.launch { _events.emit(AuthUiEvent.ShowSnackbar(message, type)) }
+        viewModelScope.launch { _events.emit(AuthUiEvent.ShowSnack(message, type)) }
     }
 
     private fun validateInputs(email: String, password: String): Boolean {

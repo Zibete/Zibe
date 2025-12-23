@@ -89,15 +89,13 @@ class NotificationHelper @Inject constructor(
     }
 
     private fun ensureChannel(nm: NotificationManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName: CharSequence = context.getString(R.string.channel_name)
-            val channel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply { setShowBadge(true) }
-            nm.createNotificationChannel(channel)
-        }
+        val channelName: CharSequence = context.getString(R.string.channel_name)
+        val channel = NotificationChannel(
+            channelId,
+            channelName,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply { setShowBadge(true) }
+        nm.createNotificationChannel(channel)
     }
 
     private fun buildOpenMainIntent(): Intent =

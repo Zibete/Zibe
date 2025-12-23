@@ -3,7 +3,7 @@ package com.zibete.proyecto1.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_GROUP
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class GroupsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GroupsUiState())
@@ -63,7 +63,7 @@ class GroupsViewModel @Inject constructor(
         userName: String,
         userType: Int
     ) {
-        userPreferencesDSRepository.setGroupSession(groupName, userName, userType)
+        userPreferencesRepository.setGroupSession(groupName, userName, userType)
 
         viewModelScope.launch {
             groupRepository.saveUserInGroup(groupName, userName, userType)

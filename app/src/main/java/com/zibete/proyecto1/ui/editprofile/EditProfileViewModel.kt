@@ -3,17 +3,17 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserRepository.AccountKeys
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_LOAD_ERROR
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_SAVED
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PROFILE_SAVE_ERROR
 import com.zibete.proyecto1.ui.constants.ERR_UNDER_AGE
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.ui.constants.MSG_PROFILE_LOAD_ERROR
+import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVED
+import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVE_ERROR
 import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.utils.Utils.calcAge
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,17 +22,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val userSessionManager: UserSessionManager,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -97,13 +95,13 @@ class EditProfileViewModel @Inject constructor(
         return calcAge(birthDay)
     }
 
-    fun checkFirstLogin(): Boolean = runBlocking {
-        userPreferencesDSRepository.firstLoginDoneFlow.first()
+    suspend fun isFirstLoginDone(): Boolean {
+        return userPreferencesRepository.getFirstLoginDone()
     }
 
     fun markFirstLoginAsDone() {
         viewModelScope.launch {
-            userPreferencesDSRepository.setFirstLoginDone(true)
+            userPreferencesRepository.setFirstLoginDone(true)
         }
     }
 
@@ -170,14 +168,14 @@ class EditProfileViewModel @Inject constructor(
 
                 // 2) Update Realtime DB (/Cuentas)
                 val updates = mutableMapOf<String, Any?>(
-                    AccountKeys.NAME to newName,
-                    AccountKeys.BIRTHDAY to newBirthDate,
-                    AccountKeys.AGE to age,
-                    AccountKeys.DESCRIPTION to newDescription
+                    AccountsKeys.NAME to newName,
+                    AccountsKeys.BIRTHDATE to newBirthDate,
+                    AccountsKeys.AGE to age,
+                    AccountsKeys.DESCRIPTION to newDescription
                 )
 
                 if (finalPhotoUrl != null && finalPhotoUrl != originalPhotoUrl) {
-                    updates[AccountKeys.PHOTO_URL] = finalPhotoUrl
+                    updates[AccountsKeys.PHOTO_URL] = finalPhotoUrl
                 }
 
                 userRepository.updateUserFields(updates)

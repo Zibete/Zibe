@@ -96,7 +96,7 @@ class SplashActivity : ComponentActivity() {
             ZibeTheme {
 
                 val navController = rememberNavController()
-                val snackbarHostState = remember { SnackbarHostState() }
+                val snackHostState = remember { SnackbarHostState() }
                 var showSessionConflictDialog by remember { mutableStateOf(false) }
                 var noInternetDialog by remember { mutableStateOf(false) }
 
@@ -177,6 +177,10 @@ class SplashActivity : ComponentActivity() {
                                     authViewModel.onDoNotDeleteClicked()
                                 },
 
+                                onDeleteAccount = {
+                                    authViewModel.onDeleteAccountClicked()
+                                },
+
                                 isLoading = uiState.isLoading,
                                 authEvents = authViewModel.events,
 
@@ -185,11 +189,6 @@ class SplashActivity : ComponentActivity() {
                                         popUpTo("auth") { inclusive = true }
                                     }
                                 },
-
-                                onClearDeletePrefs = {
-                                    userPreferencesRepository.deleteUser = false
-                                    userPreferencesRepository.deleteFirebaseAccount = false
-                                }
                             )
                         }
                         // ======================================
@@ -238,7 +237,7 @@ class SplashActivity : ComponentActivity() {
 
                     // SNACKBAR HOST
                     ZibeSnackHost(
-                        hostState = snackbarHostState,
+                        hostState = snackHostState,
                         modifier = Modifier.align(Alignment.BottomCenter)
                     )
 
@@ -288,7 +287,7 @@ class SplashActivity : ComponentActivity() {
                         when (event) {
 
                             is SplashUiEvent.ShowSnackbar ->
-                                snackbarHostState.showZibeMessage(event.type, event.message)
+                                snackHostState.showZibeMessage(event.type, event.message)
 
                             is SplashUiEvent.ShowNoInternetDialog ->
                                 noInternetDialog = true

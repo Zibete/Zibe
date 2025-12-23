@@ -10,7 +10,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.data.UserSessionManager.AuthProvider
@@ -30,7 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository
 ) : ViewModel() {
@@ -65,13 +65,13 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
-            userPreferencesDSRepository.groupNotificationsFlow.collect { enabled ->
+            userPreferencesRepository.groupNotificationsFlow.collect { enabled ->
                 _uiState.update { it.copy(groupNotificationsEnabled = enabled) }
             }
         }
 
         viewModelScope.launch {
-            userPreferencesDSRepository.individualNotificationsFlow.collect { enabled ->
+            userPreferencesRepository.individualNotificationsFlow.collect { enabled ->
                 _uiState.update { it.copy(individualNotificationsEnabled = enabled) }
             }
         }
@@ -113,7 +113,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onGroupNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
-            userPreferencesDSRepository.setGroupNotifications(enabled)
+            userPreferencesRepository.setGroupNotifications(enabled)
             emitSnack(
                 if (enabled) "Notificaciones grupales encendidas"
                 else "Notificaciones grupales apagadas"
@@ -123,7 +123,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onIndividualNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
-            userPreferencesDSRepository.setIndividualNotifications(enabled)
+            userPreferencesRepository.setIndividualNotifications(enabled)
             emitSnack(
                 if (enabled) "Notificaciones individuales encendidas"
                 else "Notificaciones individuales apagadas"
@@ -238,19 +238,7 @@ class SettingsViewModel @Inject constructor(
                 }
             }
 
-            runCatching { userSessionManager.deleteFirebaseUser() }
-                .onFailure {
-                    emitHideProgress()
-                    emitSnack("No se pudo eliminar la cuenta")
-                    return@launch
-                }
-
-            runCatching { userRepository.deleteMyAccountData() }
-                .onFailure {
-                    emitHideProgress()
-                    emitSnack("Error eliminando datos de la cuenta")
-                    return@launch
-                }
+            // Eliminación: Se decide en Splash
 
             emitHideProgress()
             logOut()

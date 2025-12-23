@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @Singleton
 class UserSessionManager @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val firebaseAuth: FirebaseAuth,
     private val loginManager: LoginManager,
     private val groupRepository: GroupRepository,
@@ -86,7 +86,7 @@ class UserSessionManager @Inject constructor(
 
     suspend fun performExitGroupDataCleanup() {
 
-        val groupContext = userPreferencesDSRepository.groupContextFlow.first() ?: return
+        val groupContext = userPreferencesRepository.groupContextFlow.first() ?: return
         val groupName = groupContext.groupName
 
         // 1) Eliminar mi lista de chats del grupo
@@ -110,7 +110,7 @@ class UserSessionManager @Inject constructor(
         )
 
         // 5) Reset estado local (DataStore)
-        userPreferencesDSRepository.resetGroupState()
+        userPreferencesRepository.resetGroupState()
     }
 
 
@@ -124,13 +124,13 @@ class UserSessionManager @Inject constructor(
         userRepository.setUserLastSeen()
 
         // 2) Limpieza de grupo si corresponde
-        val inGroup = userPreferencesDSRepository.inGroupFlow.first()
+        val inGroup = userPreferencesRepository.inGroupFlow.first()
         if (inGroup) {
             performExitGroupDataCleanup()
         }
 
         // 3) Limpiar prefs (DataStore)
-        userPreferencesDSRepository.clearAllData()
+        userPreferencesRepository.clearAllData()
 
         // 4) Sign out
         firebaseAuth.signOut()

@@ -67,10 +67,10 @@ fun AuthScreen(
     onGoogleClick: () -> Unit,
     onFacebookClick: () -> Unit,
     onDoNotDelete: () -> Unit,
+    onDeleteAccount: () -> Unit,
     authEvents: SharedFlow<AuthUiEvent>,
     isLoading: Boolean,
-    onNavigateToSplash: () -> Unit,
-    onClearDeletePrefs: () -> Unit
+    onNavigateToSplash: () -> Unit
 ) {
     // Inputs
     var email by rememberSaveable { mutableStateOf("") }
@@ -82,22 +82,22 @@ fun AuthScreen(
 
     val zibeColors = LocalZibeExtendedColors.current
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         authEvents.collect { event ->
             when (event) {
-                is AuthUiEvent.ShowSnackbar -> {
+                is AuthUiEvent.ShowSnack -> {
                     scope.launch {
-                        snackbarHostState.showZibeMessage(
-                            type = event.type,
-                            message = event.message
+                        snackHostState.showZibeMessage(
+                            message = event.message,
+                            type = event.type
                         )
                     }
                 }
-                AuthUiEvent.ClearDeletePrefs -> onClearDeletePrefs()
-                AuthUiEvent.NavigateToSplash -> onNavigateToSplash()
+                is AuthUiEvent.NavigateToSplash -> {
+                    onNavigateToSplash() }
             }
         }
     }
@@ -105,7 +105,7 @@ fun AuthScreen(
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost = {
-            ZibeSnackHost(hostState = snackbarHostState)
+            ZibeSnackHost(hostState = snackHostState)
         },
     ) { innerPadding ->
         Box(
@@ -273,6 +273,13 @@ fun AuthScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(onClick = onDeleteAccount) {
+                        Text(
+                            text = stringResource(id = R.string.delete_account),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
@@ -345,10 +352,10 @@ fun AuthScreenPreview() {
             onGoogleClick = {},
             onFacebookClick = {},
             onDoNotDelete = {},
+            onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {},
-            onClearDeletePrefs = {},
+            onNavigateToSplash = {}
         )
     }
 }
@@ -365,10 +372,10 @@ fun AuthScreenDeleteUserPreview() {
             onGoogleClick = {},
             onFacebookClick = {},
             onDoNotDelete = {},
+            onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {},
-            onClearDeletePrefs = {},
+            onNavigateToSplash = {}
         )
     }
 }

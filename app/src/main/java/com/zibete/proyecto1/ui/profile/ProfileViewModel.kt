@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
@@ -37,7 +37,7 @@ class ProfileViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
     private val locationRepository: LocationRepository,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -116,7 +116,7 @@ class ProfileViewModel @Inject constructor(
 
     // En MainViewModel
     val groupName: String
-        get() = runBlocking { userPreferencesDSRepository.groupNameFlow.first() }
+        get() = runBlocking { userPreferencesRepository.groupNameFlow.first() }
 
     fun loadGroupMatch() {
         viewModelScope.launch {

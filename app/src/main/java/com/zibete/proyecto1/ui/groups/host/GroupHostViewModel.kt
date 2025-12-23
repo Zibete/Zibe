@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.ChatGroupItem
@@ -30,7 +30,7 @@ import javax.inject.Inject
 class GroupHostViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     val myUid get() = userRepository.myUid
@@ -42,7 +42,7 @@ class GroupHostViewModel @Inject constructor(
     val events = _events.receiveAsFlow()
 
     val groupContext: StateFlow<GroupContext?> =
-        userPreferencesDSRepository.groupContextFlow
+        userPreferencesRepository.groupContextFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {

@@ -10,7 +10,7 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +40,7 @@ enum class CurrentScreen {
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
     private val groupRepository: GroupRepository,
@@ -52,7 +52,7 @@ class MainViewModel @Inject constructor(
     private val myUid: String get() = userRepository.myUid
 
     val groupContext: StateFlow<GroupContext?> =
-        userPreferencesDSRepository.groupContextFlow
+        userPreferencesRepository.groupContextFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -111,7 +111,7 @@ class MainViewModel @Inject constructor(
 
         // Badge bottom nav = (unread chat grupo) + (unread privados dentro de grupo)
         viewModelScope.launch {
-            userPreferencesDSRepository.groupContextFlow
+            userPreferencesRepository.groupContextFlow
                 .flatMapLatest { ctx ->
                     if (ctx == null) flowOf(0)
                     else groupRepository.unreadGroupBadgeCount(ctx.groupName)
@@ -124,7 +124,7 @@ class MainViewModel @Inject constructor(
 
         // Badge tab chat de grupo
         viewModelScope.launch {
-            userPreferencesDSRepository.groupContextFlow
+            userPreferencesRepository.groupContextFlow
                 .flatMapLatest { ctx ->
                     if (ctx == null) flowOf(0)
                     else groupRepository.observeUnreadGroupChat(ctx.groupName)
@@ -137,7 +137,7 @@ class MainViewModel @Inject constructor(
 
         // Badge privados dentro del grupo
         viewModelScope.launch {
-            userPreferencesDSRepository.groupContextFlow
+            userPreferencesRepository.groupContextFlow
                 .flatMapLatest { ctx ->
                     if (ctx == null) flowOf(0)
                     else groupRepository.observeUnreadPrivateMessages()
@@ -209,7 +209,7 @@ class MainViewModel @Inject constructor(
 
     fun checkFirstLogin() {
         viewModelScope.launch {
-            val done = userPreferencesDSRepository.firstLoginDoneFlow.first()
+            val done = userPreferencesRepository.getFirstLoginDone()
             if (!done) onEditProfileSelected()
         }
     }
@@ -375,12 +375,12 @@ class MainViewModel @Inject constructor(
     }
 
     val groupName: StateFlow<String> =
-        userPreferencesDSRepository.groupContextFlow
+        userPreferencesRepository.groupContextFlow
             .map { it?.groupName.orEmpty() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     val hasActiveFilter: StateFlow<Boolean> =
-        userPreferencesDSRepository.filterSwitchFlow
+        userPreferencesRepository.filterSwitchFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
 

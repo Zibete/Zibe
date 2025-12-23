@@ -122,6 +122,7 @@
     <string name="ocultar">Ocultar</string>
     <string name="recording">grabando audio...</string>
     <string name="dont_delete_account">Ya no quiero eliminar mi cuenta</string>
+    <string name="delete_account">Finalizar la eliminación de mi cuenta</string>
     <string name="forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="send_feedback">Enivar comentarios</string>
     <string name="version">2025</string>

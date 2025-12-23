@@ -1,118 +1,179 @@
 package com.zibete.proyecto1.data
 
-import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Repositorio para gestionar las SharedPreferences de la aplicación (filtros, estado de grupo, notificaciones).
- * Utiliza @Inject constructor para que Hilt maneje su ciclo de vida como Singleton.
- */
+data class GroupContext(
+    val inGroup: Boolean,
+    val groupName: String,
+    val userName: String,
+    val userType: Int
+)
+
 @Singleton
 class UserPreferencesRepository @Inject constructor(
-    @ApplicationContext context: Context
+    private val dataStore: DataStore<Preferences>
 ) {
 
-    private val userPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("userPrefs", Context.MODE_PRIVATE)
-    private val appPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("appPrefs", Context.MODE_PRIVATE)
-    private val filterPrefs: SharedPreferences = context.applicationContext.getSharedPreferences("filterPrefs", Context.MODE_PRIVATE)
+    // ---------------------------------------------------------------------------------------------
+    // GROUP (source of truth)
+    // ---------------------------------------------------------------------------------------------
 
-    // DATOS DE USUARIO Y GRUPO
-    var inGroup: Boolean
-        get() = userPrefs.getBoolean("inGroup", false)
-        set(value) = userPrefs.edit { putBoolean("inGroup", value) }
+    /** Contexto reactivo del grupo (si no está en grupo -> null) */
+    val groupContextFlow: Flow<GroupContext?> =
+        dataStore.data
+            .map { prefs ->
+                val inGroup = prefs[Keys.IN_GROUP] ?: false
+                val groupName = prefs[Keys.GROUP_NAME].orEmpty()
 
-    var userNameGroup: String
-        get() = userPrefs.getString("userName", "") ?: ""
-        set(value) = userPrefs.edit { putString("userName", value) }
+                if (!inGroup || groupName.isBlank()) return@map null
 
-    var groupName: String
-        get() = userPrefs.getString("groupName", "") ?: ""
-        set(value) = userPrefs.edit { putString("groupName", value) }
+                GroupContext(
+                    inGroup = true,
+                    groupName = groupName,
+                    userName = prefs[Keys.USER_NAME_GROUP].orEmpty(),
+                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER
+                )
+            }
+            .distinctUntilChanged()
 
-    var userType: Int
-        get() = userPrefs.getInt("userType", PUBLIC_USER)
-        set(value) = userPrefs.edit { putInt("userType", value) }
+    /** Flag simple (reactivo) por si alguna pantalla lo necesita */
+    val inGroupFlow: Flow<Boolean> =
+        dataStore.data
+            .map { it[Keys.IN_GROUP] ?: false }
+            .distinctUntilChanged()
 
-    var userDate: String
-        get() = userPrefs.getString("userDate", "") ?: ""
-        set(value) = userPrefs.edit { putString("userDate", value) }
+    /** groupName reactivo (útil para toolbar o labels sin armar GroupContext) */
+    val groupNameFlow: Flow<String> =
+        dataStore.data
+            .map { it[Keys.GROUP_NAME].orEmpty() }
+            .distinctUntilChanged()
 
-    var readGroupMsg: Int
-        get() = userPrefs.getInt("readGroupMsg", 0)
-        set(value) = userPrefs.edit { putInt("readGroupMsg", value) }
-
-    // FILTROS
-    var filterSwitch: Boolean
-        get() = filterPrefs.getBoolean("filterPrefs", false)
-        set(value) = filterPrefs.edit { putBoolean("filterPrefs", value) }
-
-    var applyOnlineFilter: Boolean
-        get() = filterPrefs.getBoolean("checkPref", false)
-        set(value) = filterPrefs.edit { putBoolean("checkPref", value) }
-
-    var applyAgeFilter: Boolean
-        get() = filterPrefs.getBoolean("edadPref", false)
-        set(value) = filterPrefs.edit { putBoolean("edadPref", value) }
-
-    var minAgePref: Int
-        get() = filterPrefs.getInt("desdePref", 0)
-        set(value) = filterPrefs.edit { putInt("desdePref", value) }
-
-    var maxAgePref: Int
-        get() = filterPrefs.getInt("hastaPref", 0)
-        set(value) = filterPrefs.edit { putInt("hastaPref", value) }
-
-    // NOTIFICACIONES - ONBOARDING
-    var individualNotifications: Boolean
-        get() = appPrefs.getBoolean("individualNotifications", true)
-        set(value) = appPrefs.edit { putBoolean("individualNotifications", value) }
-
-    var groupNotifications: Boolean
-        get() = appPrefs.getBoolean("groupNotifications", true)
-        set(value) = appPrefs.edit { putBoolean("groupNotifications", value) }
-
-    var onboardingDone: Boolean
-        get() = appPrefs.getBoolean("onboardingDone", false)
-        set(value) = appPrefs.edit { putBoolean("onboardingDone", value) }
-
-    var firstLoginDone: Boolean
-        get() = appPrefs.getBoolean("firstLoginDone", false)
-        set(value) = appPrefs.edit { putBoolean("firstLoginDone", value) }
-
-    var deleteUser: Boolean
-        get() = appPrefs.getBoolean("deleteUser", false)
-        set(value) = appPrefs.edit { putBoolean("deleteUser", value) }
-
-    var deleteFirebaseAccount: Boolean
-        get() = appPrefs.getBoolean("deleteFirebaseAccount", false)
-        set(value) = appPrefs.edit { putBoolean("deleteFirebaseAccount", value) }
-
-    fun clearAllData() {
-
-        resetGroupState()
-
-        userPrefs.edit {
-            putBoolean("filterPrefs", false)
-            putBoolean("checkPref", false)
-            putBoolean("edadPref", false)
-            putInt("desdePref", 0)
-            putInt("hastaPref", 0)
+    suspend fun setGroupSession(
+        groupName: String,
+        userName: String,
+        userType: Int
+    ) {
+        dataStore.edit { prefs ->
+            prefs[Keys.IN_GROUP] = true
+            prefs[Keys.GROUP_NAME] = groupName
+            prefs[Keys.USER_NAME_GROUP] = userName
+            prefs[Keys.USER_TYPE] = userType
         }
     }
 
-    fun resetGroupState() {
-        userPrefs.edit {
-            putBoolean("inGroup", false)
-            putString("userName", "")
-            putString("groupName", "")
-            putInt("userType", PUBLIC_USER)
-            putInt("readGroupMsg", 0)
-            putString("userDate", "")
+    suspend fun resetGroupState() {
+        dataStore.edit { prefs ->
+            prefs[Keys.IN_GROUP] = false
+            prefs[Keys.GROUP_NAME] = ""
+            prefs[Keys.USER_NAME_GROUP] = ""
+            prefs[Keys.USER_TYPE] = PUBLIC_USER
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // FILTERS (reactivo)
+    // ---------------------------------------------------------------------------------------------
+
+    val filterSwitchFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.FILTER_SWITCH] ?: false }.distinctUntilChanged()
+
+    suspend fun setFilterSwitch(value: Boolean) {
+        dataStore.edit { it[Keys.FILTER_SWITCH] = value }
+    }
+
+    val applyOnlineFilterFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.APPLY_ONLINE_FILTER] ?: false }.distinctUntilChanged()
+
+    suspend fun setApplyOnlineFilter(value: Boolean) {
+        dataStore.edit { it[Keys.APPLY_ONLINE_FILTER] = value }
+    }
+
+    val applyAgeFilterFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.APPLY_AGE_FILTER] ?: false }.distinctUntilChanged()
+
+    suspend fun setApplyAgeFilter(value: Boolean) {
+        dataStore.edit { it[Keys.APPLY_AGE_FILTER] = value }
+    }
+
+    val minAgeFlow: Flow<Int> =
+        dataStore.data.map { it[Keys.MIN_AGE] ?: 0 }.distinctUntilChanged()
+
+    suspend fun setMinAge(value: Int) {
+        dataStore.edit { it[Keys.MIN_AGE] = value }
+    }
+
+    val maxAgeFlow: Flow<Int> =
+        dataStore.data.map { it[Keys.MAX_AGE] ?: 0 }.distinctUntilChanged()
+
+    suspend fun setMaxAge(value: Int) {
+        dataStore.edit { it[Keys.MAX_AGE] = value }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // NOTIFICATIONS / ONBOARDING (reactivo + setters)
+    // ---------------------------------------------------------------------------------------------
+
+    val individualNotificationsFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.INDIVIDUAL_NOTIFICATIONS] ?: true }.distinctUntilChanged()
+
+    suspend fun setIndividualNotifications(value: Boolean) {
+        dataStore.edit { it[Keys.INDIVIDUAL_NOTIFICATIONS] = value }
+    }
+
+    val groupNotificationsFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.GROUP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
+
+    suspend fun setGroupNotifications(value: Boolean) {
+        dataStore.edit { it[Keys.GROUP_NOTIFICATIONS] = value }
+    }
+
+    val onboardingDoneFlow: Flow<Boolean> =
+        dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }.distinctUntilChanged()
+
+    suspend fun setOnboardingDone(value: Boolean) {
+        dataStore.edit { it[Keys.ONBOARDING_DONE] = value }
+    }
+
+    suspend fun setFirstLoginDone(value: Boolean) {
+        dataStore.edit { it[Keys.FIRST_LOGIN_DONE] = value }
+    }
+
+    suspend fun getFirstLoginDone(): Boolean =
+        dataStore.data.first()[Keys.FIRST_LOGIN_DONE] ?: false
+
+    suspend fun getDeleteUser(): Boolean =
+        dataStore.data.first()[Keys.DELETE_USER] ?: false
+
+    suspend fun setDeleteUser(value: Boolean) {
+        dataStore.edit { it[Keys.DELETE_USER] = value }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // CLEANUP
+    // ---------------------------------------------------------------------------------------------
+
+    /** Equivalente a tu clearAllData() actual */
+    suspend fun clearAllData() {
+        resetGroupState()
+        dataStore.edit { prefs ->
+            prefs[Keys.FILTER_SWITCH] = false
+            prefs[Keys.APPLY_ONLINE_FILTER] = false
+            prefs[Keys.APPLY_AGE_FILTER] = false
+            prefs[Keys.MIN_AGE] = 0
+            prefs[Keys.MAX_AGE] = 0
+
+            prefs[Keys.ONBOARDING_DONE] = false
+            prefs[Keys.FIRST_LOGIN_DONE] = false
+            prefs[Keys.DELETE_USER] = false
         }
     }
 }

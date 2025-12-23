@@ -5,7 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesDSRepository
+import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val userPreferencesDSRepository: UserPreferencesDSRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
     private val userSessionManager: UserSessionManager
@@ -53,9 +53,9 @@ class SplashViewModel @Inject constructor(
 
             // 2) Onboarding (solo una vez)
             val onboardingDone =
-                userPreferencesDSRepository.onboardingDoneFlow.first()
+                userPreferencesRepository.onboardingDoneFlow.first()
             if (!onboardingDone) {
-                userPreferencesDSRepository.setOnboardingDone(true)
+                userPreferencesRepository.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
@@ -137,14 +137,14 @@ class SplashViewModel @Inject constructor(
             userSessionManager.currentUser?.let {
                 userRepository.createUserNode(it, "", "")
             }
-            userPreferencesDSRepository.setFirstLoginDone(false)
+            userPreferencesRepository.setFirstLoginDone(false)
             _events.emit(SplashUiEvent.NavigateMain)
             return
         }
 
         // Perfil incompleto / completo
         val hasBirthDate = userRepository.hasBirthDate(uid)
-        userPreferencesDSRepository.setFirstLoginDone(hasBirthDate)
+        userPreferencesRepository.setFirstLoginDone(hasBirthDate)
 
         _events.emit(SplashUiEvent.NavigateMain)
     }
