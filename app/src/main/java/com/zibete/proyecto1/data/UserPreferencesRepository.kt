@@ -17,11 +17,20 @@ data class GroupContext(
     val userName: String,
     val userType: Int
 )
+interface UserPreferencesProvider {
+    suspend fun isOnboardingDone(): Boolean
+    suspend fun isFirstLoginDone(): Boolean
+}
+interface UserPreferencesActions {
+    suspend fun setOnboardingDone(done: Boolean)
+    suspend fun setFirstLoginDone(done: Boolean)
+}
+
 
 @Singleton
 class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
-) {
+) : UserPreferencesProvider, UserPreferencesActions {
 
     // ---------------------------------------------------------------------------------------------
     // GROUP (source of truth)
@@ -136,21 +145,21 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { it[Keys.GROUP_NOTIFICATIONS] = value }
     }
 
-    val onboardingDoneFlow: Flow<Boolean> =
-        dataStore.data.map { it[Keys.ONBOARDING_DONE] ?: false }.distinctUntilChanged()
+    override suspend fun isOnboardingDone(): Boolean =
+        dataStore.data.first()[Keys.ONBOARDING_DONE] ?: false
 
-    suspend fun setOnboardingDone(value: Boolean) {
-        dataStore.edit { it[Keys.ONBOARDING_DONE] = value }
+    override suspend fun setOnboardingDone(done: Boolean) {
+        dataStore.edit { it[Keys.ONBOARDING_DONE] = done }
     }
 
-    suspend fun setFirstLoginDone(value: Boolean) {
-        dataStore.edit { it[Keys.FIRST_LOGIN_DONE] = value }
-    }
-
-    suspend fun getFirstLoginDone(): Boolean =
+    override suspend fun isFirstLoginDone(): Boolean =
         dataStore.data.first()[Keys.FIRST_LOGIN_DONE] ?: false
 
-    suspend fun getDeleteUser(): Boolean =
+    override suspend fun setFirstLoginDone(done: Boolean) {
+        dataStore.edit { it[Keys.FIRST_LOGIN_DONE] = done }
+    }
+
+    suspend fun isDeleteUser(): Boolean =
         dataStore.data.first()[Keys.DELETE_USER] ?: false
 
     suspend fun setDeleteUser(value: Boolean) {

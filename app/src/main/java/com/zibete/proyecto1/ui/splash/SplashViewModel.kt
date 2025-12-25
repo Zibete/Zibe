@@ -5,26 +5,30 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.utils.Utils.AppChecks
+import com.zibete.proyecto1.utils.AppChecksProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val appChecksProvider: AppChecksProvider,
+    private val sessionProvider: UserSessionProvider,
+    private val sessionActions: UserSessionActions,
+    private val preferencesProvider: UserPreferencesProvider,
+    private val preferencesActions: UserPreferencesActions,
     private val userRepository: UserRepository,
-    private val sessionRepository: SessionRepository,
-    private val userSessionManager: UserSessionManager
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SplashUiEvent>(
@@ -53,28 +57,28 @@ class SplashViewModel @Inject constructor(
 
             // 2) Onboarding (solo una vez)
             val onboardingDone =
-                userPreferencesRepository.onboardingDoneFlow.first()
+                preferencesProvider.isOnboardingDone()
             if (!onboardingDone) {
-                userPreferencesRepository.setOnboardingDone(true)
+                preferencesActions.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
 
             // 3) Internet
-            if (!AppChecks.hasInternetConnection(context)) {
+            if (!appChecksProvider.hasInternetConnection(context)) {
                 _events.emit(SplashUiEvent.ShowNoInternetDialog)
                 return@launch
             }
 
             // 4) Sin usuario → Auth
-            val currentUser = userSessionManager.currentUser
+            val currentUser = sessionProvider.currentUser
             if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
 
             // 5) Permisos de ubicación
-            if (!AppChecks.hasLocationPermission(context)) {
+            if (!appChecksProvider.hasLocationPermission(context)) {
                 _events.emit(SplashUiEvent.RequestLocationPermission)
                 return@launch
             }
@@ -92,7 +96,7 @@ class SplashViewModel @Inject constructor(
     // ============================================================
 
     suspend fun onSessionConflictConfirmed() {
-        val currentUser = userSessionManager.currentUser ?: return
+        val currentUser = sessionProvider.currentUser ?: return
         setActiveSession(currentUser.uid)
         updateUserFlow(currentUser.uid)
     }
@@ -115,7 +119,7 @@ class SplashViewModel @Inject constructor(
     fun onLogoutRequested() {
         viewModelScope.launch {
             userRepository.setUserLastSeen()
-            val intent = userSessionManager.logOutCleanup()
+            val intent = sessionActions.logOutCleanup()
             _events.emit(SplashUiEvent.Navigate(intent))
         }
     }
@@ -135,17 +139,17 @@ class SplashViewModel @Inject constructor(
 
         // Usuario nuevo
         if (!snapshot.exists()) {
-            userSessionManager.currentUser?.let {
+            sessionProvider.currentUser?.let {
                 userRepository.createUserNode(it, "", "")
             }
-            userPreferencesRepository.setFirstLoginDone(false)
+            preferencesActions.setFirstLoginDone(false)
             _events.emit(SplashUiEvent.NavigateMain)
             return
         }
 
         // Perfil incompleto / completo
         val hasBirthDate = userRepository.hasBirthDate(uid)
-        userPreferencesRepository.setFirstLoginDone(hasBirthDate)
+        preferencesActions.setFirstLoginDone(hasBirthDate)
 
         _events.emit(SplashUiEvent.NavigateMain)
     }

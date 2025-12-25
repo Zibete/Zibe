@@ -14,6 +14,14 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface UserSessionProvider {
+    val currentUser: FirebaseUser?
+}
+
+interface UserSessionActions {
+    suspend fun logOutCleanup(): Intent
+}
+
 @Singleton
 class UserSessionManager @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
@@ -21,13 +29,13 @@ class UserSessionManager @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val loginManager: LoginManager,
     private val groupRepository: GroupRepository
-) {
+) : UserSessionProvider, UserSessionActions {
 
     // ---------------------------------------------------------------------------------------------
     // AUTH USER
     // ---------------------------------------------------------------------------------------------
 
-    val currentUser: FirebaseUser?
+    override val currentUser: FirebaseUser?
         get() = firebaseAuth.currentUser
 
     val firebaseUser: FirebaseUser
@@ -125,7 +133,7 @@ class UserSessionManager @Inject constructor(
     // LOGOUT CLEANUP
     // ---------------------------------------------------------------------------------------------
 
-    suspend fun logOutCleanup(): Intent {
+    override suspend fun logOutCleanup(): Intent {
 
         // 2) Limpieza de grupo si corresponde
         val inGroup = userPreferencesRepository.inGroupFlow.first()

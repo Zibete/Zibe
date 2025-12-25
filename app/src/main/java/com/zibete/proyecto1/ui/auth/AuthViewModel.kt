@@ -43,7 +43,7 @@ class AuthViewModel @Inject constructor(
     fun initAfterDelete() {
 
         viewModelScope.launch {
-            val deleteUser = userPreferencesRepository.getDeleteUser()
+            val deleteUser = userPreferencesRepository.isDeleteUser()
             _uiState.update { it.copy(deleteUser = deleteUser) }
         }
 
