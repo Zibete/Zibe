@@ -93,7 +93,7 @@ class EditProfileViewModel @Inject constructor(
     }
 
     suspend fun isFirstLoginDone(): Boolean {
-        return userPreferencesRepository.getFirstLoginDone()
+        return userPreferencesRepository.isFirstLoginDone()
     }
 
     fun markFirstLoginAsDone() {

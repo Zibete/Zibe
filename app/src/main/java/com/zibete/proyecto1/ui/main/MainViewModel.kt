@@ -13,6 +13,7 @@ import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -36,8 +36,6 @@ enum class CurrentScreen {
     CHAT, USERS, GROUPS, EDIT_PROFILE, FAVORITES, OTHER
 }
 
-
-
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
@@ -46,7 +44,8 @@ class MainViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
     private val locationRepository: LocationRepository,
-    private val presenceRepository: PresenceRepository
+    private val presenceRepository: PresenceRepository,
+    private val logoutUseCase: DefaultLogoutUseCase,
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -202,15 +201,14 @@ class MainViewModel @Inject constructor(
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
-            userRepository.setUserLastSeen()
-            val intent = userSessionManager.logOutCleanup()
+            val intent = logoutUseCase.execute()
             _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
         }
     }
 
     fun checkFirstLogin() {
         viewModelScope.launch {
-            val done = userPreferencesRepository.getFirstLoginDone()
+            val done = userPreferencesRepository.isFirstLoginDone()
             if (!done) onEditProfileSelected()
         }
     }

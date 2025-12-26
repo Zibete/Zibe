@@ -31,8 +31,8 @@ import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
+import com.zibete.proyecto1.utils.SimpleWatcher
 import com.zibete.proyecto1.utils.UserMessageUtils
-import com.zibete.proyecto1.utils.Utils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -166,7 +166,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
         dialogBinding.btnStartAnonymousChat.isEnabled = false
 
-        dialogBinding.edtNick.addTextChangedListener(Utils.SimpleWatcher { text ->
+        dialogBinding.edtNick.addTextChangedListener(SimpleWatcher { text ->
             dialogBinding.btnStartAnonymousChat.isEnabled = text.isNotEmpty()
         })
 
@@ -212,8 +212,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                         dialogBinding.edtDataNewGroup.text?.isNotEmpty() == true
         }
 
-        dialogBinding.edtNameNewGroup.addTextChangedListener(Utils.SimpleWatcher(validate))
-        dialogBinding.edtDataNewGroup.addTextChangedListener(Utils.SimpleWatcher(validate))
+        dialogBinding.edtNameNewGroup.addTextChangedListener(SimpleWatcher(validate))
+        dialogBinding.edtDataNewGroup.addTextChangedListener(SimpleWatcher(validate))
 
         joinGroupDialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)

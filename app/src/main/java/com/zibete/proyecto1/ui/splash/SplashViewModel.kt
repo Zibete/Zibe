@@ -4,27 +4,30 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
+import com.google.firebase.auth.FirebaseUser
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.utils.Utils.AppChecks
+import com.zibete.proyecto1.utils.AppChecksProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val userRepository: UserRepository,
-    private val sessionRepository: SessionRepository,
-    private val userSessionManager: UserSessionManager
+    private val appChecksProvider: AppChecksProvider,
+    private val sessionProvider: UserSessionProvider,
+    private val preferencesProvider: UserPreferencesProvider,
+    private val preferencesActions: UserPreferencesActions,
+    private val sessionBootstrapper: SessionBootstrapper,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SplashUiEvent>(
@@ -52,70 +55,57 @@ class SplashViewModel @Inject constructor(
             }
 
             // 2) Onboarding (solo una vez)
-            val onboardingDone =
-                userPreferencesRepository.onboardingDoneFlow.first()
-            if (!onboardingDone) {
-                userPreferencesRepository.setOnboardingDone(true)
+            if (!preferencesProvider.isOnboardingDone()) {
+                preferencesActions.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
 
             // 3) Internet
-            if (!AppChecks.hasInternetConnection(context)) {
+            if (!appChecksProvider.hasInternetConnection(context)) {
                 _events.emit(SplashUiEvent.ShowNoInternetDialog)
                 return@launch
             }
 
             // 4) Sin usuario → Auth
-            val currentUser = userSessionManager.currentUser
+            val currentUser = sessionProvider.currentUser
             if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
 
             // 5) Permisos de ubicación
-            if (!AppChecks.hasLocationPermission(context)) {
+            if (!appChecksProvider.hasLocationPermission(context)) {
                 _events.emit(SplashUiEvent.RequestLocationPermission)
                 return@launch
             }
 
             // 6) Sesión activa (installId + fcmToken)
-            setActiveSession(currentUser.uid)
-
-            // 7) Continuar flujo
-            updateUserFlow(currentUser.uid)
+            continueToMain(currentUser)
         }
     }
 
     // ============================================================
-    // SESSION CONFLICT
+    // SESSION
     // ============================================================
 
-    suspend fun onSessionConflictConfirmed() {
-        val currentUser = userSessionManager.currentUser ?: return
-        setActiveSession(currentUser.uid)
-        updateUserFlow(currentUser.uid)
+    fun onSessionConflictConfirmed() {
+        val currentUser = sessionProvider.currentUser ?: return
+        viewModelScope.launch { continueToMain(currentUser) }
+    }
+
+    suspend fun continueToMain(currentUser: FirebaseUser){
+        sessionBootstrapper.bootstrap(currentUser.uid)
+        _events.emit(SplashUiEvent.NavigateMain)
     }
 
     fun onSessionConflictCancelled() {
         onLogoutRequested()
     }
 
-    private suspend fun setActiveSession(uid: String) {
-        val installId = sessionRepository.getLocalInstallId()
-        val fcmToken = sessionRepository.getLocalFcmToken()
-
-        sessionRepository.setActiveSession(
-            uid = uid,
-            installId = installId,
-            fcmToken = fcmToken
-        )
-    }
-
     fun onLogoutRequested() {
         viewModelScope.launch {
-            userRepository.setUserLastSeen()
-            val intent = userSessionManager.logOutCleanup()
+            val intent = logoutUseCase.execute()
             _events.emit(SplashUiEvent.Navigate(intent))
         }
     }
@@ -124,29 +114,5 @@ class SplashViewModel @Inject constructor(
         viewModelScope.launch {
             _events.emit(SplashUiEvent.ShowSessionConflictDialog)
         }
-    }
-
-    // ============================================================
-    // USER FLOW
-    // ============================================================
-
-    private suspend fun updateUserFlow(uid: String) {
-        val snapshot = userRepository.getAccountSnapshot(uid)
-
-        // Usuario nuevo
-        if (!snapshot.exists()) {
-            userSessionManager.currentUser?.let {
-                userRepository.createUserNode(it, "", "")
-            }
-            userPreferencesRepository.setFirstLoginDone(false)
-            _events.emit(SplashUiEvent.NavigateMain)
-            return
-        }
-
-        // Perfil incompleto / completo
-        val hasBirthDate = userRepository.hasBirthDate(uid)
-        userPreferencesRepository.setFirstLoginDone(hasBirthDate)
-
-        _events.emit(SplashUiEvent.NavigateMain)
     }
 }

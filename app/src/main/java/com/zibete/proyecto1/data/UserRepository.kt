@@ -51,10 +51,21 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// ------------------------------------------------------------
-// Atajo opcional para lecturas one-shot con coroutines
-// ------------------------------------------------------------
-private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await()
+interface UserRepositoryProvider {
+    suspend fun accountExists(uid: String): Boolean
+    suspend fun hasBirthDate(uid: String): Boolean
+}
+
+interface UserRepositoryActions {
+    suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String)
+    suspend fun setUserLastSeen()
+    suspend fun setUserActivityStatus(status: String)
+    suspend fun deleteMyAccountData()
+}
+
+
+
+private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await() // Atajo para lecturas one-shot con coroutines
 
 @Singleton
 class UserRepository @Inject constructor(
@@ -63,7 +74,7 @@ class UserRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
-) {
+) : UserRepositoryProvider, UserRepositoryActions {
 
     // ============================================================
     // SESSION (cache local)
@@ -243,20 +254,24 @@ class UserRepository @Inject constructor(
     // USER NODE (alta)
     // ============================================================
 
-    suspend fun createUserNode(
+    override suspend fun createUserNode(
         firebaseUser: FirebaseUser,
         birthDate: String,
         description: String
     ) {
+        val id = firebaseUser.uid
+        val userName = firebaseUser.displayName.orEmpty()
+        val createdAt = now()
+        val age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate)
         val email: String = firebaseUser.email ?: ""
         val photoUrl: String = firebaseUser.photoUrl?.toString() ?: DEFAULT_PROFILE_PHOTO_URL
 
         val newUser = Users(
-            id = firebaseUser.uid,
-            name = firebaseUser.displayName.orEmpty(),
+            id = id,
+            name = userName,
             birthDate = birthDate,
-            createdAt = now(),
-            age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate),
+            createdAt = createdAt,
+            age = age,
             email = email,
             photoUrl = photoUrl,
             isOnline = true,
@@ -266,12 +281,14 @@ class UserRepository @Inject constructor(
             longitude = 0.0
         )
 
-        accountRef(firebaseUser.uid)
+        accountRef(id)
             .setValue(newUser)
             .await()
     }
 
-    suspend fun hasBirthDate(uid: String): Boolean =
+    override suspend fun accountExists(uid: String): Boolean =
+        firebaseRefsContainer.refAccounts.child(uid).get().await().exists()
+    override suspend fun hasBirthDate(uid: String): Boolean =
         firebaseRefsContainer.refAccounts
             .child(uid)
             .child(AccountsKeys.BIRTHDATE) // OLD: BIRTHDAY
@@ -480,11 +497,11 @@ class UserRepository @Inject constructor(
     // PRESENCE / STATUS (nuevo)
     // ============================================================
 
-    suspend fun setUserActivityStatus(status: String) {
+    override suspend fun setUserActivityStatus(status: String) {
         presenceRepository.setActivityStatus(status)
     }
 
-    suspend fun setUserLastSeen() {
+    override suspend fun setUserLastSeen() {
         presenceRepository.setLastSeenNow()
     }
 
@@ -564,7 +581,7 @@ class UserRepository @Inject constructor(
     // UTILS
     // ============================================================
 
-    suspend fun deleteMyAccountData() {
+    override suspend fun deleteMyAccountData() {
         firebaseRefsContainer.refData.child(myUid).removeValue().await()
         firebaseRefsContainer.refAccounts.child(myUid).removeValue().await()
         runCatching { getProfilePhotoStoragePath().delete().await() }

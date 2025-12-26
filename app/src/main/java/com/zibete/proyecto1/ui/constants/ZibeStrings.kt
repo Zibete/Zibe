@@ -31,7 +31,7 @@ const val MSG_USER_LEAVED = "abandonó la sala"
 
 const val NO_INTERNET = "No hay conexión a Internet en este momento"
 
-const val DELETE_ACCOUNT = "La cuenta ha sido eliminada"
+const val DELETE_ACCOUNT_SUCCESS = "La cuenta ha sido eliminada"
 const val DO_NOT_DELETE_ACCOUNT = "La cuenta se mantendrá activa"
 
 const val ERR_ZIBE = "Ocurrió un error inesperado. Intentá nuevamente."
