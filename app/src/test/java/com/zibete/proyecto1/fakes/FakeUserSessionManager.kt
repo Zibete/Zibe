@@ -5,8 +5,6 @@ import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
 
-interface Fake
-
 class FakeUserSessionProvider(
     override var currentUser: FirebaseUser? = null
 ) : UserSessionProvider

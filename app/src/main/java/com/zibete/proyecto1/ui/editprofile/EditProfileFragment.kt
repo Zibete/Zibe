@@ -34,7 +34,6 @@ import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
@@ -43,10 +42,11 @@ import com.zibete.proyecto1.ui.constants.MSG_CAMERA_PERMISSION_REQUIRED
 import com.zibete.proyecto1.ui.constants.SIGNUP_PROFILE_MESSAGE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainNavEvent
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
+import com.zibete.proyecto1.utils.SimpleWatcher
 import com.zibete.proyecto1.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.utils.TimeUtils.millisToIso
-import com.zibete.proyecto1.utils.Utils
+import com.zibete.proyecto1.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -136,10 +136,10 @@ class EditProfileFragment : Fragment() {
         binding.btnDone.setOnClickListener { editProfileViewModel.onBackToMain() }
 
         // Watchers -> VM
-        binding.edtNameUser.addTextChangedListener(Utils.SimpleWatcher {
+        binding.edtNameUser.addTextChangedListener(SimpleWatcher {
             editProfileViewModel.onNameChanged(it)
         })
-        binding.edtDesc.addTextChangedListener(Utils.SimpleWatcher {
+        binding.edtDesc.addTextChangedListener(SimpleWatcher {
             editProfileViewModel.onDescriptionChanged(it)
         })
 

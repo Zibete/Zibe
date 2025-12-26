@@ -24,7 +24,6 @@ import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
 import com.zibete.proyecto1.utils.TimeUtils
-import com.zibete.proyecto1.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
