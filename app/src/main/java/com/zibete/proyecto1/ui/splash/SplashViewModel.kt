@@ -55,9 +55,7 @@ class SplashViewModel @Inject constructor(
             }
 
             // 2) Onboarding (solo una vez)
-            val onboardingDone =
-                preferencesProvider.isOnboardingDone()
-            if (!onboardingDone) {
+            if (!preferencesProvider.isOnboardingDone()) {
                 preferencesActions.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
