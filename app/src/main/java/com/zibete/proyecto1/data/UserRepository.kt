@@ -248,15 +248,19 @@ class UserRepository @Inject constructor(
         birthDate: String,
         description: String
     ) {
+        val id = firebaseUser.uid
+        val userName = firebaseUser.displayName.orEmpty()
+        val createdAt = now()
+        val age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate)
         val email: String = firebaseUser.email ?: ""
         val photoUrl: String = firebaseUser.photoUrl?.toString() ?: DEFAULT_PROFILE_PHOTO_URL
 
         val newUser = Users(
-            id = firebaseUser.uid,
-            name = firebaseUser.displayName.orEmpty(),
+            id = id,
+            name = userName,
             birthDate = birthDate,
-            createdAt = now(),
-            age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate),
+            createdAt = createdAt,
+            age = age,
             email = email,
             photoUrl = photoUrl,
             isOnline = true,
@@ -266,7 +270,7 @@ class UserRepository @Inject constructor(
             longitude = 0.0
         )
 
-        accountRef(firebaseUser.uid)
+        accountRef(id)
             .setValue(newUser)
             .await()
     }

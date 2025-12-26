@@ -2,12 +2,11 @@ package com.zibete.proyecto1
 
 import androidx.lifecycle.SavedStateHandle
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
-import com.zibete.proyecto1.fakes.FakeUserPreferences
+import com.zibete.proyecto1.fakes.FakeLogoutOrchestrator
+import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.fakes.FakeUserPreferencesState
-import com.zibete.proyecto1.fakes.FakeUserSessionActions
-import com.zibete.proyecto1.fakes.FakeUserSessionManager
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.ui.splash.SplashUiEvent
 import com.zibete.proyecto1.ui.splash.SplashViewModel
@@ -36,21 +35,23 @@ class SplashViewModelTest {
             firstLoginDone = false
         )
 
+        val savedStateHandle = SavedStateHandle()
         val fakeAppChecksProvider = FakeAppChecksProvider()
+        val fakeSessionProvider = FakeUserSessionProvider()
         val fakeUserPreferencesProvider = FakeUserPreferencesProvider(state)
         val fakeUserPreferencesActions = FakeUserPreferencesActions(state)
-        val fakeSessionProvider = FakeUserSessionProvider()
-        val fakeSessionActions = FakeUserSessionActions()
+        val fakeSessionBootstrapper = FakeSessionBootstrapper()
+        val fakeLogoutOrchestrator = FakeLogoutOrchestrator()
+
 
         val viewModel = SplashViewModel(
-            savedStateHandle = SavedStateHandle(),
+            savedStateHandle = savedStateHandle,
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = fakeSessionProvider,
-            sessionActions = fakeSessionActions,
             preferencesProvider = fakeUserPreferencesProvider,
             preferencesActions = fakeUserPreferencesActions,
-            userRepository = fakeUserPreferences, //falta
-            sessionRepository = fakeUserPreferences//falta
+            sessionBootstrapper = fakeSessionBootstrapper,
+            logoutOrchestrator = fakeLogoutOrchestrator
         )
 
         val events = mutableListOf<SplashUiEvent>()

@@ -13,6 +13,7 @@ import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.domain.session.DefaultLogoutOrchestrator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +46,8 @@ class MainViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
     private val locationRepository: LocationRepository,
-    private val presenceRepository: PresenceRepository
+    private val presenceRepository: PresenceRepository,
+    private val logoutOrchestrator: DefaultLogoutOrchestrator,
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -201,8 +203,7 @@ class MainViewModel @Inject constructor(
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
-            userRepository.setUserLastSeen()
-            val intent = userSessionManager.logOutCleanup()
+            val intent = logoutOrchestrator.execute()
             _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
         }
     }
