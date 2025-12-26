@@ -20,6 +20,10 @@ interface UserSessionProvider {
 
 interface UserSessionActions {
     suspend fun logOutCleanup(): Intent
+    suspend fun signInWithEmail(email: String, password: String)
+    suspend fun signInWithCredential(credential: AuthCredential)
+    suspend fun sendPasswordResetEmail(email: String)
+    suspend fun deleteFirebaseUser()
 }
 
 @Singleton
@@ -63,19 +67,19 @@ class UserSessionManager @Inject constructor(
     // AUTH API
     // ---------------------------------------------------------------------------------------------
 
-    suspend fun signInWithEmail(email: String, password: String) {
+    override suspend fun signInWithEmail(email: String, password: String) {
         firebaseAuth.signInWithEmailAndPassword(email, password).await()
     }
 
-    suspend fun signInWithCredential(credential: AuthCredential) {
+    override suspend fun signInWithCredential(credential: AuthCredential) {
         firebaseAuth.signInWithCredential(credential).await()
     }
 
-    suspend fun sendPasswordResetEmail(email: String) {
+    override suspend fun sendPasswordResetEmail(email: String) {
         firebaseAuth.sendPasswordResetEmail(email).await()
     }
 
-    suspend fun deleteFirebaseUser() {
+    override suspend fun deleteFirebaseUser() {
         firebaseUser.delete().await()
     }
 

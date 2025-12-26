@@ -13,6 +13,10 @@ class FakeUserRepositoryActions : UserRepositoryActions {
     var setLastSeenCalled: Boolean = false
     var lastActivityStatus: String? = null
 
+    var deleteMyAccountDataCalled: Boolean = false
+    var deleteShouldFail: Boolean = false
+    var deleteFailure: Throwable = RuntimeException("deleteMyAccountData failed")
+
     override suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String) {
         createUserNodeCalled = true
         lastCreatedUser = firebaseUser
@@ -27,4 +31,10 @@ class FakeUserRepositoryActions : UserRepositoryActions {
     override suspend fun setUserActivityStatus(status: String) {
         lastActivityStatus = status
     }
+
+    override suspend fun deleteMyAccountData() {
+        deleteMyAccountDataCalled = true
+        if (deleteShouldFail) throw deleteFailure
+    }
 }
+

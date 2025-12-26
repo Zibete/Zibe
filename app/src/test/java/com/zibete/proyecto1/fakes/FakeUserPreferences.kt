@@ -5,7 +5,8 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 
 class FakeUserPreferencesState(
     var onboardingDone: Boolean = false,
-    var firstLoginDone: Boolean = false
+    var firstLoginDone: Boolean = false,
+    var deleteUser: Boolean = false
 )
 
 class FakeUserPreferencesProvider(
@@ -14,6 +15,7 @@ class FakeUserPreferencesProvider(
 
     override suspend fun isOnboardingDone(): Boolean = state.onboardingDone
     override suspend fun isFirstLoginDone(): Boolean = state.firstLoginDone
+    override suspend fun isDeleteUser(): Boolean = state.deleteUser
 }
 
 class FakeUserPreferencesActions(
@@ -26,5 +28,9 @@ class FakeUserPreferencesActions(
 
     override suspend fun setFirstLoginDone(done: Boolean) {
         state.firstLoginDone = done
+    }
+
+    override suspend fun setDeleteUser(done: Boolean) {
+        state.deleteUser = done
     }
 }

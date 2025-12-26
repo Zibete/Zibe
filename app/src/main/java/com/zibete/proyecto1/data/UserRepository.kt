@@ -60,7 +60,10 @@ interface UserRepositoryActions {
     suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String)
     suspend fun setUserLastSeen()
     suspend fun setUserActivityStatus(status: String)
+    suspend fun deleteMyAccountData()
 }
+
+
 
 private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await() // Atajo para lecturas one-shot con coroutines
 
@@ -578,7 +581,7 @@ class UserRepository @Inject constructor(
     // UTILS
     // ============================================================
 
-    suspend fun deleteMyAccountData() {
+    override suspend fun deleteMyAccountData() {
         firebaseRefsContainer.refData.child(myUid).removeValue().await()
         firebaseRefsContainer.refAccounts.child(myUid).removeValue().await()
         runCatching { getProfilePhotoStoragePath().delete().await() }

@@ -1,11 +1,11 @@
 package com.zibete.proyecto1.fakes
 
 import android.content.Intent
-import com.zibete.proyecto1.domain.session.LogoutOrchestrator
+import com.zibete.proyecto1.domain.session.LogoutUseCase
 
-class FakeLogoutOrchestrator(
+class FakeLogoutUseCase(
     private val intentToReturn: Intent = Intent()
-) : LogoutOrchestrator {
+) : LogoutUseCase {
 
     override suspend fun execute(): Intent = intentToReturn
 }

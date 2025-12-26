@@ -16,12 +16,14 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
+import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 
-import com.zibete.proyecto1.domain.session.LogoutOrchestrator
-import com.zibete.proyecto1.domain.session.DefaultLogoutOrchestrator
+import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
+import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.utils.AppChecksProvider
 
 import dagger.Binds
@@ -73,9 +75,15 @@ abstract class AppBindingsModule {
 
     @Binds
     @Singleton
-    abstract fun bindLogoutOrchestrator(
-        impl: DefaultLogoutOrchestrator
-    ): LogoutOrchestrator
+    abstract fun bindLogoutUseCase(
+        impl: DefaultLogoutUseCase
+    ): LogoutUseCase
+
+    @Binds
+    @Singleton
+    abstract fun bindDeleteAccountUseCase(
+        impl: DefaultDeleteAccountUseCase
+    ): DeleteAccountUseCase
 
     @Binds
     @Singleton

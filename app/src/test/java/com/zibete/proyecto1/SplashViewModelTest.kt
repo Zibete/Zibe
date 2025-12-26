@@ -2,7 +2,7 @@ package com.zibete.proyecto1
 
 import androidx.lifecycle.SavedStateHandle
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
-import com.zibete.proyecto1.fakes.FakeLogoutOrchestrator
+import com.zibete.proyecto1.fakes.FakeLogoutUseCase
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
@@ -52,7 +52,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -86,7 +86,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -130,7 +130,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -173,7 +173,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -216,7 +216,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -263,7 +263,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -299,7 +299,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = fakeSessionBootstrapper,
-            logoutOrchestrator = FakeLogoutOrchestrator()
+            logoutUseCase = FakeLogoutUseCase()
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -319,7 +319,7 @@ class SplashViewModelTest {
     @Test
     fun `cuando se cancela conflicto de sesion hace logout y navega`() = runTest {
         // Given
-        val fakeLogoutOrchestrator = FakeLogoutOrchestrator()
+        val fakeLogoutOrchestrator = FakeLogoutUseCase()
 
         val state = FakeUserPreferencesState(
             onboardingDone = true,
@@ -333,7 +333,7 @@ class SplashViewModelTest {
             preferencesProvider = FakeUserPreferencesProvider(state),
             preferencesActions = FakeUserPreferencesActions(state),
             sessionBootstrapper = FakeSessionBootstrapper(),
-            logoutOrchestrator = fakeLogoutOrchestrator
+            logoutUseCase = fakeLogoutOrchestrator
         )
 
         val events = mutableListOf<SplashUiEvent>()
@@ -353,7 +353,7 @@ class SplashViewModelTest {
     @Test
     fun `cuando se solicita logout navega con intent`() = runTest {
         // Given
-        val fakeLogoutOrchestrator = FakeLogoutOrchestrator()
+        val fakeLogoutOrchestrator = FakeLogoutUseCase()
 
         val viewModel = SplashViewModel(
             savedStateHandle = SavedStateHandle(),
@@ -366,7 +366,7 @@ class SplashViewModelTest {
                 FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
             ),
             sessionBootstrapper = FakeSessionBootstrapper(),
-            logoutOrchestrator = fakeLogoutOrchestrator
+            logoutUseCase = fakeLogoutOrchestrator
         )
 
         val events = mutableListOf<SplashUiEvent>()

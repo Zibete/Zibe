@@ -8,7 +8,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.domain.session.LogoutOrchestrator
+import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.utils.AppChecksProvider
@@ -27,7 +27,7 @@ class SplashViewModel @Inject constructor(
     private val preferencesProvider: UserPreferencesProvider,
     private val preferencesActions: UserPreferencesActions,
     private val sessionBootstrapper: SessionBootstrapper,
-    private val logoutOrchestrator: LogoutOrchestrator
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SplashUiEvent>(
@@ -105,7 +105,7 @@ class SplashViewModel @Inject constructor(
 
     fun onLogoutRequested() {
         viewModelScope.launch {
-            val intent = logoutOrchestrator.execute()
+            val intent = logoutUseCase.execute()
             _events.emit(SplashUiEvent.Navigate(intent))
         }
     }

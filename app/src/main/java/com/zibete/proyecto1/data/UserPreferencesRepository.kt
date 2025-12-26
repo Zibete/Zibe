@@ -20,10 +20,12 @@ data class GroupContext(
 interface UserPreferencesProvider {
     suspend fun isOnboardingDone(): Boolean
     suspend fun isFirstLoginDone(): Boolean
+    suspend fun isDeleteUser(): Boolean
 }
 interface UserPreferencesActions {
     suspend fun setOnboardingDone(done: Boolean)
     suspend fun setFirstLoginDone(done: Boolean)
+    suspend fun setDeleteUser(done: Boolean)
 }
 
 
@@ -159,11 +161,11 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { it[Keys.FIRST_LOGIN_DONE] = done }
     }
 
-    suspend fun isDeleteUser(): Boolean =
+    override suspend fun isDeleteUser(): Boolean =
         dataStore.data.first()[Keys.DELETE_USER] ?: false
 
-    suspend fun setDeleteUser(value: Boolean) {
-        dataStore.edit { it[Keys.DELETE_USER] = value }
+    override suspend fun setDeleteUser(done: Boolean) {
+        dataStore.edit { it[Keys.DELETE_USER] = done }
     }
 
     // ---------------------------------------------------------------------------------------------

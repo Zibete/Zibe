@@ -9,11 +9,14 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.data.UserPreferencesRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.domain.session.DeleteAccountResult
+import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT
+import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
 import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
@@ -29,9 +32,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val userSessionManager: UserSessionManager,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val userRepository: UserRepository
+    private val userSessionProvider: UserSessionProvider,
+    private val userSessionActions: UserSessionActions,
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val userPreferencesActions: UserPreferencesActions,
+    private val deleteAccountUseCase: DeleteAccountUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -43,7 +48,7 @@ class AuthViewModel @Inject constructor(
     fun initAfterDelete() {
 
         viewModelScope.launch {
-            val deleteUser = userPreferencesRepository.isDeleteUser()
+            val deleteUser = userPreferencesProvider.isDeleteUser()
             _uiState.update { it.copy(deleteUser = deleteUser) }
         }
 
@@ -57,7 +62,7 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             runCatching {
-                userSessionManager.signInWithEmail(email, password)
+                userSessionActions.signInWithEmail(email, password)
             }.onFailure { e ->
                 showMessage(
                     message = getAuthErrorMessage(e),
@@ -85,7 +90,7 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             runCatching {
-                userSessionManager.sendPasswordResetEmail(email)
+                userSessionActions.sendPasswordResetEmail(email)
             }.onSuccess {
                 showMessage(
                     message = "Instrucciones enviadas a $email",
@@ -117,7 +122,7 @@ class AuthViewModel @Inject constructor(
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
 
             runCatching {
-                userSessionManager.signInWithCredential(credential)
+                userSessionActions.signInWithCredential(credential)
             }.onFailure { e ->
                 showMessage(
                     message = getAuthErrorMessage(e),
@@ -138,7 +143,7 @@ class AuthViewModel @Inject constructor(
             val credential = FacebookAuthProvider.getCredential(token.token)
 
             runCatching {
-                userSessionManager.signInWithCredential(credential)
+                userSessionActions.signInWithCredential(credential)
             }.onFailure { e ->
                 showMessage(
                     message = getAuthErrorMessage(e),
@@ -153,7 +158,7 @@ class AuthViewModel @Inject constructor(
     // ================= DELETE USER FLOW =================
 
     private fun handleAuthSuccess() {
-        val user = userSessionManager.currentUser
+        val user = userSessionProvider.currentUser
 
         if (user == null) {
             showMessage(ERR_ZIBE, ZibeSnackType.ERROR)
@@ -167,42 +172,34 @@ class AuthViewModel @Inject constructor(
     }
 
     fun onDeleteAccountClicked(){
-        _uiState.update { it.copy(isLoading = true) }
-
         viewModelScope.launch {
-            runCatching { userSessionManager.deleteFirebaseUser() }
-                .onFailure {
+            _uiState.update { it.copy(isLoading = true) }
+
+            when (deleteAccountUseCase.execute()) {
+                is DeleteAccountResult.Success -> {
                     showMessage(
-                        message = "No se pudo eliminar la cuenta. Intentá nuevamente.",
-                        type = ZibeSnackType.ERROR
-                    )
-                    return@launch
+                        message = DELETE_ACCOUNT_SUCCESS,
+                        type = ZibeSnackType.INFO,
+                        stopLoading = false)
+
+                    setDeleteUser(deleteUser = false)
                 }
+                is DeleteAccountResult.Failure -> {
+                    showMessage(
+                        "No se pudo eliminar la cuenta. Intentá nuevamente.",
+                        ZibeSnackType.ERROR
+                    )
+                }
+            }
+
+            _uiState.update { it.copy(isLoading = false) }
         }
 
-        viewModelScope.launch {
-            runCatching { userRepository.deleteMyAccountData() }
-                .onFailure {
-                    showMessage(
-                        message = "Error eliminando datos de la cuenta",
-                        type = ZibeSnackType.ERROR
-                    )
-                    return@launch
-                }
-        }
-
-        showMessage(
-            message = DELETE_ACCOUNT,
-            type = ZibeSnackType.INFO,
-            stopLoading = false
-        )
-
-        setDeleteUser(deleteUser = false)
     }
 
     fun setDeleteUser(deleteUser: Boolean){
         viewModelScope.launch {
-            userPreferencesRepository.setDeleteUser(deleteUser)
+            userPreferencesActions.setDeleteUser(deleteUser)
             _uiState.update { it.copy(deleteUser = deleteUser, isLoading = false) }
         }
     }
