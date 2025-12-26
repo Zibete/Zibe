@@ -10,45 +10,45 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface SessionRepositoryActions {
+    suspend fun setActiveSession(uid: String, installId: String, fcmToken: String?)
+    suspend fun clearSession(uid: String)
+}
+
+interface SessionRepositoryProvider {
+    suspend fun getLocalInstallId(): String
+    suspend fun getLocalFcmToken(): String?
+    suspend fun getInstallId(uid: String): String?
+    suspend fun getFcmToken(uid: String): String?
+    suspend fun getSessionsByFcmToken(token: String): DataSnapshot
+}
+
 @Singleton
 class SessionRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
-) {
+) : SessionRepositoryActions, SessionRepositoryProvider {
 
     // LOCAL INFO
-    suspend fun getLocalInstallId(): String = FirebaseInstallations.getInstance().id.await()
-    suspend fun getLocalFcmToken(): String = FirebaseMessaging.getInstance().token.await()
-
-    // ============================================================
-    // Refs
-    // ============================================================
-
-    private fun refSession(uid: String) =
-        firebaseRefsContainer.refSessions.child(uid)
-
-    private fun refInstallId(uid: String) =
-        refSession(uid).child(SessionKeys.ACTIVE_INSTALL_ID)
-
-    private fun refFcmToken(uid: String) =
-        refSession(uid).child(SessionKeys.FCM_TOKEN)
+    override suspend fun getLocalInstallId(): String = FirebaseInstallations.getInstance().id.await()
+    override suspend fun getLocalFcmToken(): String? = FirebaseMessaging.getInstance().token.await()
 
     // ============================================================
     // READ
     // ============================================================
 
-    suspend fun getInstallId(uid: String): String? =
+    override suspend fun getInstallId(uid: String): String? =
         refInstallId(uid)
             .get()
             .await()
             .getValue(String::class.java)
 
-    suspend fun getFcmToken(uid: String): String? =
+    override suspend fun getFcmToken(uid: String): String? =
         refFcmToken(uid)
             .get()
             .await()
             .getValue(String::class.java)
 
-    suspend fun findSessionsByFcmToken(token: String): DataSnapshot {
+    override suspend fun getSessionsByFcmToken(token: String): DataSnapshot {
         return firebaseRefsContainer.refSessions
             .orderByChild(SessionKeys.FCM_TOKEN)
             .equalTo(token)
@@ -60,7 +60,7 @@ class SessionRepository @Inject constructor(
     // WRITE
     // ============================================================
 
-    suspend fun setActiveSession(
+    override suspend fun setActiveSession(
         uid: String,
         installId: String,
         fcmToken: String?
@@ -78,7 +78,7 @@ class SessionRepository @Inject constructor(
             .await()
     }
 
-    suspend fun clearSession(uid: String) {
+    override suspend fun clearSession(uid: String) {
         refSession(uid)
             .removeValue()
             .await()
@@ -114,4 +114,18 @@ class SessionRepository @Inject constructor(
     fun removeSessionListener(uid: String, listener: ValueEventListener) {
         refInstallId(uid).removeEventListener(listener)
     }
+
+
+    // ============================================================
+    // Refs
+    // ============================================================
+
+    private fun refSession(uid: String) =
+        firebaseRefsContainer.refSessions.child(uid)
+
+    private fun refInstallId(uid: String) =
+        refSession(uid).child(SessionKeys.ACTIVE_INSTALL_ID)
+
+    private fun refFcmToken(uid: String) =
+        refSession(uid).child(SessionKeys.FCM_TOKEN)
 }

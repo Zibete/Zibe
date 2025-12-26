@@ -1,6 +1,9 @@
 package com.zibete.proyecto1.di
 
 
+import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.SessionRepositoryActions
+import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.utils.DefaultAppChecksProvider
 
 import com.zibete.proyecto1.data.UserSessionProvider
@@ -10,6 +13,9 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.UserRepositoryProvider
 
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
@@ -28,14 +34,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class AppBindingsModule {
 
-    // --- Utils / System checks ---
     @Binds
     @Singleton
     abstract fun bindAppChecksProvider(
         impl: DefaultAppChecksProvider
     ): AppChecksProvider
 
-    // --- Session: Provider/Actions ---
     @Binds
     @Singleton
     abstract fun bindUserSessionProvider(
@@ -48,7 +52,6 @@ abstract class AppBindingsModule {
         impl: UserSessionManager
     ): UserSessionActions
 
-    // --- Preferences: Provider/Actions ---
     @Binds
     @Singleton
     abstract fun bindUserPreferencesProvider(
@@ -73,4 +76,28 @@ abstract class AppBindingsModule {
     abstract fun bindLogoutOrchestrator(
         impl: DefaultLogoutOrchestrator
     ): LogoutOrchestrator
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionRepositoryActions(
+        impl: SessionRepository
+    ): SessionRepositoryActions
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionRepositoryProvider(
+        impl: SessionRepository
+    ): SessionRepositoryProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepositoryActions(
+        impl: UserRepository
+    ): UserRepositoryActions
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepositoryProvider(
+        impl: UserRepository
+    ): UserRepositoryProvider
 }

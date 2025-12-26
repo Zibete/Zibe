@@ -51,10 +51,18 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// ------------------------------------------------------------
-// Atajo opcional para lecturas one-shot con coroutines
-// ------------------------------------------------------------
-private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await()
+interface UserRepositoryProvider {
+    suspend fun accountExists(uid: String): Boolean
+    suspend fun hasBirthDate(uid: String): Boolean
+}
+
+interface UserRepositoryActions {
+    suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String)
+    suspend fun setUserLastSeen()
+    suspend fun setUserActivityStatus(status: String)
+}
+
+private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await() // Atajo para lecturas one-shot con coroutines
 
 @Singleton
 class UserRepository @Inject constructor(
@@ -63,7 +71,7 @@ class UserRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
-) {
+) : UserRepositoryProvider, UserRepositoryActions {
 
     // ============================================================
     // SESSION (cache local)
@@ -243,7 +251,7 @@ class UserRepository @Inject constructor(
     // USER NODE (alta)
     // ============================================================
 
-    suspend fun createUserNode(
+    override suspend fun createUserNode(
         firebaseUser: FirebaseUser,
         birthDate: String,
         description: String
@@ -275,7 +283,9 @@ class UserRepository @Inject constructor(
             .await()
     }
 
-    suspend fun hasBirthDate(uid: String): Boolean =
+    override suspend fun accountExists(uid: String): Boolean =
+        firebaseRefsContainer.refAccounts.child(uid).get().await().exists()
+    override suspend fun hasBirthDate(uid: String): Boolean =
         firebaseRefsContainer.refAccounts
             .child(uid)
             .child(AccountsKeys.BIRTHDATE) // OLD: BIRTHDAY
@@ -484,11 +494,11 @@ class UserRepository @Inject constructor(
     // PRESENCE / STATUS (nuevo)
     // ============================================================
 
-    suspend fun setUserActivityStatus(status: String) {
+    override suspend fun setUserActivityStatus(status: String) {
         presenceRepository.setActivityStatus(status)
     }
 
-    suspend fun setUserLastSeen() {
+    override suspend fun setUserLastSeen() {
         presenceRepository.setLastSeenNow()
     }
 

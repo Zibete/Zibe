@@ -1,11 +1,12 @@
 package com.zibete.proyecto1.domain.session
 
 import com.google.firebase.auth.FirebaseUser
-import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.SessionRepositoryActions
+import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.UserSessionProvider
-
 import javax.inject.Inject
 
 interface SessionBootstrapper {
@@ -13,8 +14,10 @@ interface SessionBootstrapper {
 }
 
 class DefaultSessionBootstrapper @Inject constructor(
-    private val sessionRepository: SessionRepository,
-    private val userRepository: UserRepository,
+    private val sessionRepositoryActions: SessionRepositoryActions,
+    private val sessionRepositoryProvider: SessionRepositoryProvider,
+    private val userRepositoryActions: UserRepositoryActions,
+    private val userRepositoryProvider: UserRepositoryProvider,
     private val sessionProvider: UserSessionProvider,
     private val preferencesActions: UserPreferencesActions
 ) : SessionBootstrapper {
@@ -25,10 +28,10 @@ class DefaultSessionBootstrapper @Inject constructor(
     }
 
     private suspend fun setActiveSession(uid: String) {
-        val installId = sessionRepository.getLocalInstallId()
-        val fcmToken = sessionRepository.getLocalFcmToken()
+        val installId = sessionRepositoryProvider.getLocalInstallId()
+        val fcmToken = sessionRepositoryProvider.getLocalFcmToken()
 
-        sessionRepository.setActiveSession(
+        sessionRepositoryActions.setActiveSession(
             uid = uid,
             installId = installId,
             fcmToken = fcmToken
@@ -36,19 +39,19 @@ class DefaultSessionBootstrapper @Inject constructor(
     }
 
     private suspend fun updateUserFlow(uid: String) {
-        val snapshot = userRepository.getAccountSnapshot(uid)
+        val accountExists = userRepositoryProvider.accountExists(uid)
 
         // Usuario nuevo
-        if (!snapshot.exists()) {
+        if (!accountExists) {
             sessionProvider.currentUser?.let { user: FirebaseUser ->
-                userRepository.createUserNode(user, "", "")
+                userRepositoryActions.createUserNode(user, "", "")
             }
             preferencesActions.setFirstLoginDone(false)
             return
         }
 
         // Perfil incompleto / completo
-        val hasBirthDate = userRepository.hasBirthDate(uid)
+        val hasBirthDate = userRepositoryProvider.hasBirthDate(uid)
         preferencesActions.setFirstLoginDone(hasBirthDate)
     }
 }
