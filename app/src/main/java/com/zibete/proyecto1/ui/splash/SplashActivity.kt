@@ -305,10 +305,6 @@ class SplashActivity : ComponentActivity() {
                                     popUpTo("splash") { inclusive = true }
                                 }
 
-                            is SplashUiEvent.Navigate -> {
-                                this@SplashActivity.startActivity(event.intent)
-                            }
-
                             is SplashUiEvent.RequestLocationPermission ->
                                 navController.navigate("permission")
 

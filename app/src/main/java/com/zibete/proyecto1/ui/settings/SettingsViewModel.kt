@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.settings
 
 import android.content.Context
-import android.content.Intent
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,7 +13,7 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.data.UserSessionManager.AuthProvider
-import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.domain.session.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
@@ -32,7 +31,8 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val userSessionManager: UserSessionManager,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val firebaseUser = userRepository.firebaseUser
@@ -241,15 +241,14 @@ class SettingsViewModel @Inject constructor(
             // Eliminación: Se decide en Splash
 
             emitHideProgress()
-            logOut()
+            onLogoutRequested()
         }
     }
 
-    fun logOut() {
+    fun onLogoutRequested() {
         viewModelScope.launch {
-            userRepository.setUserLastSeen()
-            val intent = userSessionManager.logOutCleanup()
-            _events.tryEmit(SettingsUiEvent.Navigate(intent, finish = true))
+            logoutUseCase.execute()
+            emitNavigateToSplash()
         }
     }
 
@@ -325,8 +324,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun emitNavigateToSplash() {
-        val intent = Intent(appContext, SplashActivity::class.java)
-        _events.tryEmit(SettingsUiEvent.Navigate(intent, finish = true))
+        _events.tryEmit(SettingsUiEvent.NavigateToSplash(finish = true))
     }
 }
 

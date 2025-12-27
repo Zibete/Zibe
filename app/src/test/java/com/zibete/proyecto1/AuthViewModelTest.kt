@@ -1,6 +1,7 @@
 package com.zibete.proyecto1
 
 import androidx.lifecycle.SavedStateHandle
+import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
@@ -8,6 +9,10 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
+import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
+import com.zibete.proyecto1.fakes.FakeSessionRepositoryProvider
+import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
+import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.ui.auth.AuthUiEvent
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -22,6 +27,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -156,6 +162,110 @@ class AuthViewModelTest {
 
         val snackEvents = events.filterIsInstance<AuthUiEvent.ShowSnack>()
         assertTrue(snackEvents.any { it.message == DELETE_ACCOUNT_SUCCESS && it.type == ZibeSnackType.INFO })
+
+        job.cancel()
+    }
+
+    @Test
+    fun `login falla emite snack`() = runTest {
+        // Given
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+
+        val sessionActions = FakeUserSessionActions().apply {
+            signInShouldFail = true
+            signInFailure = RuntimeException("boom")
+        }
+
+        val deleteUseCase = FakeDeleteAccountUseCase(
+            result = DeleteAccountResult.Success
+        )
+
+        val vm = AuthViewModel(
+            userSessionProvider = FakeUserSessionProvider(),
+            userSessionActions = sessionActions,
+            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
+            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            deleteAccountUseCase = deleteUseCase
+        )
+
+        val events = mutableListOf<AuthUiEvent>()
+        val job = launch { vm.events.toList(events) }
+
+        // When
+        vm.onEmailLogin("a@a.com", "123456")
+        advanceUntilIdle()
+
+        // Then
+        val snack = events.filterIsInstance<AuthUiEvent.ShowSnack>().last()
+        assertEquals(ZibeSnackType.ERROR, snack.type)
+        assertFalse(vm.uiState.value.isLoading)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `reset password con email vacio emite snack`() = runTest {
+        // Given
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+
+        val deleteUseCase = FakeDeleteAccountUseCase(
+            result = DeleteAccountResult.Success
+        )
+
+        val vm = AuthViewModel(
+            userSessionProvider = FakeUserSessionProvider(),
+            userSessionActions = FakeUserSessionActions(),
+            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
+            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            deleteAccountUseCase = deleteUseCase
+        )
+
+        val events = mutableListOf<AuthUiEvent>()
+        val job = launch { vm.events.toList(events) }
+
+        // When
+        vm.onResetPassword("")
+        advanceUntilIdle()
+
+        // Then
+        val snack = events.last() as AuthUiEvent.ShowSnack
+        assertEquals(ZibeSnackType.WARNING, snack.type)
+
+        job.cancel()
+    }
+
+    @Test
+    fun `reset password con email OK pero failure emite snack`() = runTest {
+        // Given
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+
+        val deleteUseCase = FakeDeleteAccountUseCase(
+            result = DeleteAccountResult.Success
+        )
+
+        val sessionActions = FakeUserSessionActions().apply {
+            resetShouldFail = true
+            resetFailure = RuntimeException("boom")
+        }
+
+        val vm = AuthViewModel(
+            userSessionProvider = FakeUserSessionProvider(),
+            userSessionActions = sessionActions,
+            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
+            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            deleteAccountUseCase = deleteUseCase
+        )
+
+        val events = mutableListOf<AuthUiEvent>()
+        val job = launch { vm.events.toList(events) }
+
+        // When
+        vm.onResetPassword("")
+        advanceUntilIdle()
+
+        // Then
+        val snack = events.last() as AuthUiEvent.ShowSnack
+        assertEquals(ZibeSnackType.WARNING, snack.type)
 
         job.cancel()
     }

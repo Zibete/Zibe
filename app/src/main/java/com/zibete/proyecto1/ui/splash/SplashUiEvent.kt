@@ -8,17 +8,13 @@ sealed class SplashUiEvent {
     // Sin internet → mostrar diálogo con "Reintentar"
     object ShowNoInternetDialog : SplashUiEvent()
     object ShowSessionConflictDialog : SplashUiEvent()
-    object NavigateAuth : SplashUiEvent()
-    class Navigate(
-        val intent : Intent
-    ) : SplashUiEvent()
-    object NavigateMain : SplashUiEvent()
     object RequestLocationPermission : SplashUiEvent()
     object NavigateOnBoarding : SplashUiEvent()
+    object NavigateAuth : SplashUiEvent()
+    object NavigateMain : SplashUiEvent()
 
     data class ShowSnack(
         val message: String,
         val type: ZibeSnackType
     ) : SplashUiEvent()
-
 }

@@ -19,7 +19,7 @@ interface UserSessionProvider {
 }
 
 interface UserSessionActions {
-    suspend fun logOutCleanup(): Intent
+    suspend fun logOutCleanup()
     suspend fun signInWithEmail(email: String, password: String)
     suspend fun signInWithCredential(credential: AuthCredential)
     suspend fun sendPasswordResetEmail(email: String)
@@ -137,13 +137,10 @@ class UserSessionManager @Inject constructor(
     // LOGOUT CLEANUP
     // ---------------------------------------------------------------------------------------------
 
-    override suspend fun logOutCleanup(): Intent {
-
+    override suspend fun logOutCleanup() {
         // 2) Limpieza de grupo si corresponde
         val inGroup = userPreferencesRepository.inGroupFlow.first()
-        if (inGroup) {
-            performExitGroupDataCleanup()
-        }
+        if (inGroup) { performExitGroupDataCleanup() }
 
         // 3) Limpiar prefs (DataStore)
         userPreferencesRepository.clearAllData()
@@ -151,11 +148,6 @@ class UserSessionManager @Inject constructor(
         // 4) Sign out
         firebaseAuth.signOut()
         loginManager.logOut()
-
-        // 5) Navegación
-        return Intent(applicationContext, SplashActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-        }
     }
 
     // ---------------------------------------------------------------------------------------------

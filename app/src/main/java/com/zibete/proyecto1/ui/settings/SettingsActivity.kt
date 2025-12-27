@@ -6,7 +6,6 @@ import android.util.TypedValue
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +22,7 @@ import com.zibete.proyecto1.databinding.ActivitySettingsBinding
 import com.zibete.proyecto1.databinding.DialogSetpasswordBinding
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.report.ReportActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -175,8 +175,10 @@ class SettingsActivity : AppCompatActivity() {
 
                         is SettingsUiEvent.HideProgress -> hideProgressDialog()
 
-                        is SettingsUiEvent.Navigate -> {
-                            startActivity(event.intent)
+                        is SettingsUiEvent.NavigateToSplash -> {
+                            startActivity(Intent(applicationContext, SplashActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK }
+                            )
                             if (event.finish) finish()
                         }
                     }
@@ -205,7 +207,7 @@ class SettingsActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Cerrar sesión")
             .setMessage("¿Seguro quieres cerrar sesión?")
-            .setPositiveButton("Sí") { _, _ -> viewModel.logOut() }
+            .setPositiveButton("Sí") { _, _ -> viewModel.onLogoutRequested() }
             .setNegativeButton(DIALOG_CANCEL, null)
             .show()
     }

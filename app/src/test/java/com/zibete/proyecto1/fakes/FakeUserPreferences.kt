@@ -19,11 +19,13 @@ class FakeUserPreferencesProvider(
 }
 
 class FakeUserPreferencesActions(
-    private val state: FakeUserPreferencesState
+    private val state: FakeUserPreferencesState,
+    var setOnboardingDoneCalls: Int = 0
 ) : UserPreferencesActions {
 
     override suspend fun setOnboardingDone(done: Boolean) {
         state.onboardingDone = done
+        setOnboardingDoneCalls++
     }
 
     override suspend fun setFirstLoginDone(done: Boolean) {

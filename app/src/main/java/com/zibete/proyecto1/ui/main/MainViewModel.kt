@@ -149,9 +149,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-
-
-
     // --- LOGICA DE SESIÓN (Install ID) ---
     private fun checkSessionConflict(uid: String, installId: String) {
         installIdListener?.let { sessionRepository.removeSessionListener(uid, it) }
@@ -161,7 +158,7 @@ class MainViewModel @Inject constructor(
             myInstallId = installId
         ) {
             viewModelScope.launch {
-                _navEvents.emit(MainNavEvent.ToSplashSessionConflict)
+                _navEvents.emit(MainNavEvent.NavigateToSplash(sessionConflict = true))
             }
         }
     }
@@ -201,8 +198,8 @@ class MainViewModel @Inject constructor(
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
-            val intent = logoutUseCase.execute()
-            _navEvents.emit(MainNavEvent.ToSplashAfterLogout(intent))
+            logoutUseCase.execute()
+            _navEvents.emit(MainNavEvent.NavigateToSplash())
         }
     }
 

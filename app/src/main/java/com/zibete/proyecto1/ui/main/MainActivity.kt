@@ -311,20 +311,12 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
-                            is MainNavEvent.ToSplashAfterLogout -> {
+                            is MainNavEvent.NavigateToSplash -> {
+                                val intent = Intent(this@MainActivity, SplashActivity::class.java)
+                                if (event.sessionConflict) intent.putExtra(EXTRA_SESSION_CONFLICT, true)
                                 stopLocationUpdates()
                                 finish()
-                                startActivity(Intent(this@MainActivity, SplashActivity::class.java))
-                            }
-
-                            is MainNavEvent.ToSplashSessionConflict -> {
-                                stopLocationUpdates()
-                                finish()
-                                startActivity(
-                                    Intent(this@MainActivity, SplashActivity::class.java).apply {
-                                        putExtra(EXTRA_SESSION_CONFLICT, true)
-                                    }
-                                )
+                                startActivity(intent)
                             }
 
                             is MainNavEvent.ToGroupsAfterExit -> {
