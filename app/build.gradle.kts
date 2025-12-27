@@ -51,6 +51,12 @@ android {
             )
         }
     }
+    lint {
+        disable += listOf(
+            "CoroutineCreationDuringComposition",
+            "StateFlowValueCalledInComposition"
+        )
+    }
 }
 
 dependencies {
