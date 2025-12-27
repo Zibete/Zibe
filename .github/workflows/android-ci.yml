@@ -1,0 +1,70 @@
+name: Android CI
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v2
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Gradle Info
+        run: ./gradlew -version
+
+      # 1) Unit tests (JVM)
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
+      # 2) Android Lint (rápido y útil)
+      - name: Android Lint
+        run: ./gradlew lintDebug
+
+      # 3) (Opcional) Build para asegurar compilación completa
+      - name: Assemble Debug
+        run: ./gradlew assembleDebug
+
+      # Subir reportes (siempre, incluso si falla)
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: |
+            app/build/reports/lint-results-*
+            app/build/reports/lint-results-*/**
+          if-no-files-found: ignore
