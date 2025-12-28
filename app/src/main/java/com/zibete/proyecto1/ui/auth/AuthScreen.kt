@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,233 +85,238 @@ fun AuthScreen(
     val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        authEvents.collect { event ->
-            when (event) {
-                is AuthUiEvent.ShowSnack -> {
-                    scope.launch {
-                        snackHostState.showZibeMessage(
-                            message = event.message,
-                            type = event.type
-                        )
+    Column(
+        modifier = Modifier.testTag("auth_screen")
+    ) {
+        LaunchedEffect(Unit) {
+            authEvents.collect { event ->
+                when (event) {
+                    is AuthUiEvent.ShowSnack -> {
+                        scope.launch {
+                            snackHostState.showZibeMessage(
+                                message = event.message,
+                                type = event.type
+                            )
+                        }
                     }
+                    is AuthUiEvent.NavigateToSplash -> {
+                        onNavigateToSplash() }
                 }
-                is AuthUiEvent.NavigateToSplash -> {
-                    onNavigateToSplash() }
             }
         }
-    }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        snackbarHost = {
-            ZibeSnackHost(hostState = snackHostState)
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(zibeColors.gradientZibe)
-        ) {
-            Column(
+        Scaffold(
+            containerColor = Color.Transparent,
+            snackbarHost = {
+                ZibeSnackHost(hostState = snackHostState)
+            },
+        ) { innerPadding ->
+            Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .verticalScroll(rememberScrollState())
                     .fillMaxSize()
-                    .padding(start = 16.dp,
-                        end = 16.dp,
-                        bottom = innerPadding.calculateTopPadding(),
-                        top = innerPadding.calculateTopPadding()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .background(zibeColors.gradientZibe)
             ) {
-                // LOGO
-                Image(
-                    painter = painterResource(id = R.mipmap.logo_zibe),
-                    contentDescription = stringResource(id = R.string.app_name),
+                Column(
                     modifier = Modifier
-                        .padding(
-                            start = 24.dp,
-                            end = 24.dp,
-                            bottom = 8.dp,
-                            top = 0.dp)
-                )
-
-                // Si no está marcada para eliminación, mostramos login normal
-                if (!deleteUser) {
-
-                    // GOOGLE
-                    SocialButton(
-                        text = "Continuar con Google",
-                        iconRes = R.drawable.ic_google,
-                        onClick = onGoogleClick
-                    )
-
-                    // FACEBOOK
-                    SocialButton(
-                        text = "Continuar con Facebook",
-                        iconRes = R.drawable.ic_facebook,
-                        onClick = onFacebookClick
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = stringResource(id = R.string.or_use_your_account),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = zibeColors.mutedText,
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // EMAIL
-                    ZibeInputField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = stringResource(id = R.string.email),
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Next
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_mail_24),
-                                contentDescription = stringResource(id = R.string.email)
-                            )
-                        },
-                        enabled = !isLoading
-                    )
-
-                    // PASSWORD
-                    ZibeInputField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = "Contraseña",
-
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_lock_24),
-                                contentDescription = "Contraseña"
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (passwordVisible)
-                                            R.drawable.ic_baseline_visibility_24
-                                        else
-                                            R.drawable.ic_baseline_visibility_off_24
-                                    ),
-                                    contentDescription = "Contraseña visible/invisible"
-                                )
-                            }
-                        },
-                        visualTransformation = if (passwordVisible)
-                            VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Done
-                        ),
-                        enabled = !isLoading
-                    )
-
-                    Text(
-                        text = stringResource(id = R.string.forgot_password),
+                        .align(Alignment.Center)
+                        .verticalScroll(rememberScrollState())
+                        .fillMaxSize()
+                        .padding(start = 16.dp,
+                            end = 16.dp,
+                            bottom = innerPadding.calculateTopPadding(),
+                            top = innerPadding.calculateTopPadding()),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // LOGO
+                    Image(
+                        painter = painterResource(id = R.mipmap.logo_zibe),
+                        contentDescription = stringResource(id = R.string.app_name),
                         modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(bottom = 8.dp)
-                            .clickable {
-                                resetEmail = email   // prellenamos con el mail del formulario
-                                showResetDialog = true },
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = zibeColors.mutedText
-                        )
+                            .padding(
+                                start = 24.dp,
+                                end = 24.dp,
+                                bottom = 8.dp,
+                                top = 0.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Si no está marcada para eliminación, mostramos login normal
+                    if (!deleteUser) {
 
-                    ZibeButton(
-                        text = stringResource(id = R.string.Entrar),
-                        onClick = { onLogin(email.trim(), password) },
-                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                        enabled = !isLoading,
-                        isLoading = isLoading
-                    )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.dont_have_an_account),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                color = zibeColors.mutedText
-                            )
+                        // GOOGLE
+                        SocialButton(
+                            text = "Continuar con Google",
+                            iconRes = R.drawable.ic_google,
+                            onClick = onGoogleClick
                         )
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        // FACEBOOK
+                        SocialButton(
+                            text = "Continuar con Facebook",
+                            iconRes = R.drawable.ic_facebook,
+                            onClick = onFacebookClick
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = stringResource(id = R.string.registro),
+                            text = stringResource(id = R.string.or_use_your_account),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = zibeColors.mutedText,
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // EMAIL
+                        ZibeInputField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = stringResource(id = R.string.email),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Next
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_mail_24),
+                                    contentDescription = stringResource(id = R.string.email)
+                                )
+                            },
+                            enabled = !isLoading
+                        )
+
+                        // PASSWORD
+                        ZibeInputField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = "Contraseña",
+
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_lock_24),
+                                    contentDescription = "Contraseña"
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (passwordVisible)
+                                                R.drawable.ic_baseline_visibility_24
+                                            else
+                                                R.drawable.ic_baseline_visibility_off_24
+                                        ),
+                                        contentDescription = "Contraseña visible/invisible"
+                                    )
+                                }
+                            },
+                            visualTransformation = if (passwordVisible)
+                                VisualTransformation.None
+                            else
+                                PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Done
+                            ),
+                            enabled = !isLoading
+                        )
+
+                        Text(
+                            text = stringResource(id = R.string.forgot_password),
                             modifier = Modifier
-                                .clickable { onNavigateToSignUp() },
+                                .align(Alignment.End)
+                                .padding(bottom = 8.dp)
+                                .clickable {
+                                    resetEmail = email   // prellenamos con el mail del formulario
+                                    showResetDialog = true },
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = zibeColors.mutedText
                             )
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        ZibeButton(
+                            text = stringResource(id = R.string.Entrar),
+                            onClick = { onLogin(email.trim(), password) },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            enabled = !isLoading,
+                            isLoading = isLoading
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.dont_have_an_account),
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    color = zibeColors.mutedText
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text(
+                                text = stringResource(id = R.string.registro),
+                                modifier = Modifier
+                                    .clickable { onNavigateToSignUp() },
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = zibeColors.mutedText
+                                )
+                            )
+                        }
+                    } else {
+
+                        // Modo "reactivar cuenta"
+
+                        ZibeButton(
+                            text = stringResource(id = R.string.dont_delete_account),
+                            onClick = { onDoNotDelete() },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            enabled = !isLoading,
+                            isLoading = isLoading
+                        )
+                        ZibeButton(
+                            text = stringResource(id = R.string.delete_account),
+                            onClick = { onDeleteAccount() },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            enabled = !isLoading,
+                            isLoading = isLoading
+                        )
+
                     }
-                } else {
+                }
 
-                    // Modo "reactivar cuenta"
-
-                    ZibeButton(
-                        text = stringResource(id = R.string.dont_delete_account),
-                        onClick = { onDoNotDelete() },
-                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                        enabled = !isLoading,
-                        isLoading = isLoading
+                if (showResetDialog) {
+                    ZibeDialog(
+                        title = "Reestablecimiento de contraseña",
+                        textContent = {
+                            ZibeInputField(
+                                value = resetEmail,
+                                onValueChange = { resetEmail = it },
+                                label = stringResource(id = R.string.email),
+                                singleLine = true,
+                                enabled = !isLoading
+                            )
+                        },
+                        confirmText = "Enviar e-mail",
+                        onConfirm = {
+                            if (resetEmail.isNotBlank()) {
+                                onResetPassword(resetEmail.trim())
+                                showResetDialog = false
+                            }
+                        },
+                        dismissText = DIALOG_CANCEL,
+                        onDismiss = { if (!isLoading) showResetDialog = false },
+                        enabled = !isLoading
                     )
-                    ZibeButton(
-                        text = stringResource(id = R.string.delete_account),
-                        onClick = { onDeleteAccount() },
-                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                        enabled = !isLoading,
-                        isLoading = isLoading
-                    )
-
                 }
             }
-
-            if (showResetDialog) {
-                ZibeDialog(
-                    title = "Reestablecimiento de contraseña",
-                    textContent = {
-                        ZibeInputField(
-                            value = resetEmail,
-                            onValueChange = { resetEmail = it },
-                            label = stringResource(id = R.string.email),
-                            singleLine = true,
-                            enabled = !isLoading
-                        )
-                    },
-                    confirmText = "Enviar e-mail",
-                    onConfirm = {
-                        if (resetEmail.isNotBlank()) {
-                            onResetPassword(resetEmail.trim())
-                            showResetDialog = false
-                        }
-                    },
-                    dismissText = DIALOG_CANCEL,
-                    onDismiss = { if (!isLoading) showResetDialog = false },
-                    enabled = !isLoading
-                )
-            }
         }
+
     }
 }
 

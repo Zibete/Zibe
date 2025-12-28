@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.fakes
 
-import android.content.Intent
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.data.UserSessionActions

@@ -1,7 +1,5 @@
 package com.zibete.proyecto1
 
-import androidx.lifecycle.SavedStateHandle
-import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
@@ -9,10 +7,6 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
-import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
-import com.zibete.proyecto1.fakes.FakeSessionRepositoryProvider
-import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
-import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.ui.auth.AuthUiEvent
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -27,7 +21,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

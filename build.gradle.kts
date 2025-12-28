@@ -14,7 +14,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
 
     // 5. HILT
-    id("com.google.dagger.hilt.android") version "2.48" apply false
+    id("com.google.dagger.hilt.android") version "2.52" apply false
+
+
+    // 6. KSP
+    id("com.google.devtools.ksp") version "2.0.0-1.0.24" apply false
 }
 
 tasks.register("clean", Delete::class) {
