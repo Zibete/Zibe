@@ -14,7 +14,7 @@ concurrency:
 jobs:
   build-test-lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -40,15 +40,15 @@ jobs:
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
 
-      # 2) Android Lint (rápido y útil)
+      # 2) Android Lint
       - name: Android Lint
         run: ./gradlew lintDebug
 
-      # 3) (Opcional) Build para asegurar compilación completa
+      # 3) Build
       - name: Assemble Debug
         run: ./gradlew assembleDebug
 
-      # Subir reportes (siempre, incluso si falla)
+      # Upload reports (always, even if failing)
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

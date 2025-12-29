@@ -3,7 +3,7 @@
 
 
     <string name="app_name">Zibe</string>
-    <string name="sign_in_with">Iniciar sesión con...</string>
+    <string name="sign_in_with">Iniciar sesión con…</string>
     <string name="or_use_your_account">o utilizá tu cuenta</string>
     <string name="dont_have_an_account">¿No tenés una cuenta?</string>
     <string name="name">Nombre/Apodo</string>
@@ -27,7 +27,7 @@
     <string name="nav_header_desc">Navigation header</string>
 
 
-    <string name="fragment_left_name">Nombre</string>
+
     <string name="usuario">Usuario</string>
     <string name="atras">Atrás</string>
     <string name="siguiente">Siguiente</string>
@@ -93,7 +93,7 @@
     <string name="yesterday">ayer</string>
     <string name="a_las">a las</string>
     <string name="online">en línea</string>
-    <string name="typing">escribiendo...</string>
+    <string name="typing">escribiendo…</string>
     <string name="online_upercase">En línea</string>
     <string name="offline">desconectado</string>
 
@@ -104,9 +104,9 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="delete_account">Eliminar cuenta</string>
-    <string name="Buscar">Buscar...</string>
+    <string name="Buscar">Buscar…</string>
     <string name="editar_foto_de_perfil">Editar foto de perfil</string>
-    <string name="enviar_desde">Enviar Desde...</string>
+    <string name="enviar_desde">Enviar Desde…</string>
     <string name="camera">Cámara</string>
     <string name="gallery">Galería</string>
     <string name="photo_received">Foto recibida</string>
@@ -114,7 +114,6 @@
     <string name="audio_received">Audio recibido</string>
     <string name="audio_send">Audio enviado</string>
 
-    <string name="URL_PHOTO_DEF"><![CDATA[https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8]]></string>
     <string name="photo_message">Photo message</string>
     <string name="perfil_incognito">Perfil incógnito</string>
     <string name="user_not_available_fmt">Lo sentimos, %1$s ya no está disponible.</string>
@@ -123,7 +122,7 @@
 
     <string name="inicio">Inicio</string>
     <string name="ocultar">Ocultar</string>
-    <string name="recording">grabando audio...</string>
+    <string name="recording">grabando audio…</string>
     <string name="dont_delete_account">Ya no quiero eliminar mi cuenta</string>
     <string name="forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="send_feedback">Enivar comentarios</string>
@@ -135,11 +134,11 @@
     <string name="cerrar">cerrar</string>
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
-    <string name="espere">Espere...</string>
+    <string name="espere">Espere…</string>
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finalizar_registro">Finalizar registro</string>
     <string name="default_web_client_id">572303503809-pj4dh024komsdj0dl9tufdh618in9env.apps.googleusercontent.com</string>
-    <string name="loading">Cargando...</string>
+    <string name="loading">Cargando…</string>
     <string name="anonimous">Anónimo</string>
     <string name="deleted_profile_fallback">Perfil eliminado</string>
     <string name="chat_private_in_group">Chat privado en %1$s</string>
