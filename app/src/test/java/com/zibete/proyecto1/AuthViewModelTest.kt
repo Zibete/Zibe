@@ -1,12 +1,11 @@
 package com.zibete.proyecto1
 
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
-import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
-import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
+import com.zibete.proyecto1.fakes.FakeUserPreferences
 import com.zibete.proyecto1.ui.auth.AuthUiEvent
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -38,8 +37,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = FakeUserSessionActions(),
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = FakeDeleteAccountUseCase()
         )
 
@@ -67,8 +66,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = FakeUserSessionActions(),
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = FakeDeleteAccountUseCase()
         )
 
@@ -103,8 +102,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = sessionProvider,
             userSessionActions = sessionActions,
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = FakeDeleteAccountUseCase()
         )
 
@@ -136,8 +135,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = FakeUserSessionActions(),
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = deleteUseCase
         )
 
@@ -176,8 +175,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = sessionActions,
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = deleteUseCase
         )
 
@@ -208,8 +207,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = FakeUserSessionActions(),
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = deleteUseCase
         )
 
@@ -244,8 +243,8 @@ class AuthViewModelTest {
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
             userSessionActions = sessionActions,
-            userPreferencesProvider = FakeUserPreferencesProvider(prefsState),
-            userPreferencesActions = FakeUserPreferencesActions(prefsState),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
             deleteAccountUseCase = deleteUseCase
         )
 

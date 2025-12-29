@@ -3,7 +3,7 @@ package com.zibete.proyecto1
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryProvider
-import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
+import com.zibete.proyecto1.fakes.FakeUserPreferences
 import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
@@ -44,7 +44,7 @@ class SessionBootstrapperTest {
         }
 
         val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
-        val prefsActions = FakeUserPreferencesActions(prefsState)
+        val prefsActions = FakeUserPreferences(prefsState)
 
         val bootstrapper = DefaultSessionBootstrapper(
             sessionRepositoryActions = sessionRepoActions,
@@ -89,7 +89,7 @@ class SessionBootstrapperTest {
         }
 
         val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = true)
-        val prefsActions = FakeUserPreferencesActions(prefsState)
+        val prefsActions = FakeUserPreferences(prefsState)
 
         val bootstrapper = DefaultSessionBootstrapper(
             sessionRepositoryActions = sessionRepoActions,
@@ -129,7 +129,7 @@ class SessionBootstrapperTest {
         }
 
         val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
-        val prefsActions = FakeUserPreferencesActions(prefsState)
+        val prefsActions = FakeUserPreferences(prefsState)
 
         val bootstrapper = DefaultSessionBootstrapper(
             sessionRepositoryActions = sessionRepoActions,

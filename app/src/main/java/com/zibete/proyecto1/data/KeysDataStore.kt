@@ -1,12 +1,8 @@
 package com.zibete.proyecto1.data
 
-import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-
-val Context.userPrefsDataStore by preferencesDataStore(name = "user_prefs_ds")
 
 object Keys {
     // migration marker (por si querés usarlo luego)

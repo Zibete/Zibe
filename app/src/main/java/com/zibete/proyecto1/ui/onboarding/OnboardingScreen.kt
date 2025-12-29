@@ -34,6 +34,8 @@ import com.zibete.proyecto1.adapters.OnboardingPage
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.testTag
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.ONBOARDING_SCREEN
 
 // ------------------------------------------------------
 //  TextButton estilizado (misma altura y forma que ZibeButton)
@@ -87,6 +89,7 @@ fun OnboardingScreen(
 
     Box(
         modifier = Modifier
+            .testTag(ONBOARDING_SCREEN)
             .fillMaxSize()
             .background(gradientBrush)
             .systemBarsPadding()

@@ -5,11 +5,11 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
-import com.zibete.proyecto1.ui.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.ui.constants.Constants.PayloadKeys
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var userPreferencesProvider: UserPreferencesProvider
     @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var chatRepository: ChatRepository
     @Inject lateinit var groupRepository: GroupRepository
@@ -60,7 +60,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // =========================
         if (nodeType == NODE_DM) {
 
-            val enabled = userPreferencesRepository.individualNotificationsFlow.first()
+            val enabled = userPreferencesProvider.individualNotificationsFlow.first()
             if (!enabled) {
                 // Si el usuario desactivó notificaciones individuales:
                 // igual aplicamos doble-check si corresponde, pero NO notificamos.
@@ -92,11 +92,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // =========================
         val groupName = nodeType
 
-        val groupEnabled = userPreferencesRepository.groupNotificationsFlow.first()
+        val groupEnabled = userPreferencesProvider.groupNotificationsFlow.first()
         if (!groupEnabled) return
 
         // Si el user está actualmente dentro de ese mismo grupo, NO notificamos (como antes)
-        val ctx = userPreferencesRepository.groupContextFlow.first()
+        val ctx = userPreferencesProvider.groupContextFlow.first()
         val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
 
         if (isInActiveGroup) return

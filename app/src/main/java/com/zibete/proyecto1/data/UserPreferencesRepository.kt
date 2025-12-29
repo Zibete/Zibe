@@ -21,11 +21,31 @@ interface UserPreferencesProvider {
     suspend fun isOnboardingDone(): Boolean
     suspend fun isFirstLoginDone(): Boolean
     suspend fun isDeleteUser(): Boolean
+    val groupContextFlow: Flow<GroupContext?>
+    val inGroupFlow: Flow<Boolean>
+    val applyAgeFilterFlow: Flow<Boolean>
+    val applyOnlineFilterFlow: Flow<Boolean>
+    val minAgeFlow: Flow<Int>
+    val maxAgeFlow: Flow<Int>
+    val individualNotificationsFlow: Flow<Boolean>
+    val groupNotificationsFlow: Flow<Boolean>
+    val filterSwitchFlow: Flow<Boolean>
+    val groupNameFlow: Flow<String>
 }
 interface UserPreferencesActions {
     suspend fun setOnboardingDone(done: Boolean)
     suspend fun setFirstLoginDone(done: Boolean)
     suspend fun setDeleteUser(done: Boolean)
+    suspend fun resetGroupState()
+    suspend fun clearAllData()
+    suspend fun setApplyAgeFilter(value: Boolean)
+    suspend fun setApplyOnlineFilter(value: Boolean)
+    suspend fun setMinAge(value: Int)
+    suspend fun setMaxAge(value: Int)
+    suspend fun setFilterSwitch(value: Boolean)
+    suspend fun setGroupNotifications(value: Boolean)
+    suspend fun setIndividualNotifications(value: Boolean)
+    suspend fun setGroupSession(groupName: String, userName: String, userType: Int)
 }
 
 
@@ -39,7 +59,7 @@ class UserPreferencesRepository @Inject constructor(
     // ---------------------------------------------------------------------------------------------
 
     /** Contexto reactivo del grupo (si no está en grupo -> null) */
-    val groupContextFlow: Flow<GroupContext?> =
+    override val groupContextFlow: Flow<GroupContext?> =
         dataStore.data
             .map { prefs ->
                 val inGroup = prefs[Keys.IN_GROUP] ?: false
@@ -57,18 +77,18 @@ class UserPreferencesRepository @Inject constructor(
             .distinctUntilChanged()
 
     /** Flag simple (reactivo) por si alguna pantalla lo necesita */
-    val inGroupFlow: Flow<Boolean> =
+    override val inGroupFlow: Flow<Boolean> =
         dataStore.data
             .map { it[Keys.IN_GROUP] ?: false }
             .distinctUntilChanged()
 
     /** groupName reactivo (útil para toolbar o labels sin armar GroupContext) */
-    val groupNameFlow: Flow<String> =
+    override val groupNameFlow: Flow<String> =
         dataStore.data
             .map { it[Keys.GROUP_NAME].orEmpty() }
             .distinctUntilChanged()
 
-    suspend fun setGroupSession(
+    override suspend fun setGroupSession(
         groupName: String,
         userName: String,
         userType: Int
@@ -81,7 +101,7 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    suspend fun resetGroupState() {
+    override suspend fun resetGroupState() {
         dataStore.edit { prefs ->
             prefs[Keys.IN_GROUP] = false
             prefs[Keys.GROUP_NAME] = ""
@@ -94,38 +114,38 @@ class UserPreferencesRepository @Inject constructor(
     // FILTERS (reactivo)
     // ---------------------------------------------------------------------------------------------
 
-    val filterSwitchFlow: Flow<Boolean> =
+    override val filterSwitchFlow: Flow<Boolean> =
         dataStore.data.map { it[Keys.FILTER_SWITCH] ?: false }.distinctUntilChanged()
 
-    suspend fun setFilterSwitch(value: Boolean) {
+    override suspend fun setFilterSwitch(value: Boolean) {
         dataStore.edit { it[Keys.FILTER_SWITCH] = value }
     }
 
-    val applyOnlineFilterFlow: Flow<Boolean> =
+    override val applyOnlineFilterFlow: Flow<Boolean> =
         dataStore.data.map { it[Keys.APPLY_ONLINE_FILTER] ?: false }.distinctUntilChanged()
 
-    suspend fun setApplyOnlineFilter(value: Boolean) {
+    override suspend fun setApplyOnlineFilter(value: Boolean) {
         dataStore.edit { it[Keys.APPLY_ONLINE_FILTER] = value }
     }
 
-    val applyAgeFilterFlow: Flow<Boolean> =
+    override val applyAgeFilterFlow: Flow<Boolean> =
         dataStore.data.map { it[Keys.APPLY_AGE_FILTER] ?: false }.distinctUntilChanged()
 
-    suspend fun setApplyAgeFilter(value: Boolean) {
+    override suspend fun setApplyAgeFilter(value: Boolean) {
         dataStore.edit { it[Keys.APPLY_AGE_FILTER] = value }
     }
 
-    val minAgeFlow: Flow<Int> =
+    override val minAgeFlow: Flow<Int> =
         dataStore.data.map { it[Keys.MIN_AGE] ?: 0 }.distinctUntilChanged()
 
-    suspend fun setMinAge(value: Int) {
+    override suspend fun setMinAge(value: Int) {
         dataStore.edit { it[Keys.MIN_AGE] = value }
     }
 
-    val maxAgeFlow: Flow<Int> =
+    override val maxAgeFlow: Flow<Int> =
         dataStore.data.map { it[Keys.MAX_AGE] ?: 0 }.distinctUntilChanged()
 
-    suspend fun setMaxAge(value: Int) {
+    override suspend fun setMaxAge(value: Int) {
         dataStore.edit { it[Keys.MAX_AGE] = value }
     }
 
@@ -133,17 +153,17 @@ class UserPreferencesRepository @Inject constructor(
     // NOTIFICATIONS / ONBOARDING (reactivo + setters)
     // ---------------------------------------------------------------------------------------------
 
-    val individualNotificationsFlow: Flow<Boolean> =
+    override val individualNotificationsFlow: Flow<Boolean> =
         dataStore.data.map { it[Keys.INDIVIDUAL_NOTIFICATIONS] ?: true }.distinctUntilChanged()
 
-    suspend fun setIndividualNotifications(value: Boolean) {
+    override suspend fun setIndividualNotifications(value: Boolean) {
         dataStore.edit { it[Keys.INDIVIDUAL_NOTIFICATIONS] = value }
     }
 
-    val groupNotificationsFlow: Flow<Boolean> =
+    override val groupNotificationsFlow: Flow<Boolean> =
         dataStore.data.map { it[Keys.GROUP_NOTIFICATIONS] ?: true }.distinctUntilChanged()
 
-    suspend fun setGroupNotifications(value: Boolean) {
+    override suspend fun setGroupNotifications(value: Boolean) {
         dataStore.edit { it[Keys.GROUP_NOTIFICATIONS] = value }
     }
 
@@ -173,7 +193,7 @@ class UserPreferencesRepository @Inject constructor(
     // ---------------------------------------------------------------------------------------------
 
     /** Equivalente a tu clearAllData() actual */
-    suspend fun clearAllData() {
+    override suspend fun clearAllData() {
         resetGroupState()
         dataStore.edit { prefs ->
             prefs[Keys.FILTER_SWITCH] = false

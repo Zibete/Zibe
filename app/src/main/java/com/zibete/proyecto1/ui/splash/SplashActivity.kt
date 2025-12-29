@@ -43,6 +43,11 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.AUTH_SCREEN
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.ONBOARDING_SCREEN
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.PERMISSION_SCREEN
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.SIGNUP_SCREEN
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_1
 import com.zibete.proyecto1.ui.constants.ONBOARDING_DESC_2
@@ -104,17 +109,17 @@ class SplashActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "splash"
+                        startDestination = SPLASH_SCREEN
                     ) {
                         // ======================================
-                        composable("splash") {
+                        composable(SPLASH_SCREEN) {
                             SplashScreen()
                             LaunchedEffect(Unit) {
                                 splashViewModel.start(this@SplashActivity)
                             }
                         }
                         // ======================================
-                        composable("onboarding") {
+                        composable(ONBOARDING_SCREEN) {
                             val pages = listOf(
                                 OnboardingPage(R.raw.onboarding1,ONBOARDING_TITLE_1,ONBOARDING_DESC_1),
                                 OnboardingPage(R.raw.onboarding2,ONBOARDING_TITLE_2,ONBOARDING_DESC_2),
@@ -124,14 +129,14 @@ class SplashActivity : ComponentActivity() {
                             OnboardingScreen(
                                 pages = pages,
                                 onFinished = {
-                                    navController.navigate("auth") {
-                                        popUpTo("onboarding") { inclusive = true }
+                                    navController.navigate(AUTH_SCREEN) {
+                                        popUpTo(ONBOARDING_SCREEN) { inclusive = true }
                                     }
                                 }
                             )
                         }
                         // ======================================
-                        composable("auth") {
+                        composable(AUTH_SCREEN) {
 
                             val uiState by authViewModel.uiState.collectAsState()
 
@@ -147,7 +152,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onNavigateToSignUp = {
-                                    navController.navigate("signup")
+                                    navController.navigate(SIGNUP_SCREEN)
                                 },
 
                                 onResetPassword = { email ->
@@ -185,14 +190,14 @@ class SplashActivity : ComponentActivity() {
                                 authEvents = authViewModel.events,
 
                                 onNavigateToSplash = {
-                                    navController.navigate("splash") {
-                                        popUpTo("auth") { inclusive = true }
+                                    navController.navigate(SPLASH_SCREEN) {
+                                        popUpTo(AUTH_SCREEN) { inclusive = true }
                                     }
                                 },
                             )
                         }
                         // ======================================
-                        composable("signup") {
+                        composable(SIGNUP_SCREEN) {
 
                             val signUpViewModel: SignUpViewModel = hiltViewModel()
                             val uiState by signUpViewModel.uiState.collectAsState()
@@ -214,17 +219,17 @@ class SplashActivity : ComponentActivity() {
                                 isLoading = uiState.isLoading,
 
                                 onNavigateToPermission = {
-                                    navController.navigate("permission")
+                                    navController.navigate(PERMISSION_SCREEN)
                                 }
                             )
                         }
                         // ======================================
-                        composable("permission") {
+                        composable(PERMISSION_SCREEN) {
 
                             CustomPermissionScreen(
                                 onPermissionGranted = {
-                                    navController.navigate("splash") {
-                                        popUpTo("permission") { inclusive = true }
+                                    navController.navigate(SPLASH_SCREEN) {
+                                        popUpTo(PERMISSION_SCREEN) { inclusive = true }
                                     }
                                 },
 
@@ -296,17 +301,17 @@ class SplashActivity : ComponentActivity() {
                                 showSessionConflictDialog = true
 
                             is SplashUiEvent.NavigateOnBoarding ->
-                                navController.navigate("onboarding") {
-                                    popUpTo("splash") { inclusive = true }
+                                navController.navigate(ONBOARDING_SCREEN) {
+                                    popUpTo(SPLASH_SCREEN) { inclusive = true }
                                 }
 
                             is SplashUiEvent.NavigateAuth ->
-                                navController.navigate("auth") {
-                                    popUpTo("splash") { inclusive = true }
+                                navController.navigate(AUTH_SCREEN) {
+                                    popUpTo(SPLASH_SCREEN) { inclusive = true }
                                 }
 
                             is SplashUiEvent.RequestLocationPermission ->
-                                navController.navigate("permission")
+                                navController.navigate(PERMISSION_SCREEN)
 
                             is SplashUiEvent.NavigateMain -> {
                                 startActivity(

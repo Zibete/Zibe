@@ -85,6 +85,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.test.espresso:espresso-intents:3.7.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -112,6 +113,8 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.52")
 
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.52")
+    androidTestImplementation("io.mockk:mockk-android:1.14.7")
+
     kspAndroidTest("com.google.dagger:hilt-android-compiler:2.52")
 
     // -------------------------------
