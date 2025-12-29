@@ -11,7 +11,7 @@
 
         <!-- Sistema -->
         <item name="android:statusBarColor">@color/zibe_night_start</item>
-        <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/zibe_night_end</item>
+        <item name="android:navigationBarColor">@color/zibe_night_end</item>
         <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
 
         <!-- Texto -->
