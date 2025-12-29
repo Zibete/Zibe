@@ -18,6 +18,16 @@ object Constants {
     const val MIC_SELECTED = 44
     const val PERMISSIONS_EDIT_PROFILE = 11
 
+    object UiTags {
+        // Screens
+        const val SPLASH_SCREEN = "splash_screen"
+        const val AUTH_SCREEN = "auth_screen"
+        const val ONBOARDING_SCREEN = "onboarding_screen"
+        const val PERMISSION_SCREEN = "permission_screen"
+        const val SIGNUP_SCREEN = "signup_screen"
+    }
+
+
     // ==============================
     // Intents / Bundle Extras
     // ==============================

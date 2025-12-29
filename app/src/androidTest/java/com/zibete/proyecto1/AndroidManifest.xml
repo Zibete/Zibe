@@ -1,0 +1,21 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+
+        <!-- Dejá el service, pero borrale el intent-filter para que NUNCA sea target -->
+        <service
+            android:name="com.zibete.proyecto1.ZibeFirebaseMessagingService"
+            tools:node="merge">
+
+            <intent-filter tools:node="removeAll" />
+        </service>
+
+        <!-- opcional: también apagar auto-init -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false"
+            tools:replace="android:value" />
+
+    </application>
+</manifest>

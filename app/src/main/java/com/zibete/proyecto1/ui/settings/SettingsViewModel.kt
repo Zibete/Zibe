@@ -9,7 +9,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.data.UserSessionManager.AuthProvider
@@ -29,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val userPreferencesActions: UserPreferencesActions,
     private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
     private val logoutUseCase: LogoutUseCase
@@ -65,13 +67,13 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
-            userPreferencesRepository.groupNotificationsFlow.collect { enabled ->
+            userPreferencesProvider.groupNotificationsFlow.collect { enabled ->
                 _uiState.update { it.copy(groupNotificationsEnabled = enabled) }
             }
         }
 
         viewModelScope.launch {
-            userPreferencesRepository.individualNotificationsFlow.collect { enabled ->
+            userPreferencesProvider.individualNotificationsFlow.collect { enabled ->
                 _uiState.update { it.copy(individualNotificationsEnabled = enabled) }
             }
         }
@@ -113,7 +115,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onGroupNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
-            userPreferencesRepository.setGroupNotifications(enabled)
+            userPreferencesActions.setGroupNotifications(enabled)
             emitSnack(
                 if (enabled) "Notificaciones grupales encendidas"
                 else "Notificaciones grupales apagadas"
@@ -123,7 +125,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onIndividualNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
-            userPreferencesRepository.setIndividualNotifications(enabled)
+            userPreferencesActions.setIndividualNotifications(enabled)
             emitSnack(
                 if (enabled) "Notificaciones individuales encendidas"
                 else "Notificaciones individuales apagadas"

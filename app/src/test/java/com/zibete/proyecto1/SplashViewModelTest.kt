@@ -6,8 +6,7 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeLogoutUseCase
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
-import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
-import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
+import com.zibete.proyecto1.fakes.FakeUserPreferences
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.ui.splash.SplashUiEvent
@@ -47,8 +46,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -77,14 +76,14 @@ class SplashViewModelTest {
         )
 
         val fakeSessionBootstrapper = FakeSessionBootstrapper()
-        val fakeUserPreferencesActions = FakeUserPreferencesActions(state)
+        val FakeUserPreferences = FakeUserPreferences(state)
 
         val viewModel = SplashViewModel(
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = fakeUserPreferencesActions,
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences,
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -98,7 +97,7 @@ class SplashViewModelTest {
 
         // Then
         assertFalse(events.contains(SplashUiEvent.NavigateOnBoarding))
-        assertEquals(0, fakeUserPreferencesActions.setOnboardingDoneCalls)
+        assertEquals(0, FakeUserPreferences.setOnboardingDoneCalls)
 
         job.cancel()
     }
@@ -130,8 +129,8 @@ class SplashViewModelTest {
             savedStateHandle = savedStateHandle,
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -166,8 +165,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -200,8 +199,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = FakeSessionBootstrapper(),
             logoutUseCase = fakeLogoutOrchestrator
         )
@@ -239,8 +238,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -282,8 +281,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -325,8 +324,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -370,8 +369,8 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = fakeAppChecksProvider,
             sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferencesProvider(state),
-            preferencesActions = FakeUserPreferencesActions(state),
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -400,10 +399,10 @@ class SplashViewModelTest {
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferencesProvider(
+            preferencesProvider = FakeUserPreferences(
                 FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
             ),
-            preferencesActions = FakeUserPreferencesActions(
+            preferencesActions = FakeUserPreferences(
                 FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
             ),
             sessionBootstrapper = FakeSessionBootstrapper(),

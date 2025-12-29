@@ -50,6 +50,7 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
@@ -86,7 +87,7 @@ fun AuthScreen(
     val scope = rememberCoroutineScope()
 
     Column(
-        modifier = Modifier.testTag("auth_screen")
+        modifier = Modifier.testTag(AUTH_SCREEN)
     ) {
         LaunchedEffect(Unit) {
             authEvents.collect { event ->

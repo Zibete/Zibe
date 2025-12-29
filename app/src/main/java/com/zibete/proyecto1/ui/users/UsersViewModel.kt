@@ -3,7 +3,8 @@ package com.zibete.proyecto1.ui.users
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.LocationRepository
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -24,7 +25,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UsersViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val userPreferencesActions: UserPreferencesActions,
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val userSessionManager: UserSessionManager,
     val locationRepository: LocationRepository,
@@ -45,10 +47,10 @@ class UsersViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             // Leer filtros una sola vez (snapshot) para esta carga
-            val applyAgeFilter = userPreferencesRepository.applyAgeFilterFlow.first()
-            val applyOnlineFilter = userPreferencesRepository.applyOnlineFilterFlow.first()
-            val minAge = userPreferencesRepository.minAgeFlow.first()
-            val maxAge = userPreferencesRepository.maxAgeFlow.first()
+            val applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first()
+            val applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first()
+            val minAge = userPreferencesProvider.minAgeFlow.first()
+            val maxAge = userPreferencesProvider.maxAgeFlow.first()
 
             try {
                 val snapshot = firebaseRefsContainer.refAccounts.get().await()
@@ -108,17 +110,17 @@ class UsersViewModel @Inject constructor(
         maxAge: Int
     ) {
         viewModelScope.launch {
-            userPreferencesRepository.setApplyAgeFilter(applyAgeFilter)
-            userPreferencesRepository.setApplyOnlineFilter(applyOnlineFilter)
+            userPreferencesActions.setApplyAgeFilter(applyAgeFilter)
+            userPreferencesActions.setApplyOnlineFilter(applyOnlineFilter)
 
             if (applyAgeFilter) {
-                userPreferencesRepository.setMinAge(minAge)
-                userPreferencesRepository.setMaxAge(maxAge)
-                userPreferencesRepository.setFilterSwitch(true)
+                userPreferencesActions.setMinAge(minAge)
+                userPreferencesActions.setMaxAge(maxAge)
+                userPreferencesActions.setFilterSwitch(true)
             } else {
-                userPreferencesRepository.setMinAge(0)
-                userPreferencesRepository.setMaxAge(0)
-                userPreferencesRepository.setFilterSwitch(applyOnlineFilter) // si online queda activo, sigue habiendo filtro
+                userPreferencesActions.setMinAge(0)
+                userPreferencesActions.setMaxAge(0)
+                userPreferencesActions.setFilterSwitch(applyOnlineFilter) // si online queda activo, sigue habiendo filtro
             }
 
             loadUsers()
@@ -127,11 +129,11 @@ class UsersViewModel @Inject constructor(
 
     fun clearFilters() {
         viewModelScope.launch {
-            userPreferencesRepository.setApplyAgeFilter(false)
-            userPreferencesRepository.setApplyOnlineFilter(false)
-            userPreferencesRepository.setMinAge(0)
-            userPreferencesRepository.setMaxAge(0)
-            userPreferencesRepository.setFilterSwitch(false)
+            userPreferencesActions.setApplyAgeFilter(false)
+            userPreferencesActions.setApplyOnlineFilter(false)
+            userPreferencesActions.setMinAge(0)
+            userPreferencesActions.setMaxAge(0)
+            userPreferencesActions.setFilterSwitch(false)
 
             loadUsers()
         }
@@ -145,11 +147,11 @@ class UsersViewModel @Inject constructor(
 
     // Helpers para UI actual (si tu fragment lo pide)
     suspend fun currentApplyAgeFilter(): Boolean {
-        return userPreferencesRepository.applyAgeFilterFlow.first()
+        return userPreferencesProvider.applyAgeFilterFlow.first()
     }
 
     suspend fun currentApplyOnlineFilter(): Boolean {
-        return userPreferencesRepository.applyOnlineFilterFlow.first()
+        return userPreferencesProvider.applyOnlineFilterFlow.first()
     }
 
 }

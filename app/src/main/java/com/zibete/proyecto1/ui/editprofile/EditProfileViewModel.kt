@@ -3,7 +3,8 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.data.UserPreferencesRepository
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -31,7 +32,9 @@ import javax.inject.Inject
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val userSessionManager: UserSessionManager,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val userPreferencesActions: UserPreferencesActions
+
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -93,12 +96,12 @@ class EditProfileViewModel @Inject constructor(
     }
 
     suspend fun isFirstLoginDone(): Boolean {
-        return userPreferencesRepository.isFirstLoginDone()
+        return userPreferencesProvider.isFirstLoginDone()
     }
 
     fun markFirstLoginAsDone() {
         viewModelScope.launch {
-            userPreferencesRepository.setFirstLoginDone(true)
+            userPreferencesActions.setFirstLoginDone(true)
         }
     }
 
