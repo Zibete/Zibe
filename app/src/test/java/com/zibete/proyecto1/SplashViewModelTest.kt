@@ -32,6 +32,10 @@ class SplashViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    // ---------------------------------------------------------------------------------
+    // Onboarding on/off
+    // ---------------------------------------------------------------------------------
+
     @Test
     fun `cuando onboarding no esta hecho navega a onboarding`() = runTest {
         // Given
@@ -76,14 +80,14 @@ class SplashViewModelTest {
         )
 
         val fakeSessionBootstrapper = FakeSessionBootstrapper()
-        val FakeUserPreferences = FakeUserPreferences(state)
+        val fakeUserPreferences = FakeUserPreferences(state)
 
         val viewModel = SplashViewModel(
             savedStateHandle = SavedStateHandle(),
             appChecksProvider = FakeAppChecksProvider(),
             sessionProvider = FakeUserSessionProvider(),
             preferencesProvider = FakeUserPreferences(state),
-            preferencesActions = FakeUserPreferences,
+            preferencesActions = fakeUserPreferences,
             sessionBootstrapper = fakeSessionBootstrapper,
             logoutUseCase = FakeLogoutUseCase()
         )
@@ -97,10 +101,14 @@ class SplashViewModelTest {
 
         // Then
         assertFalse(events.contains(SplashUiEvent.NavigateOnBoarding))
-        assertEquals(0, FakeUserPreferences.setOnboardingDoneCalls)
+        assertEquals(0, fakeUserPreferences.setOnboardingDoneCalls)
 
         job.cancel()
     }
+
+    // ---------------------------------------------------------------------------------
+    // Session conflict on/off
+    // ---------------------------------------------------------------------------------
 
     @Test
     fun `cuando hay conflicto de sesion muestra dialogo`() = runTest {
@@ -219,6 +227,10 @@ class SplashViewModelTest {
         job.cancel()
     }
 
+    // ---------------------------------------------------------------------------------
+    // Internet conflict
+    // ---------------------------------------------------------------------------------
+
     @Test
     fun `cuando no hay internet muestra dialogo`() = runTest {
         // Given
@@ -257,6 +269,94 @@ class SplashViewModelTest {
 
         job.cancel()
     }
+
+    // ---------------------------------------------------------------------------------
+    // permission
+    // ---------------------------------------------------------------------------------
+
+    @Test
+    fun `cuando hay usuario pero no hay permiso de ubicacion solicita permiso`() = runTest {
+        // Given
+        val state = FakeUserPreferencesState(
+            onboardingDone = true,
+            firstLoginDone = false
+        )
+
+        val fakeAppChecksProvider = FakeAppChecksProvider().apply {
+            internet = true
+            locationPermission = false
+        }
+
+        val fakeSessionProvider = FakeUserSessionProvider().apply {
+            currentUser = mockk(relaxed = true)
+        }
+
+        val fakeSessionBootstrapper = FakeSessionBootstrapper()
+
+        val viewModel = SplashViewModel(
+            savedStateHandle = SavedStateHandle(),
+            appChecksProvider = fakeAppChecksProvider,
+            sessionProvider = fakeSessionProvider,
+            preferencesProvider = FakeUserPreferences(state),
+            preferencesActions = FakeUserPreferences(state),
+            sessionBootstrapper = fakeSessionBootstrapper,
+            logoutUseCase = FakeLogoutUseCase()
+        )
+
+        val events = mutableListOf<SplashUiEvent>()
+        val job = launch { viewModel.events.toList(events) }
+
+        // When
+        viewModel.start(context = mockk(relaxed = true))
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(listOf(SplashUiEvent.RequestLocationPermission), events)
+        assertNull(fakeSessionBootstrapper.calledWithUid)
+
+        job.cancel()
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Helper logout
+    // ---------------------------------------------------------------------------------
+
+    @Test
+    fun `cuando se solicita logout navega a auth`() = runTest {
+        // Given
+        val fakeLogoutOrchestrator = FakeLogoutUseCase()
+
+        val viewModel = SplashViewModel(
+            savedStateHandle = SavedStateHandle(),
+            appChecksProvider = FakeAppChecksProvider(),
+            sessionProvider = FakeUserSessionProvider(),
+            preferencesProvider = FakeUserPreferences(
+                FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+            ),
+            preferencesActions = FakeUserPreferences(
+                FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+            ),
+            sessionBootstrapper = FakeSessionBootstrapper(),
+            logoutUseCase = fakeLogoutOrchestrator
+        )
+
+        val events = mutableListOf<SplashUiEvent>()
+        val job = launch { viewModel.events.toList(events) }
+
+        // When
+        viewModel.onLogoutRequested()
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(1, events.size)
+        assertTrue(events.first() is SplashUiEvent.NavigateAuth)
+
+        job.cancel()
+    }
+
+    // ---------------------------------------------------------------------------------
+    // user null
+    // ---------------------------------------------------------------------------------
 
     @Test
     fun `cuando no hay usuario navega a auth`() = runTest {
@@ -301,48 +401,9 @@ class SplashViewModelTest {
         job.cancel()
     }
 
-    @Test
-    fun `cuando hay usuario pero no hay permiso de ubicacion solicita permiso`() = runTest {
-        // Given
-        val state = FakeUserPreferencesState(
-            onboardingDone = true,
-            firstLoginDone = false
-        )
-
-        val fakeAppChecksProvider = FakeAppChecksProvider().apply {
-            internet = true
-            locationPermission = false
-        }
-
-        val fakeSessionProvider = FakeUserSessionProvider().apply {
-            currentUser = mockk(relaxed = true)
-        }
-
-        val fakeSessionBootstrapper = FakeSessionBootstrapper()
-
-        val viewModel = SplashViewModel(
-            savedStateHandle = SavedStateHandle(),
-            appChecksProvider = fakeAppChecksProvider,
-            sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferences(state),
-            preferencesActions = FakeUserPreferences(state),
-            sessionBootstrapper = fakeSessionBootstrapper,
-            logoutUseCase = FakeLogoutUseCase()
-        )
-
-        val events = mutableListOf<SplashUiEvent>()
-        val job = launch { viewModel.events.toList(events) }
-
-        // When
-        viewModel.start(context = mockk(relaxed = true))
-        advanceUntilIdle()
-
-        // Then
-        assertEquals(listOf(SplashUiEvent.RequestLocationPermission), events)
-        assertNull(fakeSessionBootstrapper.calledWithUid)
-
-        job.cancel()
-    }
+    // ---------------------------------------------------------------------------------
+    // user OK
+    // ---------------------------------------------------------------------------------
 
     @Test
     fun `cuando internet ok + user ok + location ok llama SessionBootstrapper con el uid correcto`() = runTest {
@@ -389,38 +450,5 @@ class SplashViewModelTest {
 
         job.cancel()
     }
-
-    @Test
-    fun `cuando se solicita logout navega a auth`() = runTest {
-        // Given
-        val fakeLogoutOrchestrator = FakeLogoutUseCase()
-
-        val viewModel = SplashViewModel(
-            savedStateHandle = SavedStateHandle(),
-            appChecksProvider = FakeAppChecksProvider(),
-            sessionProvider = FakeUserSessionProvider(),
-            preferencesProvider = FakeUserPreferences(
-                FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
-            ),
-            preferencesActions = FakeUserPreferences(
-                FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
-            ),
-            sessionBootstrapper = FakeSessionBootstrapper(),
-            logoutUseCase = fakeLogoutOrchestrator
-        )
-
-        val events = mutableListOf<SplashUiEvent>()
-        val job = launch { viewModel.events.toList(events) }
-
-        // When
-        viewModel.onLogoutRequested()
-        advanceUntilIdle()
-
-        // Then
-        assertEquals(1, events.size)
-        assertTrue(events.first() is SplashUiEvent.NavigateAuth)
-
-        job.cancel()
-    }
-
+    
 }

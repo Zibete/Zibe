@@ -1,99 +1,99 @@
 package com.zibete.proyecto1.ui.custompermission
 
-import android.Manifest
 import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.di.PermissionRequesterEntryPoint
+import com.zibete.proyecto1.di.RationaleEntryPoint
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.constants.BUTTON_START
-import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_MESSAGE
-import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_TITLE
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.DIALOG_OK
-import com.zibete.proyecto1.ui.constants.PERMISSION_LEGAL_DISCLAIMER
-import com.zibete.proyecto1.ui.constants.PERMISSION_LOCATION_MESSAGE
-import com.zibete.proyecto1.ui.constants.LOGO_CONTENT_DESC
-import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_MESSAGE
-import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_TITLE
+import com.zibete.proyecto1.ui.components.ZibeOkDialog
+import com.zibete.proyecto1.ui.constants.*
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-
-// Helper para obtener la Activity desde el Context
-private fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
+import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun CustomPermissionScreen(
     onPermissionGranted: () -> Unit,
-    onForceLogout: () -> Unit
+    onPermissionDenied: () -> Unit
 ) {
-    val context = LocalContext.current
-    val activity = context.findActivity()
-    val zibeColors = LocalZibeExtendedColors.current
+    val permissionViewModel: PermissionViewModel = hiltViewModel()
+    val uiState by permissionViewModel.uiState.collectAsState()
 
-    var showRationaleDialog by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) }
+    val activity = LocalContext.current as Activity
+    val appContext = LocalContext.current.applicationContext
 
-    val permissionLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (isGranted) {
+    val rationaleProvider = remember {
+        EntryPointAccessors.fromActivity(activity, RationaleEntryPoint::class.java)
+            .rationaleProvider()
+    }
+    val requester = remember {
+        EntryPointAccessors.fromApplication(appContext, PermissionRequesterEntryPoint::class.java)
+            .requester()
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        requester.onPermissionResult(isGranted)
+    }
+
+    LaunchedEffect(Unit) {
+        requester.bindLauncher(launcher)
+    }
+
+    // La UI solo “escucha” eventos del VM y ejecuta acciones externas
+    val event by permissionViewModel.event.collectAsState()
+
+    LaunchedEffect(event) {
+        when (event) {
+            PermissionUiEvent.PermissionGranted -> {
+                permissionViewModel.consumeEvent()
                 onPermissionGranted()
-            } else {
-                showLogoutDialog = true
             }
+            PermissionUiEvent.PermissionDenied -> {
+                permissionViewModel.consumeEvent()
+                onPermissionDenied()
+            }
+            null -> Unit
         }
+    }
+
+    val zibeColors = LocalZibeExtendedColors.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(zibeColors.gradientZibe) // fondo más “serio” pero ZIBE
+            .testTag(PERMISSION_SCREEN)
+            .background(zibeColors.gradientZibe)
             .padding(horizontal = 20.dp, vertical = 40.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             color = zibeColors.cardBackground,
             shape = MaterialTheme.shapes.large,
             tonalElevation = 0.dp
@@ -113,8 +113,7 @@ fun CustomPermissionScreen(
                     Image(
                         painter = painterResource(id = R.mipmap.logo_zibe_icon),
                         contentDescription = LOGO_CONTENT_DESC,
-                        modifier = Modifier
-                            .height(90.dp),
+                        modifier = Modifier.height(90.dp),
                         contentScale = ContentScale.Fit
                     )
 
@@ -141,33 +140,15 @@ fun CustomPermissionScreen(
 
                 ZibeButton(
                     text = BUTTON_START,
-                    onClick = {
-                        if (activity != null) {
-                            val shouldShowRationale =
-                                ActivityCompat.shouldShowRequestPermissionRationale(
-                                    activity,
-                                    Manifest.permission.ACCESS_FINE_LOCATION
-                                )
-
-                            if (shouldShowRationale) {
-                                showRationaleDialog = true
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                            }
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        }
-                    },
+                    onClick = { permissionViewModel.onStartClicked(rationaleProvider.shouldShowRationale()) },
                     modifier = Modifier.fillMaxWidth(),
                     isLoading = false
                 )
-
             }
         }
     }
 
-    // Diálogo de rationale
-    if (showRationaleDialog) {
+    if (uiState.showRationaleDialog) {
         ZibeDialog(
             title = PERMISSION_RATIONALE_TITLE,
             textContent = {
@@ -179,19 +160,14 @@ fun CustomPermissionScreen(
                 )
             },
             confirmText = DIALOG_ACCEPT,
-            onConfirm = {
-                showRationaleDialog = false
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            },
-            onDismiss = {
-                showRationaleDialog = false
-            }
+            onConfirm = { permissionViewModel.onRationaleAccept() },
+            dismissText = DIALOG_CANCEL,
+            onDismiss = { permissionViewModel.onRationaleDismiss() }
         )
     }
 
-    // Diálogo cuando niegan el permiso
-    if (showLogoutDialog) {
-        ZibeDialog(
+    if (uiState.showDeniedDialog) {
+        ZibeOkDialog(
             title = PERMISSION_DENIED_TITLE,
             textContent = {
                 Text(
@@ -202,14 +178,7 @@ fun CustomPermissionScreen(
                 )
             },
             confirmText = DIALOG_OK,
-            onConfirm = {
-                showLogoutDialog = false
-                onForceLogout()
-            },
-            dismissText = DIALOG_CANCEL,
-            onDismiss = {
-                showLogoutDialog = false
-            }
+            onConfirm = { permissionViewModel.onDeniedOkClicked() }
         )
     }
 }
@@ -220,7 +189,7 @@ fun CustomPermissionScreenPreview() {
     ZibeTheme {
         CustomPermissionScreen(
             onPermissionGranted = {},
-            onForceLogout = {}
+            onPermissionDenied = {}
         )
     }
 }

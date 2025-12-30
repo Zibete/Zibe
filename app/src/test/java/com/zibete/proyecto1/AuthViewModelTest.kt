@@ -10,6 +10,7 @@ import com.zibete.proyecto1.ui.auth.AuthUiEvent
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
+import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
 import io.mockk.mockk
@@ -29,6 +30,10 @@ class AuthViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    // ---------------------------------------------------------------------------------
+    // Email Login
+    // ---------------------------------------------------------------------------------
 
     @Test
     fun `onEmailLogin con email vacio emite warning y no carga loading`() = runTest {
@@ -122,6 +127,47 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `login falla emite snack`() = runTest {
+        // Given
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+
+        val sessionActions = FakeUserSessionActions().apply {
+            signInShouldFail = true
+            signInFailure = RuntimeException("boom")
+        }
+
+        val deleteUseCase = FakeDeleteAccountUseCase(
+            result = DeleteAccountResult.Success
+        )
+
+        val vm = AuthViewModel(
+            userSessionProvider = FakeUserSessionProvider(),
+            userSessionActions = sessionActions,
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
+            deleteAccountUseCase = deleteUseCase
+        )
+
+        val events = mutableListOf<AuthUiEvent>()
+        val job = launch { vm.events.toList(events) }
+
+        // When
+        vm.onEmailLogin("a@a.com", "123456")
+        advanceUntilIdle()
+
+        // Then
+        val snack = events.filterIsInstance<AuthUiEvent.ShowSnack>().last()
+        assertEquals(ZibeSnackType.ERROR, snack.type)
+        assertFalse(vm.uiState.value.isLoading)
+
+        job.cancel()
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Cuando venimos de eliminar cuenta
+    // ---------------------------------------------------------------------------------
+
+    @Test
     fun `onDeleteAccountClicked success muestra mensaje y setea deleteUser false`() = runTest {
         // Given
         val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false).apply {
@@ -159,41 +205,40 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `login falla emite snack`() = runTest {
+    fun `onDoNotDeleteAccountClicked muestra mensaje y setea deleteUser false`() = runTest {
         // Given
-        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
-
-        val sessionActions = FakeUserSessionActions().apply {
-            signInShouldFail = true
-            signInFailure = RuntimeException("boom")
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false).apply {
+            deleteUser = true
         }
-
-        val deleteUseCase = FakeDeleteAccountUseCase(
-            result = DeleteAccountResult.Success
-        )
 
         val vm = AuthViewModel(
             userSessionProvider = FakeUserSessionProvider(),
-            userSessionActions = sessionActions,
+            userSessionActions = FakeUserSessionActions(),
             userPreferencesProvider = FakeUserPreferences(prefsState),
             userPreferencesActions = FakeUserPreferences(prefsState),
-            deleteAccountUseCase = deleteUseCase
+            deleteAccountUseCase = FakeDeleteAccountUseCase()
         )
 
         val events = mutableListOf<AuthUiEvent>()
         val job = launch { vm.events.toList(events) }
 
         // When
-        vm.onEmailLogin("a@a.com", "123456")
+        vm.onDoNotDeleteAccountClicked()
         advanceUntilIdle()
 
         // Then
-        val snack = events.filterIsInstance<AuthUiEvent.ShowSnack>().last()
-        assertEquals(ZibeSnackType.ERROR, snack.type)
+        assertFalse(vm.uiState.value.deleteUser)
         assertFalse(vm.uiState.value.isLoading)
+
+        val snackEvents = events.filterIsInstance<AuthUiEvent.ShowSnack>()
+        assertTrue(snackEvents.any { it.message == DO_NOT_DELETE_ACCOUNT && it.type == ZibeSnackType.INFO })
 
         job.cancel()
     }
+
+    // ---------------------------------------------------------------------------------
+    // Reset password
+    // ---------------------------------------------------------------------------------
 
     @Test
     fun `reset password con email vacio emite snack`() = runTest {
@@ -258,6 +303,37 @@ class AuthViewModelTest {
         // Then
         val snack = events.last() as AuthUiEvent.ShowSnack
         assertEquals(ZibeSnackType.WARNING, snack.type)
+
+        job.cancel()
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Navigate -> SignUp
+    // ---------------------------------------------------------------------------------
+
+    @Test
+    fun `onNavigateToSignUpClicked navega a signup`() = runTest {
+        // Given
+        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+
+        val vm = AuthViewModel(
+            userSessionProvider = FakeUserSessionProvider(),
+            userSessionActions = FakeUserSessionActions(),
+            userPreferencesProvider = FakeUserPreferences(prefsState),
+            userPreferencesActions = FakeUserPreferences(prefsState),
+            deleteAccountUseCase = FakeDeleteAccountUseCase()
+        )
+
+        val events = mutableListOf<AuthUiEvent>()
+        val job = launch { vm.events.toList(events) }
+
+        // When
+        vm.onNavigateToSignUpClicked()
+        advanceUntilIdle()
+
+        // Then
+        assertTrue(events.contains(AuthUiEvent.NavigateToSignUp))
+        assertFalse(vm.uiState.value.isLoading)
 
         job.cancel()
     }

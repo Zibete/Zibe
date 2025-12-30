@@ -2,6 +2,7 @@ package com.zibete.proyecto1.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FacebookAuthProvider
@@ -16,6 +17,7 @@ import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
 import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
@@ -206,7 +208,7 @@ class AuthViewModel @Inject constructor(
 
     // ================= DO NOT DELETE =================
 
-    fun onDoNotDeleteClicked() {
+    fun onDoNotDeleteAccountClicked() {
         showMessage(
             message = DO_NOT_DELETE_ACCOUNT,
             type = ZibeSnackType.INFO,
@@ -214,6 +216,13 @@ class AuthViewModel @Inject constructor(
         )
 
         setDeleteUser(false)
+    }
+
+    fun onNavigateToSignUpClicked(){
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = false) }
+            _events.emit(AuthUiEvent.NavigateToSignUp)
+        }
     }
 
     // ================= HELPERS =================

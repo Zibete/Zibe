@@ -85,20 +85,18 @@ const val SESSION_CONFLICT_MESSAGE =
 const val SESSION_CONFLICT_KEEP_HERE = "Continuar en este dispositivo"
 const val SESSION_CONFLICT_LOGOUT = "Cerrar sesión"
 
-const val BUTTON_START =
-    "Comenzar"
+const val BUTTON_START = "Comenzar"
+const val BUTTON_NEXT = "Siguiente"
+const val BUTTON_SKIP = "saltar"
+const val BUTTON_BACK = "Atrás"
 
-const val PERMISSION_RATIONALE_TITLE =
-    "Permiso de ubicación"
+const val PERMISSION_RATIONALE_TITLE = "Permiso de ubicación"
 
-const val PERMISSION_RATIONALE_MESSAGE =
-    "ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas."
+const val PERMISSION_RATIONALE_MESSAGE = "ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas."
 
-const val PERMISSION_DENIED_TITLE =
-    "Permiso denegado"
+const val PERMISSION_DENIED_TITLE = "Permiso denegado"
 
-const val PERMISSION_DENIED_MESSAGE =
-    "Zibe necesita acceso a tu ubicación para funcionar correctamente.\n \n" +
+const val PERMISSION_DENIED_MESSAGE = "Zibe necesita acceso a tu ubicación para funcionar correctamente.\n \n" +
             "Podés activar el permiso desde: Ajustes > Aplicaciones > Zibe > Permisos > Ubicación."
 
 const val DIALOG_ACCEPT ="Aceptar"

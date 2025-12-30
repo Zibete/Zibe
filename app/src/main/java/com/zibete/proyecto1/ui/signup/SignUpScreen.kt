@@ -49,7 +49,6 @@ import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.ui.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
@@ -93,7 +92,7 @@ fun SignUpScreen(
                         )
                     }
                 }
-                SignUpUiEvent.RequestLocationPermission -> {
+                is SignUpUiEvent.RequestLocationPermission -> {
                     // Esto lo maneja la Activity; acá no hacemos nada.
                 }
             }

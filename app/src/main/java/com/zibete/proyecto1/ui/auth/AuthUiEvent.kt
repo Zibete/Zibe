@@ -8,4 +8,6 @@ sealed class AuthUiEvent {
         val type: ZibeSnackType
     ) : AuthUiEvent()
     object NavigateToSplash : AuthUiEvent()
+    object NavigateToSignUp : AuthUiEvent()
+
 }
