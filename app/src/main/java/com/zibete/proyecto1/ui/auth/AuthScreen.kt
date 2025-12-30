@@ -101,7 +101,12 @@ fun AuthScreen(
                         }
                     }
                     is AuthUiEvent.NavigateToSplash -> {
-                        onNavigateToSplash() }
+                        onNavigateToSplash()
+                    }
+
+                    is AuthUiEvent.NavigateToSignUp -> {
+                        onNavigateToSignUp()
+                    }
                 }
             }
         }

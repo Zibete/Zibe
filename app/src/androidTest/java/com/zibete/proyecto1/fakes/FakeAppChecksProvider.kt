@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.testing.fakes
+package com.zibete.proyecto1.fakes
 
 import android.content.Context
 import com.zibete.proyecto1.testing.TestScenario

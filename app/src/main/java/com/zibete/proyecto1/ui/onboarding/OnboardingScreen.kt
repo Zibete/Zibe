@@ -35,6 +35,10 @@ import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.testTag
+import com.zibete.proyecto1.ui.constants.BUTTON_BACK
+import com.zibete.proyecto1.ui.constants.BUTTON_NEXT
+import com.zibete.proyecto1.ui.constants.BUTTON_SKIP
+import com.zibete.proyecto1.ui.constants.BUTTON_START
 import com.zibete.proyecto1.ui.constants.Constants.UiTags.ONBOARDING_SCREEN
 
 // ------------------------------------------------------
@@ -105,7 +109,7 @@ fun OnboardingScreen(
                     .zIndex(1f)
             ) {
                 Text(
-                    text = stringResource(id = R.string.saltar),
+                    text = BUTTON_SKIP,
                     color = Color.White,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -165,7 +169,7 @@ fun OnboardingScreen(
                 // IZQUIERDA = ATRÁS (si page > 0), si no → invisible
                 if (pagerState.currentPage > 0) {
                     ZibeTextButton(
-                        text = stringResource(id = R.string.atras),
+                        text = BUTTON_BACK,
                         modifier = Modifier.weight(1f)
                     ) {
                         scope.launch {
@@ -182,7 +186,7 @@ fun OnboardingScreen(
                 // DERECHA = SIGUIENTE / COMENZAR
                 if (pagerState.currentPage < lastIndex) {
                     ZibeTextButton(
-                        text = stringResource(id = R.string.siguiente),
+                        text = BUTTON_NEXT,
                         modifier = Modifier.weight(1f)
                     ) {
                         scope.launch {
@@ -192,7 +196,7 @@ fun OnboardingScreen(
                 } else {
                     // última → COMENZAR = ZibeButton
                     ZibeButton(
-                        text = stringResource(id = R.string.comenzar),
+                        text = BUTTON_START,
                         modifier = Modifier.weight(1f),
                         onClick = onFinished
                     )

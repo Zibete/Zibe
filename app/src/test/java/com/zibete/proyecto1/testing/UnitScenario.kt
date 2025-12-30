@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.testing
 
-import com.zibete.proyecto1.ui.custompermission.di.PermissionInteractor
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -8,21 +7,19 @@ import javax.inject.Singleton
  * Perillas del escenario para androidTest.
  * El test setea estos valores ANTES de abrir la pantalla.
  */
-data class TestScenario(
+data class UnitScenario(
     var onboardingDone: Boolean = true,
     var firstLoginDone: Boolean = true,
     var deleteUser: Boolean = false,
     var hasInternet: Boolean = true,
     var hasLocationPermission: Boolean = true,
-    var currentUserUid: String? = null,
-    val permissionInteractor: PermissionInteractor? = null
-
+    var currentUserUid: String? = null
 )
 
 @Singleton
-class TestScenarioStore @Inject constructor() {
-    @Volatile var scenario: TestScenario = TestScenario()
+class UnitScenarioStore @Inject constructor() {
+    @Volatile var scenario: UnitScenario = UnitScenario()
 }
-object TestScenarioHolder {
-    @Volatile var scenario: TestScenario = TestScenario()
+object UnitScenarioHolder {
+    @Volatile var scenario: UnitScenario = UnitScenario()
 }

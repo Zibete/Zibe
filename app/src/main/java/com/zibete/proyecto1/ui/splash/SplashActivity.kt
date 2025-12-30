@@ -152,7 +152,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onNavigateToSignUp = {
-                                    navController.navigate(SIGNUP_SCREEN)
+                                    authViewModel.onNavigateToSignUpClicked()
                                 },
 
                                 onResetPassword = { email ->
@@ -179,7 +179,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onDoNotDelete = {
-                                    authViewModel.onDoNotDeleteClicked()
+                                    authViewModel.onDoNotDeleteAccountClicked()
                                 },
 
                                 onDeleteAccount = {
@@ -233,7 +233,7 @@ class SplashActivity : ComponentActivity() {
                                     }
                                 },
 
-                                onForceLogout = {
+                                onPermissionDenied = {
                                     splashViewModel.onLogoutRequested()
                                 }
                             )
