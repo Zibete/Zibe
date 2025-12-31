@@ -2,7 +2,6 @@ package com.zibete.proyecto1.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FacebookAuthProvider
@@ -17,12 +16,14 @@ import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
 import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
 import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.ui.constants.RESET_PASSWORD_EMAIL_INSTRUCTION
+import com.zibete.proyecto1.ui.constants.resetPasswordError
+import com.zibete.proyecto1.ui.constants.resetPasswordSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,7 +82,7 @@ class AuthViewModel @Inject constructor(
     fun onResetPassword(email: String) {
         if (email.isBlank()) {
             showMessage(
-                message = "Por favor, ingresá tu email para reestablecer la contraseña",
+                message = RESET_PASSWORD_EMAIL_INSTRUCTION,
                 type = ZibeSnackType.WARNING,
                 stopLoading = false
             )
@@ -95,12 +96,12 @@ class AuthViewModel @Inject constructor(
                 userSessionActions.sendPasswordResetEmail(email)
             }.onSuccess {
                 showMessage(
-                    message = "Instrucciones enviadas a $email",
+                    message = resetPasswordSuccess(email),
                     type = ZibeSnackType.SUCCESS
                 )
             }.onFailure {
                 showMessage(
-                    message = "No pudimos enviar el correo a $email. Verificá que esté correcto.",
+                    message = resetPasswordError(email),
                     type = ZibeSnackType.ERROR
                 )
             }

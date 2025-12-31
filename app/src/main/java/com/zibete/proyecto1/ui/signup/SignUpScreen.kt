@@ -68,7 +68,7 @@ fun SignUpScreen(
     onRegister: (String, String, String, String, String) -> Unit,
     signUpEvents: Flow<SignUpUiEvent>,
     isLoading: Boolean,
-    onNavigateToPermission: () -> Unit
+    onNavigateToSplash: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -92,8 +92,8 @@ fun SignUpScreen(
                         )
                     }
                 }
-                is SignUpUiEvent.RequestLocationPermission -> {
-                    // Esto lo maneja la Activity; acá no hacemos nada.
+                is SignUpUiEvent.NavigateToSplash -> {
+                    onNavigateToSplash()
                 }
             }
         }
@@ -297,7 +297,7 @@ fun PreviewSignUpScreen() {
             onRegister = { _, _, _, _, _ -> },
             signUpEvents = fakeFlow,
             isLoading = false,
-            onNavigateToPermission = {}
+            onNavigateToSplash = {}
         )
     }
 }

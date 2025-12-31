@@ -9,5 +9,5 @@ sealed class SignUpUiEvent {
         val type: ZibeSnackType
     ) : SignUpUiEvent()
 
-    object RequestLocationPermission : SignUpUiEvent()
+    object NavigateToSplash : SignUpUiEvent()
 }

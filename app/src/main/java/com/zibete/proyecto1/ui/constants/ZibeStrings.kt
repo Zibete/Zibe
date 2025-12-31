@@ -25,6 +25,12 @@ const val MSG_PROFILE_LOAD_ERROR = "No se pudo cargar el perfil"
 const val MSG_CAMERA_ERROR = "No se pudo abrir la cámara"
 const val MSG_CAMERA_PERMISSION_REQUIRED = "Necesitás otorgar permiso de cámara para sacar una foto."
 
+const val RESET_PASSWORD_EMAIL_INSTRUCTION = "Por favor, ingresá tu email para reestablecer la contraseña"
+
+fun resetPasswordSuccess(email: String) = "Instrucciones enviadas a $email"
+
+fun resetPasswordError(email: String) = "No pudimos enviar el correo a $email. Verificá que esté correcto."
+
 const val MSG_USER_JOINED = "se unió a la sala"
 
 const val MSG_USER_LEAVED = "abandonó la sala"

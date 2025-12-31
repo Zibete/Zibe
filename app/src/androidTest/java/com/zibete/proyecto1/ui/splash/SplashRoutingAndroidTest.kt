@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.navigation
+package com.zibete.proyecto1.ui.splash
 
 import android.content.Context
 import android.content.Intent
@@ -22,7 +22,6 @@ import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_KEEP_HERE
 import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_LOGOUT
 import com.zibete.proyecto1.ui.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.ui.main.MainActivity
-import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.After
 import org.junit.Before

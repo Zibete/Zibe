@@ -1,16 +1,16 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.splash
 
 import androidx.lifecycle.SavedStateHandle
 import com.google.firebase.auth.FirebaseUser
-import com.zibete.proyecto1.fakes.FakeUserPreferencesState
+import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeLogoutUseCase
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeUserPreferences
+import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.ui.splash.SplashUiEvent
-import com.zibete.proyecto1.ui.splash.SplashViewModel
+import com.zibete.proyecto1.testing.TestData
+import com.zibete.proyecto1.ui.constants.Constants
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,11 +18,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -64,9 +60,9 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.NavigateOnBoarding), events)
-        assertTrue(state.onboardingDone) // se marcó onboarding done
-        assertNull(fakeSessionBootstrapper.calledWithUid)
+        Assert.assertEquals(listOf(SplashUiEvent.NavigateOnBoarding), events)
+        Assert.assertTrue(state.onboardingDone) // se marcó onboarding done
+        Assert.assertNull(fakeSessionBootstrapper.calledWithUid)
 
         job.cancel()
     }
@@ -100,8 +96,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertFalse(events.contains(SplashUiEvent.NavigateOnBoarding))
-        assertEquals(0, fakeUserPreferences.setOnboardingDoneCalls)
+        Assert.assertFalse(events.contains(SplashUiEvent.NavigateOnBoarding))
+        Assert.assertEquals(0, fakeUserPreferences.setOnboardingDoneCalls)
 
         job.cancel()
     }
@@ -120,7 +116,7 @@ class SplashViewModelTest {
 
         val savedStateHandle = SavedStateHandle()
 
-        savedStateHandle[EXTRA_SESSION_CONFLICT] = true
+        savedStateHandle[Constants.EXTRA_SESSION_CONFLICT] = true
 
         val fakeAppChecksProvider = FakeAppChecksProvider().apply {
             internet = true
@@ -151,7 +147,7 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.ShowSessionConflictDialog), events)
+        Assert.assertEquals(listOf(SplashUiEvent.ShowSessionConflictDialog), events)
 
         job.cancel()
     }
@@ -187,8 +183,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.NavigateMain), events)
-        assertNotNull(fakeSessionBootstrapper.calledWithUid)
+        Assert.assertEquals(listOf(SplashUiEvent.NavigateMain), events)
+        Assert.assertNotNull(fakeSessionBootstrapper.calledWithUid)
 
         job.cancel()
     }
@@ -221,8 +217,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(1, events.size)
-        assertTrue(events.first() is SplashUiEvent.NavigateAuth)
+        Assert.assertEquals(1, events.size)
+        Assert.assertTrue(events.first() is SplashUiEvent.NavigateAuth)
 
         job.cancel()
     }
@@ -264,8 +260,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.ShowNoInternetDialog), events)
-        assertNull(fakeSessionBootstrapper.calledWithUid)
+        Assert.assertEquals(listOf(SplashUiEvent.ShowNoInternetDialog), events)
+        Assert.assertNull(fakeSessionBootstrapper.calledWithUid)
 
         job.cancel()
     }
@@ -311,8 +307,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.RequestLocationPermission), events)
-        assertNull(fakeSessionBootstrapper.calledWithUid)
+        Assert.assertEquals(listOf(SplashUiEvent.RequestLocationPermission), events)
+        Assert.assertNull(fakeSessionBootstrapper.calledWithUid)
 
         job.cancel()
     }
@@ -348,8 +344,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(1, events.size)
-        assertTrue(events.first() is SplashUiEvent.NavigateAuth)
+        Assert.assertEquals(1, events.size)
+        Assert.assertTrue(events.first() is SplashUiEvent.NavigateAuth)
 
         job.cancel()
     }
@@ -395,8 +391,8 @@ class SplashViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(listOf(SplashUiEvent.NavigateAuth), events)
-        assertNull(fakeSessionBootstrapper.calledWithUid)
+        Assert.assertEquals(listOf(SplashUiEvent.NavigateAuth), events)
+        Assert.assertNull(fakeSessionBootstrapper.calledWithUid)
 
         job.cancel()
     }
@@ -406,49 +402,50 @@ class SplashViewModelTest {
     // ---------------------------------------------------------------------------------
 
     @Test
-    fun `cuando internet ok + user ok + location ok llama SessionBootstrapper con el uid correcto`() = runTest {
-        // Given
-        val state = FakeUserPreferencesState(
-            onboardingDone = true,
-            firstLoginDone = false
-        )
+    fun `cuando internet ok + user ok + location ok llama SessionBootstrapper con el uid correcto`() =
+        runTest {
+            // Given
+            val state = FakeUserPreferencesState(
+                onboardingDone = true,
+                firstLoginDone = false
+            )
 
-        val fakeAppChecksProvider = FakeAppChecksProvider().apply {
-            internet = true
-            locationPermission = true
+            val fakeAppChecksProvider = FakeAppChecksProvider().apply {
+                internet = true
+                locationPermission = true
+            }
+
+            val fakeSessionBootstrapper = FakeSessionBootstrapper()
+
+            val fakeSessionProvider = FakeUserSessionProvider()
+
+            val fakeUser = mockk<FirebaseUser> { every { uid } returns TestData.UID }
+            fakeSessionProvider.currentUser = fakeUser
+
+
+            val viewModel = SplashViewModel(
+                savedStateHandle = SavedStateHandle(),
+                appChecksProvider = fakeAppChecksProvider,
+                sessionProvider = fakeSessionProvider,
+                preferencesProvider = FakeUserPreferences(state),
+                preferencesActions = FakeUserPreferences(state),
+                sessionBootstrapper = fakeSessionBootstrapper,
+                logoutUseCase = FakeLogoutUseCase()
+            )
+
+            val events = mutableListOf<SplashUiEvent>()
+            val job = launch { viewModel.events.toList(events) }
+
+            // When
+            viewModel.start(context = mockk(relaxed = true))
+            advanceUntilIdle()
+
+            // Then
+            Assert.assertEquals(listOf(SplashUiEvent.NavigateMain), events)
+            Assert.assertTrue(fakeSessionBootstrapper.calledWithUid != null)
+            Assert.assertEquals(TestData.UID, fakeSessionBootstrapper.calledWithUid)
+
+            job.cancel()
         }
 
-        val fakeSessionBootstrapper = FakeSessionBootstrapper()
-
-        val fakeSessionProvider = FakeUserSessionProvider()
-
-        val fakeUser = mockk<FirebaseUser> { every { uid } returns "uid_123" }
-        fakeSessionProvider.currentUser = fakeUser
-
-
-        val viewModel = SplashViewModel(
-            savedStateHandle = SavedStateHandle(),
-            appChecksProvider = fakeAppChecksProvider,
-            sessionProvider = fakeSessionProvider,
-            preferencesProvider = FakeUserPreferences(state),
-            preferencesActions = FakeUserPreferences(state),
-            sessionBootstrapper = fakeSessionBootstrapper,
-            logoutUseCase = FakeLogoutUseCase()
-        )
-
-        val events = mutableListOf<SplashUiEvent>()
-        val job = launch { viewModel.events.toList(events) }
-
-        // When
-        viewModel.start(context = mockk(relaxed = true))
-        advanceUntilIdle()
-
-        // Then
-        assertEquals(listOf(SplashUiEvent.NavigateMain), events)
-        assertTrue(fakeSessionBootstrapper.calledWithUid != null)
-        assertEquals("uid_123", fakeSessionBootstrapper.calledWithUid)
-
-        job.cancel()
-    }
-    
 }

@@ -152,7 +152,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onNavigateToSignUp = {
-                                    authViewModel.onNavigateToSignUpClicked()
+                                    navController.navigate(SIGNUP_SCREEN)
                                 },
 
                                 onResetPassword = { email ->
@@ -218,8 +218,8 @@ class SplashActivity : ComponentActivity() {
                                 signUpEvents = signUpViewModel.events,
                                 isLoading = uiState.isLoading,
 
-                                onNavigateToPermission = {
-                                    navController.navigate(PERMISSION_SCREEN)
+                                onNavigateToSplash = {
+                                    navController.navigate(SPLASH_SCREEN)
                                 }
                             )
                         }

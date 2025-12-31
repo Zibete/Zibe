@@ -1,6 +1,5 @@
-package com.zibete.proyecto1.navigation
+package com.zibete.proyecto1.ui.splash
 
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
@@ -17,7 +16,6 @@ import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.constants.DIALOG_OK
 import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_TITLE
 import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_TITLE
-import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Test
 

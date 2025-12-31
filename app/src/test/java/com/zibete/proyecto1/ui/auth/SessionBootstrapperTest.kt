@@ -1,5 +1,6 @@
-package com.zibete.proyecto1
+package com.zibete.proyecto1.ui.auth
 
+import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryProvider
@@ -8,13 +9,11 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
+import com.zibete.proyecto1.testing.TestData
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -28,8 +27,8 @@ class SessionBootstrapperTest {
     fun `bootstrap setea sesion activa con installId y fcmToken`() = runTest {
         // Given
         val sessionRepoProvider = FakeSessionRepositoryProvider(
-            localInstallId = "install-123",
-            localFcmToken = "fcm-abc"
+            localInstallId = TestData.INSTALL_ID,
+            localFcmToken = TestData.TOKEN
         )
         val sessionRepoActions = FakeSessionRepositoryActions()
 
@@ -56,14 +55,14 @@ class SessionBootstrapperTest {
         )
 
         // When
-        bootstrapper.bootstrap("uid-1")
+        bootstrapper.bootstrap(TestData.UID)
 
         // Then
-        assertEquals(
+        Assert.assertEquals(
             FakeSessionRepositoryActions.ActiveSessionCall(
-                uid = "uid-1",
-                installId = "install-123",
-                fcmToken = "fcm-abc"
+                uid = TestData.UID,
+                installId = TestData.INSTALL_ID,
+                fcmToken = TestData.TOKEN
             ),
             sessionRepoActions.lastSetActiveSessionCall
         )
@@ -73,8 +72,8 @@ class SessionBootstrapperTest {
     fun `bootstrap usuario nuevo crea nodo y setea firstLoginDone false`() = runTest {
         // Given
         val sessionRepoProvider = FakeSessionRepositoryProvider(
-            localInstallId = "install-1",
-            localFcmToken = "fcm-1"
+            localInstallId = TestData.INSTALL_ID,
+            localFcmToken = TestData.TOKEN
         )
         val sessionRepoActions = FakeSessionRepositoryActions()
 
@@ -101,20 +100,20 @@ class SessionBootstrapperTest {
         )
 
         // When
-        bootstrapper.bootstrap("uid-1")
+        bootstrapper.bootstrap(TestData.UID)
 
         // Then
-        assertTrue(userRepoActions.createUserNodeCalled)
-        assertFalse(prefsState.firstLoginDone)
-        assertNotNull(sessionRepoActions.lastSetActiveSessionCall)
+        Assert.assertTrue(userRepoActions.createUserNodeCalled)
+        Assert.assertFalse(prefsState.firstLoginDone)
+        Assert.assertNotNull(sessionRepoActions.lastSetActiveSessionCall)
     }
 
     @Test
     fun `bootstrap usuario existente setea firstLoginDone segun birthDate`() = runTest {
         // Given
         val sessionRepoProvider = FakeSessionRepositoryProvider(
-            localInstallId = "install-1",
-            localFcmToken = "fcm-1"
+            localInstallId = TestData.INSTALL_ID,
+            localFcmToken = TestData.TOKEN
         )
         val sessionRepoActions = FakeSessionRepositoryActions()
 
@@ -141,11 +140,11 @@ class SessionBootstrapperTest {
         )
 
         // When
-        bootstrapper.bootstrap("uid-1")
+        bootstrapper.bootstrap(TestData.UID)
 
         // Then
-        assertTrue(prefsState.firstLoginDone)
-        assertFalse(userRepoActions.createUserNodeCalled)
-        assertNotNull(sessionRepoActions.lastSetActiveSessionCall)
+        Assert.assertTrue(prefsState.firstLoginDone)
+        Assert.assertFalse(userRepoActions.createUserNodeCalled)
+        Assert.assertNotNull(sessionRepoActions.lastSetActiveSessionCall)
     }
 }

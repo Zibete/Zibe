@@ -43,7 +43,7 @@ class SignUpViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<SignUpUiEvent>()
+    private val _events = MutableSharedFlow<SignUpUiEvent>(extraBufferCapacity = 1)
     val events = _events.asSharedFlow()
 
     // -------------------------- Registro
@@ -99,8 +99,8 @@ class SignUpViewModel @Inject constructor(
                     )
                 )
 
-                // 6) Pedir permisos de ubicación (lo maneja la Activity)
-                _events.emit(SignUpUiEvent.RequestLocationPermission)
+                // 6) Splash -> Location Permission
+                _events.emit(SignUpUiEvent.NavigateToSplash)
 
             } catch (e: Exception) {
 

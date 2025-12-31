@@ -13,21 +13,6 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="flow_whenStartClicked_showsRationaleDialog_andCancel_StaysInPermission()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="flow_whenStartClicked_showsRationaleDialog_andAccept_andAcceptPermission_navigateToSplash()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="flow_whenStartClicked_showsRationaleDialog_andAccept_andDeniedPermission_showsDeniedDialog_andOk_navigateToAuth()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="flow_whenStartClicked_andAcceptPermission_navigateToSplash()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="PermissionRoutingAndroidTest">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
     </selectionStates>
   </component>
 </project>
