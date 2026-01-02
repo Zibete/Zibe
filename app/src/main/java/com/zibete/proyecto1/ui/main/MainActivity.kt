@@ -59,8 +59,8 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
-import com.zibete.proyecto1.utils.UserMessageUtils
-import com.zibete.proyecto1.utils.ZibeApp
+import com.zibete.proyecto1.core.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 

@@ -2,7 +2,7 @@ package com.zibete.proyecto1.fakes
 
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
-import com.zibete.proyecto1.core.ZibeResult
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
 

@@ -11,7 +11,7 @@ import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.utils.AppChecksProvider
+import com.zibete.proyecto1.core.utils.AppChecksProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow

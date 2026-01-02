@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.utils
+package com.zibete.proyecto1.core.utils
 
 import androidx.appcompat.app.AlertDialog
 import android.content.Context

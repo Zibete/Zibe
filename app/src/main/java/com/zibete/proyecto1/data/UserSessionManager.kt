@@ -4,9 +4,10 @@ import android.content.Context
 import androidx.core.net.toUri
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.*
-import com.zibete.proyecto1.core.ZibeResult
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.core.constants.MSG_USER_LEAVED
+import com.zibete.proyecto1.core.utils.zibeCatching
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
@@ -20,9 +21,9 @@ interface UserSessionProvider {
 interface UserSessionActions {
     suspend fun logOutCleanup()
     suspend fun signInWithEmail(email: String, password: String): ZibeResult<AuthResult>
-    suspend fun signInWithCredential(credential: AuthCredential)
+    suspend fun signInWithCredential(credential: AuthCredential): ZibeResult<Unit>
     suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit>
-    suspend fun deleteFirebaseUser()
+    suspend fun deleteFirebaseUser(): ZibeResult<Unit>
     suspend fun updateAuthProfile(userName: String, photoUrl: String?): ZibeResult<Unit>
     suspend fun createUser(email: String, password: String): ZibeResult<AuthResult>
 }
@@ -112,22 +113,17 @@ class UserSessionManager @Inject constructor(
 //        firebaseAuth.signInWithEmailAndPassword(email, password).await()
 //    }
 //
-    override suspend fun signInWithCredential(credential: AuthCredential) {
-        firebaseAuth.signInWithCredential(credential).await()
-    }
+    override suspend fun signInWithCredential(credential: AuthCredential): ZibeResult<Unit> =
+        zibeCatching { firebaseAuth.signInWithCredential(credential).await() }
 
-    override suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit> {
-        return try {
-            firebaseAuth.sendPasswordResetEmail(email).await()
-            ZibeResult.Success(Unit)
-        } catch (e: Exception) {
-            ZibeResult.Failure(e)
-        }
-    }
 
-    override suspend fun deleteFirebaseUser() {
-        firebaseUser.delete().await()
-    }
+    override suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit> =
+        zibeCatching { firebaseAuth.sendPasswordResetEmail(email).await() }
+
+
+    override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
+        zibeCatching { firebaseUser.delete().await() }
+
 
     // ---------------------------------------------------------------------------------------------
     // PROFILE (AUTH USER)

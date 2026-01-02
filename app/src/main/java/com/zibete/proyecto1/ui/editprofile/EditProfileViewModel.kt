@@ -3,28 +3,21 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.core.ZibeResult
-import com.zibete.proyecto1.core.onFailure
-import com.zibete.proyecto1.core.onSuccess
-import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
 import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.core.constants.MSG_PROFILE_LOAD_ERROR
 import com.zibete.proyecto1.core.constants.MSG_PROFILE_SAVED
-import com.zibete.proyecto1.core.constants.MSG_PROFILE_SAVE_ERROR
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
-import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
-import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.utils.TimeUtils.isoToUiDate
-import com.zibete.proyecto1.utils.getAuthErrorMessage
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,17 +30,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
-    private val userRepository: UserRepository,
-    private val userRepositoryActions: UserRepositoryActions,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
-    private val userSessionActions: UserSessionActions,
     private val userRepositoryProvider: UserRepositoryProvider,
     private val updateProfileUseCase: UpdateProfileUseCase
-
 ) : ViewModel() {
 
-    private val myUid: String get() = userRepository.myUid
+    private val myUid: String get() = userRepositoryProvider.myUid
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -63,7 +52,7 @@ class EditProfileViewModel @Inject constructor(
 
             runCatching {
 
-                val u = userRepository.getAccount(myUid)
+                val u = userRepositoryProvider.getAccount(myUid)
 
                 if (u == null) {
                     _uiState.update { it.copy(isLoading = false) }
@@ -110,9 +99,7 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun markFirstLoginAsDone() {
-        viewModelScope.launch {
-            userPreferencesActions.setFirstLoginDone(true)
-        }
+        viewModelScope.launch { userPreferencesActions.setFirstLoginDone(true) }
     }
 
     fun onPhotoSelected(uri: Uri) {

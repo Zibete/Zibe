@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.adapters
 
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +11,7 @@ import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.adapters.AdapterPhotoReceived.ViewHolderAdapterPhoto
-import com.zibete.proyecto1.utils.ZibeApp
+import com.zibete.proyecto1.core.utils.ZibeApp
 
 class AdapterPhotoReceived(
     private var photoList: ArrayList<String>,

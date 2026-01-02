@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.utils
+package com.zibete.proyecto1.core.utils
 
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthException
@@ -16,20 +16,34 @@ import com.zibete.proyecto1.core.constants.SIGNUP_ERR_GENERIC_PREFIX
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_INVALID_EMAIL
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_INVALID_PASSWORD
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_UNEXPECTED_PREFIX
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.zibete.proyecto1.core.constants.ERR_ACCOUNT_NOT_FOUND
 
-// Usa tus constantes importadas para evitar hardcoding
+class AccountNotFoundException : IllegalStateException()
+
 fun getAuthErrorMessage(e: Throwable?): String {
     if (e == null) return ERR_ZIBE
 
     return when (e) {
-        // 1. Excepciones específicas de Firebase (Clases)
+
+        // Credential Manager / Google
+        is GetCredentialCancellationException -> "Inicio de sesión cancelado"
+        is NoCredentialException -> "No hay cuentas disponibles para iniciar sesión con Google"
+        is GoogleIdTokenParsingException -> "No se pudo validar el token de Google"
+        is GetCredentialException -> "No se pudo iniciar sesión con Google"
+
+        // Firebase
         is FirebaseAuthInvalidCredentialsException -> AUTH_ERR_INVALID_CREDENTIALS
         is FirebaseAuthInvalidUserException -> AUTH_ERR_USER_NOT_FOUND
         is FirebaseAuthUserCollisionException -> SIGNUP_ERR_EMAIL_IN_USE
         is FirebaseNetworkException -> ERR_NETWORK_CONNECTION
         is FirebaseAuthRecentLoginRequiredException -> AUTH_ERR_REAUTHENTICATION_REQUIRED
 
-        // 2. Excepción genérica de Firebase con ErrorCodes (Strings internos)
+        is AccountNotFoundException -> ERR_ACCOUNT_NOT_FOUND
+
         is FirebaseAuthException -> {
             when (e.errorCode) {
                 "ERROR_EMAIL_ALREADY_IN_USE" -> SIGNUP_ERR_EMAIL_IN_USE
@@ -39,12 +53,9 @@ fun getAuthErrorMessage(e: Throwable?): String {
             }
         }
 
-        // 3. Fallo genérico (Cualquier otra Exception)
-        else -> {
-            val technicalInfo = null ?: e.javaClass.simpleName
-            "$SIGNUP_ERR_UNEXPECTED_PREFIX ($technicalInfo)"
-        }
+        else -> "$SIGNUP_ERR_UNEXPECTED_PREFIX (${e.javaClass.simpleName})"
     }
 }
+
 
 

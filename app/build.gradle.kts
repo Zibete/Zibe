@@ -141,7 +141,7 @@ dependencies {
     // -------------------------------
     // GOOGLE / FIREBASE
     // -------------------------------
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
+//    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
@@ -157,6 +157,11 @@ dependencies {
     // -------------------------------
     // OTHERS
     // -------------------------------
+
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("com.android.volley:volley:1.2.1")
     implementation("jp.co.cyberagent.android:gpuimage:2.1.0")

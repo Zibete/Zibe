@@ -17,6 +17,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.data.UserRepositoryProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val userRepository: UserRepository,
+    private val userRepositoryProvider: UserRepositoryProvider,
     private val userSessionManager: UserSessionManager,
     private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
@@ -65,13 +67,13 @@ class ProfileViewModel @Inject constructor(
 
             _uiState.update { it.copy(isLoading = true) }
 
-            val profile = userRepository.getAccount(userId)
+            val profile = userRepositoryProvider.getAccount(userId)
             if (profile == null) {
                 _uiState.update { it.copy(isLoading = false) }
                 return@launch
             }
 
-            val userState = userRepository.getChatStateWith(userId, _uiState.value.chatState)
+            val userState = userRepositoryProvider.getChatStateWith(userId, _uiState.value.chatState)
 
             _uiState.value = ProfileUiState(
                 isLoading = false,
@@ -79,7 +81,7 @@ class ProfileViewModel @Inject constructor(
                 chatState = userState
             )
 
-            val photos = userRepository.getChatPhotosWithUser(userId, NODE_DM)
+            val photos = userRepositoryProvider.getChatPhotosWithUser(userId, NODE_DM)
             _photosFromChat.value = photos
 
             loadFavoriteAndBlockState()

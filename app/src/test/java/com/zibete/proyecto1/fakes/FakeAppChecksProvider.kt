@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.fakes
 
 import android.content.Context
-import com.zibete.proyecto1.utils.AppChecksProvider
+import com.zibete.proyecto1.core.utils.AppChecksProvider
 
 class FakeAppChecksProvider(
     var internet: Boolean = true,

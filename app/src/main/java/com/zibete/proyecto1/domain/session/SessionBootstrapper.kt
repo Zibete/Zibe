@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.domain.session
 
 import com.google.firebase.auth.FirebaseUser
-import com.zibete.proyecto1.core.ZibeResult
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions

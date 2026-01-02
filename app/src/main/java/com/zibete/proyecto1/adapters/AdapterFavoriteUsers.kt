@@ -11,7 +11,7 @@ import com.zibete.proyecto1.databinding.RowFavoritesBinding
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
-import com.zibete.proyecto1.utils.ZibeApp
+import com.zibete.proyecto1.core.utils.ZibeApp
 
 class AdapterFavoriteUsers(
     private val onUserClicked: (FavoriteUserUi) -> Unit

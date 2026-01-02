@@ -16,7 +16,7 @@ import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
-import com.zibete.proyecto1.utils.GlassEffect
+import com.zibete.proyecto1.core.utils.GlassEffect
 
 class AdapterUsers(
     private val onChatClicked: (String) -> Unit,

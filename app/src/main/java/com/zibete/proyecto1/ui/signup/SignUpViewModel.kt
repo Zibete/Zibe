@@ -2,14 +2,7 @@ package com.zibete.proyecto1.ui.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.zibete.proyecto1.core.ZibeResult
-import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserRepositoryActions
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.domain.session.SessionBootstrapper
-import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
@@ -18,8 +11,13 @@ import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
-import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,12 +29,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val firebaseAuth: FirebaseAuth,
-    private val userRepository: UserRepository,
-    private val userRepositoryActions: UserRepositoryActions,
     private val userSessionActions: UserSessionActions,
-    private val sessionBootstrapper: SessionBootstrapper,
-    private val sessionRepository: SessionRepository
+    private val sessionBootstrapper: SessionBootstrapper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -60,36 +54,36 @@ class SignUpViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             // 1. Crear Usuario
-            val authResult = userSessionActions.createUser(email.trim(), password.trim())
-
-            if (authResult is ZibeResult.Failure) {
-                handleRegisterError(authResult.exception)
+            userSessionActions.createUser(
+                email = email.trim(),
+                password = password.trim()
+            ).onFailure { e ->
+                handleRegisterError(e)
                 return@launch
+            }.onSuccess { authResult ->
+
+                val firebaseUser = authResult?.user
+                    ?: return@launch handleRegisterError(
+                        IllegalStateException(SIGNUP_ERR_EXCEPTION)
+                    )
+
+                // 2. Guardar perfil RTDB
+                sessionBootstrapper.bootstrap(
+                    uid = firebaseUser.uid,
+                    birthDate = birthDate,
+                    description = description
+                ).onFailure { e ->
+                    handleRegisterError(e)
+                    return@launch
+                }
             }
 
-            val firebaseUser = (authResult as ZibeResult.Success).data?.user
-                ?: return@launch handleRegisterError(IllegalStateException(SIGNUP_ERR_EXCEPTION))
-
-            // 2. Perfil de Auth
-            val updateAuthProfileResult = userSessionActions.updateAuthProfile(
+            // 3. Guardar Perfil de Auth
+            userSessionActions.updateAuthProfile(
                 userName = name,
                 photoUrl = DEFAULT_PROFILE_PHOTO_URL
-            )
-
-            if (updateAuthProfileResult is ZibeResult.Failure) {
-                handleRegisterError(updateAuthProfileResult.exception)
-                return@launch
-            }
-
-            // 3. Guardar perfil
-            val sessionBootstrapperResult = sessionBootstrapper.bootstrap(
-                uid = firebaseUser.uid,
-                birthDate = birthDate,
-                description = description
-            )
-
-            if (sessionBootstrapperResult is ZibeResult.Failure) {
-                handleRegisterError(sessionBootstrapperResult.exception)
+            ).onFailure { e ->
+                handleRegisterError(e)
                 return@launch
             }
 

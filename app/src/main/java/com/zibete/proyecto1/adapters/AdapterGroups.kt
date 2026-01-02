@@ -11,7 +11,7 @@ import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_CATEGORY
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_DATA
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_USERS
-import com.zibete.proyecto1.utils.GlassEffect
+import com.zibete.proyecto1.core.utils.GlassEffect
 import eightbitlab.com.blurview.BlurView
 
 class AdapterGroups(

@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.domain.profile
 
 import android.net.Uri
-import com.zibete.proyecto1.core.ZibeResult
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.data.UserRepositoryActions

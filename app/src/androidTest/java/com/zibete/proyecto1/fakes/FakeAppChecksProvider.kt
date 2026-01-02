@@ -2,7 +2,7 @@ package com.zibete.proyecto1.fakes
 
 import android.content.Context
 import com.zibete.proyecto1.testing.TestScenario
-import com.zibete.proyecto1.utils.AppChecksProvider
+import com.zibete.proyecto1.core.utils.AppChecksProvider
 
 class FakeAppChecksProvider(
     private val scenarioProvider: () -> TestScenario

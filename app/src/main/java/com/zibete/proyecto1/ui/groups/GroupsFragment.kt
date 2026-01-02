@@ -31,8 +31,8 @@ import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
-import com.zibete.proyecto1.utils.SimpleWatcher
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.SimpleWatcher
+import com.zibete.proyecto1.core.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 

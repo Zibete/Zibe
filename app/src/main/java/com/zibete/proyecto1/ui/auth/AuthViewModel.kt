@@ -1,18 +1,11 @@
 package com.zibete.proyecto1.ui.auth
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.core.ZibeResult
-import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
-import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.core.constants.DELETE_ACCOUNT_SUCCESS
 import com.zibete.proyecto1.core.constants.DO_NOT_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
@@ -20,7 +13,16 @@ import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
 import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.core.constants.resetPasswordError
 import com.zibete.proyecto1.core.constants.resetPasswordSuccess
-import com.zibete.proyecto1.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +38,8 @@ class AuthViewModel @Inject constructor(
     private val userSessionActions: UserSessionActions,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
-    private val deleteAccountUseCase: DeleteAccountUseCase
+    private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val googleSignInUseCase: GoogleSignInUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -46,31 +49,30 @@ class AuthViewModel @Inject constructor(
     val events = _events.asSharedFlow()
 
     fun initAfterDelete() {
-
         viewModelScope.launch {
             val deleteUser = userPreferencesProvider.isDeleteUser()
             _uiState.update { it.copy(deleteUser = deleteUser) }
         }
-
     }
 
     // ================= EMAIL / PASSWORD =================
+
     fun onEmailLogin(email: String, password: String) {
         viewModelScope.launch {
             if (!validateInputs(email, password)) return@launch
+
             _uiState.update { it.copy(isLoading = true) }
 
-            when (val result = userSessionActions.signInWithEmail(email, password)) {
-                is ZibeResult.Success -> {
-                    handleAuthSuccess()
-                }
-                is ZibeResult.Failure -> {
-                    showMessage(
-                        message = getAuthErrorMessage(result.exception),
-                        type = ZibeSnackType.ERROR
-                    )
-                    _uiState.update { it.copy(isLoading = false) }
-                }
+            userSessionActions.signInWithEmail(
+                email = email.trim(),
+                password = password.trim()
+            ).onSuccess {
+                handleAuthSuccess()
+            }.onFailure { e ->
+                showMessage(
+                    message = getAuthErrorMessage(e),
+                    type = ZibeSnackType.ERROR
+                )
             }
         }
     }
@@ -83,50 +85,41 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val result = userSessionActions.sendPasswordResetEmail(email.trim())
-
-            when (result) {
-                is ZibeResult.Success -> {
-                    showMessage(
-                        message = resetPasswordSuccess(email),
-                        type = ZibeSnackType.SUCCESS
-                    )
-                }
-                is ZibeResult.Failure -> {
-                    showMessage(
-                        message = resetPasswordError(email),
-                        type = ZibeSnackType.ERROR
-                    )
-                }
+            userSessionActions.sendPasswordResetEmail(
+                email = email.trim()
+            ).onSuccess {
+                showMessage(
+                    message = resetPasswordSuccess(email),
+                    type = ZibeSnackType.SUCCESS
+                )
+            }.onFailure {
+                showMessage(
+                    message = resetPasswordError(email),
+                    type = ZibeSnackType.ERROR
+                )
             }
         }
     }
 
     // ================= GOOGLE =================
 
-    fun onGoogleAccountReceived(account: GoogleSignInAccount?) {
-        if (account == null) {
-            showMessage(
-                message = "No se pudo iniciar con Google (account nulo)",
-                type = ZibeSnackType.ERROR
-            )
-            return
-        }
-
+    fun onGoogleClick(activity: Activity) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-
+            // Nuevo enfoque: UseCase devuelve idToken o lanza -> mapeamos con runCatching en el VM
             runCatching {
+                val idToken = googleSignInUseCase(activity)
+                GoogleAuthProvider.getCredential(idToken, null)
+            }.mapCatching { credential ->
                 userSessionActions.signInWithCredential(credential)
+            }.onSuccess {
+                handleAuthSuccess()
             }.onFailure { e ->
                 showMessage(
                     message = getAuthErrorMessage(e),
                     type = ZibeSnackType.ERROR
                 )
-            }.onSuccess {
-                handleAuthSuccess()
             }
         }
     }
@@ -137,64 +130,46 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val credential = FacebookAuthProvider.getCredential(token.token)
+            val facebookCredential = FacebookAuthProvider.getCredential(token.token)
 
-            runCatching {
-                userSessionActions.signInWithCredential(credential)
-            }.onFailure { e ->
-                showMessage(
-                    message = getAuthErrorMessage(e),
-                    type = ZibeSnackType.ERROR
-                )
-            }.onSuccess {
-                handleAuthSuccess()
-            }
+            userSessionActions.signInWithCredential(facebookCredential)
+                .onSuccess { handleAuthSuccess() }
+                .onFailure { e ->
+                    showMessage(
+                        message = getAuthErrorMessage(e),
+                        type = ZibeSnackType.ERROR
+                    )
+                }
         }
     }
 
     // ================= DELETE USER FLOW =================
 
-    private fun handleAuthSuccess() {
-        val user = userSessionProvider.currentUser
-
-        if (user == null) {
-            showMessage(ERR_ZIBE, ZibeSnackType.ERROR)
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = false) }
-            _events.emit(AuthUiEvent.NavigateToSplash)
-        }
-    }
-
-    fun onDeleteAccountClicked(){
+    fun onDeleteAccountClicked() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            when (deleteAccountUseCase.execute()) {
-                is ZibeResult.Success -> {
+            deleteAccountUseCase.execute()
+                .onSuccess {
                     showMessage(
                         message = DELETE_ACCOUNT_SUCCESS,
                         type = ZibeSnackType.INFO,
-                        stopLoading = false)
-
+                        stopLoading = false
+                    )
                     setDeleteUser(deleteUser = false)
                 }
-                is ZibeResult.Failure -> {
+                .onFailure { e ->
                     showMessage(
-                        "No se pudo eliminar la cuenta. Intentá nuevamente.",
-                        ZibeSnackType.ERROR
+                        message = getAuthErrorMessage(e),
+                        type = ZibeSnackType.ERROR
                     )
                 }
-            }
 
             _uiState.update { it.copy(isLoading = false) }
         }
-
     }
 
-    fun setDeleteUser(deleteUser: Boolean){
+    fun setDeleteUser(deleteUser: Boolean) {
         viewModelScope.launch {
             userPreferencesActions.setDeleteUser(deleteUser)
             _uiState.update { it.copy(deleteUser = deleteUser, isLoading = false) }
@@ -209,14 +184,28 @@ class AuthViewModel @Inject constructor(
             type = ZibeSnackType.INFO,
             stopLoading = false
         )
-
         setDeleteUser(false)
     }
 
-    fun onNavigateToSignUpClicked(){
+    fun onNavigateToSignUpClicked() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = false) }
             _events.emit(AuthUiEvent.NavigateToSignUp)
+        }
+    }
+
+    // ================= SUCCESS ROUTING =================
+
+    private fun handleAuthSuccess() {
+        val user = userSessionProvider.currentUser
+        if (user == null) {
+            showMessage(ERR_ZIBE, ZibeSnackType.ERROR)
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = false) }
+            _events.emit(AuthUiEvent.NavigateToSplash)
         }
     }
 
@@ -242,5 +231,4 @@ class AuthViewModel @Inject constructor(
         if (password.isBlank()) return warn(ERR_PASSWORD_REQUIRED)
         return true
     }
-
 }

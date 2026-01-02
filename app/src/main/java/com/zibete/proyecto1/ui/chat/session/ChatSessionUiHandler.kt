@@ -2,10 +2,8 @@ package com.zibete.proyecto1.ui.chat.session
 
 import android.content.Context
 import android.view.View
-import com.google.android.material.snackbar.Snackbar
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.UserMessageUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

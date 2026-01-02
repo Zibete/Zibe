@@ -29,7 +29,7 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
-import com.zibete.proyecto1.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.TimeUtils.now
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose

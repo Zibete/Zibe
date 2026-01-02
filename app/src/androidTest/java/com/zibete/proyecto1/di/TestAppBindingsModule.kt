@@ -13,7 +13,7 @@ import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestScenarioStore
-import com.zibete.proyecto1.utils.AppChecksProvider
+import com.zibete.proyecto1.core.utils.AppChecksProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent

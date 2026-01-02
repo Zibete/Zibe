@@ -54,9 +54,9 @@ import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.core.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.utils.TimeUtils.isoToMillis
-import com.zibete.proyecto1.utils.TimeUtils.isoToUiDate
-import com.zibete.proyecto1.utils.TimeUtils.millisToIso
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch

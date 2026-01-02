@@ -4,9 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -29,19 +28,8 @@ import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.android.gms.common.api.ApiException
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
-import com.zibete.proyecto1.ui.auth.AuthScreen
-import com.zibete.proyecto1.ui.auth.AuthViewModel
-import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeSnackHost
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
@@ -59,6 +47,12 @@ import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_MESSAGE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_TITLE
+import com.zibete.proyecto1.ui.auth.AuthScreen
+import com.zibete.proyecto1.ui.auth.AuthViewModel
+import com.zibete.proyecto1.ui.components.ZibeDialog
+import com.zibete.proyecto1.ui.components.ZibeSnackHost
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
@@ -80,11 +74,7 @@ class SplashActivity : ComponentActivity() {
     private lateinit var callbackManager: CallbackManager
     private lateinit var loginManager: LoginManager
     private lateinit var facebookLauncher: ActivityResultLauncher<Collection<String>>
-    private var googleSignInClient: GoogleSignInClient? = null
-    private val googleSignInLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            handleGoogleResult(result, authViewModel)
-        }
+
     // ===============================
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,8 +83,7 @@ class SplashActivity : ComponentActivity() {
         splashViewModel.handleIntentExtras(
             intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false))
 
-        // Configurar Google/Facebook
-        setupGoogleSignIn()
+        // Configurar Facebook
         setupFacebookSignIn(authViewModel)
 
         setContent {
@@ -160,18 +149,7 @@ class SplashActivity : ComponentActivity() {
                                 },
 
                                 onGoogleClick = {
-                                    googleSignInClient?.signOut()
-                                        ?.addOnCompleteListener {
-                                            val intent = googleSignInClient?.signInIntent
-                                            if (intent != null) {
-                                                googleSignInLauncher.launch(intent)
-                                            } else {
-                                                authViewModel.showMessage(
-                                                    "No se pudo abrir Google Sign-In",
-                                                    ZibeSnackType.ERROR
-                                                )
-                                            }
-                                        }
+                                    authViewModel.onGoogleClick(this@SplashActivity)
                                 },
 
                                 onFacebookClick = {
@@ -323,34 +301,6 @@ class SplashActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-    }
-
-    // ======================================
-    // GOOGLE
-    // ======================================
-    private fun setupGoogleSignIn() {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-    }
-
-    private fun handleGoogleResult(result: ActivityResult, vm: AuthViewModel) {
-        if (result.resultCode == RESULT_OK && result.data != null) {
-            try {
-                val account = GoogleSignIn
-                    .getSignedInAccountFromIntent(result.data)
-                    .getResult(ApiException::class.java)
-
-                vm.onGoogleAccountReceived(account)
-
-            } catch (e: ApiException) {
-                vm.showMessage("ShowErrorDialog de Google: ${e.statusCode}", ZibeSnackType.ERROR)
-            }
-        } else {
-            vm.showMessage("Inicio con Google cancelado", ZibeSnackType.INFO)
         }
     }
 

@@ -37,9 +37,11 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
-import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.utils.TimeUtils.formatLastSeen
-import com.zibete.proyecto1.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
+import com.zibete.proyecto1.core.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.zibeCatching
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -55,13 +57,17 @@ interface UserRepositoryProvider {
     suspend fun accountExists(uid: String): Boolean
     suspend fun hasBirthDate(uid: String): Boolean
     suspend fun getProfilePhotoUrl(): String?
+    suspend fun getAccount(uid: String): Users?
+    suspend fun getChatStateWith(otherUid: String, nodeType: String): String
+    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String>
+    val myUid: String
 }
 
 interface UserRepositoryActions {
     suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String)
     suspend fun setUserLastSeen()
     suspend fun setUserActivityStatus(status: String)
-    suspend fun deleteMyAccountData()
+    suspend fun deleteMyAccountData(): ZibeResult<Unit>
     suspend fun deleteProfilePhoto()
     suspend fun putProfilePhotoInStorage(localUri: Uri)
     suspend fun updateUserFields(fields: Map<String, Any?>)
@@ -91,7 +97,7 @@ class UserRepository @Inject constructor(
             "User must be logged in to access this property"
         }
 
-    val myUid: String
+    override val myUid: String
         get() = firebaseUser.uid
 
 
@@ -226,7 +232,7 @@ class UserRepository @Inject constructor(
     suspend fun getAccountSnapshot(uid: String): DataSnapshot =
         accountRef(uid).awaitSnapshot()
 
-    suspend fun getAccount(uid: String): Users? =
+    override suspend fun getAccount(uid: String): Users? =
         getAccountSnapshot(uid)
             .takeIf { it.exists() }
             ?.getValue(Users::class.java)
@@ -385,7 +391,7 @@ class UserRepository @Inject constructor(
     // CHAT PHOTOS (lee /Chats/{nodeType}/{chatId})
     // ============================================================
 
-    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
+    override suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
         val chatId = chatRepository.getChatId(otherUid)
         val refChat = firebaseRefsContainer.refChatsRoot
             .child(nodeType)
@@ -445,7 +451,7 @@ class UserRepository @Inject constructor(
     // CHAT STATE (ConversationKeys.STATE)
     // ============================================================
 
-    suspend fun getChatStateWith(otherUid: String, nodeType: String): String {
+    override suspend fun getChatStateWith(otherUid: String, nodeType: String): String {
         return conversationRef(nodeType = nodeType, otherUid = otherUid)
             .child(ConversationKeys.STATE) // OLD: NODE_CHAT_STATE
             .awaitSnapshot()
@@ -585,11 +591,13 @@ class UserRepository @Inject constructor(
     // UTILS
     // ============================================================
 
-    override suspend fun deleteMyAccountData() {
-        firebaseRefsContainer.refData.child(myUid).removeValue().await()
-        firebaseRefsContainer.refAccounts.child(myUid).removeValue().await()
-        runCatching { getProfilePhotoStoragePath().delete().await() }
-    }
+    override suspend fun deleteMyAccountData(): ZibeResult<Unit> =
+        zibeCatching {
+            firebaseRefsContainer.refData.child(myUid).removeValue().await()
+            firebaseRefsContainer.refAccounts.child(myUid).removeValue().await()
+            getProfilePhotoStoragePath().delete().await()
+
+        }
 
 
     suspend fun setActiveThread(otherUid: String, nodeType: String) {

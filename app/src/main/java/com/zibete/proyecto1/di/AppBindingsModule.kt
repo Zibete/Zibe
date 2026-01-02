@@ -4,7 +4,7 @@ package com.zibete.proyecto1.di
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
-import com.zibete.proyecto1.utils.DefaultAppChecksProvider
+import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
 
 import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.data.UserSessionActions
@@ -26,7 +26,7 @@ import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
-import com.zibete.proyecto1.utils.AppChecksProvider
+import com.zibete.proyecto1.core.utils.AppChecksProvider
 
 import dagger.Binds
 import dagger.Module

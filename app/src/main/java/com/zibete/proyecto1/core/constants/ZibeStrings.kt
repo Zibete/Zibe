@@ -42,6 +42,9 @@ const val AUTH_ERR_USER_NOT_FOUND = "Usuario no encontrado."
 
 const val AUTH_ERR_REAUTHENTICATION_REQUIRED = "Por seguridad, por favor volvé a iniciar sesión."
 
+const val ERR_ACCOUNT_NOT_FOUND = "ERR_ACCOUNT_NOT_FOUND"
+
+
 const val AUTH_ERR_INVALID_CREDENTIALS = "Email o contraseña incorrectos."
 
 const val DELETE_ACCOUNT_SUCCESS = "La cuenta ha sido eliminada"

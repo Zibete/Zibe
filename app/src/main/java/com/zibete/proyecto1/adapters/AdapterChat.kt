@@ -46,9 +46,9 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_LEFT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_RIGHT
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
-import com.zibete.proyecto1.utils.TimeUtils
-import com.zibete.proyecto1.utils.TimeUtils.formatHour
-import com.zibete.proyecto1.utils.ZibeApp.ScreenUtils.widthPx
+import com.zibete.proyecto1.core.utils.TimeUtils
+import com.zibete.proyecto1.core.utils.TimeUtils.formatHour
+import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils.widthPx
 import de.hdodenhof.circleimageview.CircleImageView
 import java.io.IOException
 

@@ -7,7 +7,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.constants.ERR_ZIBE
-import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

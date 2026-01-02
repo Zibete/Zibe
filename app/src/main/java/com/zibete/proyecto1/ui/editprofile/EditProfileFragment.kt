@@ -43,10 +43,10 @@ import com.zibete.proyecto1.core.constants.SIGNUP_PROFILE_MESSAGE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainNavEvent
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
-import com.zibete.proyecto1.utils.SimpleWatcher
-import com.zibete.proyecto1.utils.TimeUtils.isoToMillis
-import com.zibete.proyecto1.utils.TimeUtils.millisToIso
-import com.zibete.proyecto1.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.SimpleWatcher
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
+import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
+import com.zibete.proyecto1.core.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
