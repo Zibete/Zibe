@@ -1,16 +1,15 @@
 package com.zibete.proyecto1.fakes
 
-import com.zibete.proyecto1.domain.session.DeleteAccountResult
+import com.zibete.proyecto1.core.ZibeResult
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 
 class FakeDeleteAccountUseCase(
-    var result: DeleteAccountResult = DeleteAccountResult.Success
 ) : DeleteAccountUseCase {
-
     var called: Boolean = false
 
-    override suspend fun execute(): DeleteAccountResult {
+    override suspend fun execute(): ZibeResult<Unit> {
         called = true
-        return result
+        return ZibeResult.Success(Unit)
     }
+
 }

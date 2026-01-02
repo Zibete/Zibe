@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.ui.constants
+package com.zibete.proyecto1.core.constants
 
 // Textos animados de la pantalla de registro
 val stringsSignUpScreen = listOf(
@@ -27,6 +27,8 @@ const val MSG_CAMERA_PERMISSION_REQUIRED = "Necesitás otorgar permiso de cámar
 
 const val RESET_PASSWORD_EMAIL_INSTRUCTION = "Por favor, ingresá tu email para reestablecer la contraseña"
 
+const val RESET_PASSWORD_TITLE = "Reestablecimiento de contraseña"
+const val RESET_PASSWORD_ACCEPT = "Enviar e-mail"
 fun resetPasswordSuccess(email: String) = "Instrucciones enviadas a $email"
 
 fun resetPasswordError(email: String) = "No pudimos enviar el correo a $email. Verificá que esté correcto."
@@ -35,7 +37,12 @@ const val MSG_USER_JOINED = "se unió a la sala"
 
 const val MSG_USER_LEAVED = "abandonó la sala"
 
-const val NO_INTERNET = "No hay conexión a Internet en este momento"
+const val ERR_NETWORK_CONNECTION = "No hay conexión a Internet."
+const val AUTH_ERR_USER_NOT_FOUND = "Usuario no encontrado."
+
+const val AUTH_ERR_REAUTHENTICATION_REQUIRED = "Por seguridad, por favor volvé a iniciar sesión."
+
+const val AUTH_ERR_INVALID_CREDENTIALS = "Email o contraseña incorrectos."
 
 const val DELETE_ACCOUNT_SUCCESS = "La cuenta ha sido eliminada"
 const val DO_NOT_DELETE_ACCOUNT = "La cuenta se mantendrá activa"

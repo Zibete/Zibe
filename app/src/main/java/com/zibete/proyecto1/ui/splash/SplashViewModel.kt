@@ -10,7 +10,7 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.utils.AppChecksProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay

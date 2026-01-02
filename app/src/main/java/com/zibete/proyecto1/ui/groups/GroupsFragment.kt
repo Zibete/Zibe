@@ -26,9 +26,9 @@ import com.zibete.proyecto1.databinding.FragmentGroupsBinding
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants.ANONYMOUS_USER
-import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.utils.SimpleWatcher

@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.zibete.proyecto1.model.ChatGroupItem
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
-import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import kotlinx.coroutines.launch
 
 @Composable

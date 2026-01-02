@@ -2,9 +2,12 @@ package com.zibete.proyecto1.ui.auth
 
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.MainDispatcherRule
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.DeleteAccountResult
+import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeUserPreferences
 import com.zibete.proyecto1.fakes.FakeUserPreferencesState
@@ -12,13 +15,12 @@ import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
-import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
-import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
-import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
-import com.zibete.proyecto1.ui.constants.RESET_PASSWORD_EMAIL_INSTRUCTION
-import com.zibete.proyecto1.ui.constants.resetPasswordError
-import com.zibete.proyecto1.ui.constants.resetPasswordSuccess
+import com.zibete.proyecto1.core.constants.DELETE_ACCOUNT_SUCCESS
+import com.zibete.proyecto1.core.constants.DO_NOT_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
+import com.zibete.proyecto1.core.constants.resetPasswordError
+import com.zibete.proyecto1.core.constants.resetPasswordSuccess
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -237,34 +239,23 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `reset password con email vacio emite snack`() = runTest {
+    fun `reset password with empty email should not trigger loading or call repository`() = runTest {
         // Given
-        val prefsState = FakeUserPreferencesState(onboardingDone = true, firstLoginDone = false)
+        val userSessionActions = FakeUserSessionActions()
 
-        val deleteUseCase = FakeDeleteAccountUseCase(
-            result = DeleteAccountResult.Success
+        val vm = buildVm(
+            userSessionActions = userSessionActions
         )
-
-        val vm = AuthViewModel(
-            userSessionProvider = FakeUserSessionProvider(),
-            userSessionActions = FakeUserSessionActions(),
-            userPreferencesProvider = FakeUserPreferences(prefsState),
-            userPreferencesActions = FakeUserPreferences(prefsState),
-            deleteAccountUseCase = deleteUseCase
-        )
-
-        val deferred = async { awaitEvent(vm) }
-        runCurrent()
 
         // When
         vm.onResetPassword("")
-        advanceUntilIdle()
+        runCurrent()
 
         // Then
-        val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
-        assertEquals(RESET_PASSWORD_EMAIL_INSTRUCTION, snack.message)
-        assertEquals(ZibeSnackType.WARNING, snack.type)
+        assertFalse(vm.uiState.value.isLoading)
+
+        assertFalse(userSessionActions.sendPasswordResetEmail(""), "El repositorio no debió llamarse con un email vacío")
+        assertEquals("", userSessionActions.lastEmail)
     }
 
     @Test
@@ -366,6 +357,22 @@ class AuthViewModelTest {
 
     private suspend fun awaitEvent(vm: AuthViewModel): AuthUiEvent {
         return withTimeout(2_000) { vm.events.first() }
+    }
+
+    private fun buildVm(
+        userSessionProvider : UserSessionProvider = FakeUserSessionProvider(),
+        userSessionActions : UserSessionActions = FakeUserSessionActions(),
+        userPreferencesProvider: UserPreferencesProvider = FakeUserPreferences(FakeUserPreferencesState()),
+        userPreferencesActions : UserPreferencesActions = FakeUserPreferences(FakeUserPreferencesState()),
+        deleteAccountUseCase : DeleteAccountUseCase = FakeDeleteAccountUseCase()
+    ) : AuthViewModel {
+        return AuthViewModel(
+            userSessionProvider = userSessionProvider,
+            userSessionActions = userSessionActions,
+            userPreferencesProvider = userPreferencesProvider,
+            userPreferencesActions = userPreferencesActions,
+            deleteAccountUseCase = deleteAccountUseCase
+        )
     }
 
 }

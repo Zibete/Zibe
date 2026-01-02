@@ -8,8 +8,8 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
-import com.zibete.proyecto1.ui.constants.Constants.PayloadKeys
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

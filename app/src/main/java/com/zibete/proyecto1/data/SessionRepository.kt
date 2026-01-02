@@ -5,7 +5,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.ui.constants.Constants.SessionKeys
+import com.zibete.proyecto1.core.constants.Constants.SessionKeys
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton

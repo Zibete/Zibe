@@ -20,7 +20,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.utils.UserMessageUtils

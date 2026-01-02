@@ -10,11 +10,11 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Status
-import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CLIENT_DATA
-import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
-import com.zibete.proyecto1.ui.constants.Constants.NODE_USERS_ACCOUNTS
-import com.zibete.proyecto1.ui.constants.Constants.StatusKeys
+import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
+import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
+import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
+import com.zibete.proyecto1.core.constants.Constants.NODE_USERS_ACCOUNTS
+import com.zibete.proyecto1.core.constants.Constants.StatusKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject

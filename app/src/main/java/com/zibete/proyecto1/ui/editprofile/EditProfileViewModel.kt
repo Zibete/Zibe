@@ -3,21 +3,28 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.core.ZibeResult
+import com.zibete.proyecto1.core.onFailure
+import com.zibete.proyecto1.core.onSuccess
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
-import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
-import com.zibete.proyecto1.ui.constants.ERR_UNDER_AGE
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
-import com.zibete.proyecto1.ui.constants.MSG_PROFILE_LOAD_ERROR
-import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVED
-import com.zibete.proyecto1.ui.constants.MSG_PROFILE_SAVE_ERROR
-import com.zibete.proyecto1.ui.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
+import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.MSG_PROFILE_LOAD_ERROR
+import com.zibete.proyecto1.core.constants.MSG_PROFILE_SAVED
+import com.zibete.proyecto1.core.constants.MSG_PROFILE_SAVE_ERROR
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
+import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.UserRepositoryProvider
+import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.utils.getAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,9 +38,12 @@ import javax.inject.Inject
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val userSessionManager: UserSessionManager,
+    private val userRepositoryActions: UserRepositoryActions,
     private val userPreferencesProvider: UserPreferencesProvider,
-    private val userPreferencesActions: UserPreferencesActions
+    private val userPreferencesActions: UserPreferencesActions,
+    private val userSessionActions: UserSessionActions,
+    private val userRepositoryProvider: UserRepositoryProvider,
+    private val updateProfileUseCase: UpdateProfileUseCase
 
 ) : ViewModel() {
 
@@ -125,13 +135,10 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-
-
     fun onSaveClicked() {
         viewModelScope.launch {
+
             val state = _uiState.value
-            val newName = state.displayName.trim()
-            val newDescription = state.description.trim()
             val newBirthDate = state.birthDate.trim()
 
             if (newBirthDate.isBlank()) {
@@ -139,68 +146,35 @@ class EditProfileViewModel @Inject constructor(
                 return@launch
             }
 
-            val age = ageCalculator(newBirthDate)
+            val calculatedAge = ageCalculator(newBirthDate)
 
-            if (age < 18) {
+            if (calculatedAge < 18) {
                 onError(ERR_UNDER_AGE)
                 return@launch
             }
 
             _uiState.update { it.copy(isSaving = true) }
 
-            runCatching {
-                // Resolver foto final
-                val originalPhotoUrl = state.photoUrl
-                var finalPhotoUrl = originalPhotoUrl
-
-                // 1) Subir/borrar foto
-                when {
-                    state.deletePhoto -> {
-                        userRepository.deleteProfilePhoto()
-                        finalPhotoUrl = DEFAULT_PROFILE_PHOTO_URL
-                    }
-
-                    state.photoPreviewUri != null -> {
-                        userRepository.putProfilePhotoInStorage(state.photoPreviewUri)
-                        finalPhotoUrl = userRepository.getProfilePhotoUrl()
-                    }
-                }
-
-                // 2) Update Realtime DB (/Cuentas)
-                val updates = mutableMapOf<String, Any?>(
-                    AccountsKeys.NAME to newName,
-                    AccountsKeys.BIRTHDATE to newBirthDate,
-                    AccountsKeys.AGE to age,
-                    AccountsKeys.DESCRIPTION to newDescription
-                )
-
-                if (finalPhotoUrl != null && finalPhotoUrl != originalPhotoUrl) {
-                    updates[AccountsKeys.PHOTO_URL] = finalPhotoUrl
-                }
-
-                userRepository.updateUserFields(updates)
-
-                _uiState.update {
-                    it.copy(
-                        isSaving = false,
-                        photoUrl = finalPhotoUrl,
-                        photoPreviewUri = null,
-                        deletePhoto = false,
-                        saveEnabled = false
-                    )
-                }
-
-                // 3) Update FirebaseAuth user profile
-                userSessionManager.updateAuthProfile(
-                    newName,
-                    finalPhotoUrl
-                )
-
+            updateProfileUseCase.execute(
+                newName = state.displayName.trim(),
+                newBirthDate = state.birthDate.trim(),
+                newDescription = state.description.trim(),
+                age = calculatedAge,
+                originalPhotoUrl = state.photoUrl,
+                photoPreviewUri = state.photoPreviewUri,
+                shouldDeletePhoto = state.deletePhoto
+            ).onSuccess {
+                _uiState.update { it.copy(
+                    isSaving = false,
+                    photoUrl = it.photoUrl,
+                    photoPreviewUri = null,
+                    deletePhoto = false,
+                    saveEnabled = false
+                ) }
                 onBackToMain(MSG_PROFILE_SAVED)
-
-            }.onFailure {
+            }.onFailure { e ->
                 _uiState.update { it.copy(isSaving = false) }
-                onError(MSG_PROFILE_SAVE_ERROR)
+                onError(getAuthErrorMessage(e))
             }
         }
     }

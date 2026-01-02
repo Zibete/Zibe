@@ -24,10 +24,10 @@ import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.ui.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
+import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay

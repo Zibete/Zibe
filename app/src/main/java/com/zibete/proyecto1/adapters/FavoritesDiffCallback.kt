@@ -1,8 +1,8 @@
 package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 
 object FavoritesDiffCallback : DiffUtil.ItemCallback<FavoriteUserUi>() {

@@ -3,8 +3,8 @@ package com.zibete.proyecto1.data
 import android.location.Location
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys.LATITUDE
-import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys.LONGITUDE
+import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
+import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LONGITUDE
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
 import java.math.RoundingMode

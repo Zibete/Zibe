@@ -11,9 +11,9 @@ import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants.MSG_TEXT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -3,7 +3,7 @@ package com.zibete.proyecto1.ui.groups.host
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.model.UserGroup
-import com.zibete.proyecto1.ui.constants.Constants.MAX_CHAT_SIZE
+import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 
 enum class GroupHostTab { USERS, GROUP_CHAT, PRIVATE_CHATS }
 

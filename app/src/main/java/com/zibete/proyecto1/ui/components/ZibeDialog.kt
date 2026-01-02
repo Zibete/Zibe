@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
@@ -16,9 +16,9 @@ fun ZibeDialog(
     onConfirm: () -> Unit,
     dismissText: String = DIALOG_CANCEL,
     onDismiss: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    confirmEnabled: Boolean = true // <-- Nuevo parámetro
 ) {
-
     val zibeColors = LocalZibeExtendedColors.current
 
     AlertDialog(
@@ -27,24 +27,20 @@ fun ZibeDialog(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-
+                style = MaterialTheme.typography.headlineSmall)
+                },
         text = textContent,
-
         confirmButton = {
             TextButton(
-                onClick = { if (enabled) onConfirm() },
-                enabled = enabled
+                onClick = { onConfirm() },
+                enabled = enabled && confirmEnabled
             ) {
                 Text(confirmText)
             }
         },
-
         dismissButton = {
             TextButton(
-                onClick = { if (enabled) onDismiss() },
+                onClick = { onDismiss() },
                 enabled = enabled
             ) {
                 Text(dismissText)

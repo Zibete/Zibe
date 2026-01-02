@@ -56,11 +56,11 @@ import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.databinding.ActivityChatBinding
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.MAX_CHAT_SIZE
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
-import com.zibete.proyecto1.ui.constants.Constants.PATH_AUDIOS
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import dagger.hilt.android.AndroidEntryPoint

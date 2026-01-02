@@ -7,10 +7,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.databinding.RowGroupBinding
 import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_CATEGORY
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_DATA
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_USERS
+import com.zibete.proyecto1.core.constants.Constants
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_CATEGORY
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_DATA
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_USERS
 import com.zibete.proyecto1.utils.GlassEffect
 import eightbitlab.com.blurview.BlurView
 

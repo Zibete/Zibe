@@ -49,9 +49,9 @@ import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.SIGNUP_SCREEN
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.stringsSignUpScreen
+import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import com.zibete.proyecto1.utils.TimeUtils.isoToMillis

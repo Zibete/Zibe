@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.ui.constants.Constants.MSG_INFO
-import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_GROUP
-import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.ui.constants.MSG_USER_JOINED
+import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
+import com.zibete.proyecto1.core.constants.MSG_USER_JOINED
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow

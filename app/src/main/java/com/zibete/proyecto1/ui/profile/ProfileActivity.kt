@@ -7,9 +7,9 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.FragmentProfileBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_START_INDEX
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_IDS
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

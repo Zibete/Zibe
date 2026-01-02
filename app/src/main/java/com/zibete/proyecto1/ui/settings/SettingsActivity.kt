@@ -20,7 +20,7 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.databinding.ActivitySettingsBinding
 import com.zibete.proyecto1.databinding.DialogSetpasswordBinding
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.report.ReportActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.AndroidEntryPoint

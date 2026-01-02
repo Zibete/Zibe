@@ -8,17 +8,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.annotation.ColorRes
-import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 
 /**
  * Utilidades centralizadas para mensajes al usuario:

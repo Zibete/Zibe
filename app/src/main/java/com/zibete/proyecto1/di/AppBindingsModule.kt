@@ -16,6 +16,8 @@ import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
+import com.zibete.proyecto1.domain.profile.DefaultUpdateProfileUseCase
+import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
@@ -84,6 +86,12 @@ abstract class AppBindingsModule {
     abstract fun bindDeleteAccountUseCase(
         impl: DefaultDeleteAccountUseCase
     ): DeleteAccountUseCase
+
+    @Binds
+    @Singleton
+    abstract fun bindUpdateProfileUseCase(
+        impl: DefaultUpdateProfileUseCase
+    ): UpdateProfileUseCase
 
     @Binds
     @Singleton

@@ -1,12 +1,12 @@
 import android.os.Bundle
 import androidx.recyclerview.widget.DiffUtil
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_AGE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DESCRIPTION
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DISTANCE_METERS
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_NAME
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 
 object UsersDiffCallback : DiffUtil.ItemCallback<Users>() {
 

@@ -50,8 +50,10 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.AUTH_SCREEN
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.RESET_PASSWORD_ACCEPT
+import com.zibete.proyecto1.core.constants.RESET_PASSWORD_TITLE
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -298,7 +300,7 @@ fun AuthScreen(
 
                 if (showResetDialog) {
                     ZibeDialog(
-                        title = "Reestablecimiento de contraseña",
+                        title = RESET_PASSWORD_TITLE,
                         textContent = {
                             ZibeInputField(
                                 value = resetEmail,
@@ -308,7 +310,8 @@ fun AuthScreen(
                                 enabled = !isLoading
                             )
                         },
-                        confirmText = "Enviar e-mail",
+                        confirmText = RESET_PASSWORD_ACCEPT,
+                        confirmEnabled = resetEmail.isNotBlank() && !isLoading,
                         onConfirm = {
                             if (resetEmail.isNotBlank()) {
                                 onResetPassword(resetEmail.trim())
@@ -322,7 +325,6 @@ fun AuthScreen(
                 }
             }
         }
-
     }
 }
 

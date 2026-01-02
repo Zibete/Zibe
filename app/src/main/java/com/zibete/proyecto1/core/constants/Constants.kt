@@ -1,4 +1,4 @@
-package com.zibete.proyecto1.ui.constants
+package com.zibete.proyecto1.core.constants
 
 object Constants {
 

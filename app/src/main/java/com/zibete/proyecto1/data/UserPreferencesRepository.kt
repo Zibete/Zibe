@@ -3,7 +3,7 @@ package com.zibete.proyecto1.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import com.zibete.proyecto1.ui.constants.Constants.PUBLIC_USER
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first

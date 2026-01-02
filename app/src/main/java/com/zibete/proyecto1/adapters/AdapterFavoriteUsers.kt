@@ -8,8 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowFavoritesBinding
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 import com.zibete.proyecto1.utils.ZibeApp
 

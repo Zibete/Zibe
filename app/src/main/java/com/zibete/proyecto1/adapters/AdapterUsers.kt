@@ -10,12 +10,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.databinding.RowUserBinding
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_AGE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DESCRIPTION
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_DISTANCE_METERS
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_NAME
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.utils.GlassEffect
 
 class AdapterUsers(

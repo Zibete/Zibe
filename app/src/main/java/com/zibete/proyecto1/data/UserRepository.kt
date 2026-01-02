@@ -15,28 +15,28 @@ import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 
-import com.zibete.proyecto1.ui.constants.Constants.StatusKeys
-import com.zibete.proyecto1.ui.constants.Constants.AccountsKeys
-import com.zibete.proyecto1.ui.constants.Constants.ActiveThreadKeys
-import com.zibete.proyecto1.ui.constants.Constants.ActiveViewKeys
-import com.zibete.proyecto1.ui.constants.Constants.ChatMessageKeys
-import com.zibete.proyecto1.ui.constants.Constants.ChatListKeys
-import com.zibete.proyecto1.ui.constants.Constants.ConversationKeys
+import com.zibete.proyecto1.core.constants.Constants.StatusKeys
+import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
+import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
+import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
+import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
+import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
+import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 
-import com.zibete.proyecto1.ui.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.EMPTY
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO
-import com.zibete.proyecto1.ui.constants.Constants.MSG_PHOTO_SENDER_DLT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_ACTIVE_VIEW
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CHAT_LIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_CLIENT_DATA
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
-import com.zibete.proyecto1.ui.constants.Constants.NODE_FAVORITE_LIST
-import com.zibete.proyecto1.ui.constants.Constants.NODE_GROUP_DM
-import com.zibete.proyecto1.ui.constants.Constants.NODE_STATUS
-import com.zibete.proyecto1.ui.constants.Constants.PATH_PROFILE_PHOTOS
-import com.zibete.proyecto1.ui.constants.Constants.PROFILE_PHOTO
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.core.constants.Constants.EMPTY
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
+import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
+import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
+import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
+import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
 import com.zibete.proyecto1.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.utils.TimeUtils.formatLastSeen
 import com.zibete.proyecto1.utils.TimeUtils.now
@@ -54,6 +54,7 @@ import javax.inject.Singleton
 interface UserRepositoryProvider {
     suspend fun accountExists(uid: String): Boolean
     suspend fun hasBirthDate(uid: String): Boolean
+    suspend fun getProfilePhotoUrl(): String?
 }
 
 interface UserRepositoryActions {
@@ -61,6 +62,9 @@ interface UserRepositoryActions {
     suspend fun setUserLastSeen()
     suspend fun setUserActivityStatus(status: String)
     suspend fun deleteMyAccountData()
+    suspend fun deleteProfilePhoto()
+    suspend fun putProfilePhotoInStorage(localUri: Uri)
+    suspend fun updateUserFields(fields: Map<String, Any?>)
 }
 
 
@@ -174,19 +178,19 @@ class UserRepository @Inject constructor(
         .child(PATH_PROFILE_PHOTOS)
         .child(fileName)
 
-    suspend fun putProfilePhotoInStorage(localUri: Uri) {
+    override suspend fun putProfilePhotoInStorage(localUri: Uri) {
         getProfilePhotoStoragePath()
             .putFile(localUri)
             .await()
     }
 
-    suspend fun deleteProfilePhoto() {
+    override suspend fun deleteProfilePhoto() {
         getProfilePhotoStoragePath()
             .delete()
             .await()
     }
 
-    suspend fun getProfilePhotoUrl(): String? {
+    override suspend fun getProfilePhotoUrl(): String? {
         return try {
             getProfilePhotoStoragePath()
                 .downloadUrl
@@ -231,10 +235,10 @@ class UserRepository @Inject constructor(
     // EDIT PROFILE (updates)
     // ============================================================
 
-    suspend fun updateUserFields(fields: Map<String, Any?>, uid: String = myUid) {
+    override suspend fun updateUserFields(fields: Map<String, Any?>) {
         val clean = fields.filterValues { it != null }
         if (clean.isEmpty()) return
-        accountRef(uid).updateChildren(clean).await()
+        accountRef(myUid).updateChildren(clean).await()
     }
 
     suspend fun updateUserName(userName: String) =

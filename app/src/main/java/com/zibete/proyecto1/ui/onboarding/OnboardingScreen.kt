@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,11 +34,11 @@ import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.testTag
-import com.zibete.proyecto1.ui.constants.BUTTON_BACK
-import com.zibete.proyecto1.ui.constants.BUTTON_NEXT
-import com.zibete.proyecto1.ui.constants.BUTTON_SKIP
-import com.zibete.proyecto1.ui.constants.BUTTON_START
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.ONBOARDING_SCREEN
+import com.zibete.proyecto1.core.constants.BUTTON_BACK
+import com.zibete.proyecto1.core.constants.BUTTON_NEXT
+import com.zibete.proyecto1.core.constants.BUTTON_SKIP
+import com.zibete.proyecto1.core.constants.BUTTON_START
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 
 // ------------------------------------------------------
 //  TextButton estilizado (misma altura y forma que ZibeButton)

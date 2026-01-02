@@ -1,22 +1,20 @@
 package com.zibete.proyecto1.ui.chatlist
 
-import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.constants.Constants
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_HIDE
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,8 +25,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.ParseException
-import java.text.SimpleDateFormat
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(

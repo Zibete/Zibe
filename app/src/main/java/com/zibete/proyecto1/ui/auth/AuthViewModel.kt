@@ -5,25 +5,22 @@ import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.firebase.auth.FacebookAuthProvider
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
+import com.zibete.proyecto1.core.ZibeResult
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.domain.session.DeleteAccountResult
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.DELETE_ACCOUNT_SUCCESS
-import com.zibete.proyecto1.ui.constants.DO_NOT_DELETE_ACCOUNT
-import com.zibete.proyecto1.ui.constants.ERR_EMAIL_REQUIRED
-import com.zibete.proyecto1.ui.constants.ERR_PASSWORD_REQUIRED
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
-import com.zibete.proyecto1.ui.constants.RESET_PASSWORD_EMAIL_INSTRUCTION
-import com.zibete.proyecto1.ui.constants.resetPasswordError
-import com.zibete.proyecto1.ui.constants.resetPasswordSuccess
+import com.zibete.proyecto1.core.constants.DELETE_ACCOUNT_SUCCESS
+import com.zibete.proyecto1.core.constants.DO_NOT_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.resetPasswordError
+import com.zibete.proyecto1.core.constants.resetPasswordSuccess
+import com.zibete.proyecto1.utils.getAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,21 +55,22 @@ class AuthViewModel @Inject constructor(
     }
 
     // ================= EMAIL / PASSWORD =================
-
     fun onEmailLogin(email: String, password: String) {
         viewModelScope.launch {
             if (!validateInputs(email, password)) return@launch
             _uiState.update { it.copy(isLoading = true) }
 
-            runCatching {
-                userSessionActions.signInWithEmail(email, password)
-            }.onFailure { e ->
-                showMessage(
-                    message = getAuthErrorMessage(e),
-                    type = ZibeSnackType.ERROR
-                )
-            }.onSuccess {
-                handleAuthSuccess()
+            when (val result = userSessionActions.signInWithEmail(email, password)) {
+                is ZibeResult.Success -> {
+                    handleAuthSuccess()
+                }
+                is ZibeResult.Failure -> {
+                    showMessage(
+                        message = getAuthErrorMessage(result.exception),
+                        type = ZibeSnackType.ERROR
+                    )
+                    _uiState.update { it.copy(isLoading = false) }
+                }
             }
         }
     }
@@ -80,30 +78,26 @@ class AuthViewModel @Inject constructor(
     // ================= RESET PASSWORD =================
 
     fun onResetPassword(email: String) {
-        if (email.isBlank()) {
-            showMessage(
-                message = RESET_PASSWORD_EMAIL_INSTRUCTION,
-                type = ZibeSnackType.WARNING,
-                stopLoading = false
-            )
-            return
-        }
+        if (email.isBlank()) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            runCatching {
-                userSessionActions.sendPasswordResetEmail(email)
-            }.onSuccess {
-                showMessage(
-                    message = resetPasswordSuccess(email),
-                    type = ZibeSnackType.SUCCESS
-                )
-            }.onFailure {
-                showMessage(
-                    message = resetPasswordError(email),
-                    type = ZibeSnackType.ERROR
-                )
+            val result = userSessionActions.sendPasswordResetEmail(email.trim())
+
+            when (result) {
+                is ZibeResult.Success -> {
+                    showMessage(
+                        message = resetPasswordSuccess(email),
+                        type = ZibeSnackType.SUCCESS
+                    )
+                }
+                is ZibeResult.Failure -> {
+                    showMessage(
+                        message = resetPasswordError(email),
+                        type = ZibeSnackType.ERROR
+                    )
+                }
             }
         }
     }
@@ -179,7 +173,7 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             when (deleteAccountUseCase.execute()) {
-                is DeleteAccountResult.Success -> {
+                is ZibeResult.Success -> {
                     showMessage(
                         message = DELETE_ACCOUNT_SUCCESS,
                         type = ZibeSnackType.INFO,
@@ -187,7 +181,7 @@ class AuthViewModel @Inject constructor(
 
                     setDeleteUser(deleteUser = false)
                 }
-                is DeleteAccountResult.Failure -> {
+                is ZibeResult.Failure -> {
                     showMessage(
                         "No se pudo eliminar la cuenta. Intentá nuevamente.",
                         ZibeSnackType.ERROR
@@ -249,14 +243,4 @@ class AuthViewModel @Inject constructor(
         return true
     }
 
-    private fun getAuthErrorMessage(e: Throwable?): String {
-        if (e == null) return ERR_ZIBE
-
-        return when (e) {
-            is FirebaseAuthInvalidCredentialsException -> "Email o contraseña incorrectos."
-            is FirebaseAuthInvalidUserException -> "La cuenta no existe o fue deshabilitada."
-            is FirebaseAuthUserCollisionException -> "Ya existe una cuenta registrada con este email."
-            else -> "Ocurrió un error (${e.javaClass.simpleName}): ${e.localizedMessage ?: "Intentá nuevamente."}"
-        }
-    }
 }

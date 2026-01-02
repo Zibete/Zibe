@@ -12,11 +12,11 @@ import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.ui.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
-import com.zibete.proyecto1.ui.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -2,9 +2,9 @@ package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
 import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_CATEGORY
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_DATA
-import com.zibete.proyecto1.ui.constants.Constants.PAYLOAD_GROUPS_USERS
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_CATEGORY
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_DATA
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_USERS
 
 object GroupsDiffCallback : DiffUtil.ItemCallback<Groups>() {
 

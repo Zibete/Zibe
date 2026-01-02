@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
-import com.zibete.proyecto1.ui.constants.Constants
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

@@ -47,10 +47,10 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.DIALOG_EXIT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment

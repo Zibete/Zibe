@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.ui.profile
 
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 
 data class ProfileUiState(
     val profile: Users? = null,

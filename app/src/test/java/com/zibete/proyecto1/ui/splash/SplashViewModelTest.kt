@@ -10,7 +10,7 @@ import com.zibete.proyecto1.fakes.FakeUserPreferences
 import com.zibete.proyecto1.fakes.FakeUserPreferencesState
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.ui.constants.Constants
+import com.zibete.proyecto1.core.constants.Constants
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

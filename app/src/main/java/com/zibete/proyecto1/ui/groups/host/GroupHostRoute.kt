@@ -23,8 +23,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.ui.constants.Constants.EXTRA_CHAT_NODE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)

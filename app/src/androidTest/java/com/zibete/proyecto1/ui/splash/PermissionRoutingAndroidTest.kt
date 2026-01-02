@@ -7,15 +7,15 @@ import com.zibete.proyecto1.testing.TestPermissionConfig
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.testing.waitTag
 import com.zibete.proyecto1.testing.waitText
-import com.zibete.proyecto1.ui.constants.BUTTON_START
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.AUTH_SCREEN
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.PERMISSION_SCREEN
-import com.zibete.proyecto1.ui.constants.Constants.UiTags.SPLASH_SCREEN
-import com.zibete.proyecto1.ui.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.ui.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.ui.constants.DIALOG_OK
-import com.zibete.proyecto1.ui.constants.PERMISSION_DENIED_TITLE
-import com.zibete.proyecto1.ui.constants.PERMISSION_RATIONALE_TITLE
+import com.zibete.proyecto1.core.constants.BUTTON_START
+import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
+import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
+import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
+import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.DIALOG_OK
+import com.zibete.proyecto1.core.constants.PERMISSION_DENIED_TITLE
+import com.zibete.proyecto1.core.constants.PERMISSION_RATIONALE_TITLE
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Test
 
