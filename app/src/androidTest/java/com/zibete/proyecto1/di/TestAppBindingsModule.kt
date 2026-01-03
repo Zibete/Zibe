@@ -14,6 +14,10 @@ import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestScenarioStore
 import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
+import com.zibete.proyecto1.fakes.FakeGoogleSignInUseCase
+import com.zibete.proyecto1.fakes.FakeUpdateProfileUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -66,5 +70,14 @@ object TestAppBindingsModule {
     @Provides @Singleton
     fun provideUserRepositoryProvider(): UserRepositoryProvider =
         FakeUserRepositoryProvider()
+
+    @Provides @Singleton
+    fun provideUpdateProfileUseCase(): UpdateProfileUseCase =
+        FakeUpdateProfileUseCase()
+
+    @Provides @Singleton
+    fun provideGoogleSignInUseCase(): GoogleSignInUseCase =
+        FakeGoogleSignInUseCase()
+
 }
 

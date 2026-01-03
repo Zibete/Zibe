@@ -2,6 +2,7 @@ package com.zibete.proyecto1.domain.session
 
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
@@ -23,27 +24,23 @@ class DefaultSessionBootstrapper @Inject constructor(
     private val sessionRepositoryProvider: SessionRepositoryProvider,
     private val userRepositoryActions: UserRepositoryActions,
     private val userRepositoryProvider: UserRepositoryProvider,
-    private val sessionProvider: UserSessionProvider,
-    private val preferencesActions: UserPreferencesActions
+    private val userSessionProvider: UserSessionProvider,
+    private val userPreferencesActions: UserPreferencesActions
 ) : SessionBootstrapper {
 
     override suspend fun bootstrap(
         uid: String,
         birthDate: String,
         description: String
-    ): ZibeResult<Unit> {
-        return try {
+    ): ZibeResult<Unit> =
+        zibeCatching {
             setActiveSession(uid)
             updateUserFlow(
                 uid = uid,
                 birthDate = birthDate,
                 description = description
             )
-            ZibeResult.Success(Unit)
-        } catch (e: Exception) {
-            ZibeResult.Failure(e)
         }
-    }
 
     private suspend fun setActiveSession(uid: String) {
         val installId = sessionRepositoryProvider.getLocalInstallId()
@@ -65,15 +62,15 @@ class DefaultSessionBootstrapper @Inject constructor(
 
         // Usuario nuevo
         if (!accountExists) {
-            sessionProvider.currentUser?.let { user: FirebaseUser ->
+            userSessionProvider.currentUser?.let { user: FirebaseUser ->
                 userRepositoryActions.createUserNode(user, birthDate, description)
+                userPreferencesActions.setFirstLoginDone(false)
             }
-            preferencesActions.setFirstLoginDone(false)
             return
         }
 
         // Perfil incompleto / completo
         val hasBirthDate = userRepositoryProvider.hasBirthDate(uid)
-        preferencesActions.setFirstLoginDone(hasBirthDate)
+        userPreferencesActions.setFirstLoginDone(hasBirthDate)
     }
 }

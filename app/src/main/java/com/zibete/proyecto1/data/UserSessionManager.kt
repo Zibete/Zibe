@@ -2,6 +2,8 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import androidx.core.net.toUri
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
 import com.facebook.login.LoginManager
 import com.google.firebase.auth.*
 import com.zibete.proyecto1.core.utils.ZibeResult
@@ -30,12 +32,12 @@ interface UserSessionActions {
 
 @Singleton
 class UserSessionManager @Inject constructor(
-    @ApplicationContext private val applicationContext: Context,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val firebaseAuth: FirebaseAuth,
     private val loginManager: LoginManager,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    @ApplicationContext private val context: Context
 ) : UserSessionProvider, UserSessionActions {
 
     // ---------------------------------------------------------------------------------------------
@@ -70,76 +72,32 @@ class UserSessionManager @Inject constructor(
     // AUTH API
     // ---------------------------------------------------------------------------------------------
 
-    // En SignIn: Aquí SI devuelves algo útil (el resultado de Auth)
-    override suspend fun signInWithEmail(email: String, password: String): ZibeResult<AuthResult> {
-        return try {
-            val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
-            ZibeResult.Success(result)
-        } catch (e: Exception) {
-            ZibeResult.Failure(e)
-        }
-    }
+    override suspend fun signInWithEmail(email: String, password: String): ZibeResult<AuthResult> =
+        zibeCatching { firebaseAuth.signInWithEmailAndPassword(email, password).await() }
 
-    // En UpdateProfile: Solo éxito/fallo
-    override suspend fun updateAuthProfile(userName: String, photoUrl: String?): ZibeResult<Unit> {
-        return try {
-            val req = UserProfileChangeRequest.Builder()
-                .setDisplayName(userName)
-                .apply { photoUrl?.let { photoUri = it.toUri() } }
-                .build()
-            firebaseUser.updateProfile(req).await()
-            ZibeResult.Success(Unit)
-        } catch (e: Exception) {
-            ZibeResult.Failure(e)
-        }
-    }
+    override suspend fun createUser(email: String, password: String): ZibeResult<AuthResult> =
+        zibeCatching { firebaseAuth.createUserWithEmailAndPassword(email, password).await() }
 
-    // 1. Cambiamos Unit por AuthResult
-    override suspend fun createUser(
-        email: String,
-        password: String
-    ): ZibeResult<AuthResult> {
-        return try {
-            val authResult = firebaseAuth
-                .createUserWithEmailAndPassword(email, password)
-                .await()
-            ZibeResult.Success(authResult)
-        } catch (e: Exception) {
-            ZibeResult.Failure(e)
-        }
-    }
-
-    //    override suspend fun signInWithEmail(email: String, password: String) {
-//        firebaseAuth.signInWithEmailAndPassword(email, password).await()
-//    }
-//
     override suspend fun signInWithCredential(credential: AuthCredential): ZibeResult<Unit> =
         zibeCatching { firebaseAuth.signInWithCredential(credential).await() }
-
 
     override suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit> =
         zibeCatching { firebaseAuth.sendPasswordResetEmail(email).await() }
 
-
     override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
         zibeCatching { firebaseUser.delete().await() }
-
 
     // ---------------------------------------------------------------------------------------------
     // PROFILE (AUTH USER)
     // ---------------------------------------------------------------------------------------------
 
-//    suspend fun updateAuthProfile(
-//        userName: String,
-//        photoUrl: String?
-//    ) {
-//        val req = UserProfileChangeRequest.Builder()
-//            .setDisplayName(userName)
-//            .apply { photoUrl?.let { photoUri = it.toUri() } }
-//            .build()
-//
-//        firebaseUser.updateProfile(req).await()
-//    }
+    override suspend fun updateAuthProfile(userName: String, photoUrl: String?): ZibeResult<Unit> =
+        zibeCatching {
+            firebaseUser.updateProfile(UserProfileChangeRequest.Builder()
+                .setDisplayName(userName)
+                .apply { photoUrl?.let { photoUri = it.toUri() } }
+                .build()).await()
+        }
 
     // ---------------------------------------------------------------------------------------------
     // GROUP EXIT CLEANUP
@@ -174,7 +132,6 @@ class UserSessionManager @Inject constructor(
         userPreferencesActions.resetGroupState()
     }
 
-
     // ---------------------------------------------------------------------------------------------
     // LOGOUT CLEANUP
     // ---------------------------------------------------------------------------------------------
@@ -190,6 +147,12 @@ class UserSessionManager @Inject constructor(
         // 4) Sign out
         firebaseAuth.signOut()
         loginManager.logOut()
+        try {
+            CredentialManager.create(context)
+                .clearCredentialState(ClearCredentialStateRequest())
+        } catch (_: Throwable) {
+            // best-effort: ignore
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

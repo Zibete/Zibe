@@ -20,6 +20,7 @@ import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -102,25 +103,30 @@ class AuthViewModel @Inject constructor(
     }
 
     // ================= GOOGLE =================
-
     fun onGoogleClick(activity: Activity) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // Nuevo enfoque: UseCase devuelve idToken o lanza -> mapeamos con runCatching en el VM
-            runCatching {
-                val idToken = googleSignInUseCase(activity)
-                GoogleAuthProvider.getCredential(idToken, null)
-            }.mapCatching { credential ->
-                userSessionActions.signInWithCredential(credential)
-            }.onSuccess {
-                handleAuthSuccess()
-            }.onFailure { e ->
-                showMessage(
-                    message = getAuthErrorMessage(e),
-                    type = ZibeSnackType.ERROR
-                )
-            }
+            googleSignInUseCase(activity)
+                .onFailure { e ->
+                    showMessage(
+                        message = getAuthErrorMessage(e),
+                        type = ZibeSnackType.ERROR
+                    )
+                    return@launch
+                }
+                .onSuccess { idToken ->
+                    val credential = GoogleAuthProvider.getCredential(idToken!!, null)
+
+                    userSessionActions.signInWithCredential(credential)
+                        .onSuccess { handleAuthSuccess() }
+                        .onFailure { e ->
+                            showMessage(
+                                message = getAuthErrorMessage(e),
+                                type = ZibeSnackType.ERROR
+                            )
+                        }
+                }
         }
     }
 
@@ -163,9 +169,8 @@ class AuthViewModel @Inject constructor(
                         message = getAuthErrorMessage(e),
                         type = ZibeSnackType.ERROR
                     )
+                    _uiState.update { it.copy(isLoading = false) }
                 }
-
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

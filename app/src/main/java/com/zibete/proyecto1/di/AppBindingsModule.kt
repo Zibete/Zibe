@@ -27,6 +27,8 @@ import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
+import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 
 import dagger.Binds
 import dagger.Module
@@ -92,6 +94,12 @@ abstract class AppBindingsModule {
     abstract fun bindUpdateProfileUseCase(
         impl: DefaultUpdateProfileUseCase
     ): UpdateProfileUseCase
+
+    @Binds
+    @Singleton
+    abstract fun bindGoogleSignInUseCase(
+        impl: DefaultGoogleSignInUseCase
+    ): GoogleSignInUseCase
 
     @Binds
     @Singleton

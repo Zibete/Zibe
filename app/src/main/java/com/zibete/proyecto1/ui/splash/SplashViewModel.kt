@@ -23,9 +23,9 @@ import javax.inject.Inject
 class SplashViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val appChecksProvider: AppChecksProvider,
-    private val sessionProvider: UserSessionProvider,
-    private val preferencesProvider: UserPreferencesProvider,
-    private val preferencesActions: UserPreferencesActions,
+    private val userSessionProvider: UserSessionProvider,
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val userPreferencesActions: UserPreferencesActions,
     private val sessionBootstrapper: SessionBootstrapper,
     private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
@@ -55,8 +55,8 @@ class SplashViewModel @Inject constructor(
             }
 
             // 2) Onboarding (solo una vez)
-            if (!preferencesProvider.isOnboardingDone()) {
-                preferencesActions.setOnboardingDone(true)
+            if (!userPreferencesProvider.isOnboardingDone()) {
+                userPreferencesActions.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
@@ -68,7 +68,7 @@ class SplashViewModel @Inject constructor(
             }
 
             // 4) Sin usuario → Auth
-            val currentUser = sessionProvider.currentUser
+            val currentUser = userSessionProvider.currentUser
             if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
@@ -90,7 +90,7 @@ class SplashViewModel @Inject constructor(
     // ============================================================
 
     fun onSessionConflictConfirmed() {
-        val currentUser = sessionProvider.currentUser ?: return
+        val currentUser = userSessionProvider.currentUser ?: return
         viewModelScope.launch { continueToMain(currentUser) }
     }
 

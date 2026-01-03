@@ -7,17 +7,21 @@ import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.utils.getOrThrow
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
-class GoogleSignInUseCase @Inject constructor(
+interface GoogleSignInUseCase {
+    suspend operator fun invoke(activity: Activity): ZibeResult<String>
+}
+
+class DefaultGoogleSignInUseCase @Inject constructor(
     @ApplicationContext private val context: Context
-) {
-    suspend operator fun invoke(
+) : GoogleSignInUseCase {
+    override suspend operator fun invoke(
         activity: Activity
-    ): String {
+    ): ZibeResult<String> {
         val cm = CredentialManager.create(activity)
 
         val request = GetCredentialRequest.Builder()
@@ -40,7 +44,7 @@ class GoogleSignInUseCase @Inject constructor(
             GoogleIdTokenCredential
                 .createFrom(result.credential.data)
                 .idToken
-        }.getOrThrow()
+        }
     }
 }
 

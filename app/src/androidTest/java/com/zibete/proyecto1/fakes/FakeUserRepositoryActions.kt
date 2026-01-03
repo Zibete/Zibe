@@ -1,40 +1,58 @@
 package com.zibete.proyecto1.fakes
 
+import android.net.Uri
 import com.google.firebase.auth.FirebaseUser
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.testing.TestData.RUNTIME_EXCEPTION
 
-class FakeUserRepositoryActions : UserRepositoryActions {
-
-    var createUserNodeCalled: Boolean = false
-    var lastCreatedUser: FirebaseUser? = null
-    var lastBirthDate: String? = null
-    var lastDescription: String? = null
-
-    var setLastSeenCalled: Boolean = false
-    var lastActivityStatus: String? = null
-
-    var deleteMyAccountDataCalled: Boolean = false
-    var deleteShouldFail: Boolean = false
-    var deleteFailure: Throwable = RuntimeException("deleteMyAccountData failed")
+class FakeUserRepositoryActions (
+    var shouldFail: Boolean = false,
+    val runtimeException: Throwable = RuntimeException(RUNTIME_EXCEPTION),
+): UserRepositoryActions {
 
     override suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String) {
-        createUserNodeCalled = true
-        lastCreatedUser = firebaseUser
-        lastBirthDate = birthDate
-        lastDescription = description
+        if (shouldFail) {
+            throw runtimeException
+        }
     }
 
     override suspend fun setUserLastSeen() {
-        setLastSeenCalled = true
+        if (shouldFail) {
+            throw runtimeException
+        }
     }
 
     override suspend fun setUserActivityStatus(status: String) {
-        lastActivityStatus = status
+        if (shouldFail) {
+            throw runtimeException
+        }
     }
 
-    override suspend fun deleteMyAccountData() {
-        deleteMyAccountDataCalled = true
-        if (deleteShouldFail) throw deleteFailure
+    override suspend fun deleteMyAccountData(): ZibeResult<Unit> =
+        if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else {
+            ZibeResult.Success(Unit)
+        }
+
+
+    override suspend fun deleteProfilePhoto() {
+        if (shouldFail) {
+            throw runtimeException
+        }
+    }
+
+    override suspend fun putProfilePhotoInStorage(localUri: Uri) {
+        if (shouldFail) {
+            throw runtimeException
+        }
+    }
+
+    override suspend fun updateUserFields(fields: Map<String, Any?>) {
+        if (shouldFail) {
+            throw runtimeException
+        }
     }
 }
 

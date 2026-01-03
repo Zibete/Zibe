@@ -2,11 +2,11 @@ package com.zibete.proyecto1.fakes
 
 import android.content.Context
 import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.testing.UnitScenario
 
 class FakeAppChecksProvider(
-    var internet: Boolean = true,
-    var locationPermission: Boolean = true
+    private val scenarioProvider: () -> UnitScenario
 ) : AppChecksProvider {
-    override fun hasInternetConnection(context: Context) = internet
-    override fun hasLocationPermission(context: Context) = locationPermission
+    override fun hasInternetConnection(context: Context): Boolean = scenarioProvider().hasInternet
+    override fun hasLocationPermission(context: Context): Boolean = scenarioProvider().hasLocationPermission
 }

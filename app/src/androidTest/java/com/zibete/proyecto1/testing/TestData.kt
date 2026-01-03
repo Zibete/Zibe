@@ -14,7 +14,6 @@ object TestData {
     const val TOKEN = "token_1"
     const val PHOTO_URL = "photoUrl"
     const val RUNTIME_EXCEPTION = "boom"
-    const val GOOGLE_ID_TOKEN = "fake-google-id-token"
     const val CHAT_STATE = NODE_DM
     val USER = Users(
         id = UID,
@@ -23,4 +22,5 @@ object TestData {
         description = DESC,
         photoUrl = PHOTO_URL
     )
+
 }

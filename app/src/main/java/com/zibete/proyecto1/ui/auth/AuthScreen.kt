@@ -234,7 +234,7 @@ fun AuthScreen(
                                 .align(Alignment.End)
                                 .padding(bottom = 8.dp)
                                 .clickable {
-                                    resetEmail = email   // prellenamos con el mail del formulario
+                                    resetEmail = email   // rellenamos con el mail del formulario
                                     showResetDialog = true },
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold,

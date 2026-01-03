@@ -1,47 +1,74 @@
 package com.zibete.proyecto1.fakes
 
 import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.testing.UnitScenario
+import io.mockk.mockk
 
 class FakeUserSessionProvider(
     override var currentUser: FirebaseUser? = null
 ) : UserSessionProvider
 
 class FakeUserSessionActions(
+    private val scenarioProvider: () -> UnitScenario
 ) : UserSessionActions {
 
-    var signInShouldFail: Boolean = false
-    var resetShouldFail: Boolean = false
-    var resetPasswordCalled = false
-    var signInFailure: Throwable = RuntimeException("fake auth failure")
-    var resetFailure: Throwable = RuntimeException("fake reset failure")
     var lastEmail: String? = null
     var lastPassword: String? = null
 
-    override suspend fun logOutCleanup() {}
+    private val shouldFail: Boolean get() = scenarioProvider().shouldFail
+    private val runtimeException: Throwable get() = scenarioProvider().runtimeException
 
-    override suspend fun signInWithEmail(email: String, password: String) {
+    override suspend fun logOutCleanup() = Unit
+
+    override suspend fun signInWithEmail(
+        email: String,
+        password: String
+    ): ZibeResult<AuthResult> {
         lastEmail = email
         lastPassword = password
-        if (signInShouldFail) throw signInFailure
+        return if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else {
+            ZibeResult.Success(mockk(relaxed = true))
+        }
     }
 
-    override suspend fun signInWithCredential(credential: AuthCredential) {
-        if (signInShouldFail) throw signInFailure
-    }
+    override suspend fun signInWithCredential(
+        credential: AuthCredential
+    ): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
-    override suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit> {
+    override suspend fun sendPasswordResetEmail(
+        email: String
+    ): ZibeResult<Unit> {
         lastEmail = email
-        resetPasswordCalled = true
-        if (resetShouldFail) throw resetFailure
-
-        return ZibeResult.Success()
+        return if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
     }
 
-    override suspend fun deleteFirebaseUser() {
-        if (signInShouldFail) throw signInFailure
+    override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
+
+    override suspend fun updateAuthProfile(
+        userName: String,
+        photoUrl: String?
+    ): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
+
+    override suspend fun createUser(
+        email: String,
+        password: String
+    ): ZibeResult<AuthResult> {
+        lastEmail = email
+        lastPassword = password
+        return if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else {
+            ZibeResult.Success(mockk(relaxed = true))
+        }
     }
 }
