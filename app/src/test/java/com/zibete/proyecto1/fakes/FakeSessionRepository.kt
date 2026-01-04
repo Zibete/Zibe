@@ -4,10 +4,10 @@ import com.google.firebase.database.DataSnapshot
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 
 class FakeSessionRepositoryActions(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : SessionRepositoryActions {
 
     var lastSetActiveSessionCall: ActiveSessionCall? = null
@@ -27,7 +27,7 @@ class FakeSessionRepositoryActions(
 }
 
 class FakeSessionRepositoryProvider(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : SessionRepositoryProvider {
 
     override suspend fun getLocalInstallId(): String =

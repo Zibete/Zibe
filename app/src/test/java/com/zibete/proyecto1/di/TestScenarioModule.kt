@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.di
 
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.testing.UnitScenarioStore
 import dagger.Module
 import dagger.Provides
@@ -14,6 +14,6 @@ object TestScenarioModule {
 
     @Provides
     @Singleton
-    fun provideScenarioProvider(store: UnitScenarioStore): () -> UnitScenario =
+    fun provideScenarioProvider(store: UnitScenarioStore): () -> TestScenario =
         { store.scenario }
 }

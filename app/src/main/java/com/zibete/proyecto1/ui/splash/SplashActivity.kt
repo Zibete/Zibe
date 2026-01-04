@@ -288,7 +288,7 @@ class SplashActivity : ComponentActivity() {
                                     popUpTo(SPLASH_SCREEN) { inclusive = true }
                                 }
 
-                            is SplashUiEvent.RequestLocationPermission ->
+                            is SplashUiEvent.NavigatePermission ->
                                 navController.navigate(PERMISSION_SCREEN)
 
                             is SplashUiEvent.NavigateMain -> {

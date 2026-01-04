@@ -8,7 +8,7 @@ import javax.inject.Singleton
  * Perillas del escenario para androidTest.
  * El test setea estos valores ANTES de abrir la pantalla.
  */
-data class UnitScenario(
+data class TestScenario(
     // --- App flow ---
     var onboardingDone: Boolean = true,
     var firstLoginDone: Boolean = true,
@@ -41,5 +41,5 @@ data class UnitScenario(
 
 @Singleton
 class UnitScenarioStore @Inject constructor() {
-    @Volatile var scenario: UnitScenario = UnitScenario()
+    @Volatile var scenario: TestScenario = TestScenario()
 }

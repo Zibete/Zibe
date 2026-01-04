@@ -2,7 +2,6 @@ package com.zibete.proyecto1.ui.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
@@ -11,9 +10,9 @@ import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
-import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.domain.session.SessionBootstrapper

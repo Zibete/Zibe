@@ -76,7 +76,7 @@ class SplashViewModel @Inject constructor(
 
             // 5) Permisos de ubicación
             if (!appChecksProvider.hasLocationPermission(context)) {
-                _events.emit(SplashUiEvent.RequestLocationPermission)
+                _events.emit(SplashUiEvent.NavigatePermission)
                 return@launch
             }
 

@@ -7,7 +7,7 @@ import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 
 data class CreateUserNodeCall(
     val user: FirebaseUser,
@@ -22,7 +22,7 @@ data class ActiveSessionCall(
 )
 
 class FakeUserRepositoryProvider(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : UserRepositoryProvider {
 
     override val myUid: String
@@ -69,7 +69,7 @@ class FakeUserRepositoryProvider(
 }
 
 class FakeUserRepositoryActions(
-    private val scenarioProvider: () -> UnitScenario,
+    private val scenarioProvider: () -> TestScenario,
 ) : UserRepositoryActions {
     var lastCreateUserNodeCall: CreateUserNodeCall? = null
     private fun failIfNeeded() {
