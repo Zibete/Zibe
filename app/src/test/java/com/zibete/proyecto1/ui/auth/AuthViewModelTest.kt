@@ -8,7 +8,6 @@ import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
 import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
 import com.zibete.proyecto1.core.constants.resetPasswordError
 import com.zibete.proyecto1.core.constants.resetPasswordSuccess
-import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserSessionActions
@@ -22,7 +21,7 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import io.mockk.every
 import io.mockk.mockk
@@ -38,6 +37,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
@@ -46,9 +46,16 @@ class AuthViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `onEmailLogin with empty email emit snack and set isLoading false`() = runTest {
+    fun flow_onEmailLogin_emptyEmail_emitsSnack_setsIsLoading_false_noSideEffects() = runTest {
         // Given
-        val vm = buildVm()
+        val scenario = TestScenario()
+
+        val userSessionActions = FakeUserSessionActions { scenario }
+
+        val vm = buildVm(
+            scenario = scenario,
+            userSessionActions = userSessionActions
+        )
 
         val deferred = async { awaitEvent(vm) }
         runCurrent()
@@ -62,17 +69,27 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
 
         assertEquals(ERR_EMAIL_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
+
+        assertEquals(null,userSessionActions.lastEmail)
+
         assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
-    fun `onEmailLogin with empty password emit snack and set isLoading false`() = runTest {
+    fun flow_onEmailLogin_emptyPassword_emitsSnack_setsIsLoading_false_noSideEffects() = runTest {
         // Given
-        val vm = buildVm()
+        val scenario = TestScenario()
+
+        val userSessionActions = FakeUserSessionActions { scenario }
+
+        val vm = buildVm(
+            scenario = scenario,
+            userSessionActions = userSessionActions
+        )
 
         val deferred = async { awaitEvent(vm) }
         runCurrent()
@@ -86,17 +103,20 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
 
         assertEquals(ERR_PASSWORD_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
+
+        assertEquals(null,userSessionActions.lastEmail)
+
         assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
-    fun `onEmailLogin success with user not null navigate to splash`() = runTest {
+    fun flow_onEmailLogin_success_withUser_navigatesToSplash() = runTest {
         // Given
-        val scenario = UnitScenario(
+        val scenario = TestScenario(
             currentUserUid = TestData.UID,
             shouldFail = false
         )
@@ -121,9 +141,9 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `onEmailLogin failure emit snack`() = runTest {
+    fun flow_onEmailLogin_failure_emitsSnack_setsIsLoading_false() = runTest {
         // Given
-        val scenario = UnitScenario(shouldFail = true)
+        val scenario = TestScenario(shouldFail = true)
 
         val vm = buildVm(scenario = scenario)
 
@@ -139,15 +159,16 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
 
-        assertEquals(ZibeSnackType.ERROR, (event as AuthUiEvent.ShowSnack).type)
+        assertEquals(ZibeSnackType.ERROR, snack.type)
         assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
-    fun `onDeleteAccountClicked success emit snack and set deleteUser false and set isLoading false`() = runTest {
+    fun flow_onDeleteAccountClicked_success_emitsSnack_setsDeleteUser_false_setsIsLoading_false() = runTest {
         // Given
-        val scenario = UnitScenario(
+        val scenario = TestScenario(
             deleteUser = true,
             shouldFail = false
         )
@@ -167,10 +188,11 @@ class AuthViewModelTest {
         advanceUntilIdle()
 
         // Then
-        assertTrue(deleteAccountUseCase.execute() is ZibeResult.Success<Unit>)
-
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+
+        assertTrue(deleteAccountUseCase.wasCalled)
+
         assertEquals(DELETE_ACCOUNT_SUCCESS, snack.message)
         assertEquals(ZibeSnackType.INFO, snack.type)
 
@@ -179,9 +201,9 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `onDoNotDeleteAccountClicked emit snack and set deleteUser and isLoading false`() = runTest {
+    fun flow_onDoNotDeleteAccountClicked_emitsSnack_setsDeleteUser_false_setsIsLoading_false() = runTest {
         // Given
-        val scenario = UnitScenario(deleteUser = true)
+        val scenario = TestScenario(deleteUser = true)
 
         val vm = buildVm(scenario = scenario)
 
@@ -194,7 +216,7 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
         assertEquals(DO_NOT_DELETE_ACCOUNT, snack.message)
         assertEquals(ZibeSnackType.INFO, snack.type)
 
@@ -203,9 +225,9 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `reset password with email failure emit snack and set isLoading false`() = runTest {
+    fun flow_onResetPassword_failure_emitsSnack_setsIsLoading_false() = runTest {
         // Given
-        val scenario = UnitScenario(shouldFail = true)
+        val scenario = TestScenario(shouldFail = true)
 
         val userSessionActions = FakeUserSessionActions { scenario }
 
@@ -223,18 +245,20 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
 
-        assertFalse(userSessionActions.sendPasswordResetEmail(TestData.EMAIL) is ZibeResult.Success<Unit>)
+        assertEquals(TestData.EMAIL,userSessionActions.lastEmail)
+
         assertEquals(resetPasswordError(TestData.EMAIL), snack.message)
         assertEquals(ZibeSnackType.ERROR, snack.type)
+
         assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
-    fun `reset password with email success emit snack and set isLoading false`() = runTest {
+    fun flow_onResetPassword_success_emitsSnack_setsIsLoading_false() = runTest {
         // Given
-        val scenario = UnitScenario(shouldFail = false)
+        val scenario = TestScenario(shouldFail = false)
 
         val userSessionActions = FakeUserSessionActions { scenario }
 
@@ -252,15 +276,16 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = event as AuthUiEvent.ShowSnack
+        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
 
-        assertTrue(userSessionActions.sendPasswordResetEmail(TestData.EMAIL) is ZibeResult.Success<Unit>)
+        assertEquals(TestData.EMAIL,userSessionActions.lastEmail)
+
         assertEquals(resetPasswordSuccess(TestData.EMAIL), snack.message)
         assertEquals(ZibeSnackType.SUCCESS, snack.type)
     }
 
     @Test
-    fun `onNavigateToSignUpClicked navigate to signup and set isLoading false`() = runTest {
+    fun flow_onNavigateToSignUpClicked_navigatesToSignUp_setsIsLoading_false() = runTest {
         // Given
         val vm = buildVm()
 
@@ -282,7 +307,7 @@ class AuthViewModelTest {
     }
 
     private fun buildVm(
-        scenario: UnitScenario = UnitScenario(),
+        scenario: TestScenario = TestScenario(),
         userSessionProvider: UserSessionProvider = FakeUserSessionProvider(
             currentUser = scenario.currentUserUid?.let { uid ->
                 mockk<FirebaseUser> { every { this@mockk.uid } returns uid }

@@ -5,7 +5,7 @@ import com.zibete.proyecto1.model.Users
 
 object TestData {
     const val EMAIL = "a@b.com"
-    const val PASSWORD = "123"
+    const val PASSWORD = "Password1234"
     const val NAME = "Zibe"
     const val BIRTH = "2000-01-01"
     const val DESC = "desc"

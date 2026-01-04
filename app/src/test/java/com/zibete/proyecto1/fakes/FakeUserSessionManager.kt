@@ -6,7 +6,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 import io.mockk.mockk
 
 class FakeUserSessionProvider(
@@ -14,7 +14,7 @@ class FakeUserSessionProvider(
 ) : UserSessionProvider
 
 class FakeUserSessionActions(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : UserSessionActions {
 
     var lastEmail: String? = null

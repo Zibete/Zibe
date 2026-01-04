@@ -64,8 +64,8 @@ class DefaultSessionBootstrapper @Inject constructor(
         if (!accountExists) {
             userSessionProvider.currentUser?.let { user: FirebaseUser ->
                 userRepositoryActions.createUserNode(user, birthDate, description)
-                userPreferencesActions.setFirstLoginDone(false)
             }
+            userPreferencesActions.setFirstLoginDone(false)
             return
         }
 

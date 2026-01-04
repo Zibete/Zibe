@@ -3,13 +3,12 @@ package com.zibete.proyecto1.fakes
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.testing.UnitScenario
+import com.zibete.proyecto1.testing.TestScenario
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.sync.Mutex
 
 class FakeUserPreferencesProvider(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : UserPreferencesProvider {
     // --- Provider ---
     override suspend fun isOnboardingDone(): Boolean = scenarioProvider().onboardingDone
@@ -32,7 +31,7 @@ class FakeUserPreferencesProvider(
 }
 
 class FakeUserPreferencesActions(
-    private val scenarioProvider: () -> UnitScenario
+    private val scenarioProvider: () -> TestScenario
 ) : UserPreferencesActions {
 
     override suspend fun setOnboardingDone(done: Boolean) { scenarioProvider().onboardingDone = done }
