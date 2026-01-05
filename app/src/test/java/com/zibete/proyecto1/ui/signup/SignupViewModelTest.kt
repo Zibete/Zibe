@@ -7,6 +7,7 @@ import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
@@ -17,9 +18,9 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import io.mockk.Called
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -41,11 +42,14 @@ class SignUpViewModelTest {
 
     private lateinit var sessionBootstrapper: SessionBootstrapper
     private lateinit var userSessionActions: UserSessionActions
+    private lateinit var snackBarManager: SnackBarManager
 
     @Before
     fun setup() {
         sessionBootstrapper = mockk<SessionBootstrapper>(relaxed = true)
         userSessionActions = mockk<UserSessionActions>(relaxed = true)
+        snackBarManager = mockk<SnackBarManager>(relaxed = true)
+
     }
 
     @Test
@@ -53,7 +57,8 @@ class SignUpViewModelTest {
         // Given
         val vm = SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -86,7 +91,8 @@ class SignUpViewModelTest {
         // Given
         val vm = SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -119,7 +125,8 @@ class SignUpViewModelTest {
         // Given
         val vm = SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -152,7 +159,8 @@ class SignUpViewModelTest {
         // Given
         val vm = SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -183,7 +191,8 @@ class SignUpViewModelTest {
         // Given
         val vm = SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -220,11 +229,11 @@ class SignUpViewModelTest {
 
         val vm = buildVm(
             scenario = scenario,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
-        val second = async { withTimeout(2_000) { vm.events.drop(1).first() } }
         runCurrent()
 
         // When
@@ -239,16 +248,10 @@ class SignUpViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
-        val secondEvent = second.await()
 
         assertTrue(sessionBootstrapper.wasCalled)
-
-        assertEquals(SIGNUP_MSG_SUCCESS, snack.message)
-        assertEquals(ZibeSnackType.SUCCESS, snack.type)
-
-        assertEquals(SignUpUiEvent.NavigateToSplash, secondEvent)
-
+        verify { snackBarManager.show(SIGNUP_MSG_SUCCESS, ZibeSnackType.SUCCESS) }
+        assertEquals(SignUpUiEvent.NavigateToSplash, event)
         assertFalse(vm.uiState.value.isLoading)
     }
 
@@ -260,7 +263,8 @@ class SignUpViewModelTest {
         )
 
         val vm = buildVm(
-            scenario = scenario
+            scenario = scenario,
+            snackBarManager = snackBarManager
         )
 
         val deferred = async { awaitEvent(vm) }
@@ -291,10 +295,12 @@ class SignUpViewModelTest {
     private fun buildVm(
         scenario: TestScenario = TestScenario(),
         userSessionActions: UserSessionActions = FakeUserSessionActions { scenario },
-        sessionBootstrapper: SessionBootstrapper = FakeSessionBootstrapper { scenario }
+        sessionBootstrapper: SessionBootstrapper = FakeSessionBootstrapper { scenario },
+        snackBarManager: SnackBarManager
         ): SignUpViewModel =
         SignUpViewModel(
             userSessionActions = userSessionActions,
-            sessionBootstrapper = sessionBootstrapper
+            sessionBootstrapper = sessionBootstrapper,
+            snackBarManager = snackBarManager
         )
 }

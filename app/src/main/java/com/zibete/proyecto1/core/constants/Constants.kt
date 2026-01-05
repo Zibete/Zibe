@@ -27,6 +27,15 @@ object Constants {
         const val SIGNUP_SCREEN = "signup_screen"
     }
 
+    object TestTags {
+        const val EMAIL = "EMAIL"
+        const val PASSWORD = "PASSWORD"
+        const val NAME = "NAME"
+        const val BIRTHDATE = "BIRTHDATE"
+        const val DESCRIPTION = "DESCRIPTION"
+        const val BTN_REGISTER = "BTN_REGISTER"
+    }
+
 
     // ==============================
     // Intents / Bundle Extras

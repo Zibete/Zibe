@@ -45,6 +45,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.AUTH_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.AUTH_DO_NOT_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.BUTTON_REGISTER
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
@@ -52,6 +55,10 @@ import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.AUTH_DO_NOT_HAVE_AN_ACCOUNT
+import com.zibete.proyecto1.core.constants.AUTH_FORGOT_PASSWORD
+import com.zibete.proyecto1.core.constants.AUTH_OR_USE_YOUR_ACCOUNT
+import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.RESET_PASSWORD_ACCEPT
 import com.zibete.proyecto1.core.constants.RESET_PASSWORD_TITLE
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
@@ -167,7 +174,7 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = stringResource(id = R.string.or_use_your_account),
+                            text = AUTH_OR_USE_YOUR_ACCOUNT,
                             style = MaterialTheme.typography.headlineSmall,
                             color = zibeColors.mutedText,
                         )
@@ -229,7 +236,7 @@ fun AuthScreen(
                         )
 
                         Text(
-                            text = stringResource(id = R.string.forgot_password),
+                            text = AUTH_FORGOT_PASSWORD,
                             modifier = Modifier
                                 .align(Alignment.End)
                                 .padding(bottom = 8.dp)
@@ -258,7 +265,7 @@ fun AuthScreen(
                             modifier = Modifier.padding(vertical = 10.dp)
                         ) {
                             Text(
-                                text = stringResource(id = R.string.dont_have_an_account),
+                                text = AUTH_DO_NOT_HAVE_AN_ACCOUNT,
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     color = zibeColors.mutedText
                                 )
@@ -267,9 +274,10 @@ fun AuthScreen(
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Text(
-                                text = stringResource(id = R.string.registro),
+                                text = BUTTON_REGISTER,
                                 modifier = Modifier
-                                    .clickable { onNavigateToSignUp() },
+                                    .clickable { onNavigateToSignUp() }
+                                    .testTag(Constants.TestTags.BTN_REGISTER),
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = zibeColors.mutedText
@@ -281,14 +289,14 @@ fun AuthScreen(
                         // Modo "reactivar cuenta"
 
                         ZibeButton(
-                            text = stringResource(id = R.string.dont_delete_account),
+                            text = AUTH_DO_NOT_DELETE_ACCOUNT,
                             onClick = { onDoNotDelete() },
                             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
                         ZibeButton(
-                            text = stringResource(id = R.string.delete_account),
+                            text = AUTH_DELETE_ACCOUNT,
                             onClick = { onDeleteAccount() },
                             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                             enabled = !isLoading,

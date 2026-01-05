@@ -40,8 +40,8 @@ object TestAppBindingsModule {
         FakeUserSessionProvider { store.scenario }
 
     @Provides @Singleton
-    fun provideUserSessionActions(): UserSessionActions =
-        FakeUserSessionActions()
+    fun provideUserSessionActions(store: TestScenarioStore): UserSessionActions =
+        FakeUserSessionActions{ store.scenario }
 
     @Provides @Singleton
     fun provideUserPreferencesProvider(store: TestScenarioStore): UserPreferencesProvider =

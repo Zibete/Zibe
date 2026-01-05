@@ -100,8 +100,14 @@ const val SESSION_CONFLICT_MESSAGE =
 
 const val SESSION_CONFLICT_KEEP_HERE = "Continuar en este dispositivo"
 const val SESSION_CONFLICT_LOGOUT = "Cerrar sesión"
+const val AUTH_DO_NOT_HAVE_AN_ACCOUNT = "¿No tenés una cuenta?"
+const val AUTH_DO_NOT_DELETE_ACCOUNT = "Ya no quiero eliminar mi cuenta"
+const val AUTH_DELETE_ACCOUNT = "Eliminar mi cuenta"
+const val AUTH_FORGOT_PASSWORD = "¿Olvidaste tu contraseña?"
+const val AUTH_OR_USE_YOUR_ACCOUNT = "o utilizá tu cuenta"
 
 const val BUTTON_START = "Comenzar"
+const val BUTTON_REGISTER = "Registrarse"
 const val BUTTON_NEXT = "Siguiente"
 const val BUTTON_SKIP = "saltar"
 const val BUTTON_BACK = "Atrás"

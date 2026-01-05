@@ -13,13 +13,13 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="flow_startClicked_rationaleAccept_grantedTrue_navigatesToSplash()">
+      <SelectionState runConfigName="SignUpFailureAndroidTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="flow_startClicked_withoutRationale_grantedTrue_navigatesToSplash()">
+      <SelectionState runConfigName="SignUpSuccessAndroidTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="PermissionRoutingAndroidTest">
+      <SelectionState runConfigName="flow_onRegister_success_showsSuccessSnack_andNavigatesToSplash_andIntentToMain()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

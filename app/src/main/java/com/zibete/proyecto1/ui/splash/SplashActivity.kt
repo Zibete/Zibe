@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,6 +48,8 @@ import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_MESSAGE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_TITLE
+import com.zibete.proyecto1.core.di.SnackBarEntryPoint
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
@@ -60,6 +63,7 @@ import com.zibete.proyecto1.ui.signup.SignUpScreen
 import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -261,6 +265,23 @@ class SplashActivity : ComponentActivity() {
                                 finish()
                             }
                         )
+                    }
+                }
+
+
+
+
+                val context = LocalContext.current
+                val snackBarManager: SnackBarManager = remember {
+                    EntryPointAccessors.fromApplication(
+                        context.applicationContext,
+                        SnackBarEntryPoint::class.java
+                    ).snackBarManager()
+                }
+
+                LaunchedEffect(Unit) {
+                    snackBarManager.events.collect { e ->
+                        snackHostState.showZibeMessage(e.type, e.message)
                     }
                 }
 

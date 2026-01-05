@@ -43,20 +43,22 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.TestTags
+import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
+import com.zibete.proyecto1.core.constants.DIALOG_OK
+import com.zibete.proyecto1.core.constants.stringsSignUpScreen
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.stringsSignUpScreen
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
-import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -135,7 +137,9 @@ fun SignUpScreen(
                     value = email,
                     onValueChange = { email = it },
                     label = stringResource(id = R.string.email),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.EMAIL),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_mail_24),
@@ -150,7 +154,8 @@ fun SignUpScreen(
                     value = password,
                     onValueChange = { password = it },
                     label = stringResource(id = R.string.password),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .testTag(TestTags.PASSWORD),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_lock_24),
@@ -166,7 +171,7 @@ fun SignUpScreen(
                                     else
                                         R.drawable.ic_baseline_visibility_off_24
                                 ),
-                                contentDescription = "Contraseña visible/invisible"
+                                contentDescription = stringResource(id = R.string.password)
                             )
                         }
                     },
@@ -181,12 +186,13 @@ fun SignUpScreen(
                 ZibeInputField(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Nombre/Apodo",
-                    modifier = Modifier.fillMaxWidth(),
+                    label = stringResource(R.string.name),
+                    modifier = Modifier.fillMaxWidth()
+                        .testTag(TestTags.NAME),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_person_24),
-                            contentDescription = "Nombre"
+                            contentDescription = stringResource(R.string.name)
                         )
                     },
                     enabled = !isLoading
@@ -198,7 +204,8 @@ fun SignUpScreen(
                         value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
                         onValueChange = { },
                         label = stringResource(R.string.birthDate),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar_24),
@@ -212,6 +219,7 @@ fun SignUpScreen(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
+                            .testTag(TestTags.BIRTHDATE)
                             .clickable { showDatePicker = true }
                     )
                 }
@@ -231,7 +239,7 @@ fun SignUpScreen(
                                     birthDate = millisToIso(ms)
                                 }
                                 showDatePicker = false
-                            }) { Text("OK") }
+                            }) { Text(DIALOG_OK) }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
@@ -246,15 +254,16 @@ fun SignUpScreen(
                 ZibeInputField(
                     value = description,
                     onValueChange = { description = it },
-                    label = "¿Algo sobre vos?",
+                    label = stringResource(R.string.description),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .testTag(TestTags.DESCRIPTION)
                         .height(140.dp),
                     singleLine = false,
                     leadingIcon = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_info_24),
-                            contentDescription = "Descripción"
+                            contentDescription = stringResource(R.string.description)
                         )
                     },
                     keyboardOptions = KeyboardOptions.Default.copy(
@@ -275,8 +284,9 @@ fun SignUpScreen(
                 // BOTÓN REGISTRAR
                 ZibeButton(
                     modifier = Modifier
-                        .padding(top = 8.dp),
-                    text = stringResource(R.string.finalizar_registro),
+                        .padding(top = 8.dp)
+                        .testTag(TestTags.BTN_REGISTER),
+                    text = stringResource(R.string.finish_registration),
                     onClick = { onRegister(email, password, name, birthDate, description) },
                     enabled = !isLoading,
                     isLoading = isLoading

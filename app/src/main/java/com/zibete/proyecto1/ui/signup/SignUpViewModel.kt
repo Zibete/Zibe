@@ -10,6 +10,7 @@ import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
@@ -29,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
     private val userSessionActions: UserSessionActions,
-    private val sessionBootstrapper: SessionBootstrapper
+    private val sessionBootstrapper: SessionBootstrapper,
+    private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -87,12 +89,14 @@ class SignUpViewModel @Inject constructor(
             }
 
             // 4. Éxito
-            _events.emit(
-                SignUpUiEvent.ShowSnack(
-                    message = SIGNUP_MSG_SUCCESS,
-                    type = ZibeSnackType.SUCCESS
-                )
-            )
+//            _events.emit(
+//                SignUpUiEvent.ShowSnack(
+//                    message = SIGNUP_MSG_SUCCESS,
+//                    type = ZibeSnackType.SUCCESS
+//                )
+//            )
+            snackBarManager.show(SIGNUP_MSG_SUCCESS, ZibeSnackType.SUCCESS)
+
             _uiState.update { it.copy(isLoading = false) }
 
             // 5. Splash -> Location Permission
