@@ -12,7 +12,7 @@ import dagger.hilt.testing.TestInstallIn
 @Module
 @TestInstallIn(
     components = [ActivityComponent::class],
-    replaces = [RationaleModule::class]
+    replaces = [RationaleModule::class],
 )
 object TestRationaleModule {
 

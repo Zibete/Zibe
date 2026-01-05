@@ -7,14 +7,25 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.testing.TestScenario
-import io.mockk.every
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import io.mockk.mockk
+import org.mockito.kotlin.doReturn
 
 class FakeUserSessionProvider(
     private val scenarioProvider: () -> TestScenario
 ) : UserSessionProvider {
 
-    override var currentUser: FirebaseUser? = null
+
+    override val currentUser: FirebaseUser?
+        get() {
+            val uid = scenarioProvider()?.currentUserUid ?: return null
+
+            return mock<FirebaseUser>().apply {
+                doReturn(uid).whenever(this).uid
+            }
+        }
+
 
     val isLoggedIn: Boolean
         get() = scenarioProvider().currentUserUid != null
