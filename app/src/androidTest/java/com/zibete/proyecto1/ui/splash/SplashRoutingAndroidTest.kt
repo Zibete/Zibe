@@ -21,6 +21,7 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_TITLE
+import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.ui.main.MainActivity
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.After
@@ -39,7 +40,10 @@ class SplashSessionConflictAndroidTest :
         }
 
         launchWithScenario(
-            scenario = TestScenario(currentUserUid = "test_uid"),
+            scenario = TestScenario(
+                onboardingDone = true,
+                currentUserUid = TestData.UID
+            ),
             intent = intent
         )
     }
@@ -51,24 +55,19 @@ class SplashSessionConflictAndroidTest :
 
     @Test
     fun flow_whenSessionConflict_dialogShows_andLogout_NavigatesToAuth() {
-        // 1) aparece el dialog
         waitText(SESSION_CONFLICT_TITLE, composeRule)
 
-        // 2) click logout
         composeRule.onNodeWithText(SESSION_CONFLICT_LOGOUT).performClick()
 
-        // 3) navega a Auth
         waitTag(AUTH_SCREEN, composeRule)
     }
 
     @Test
     fun flow_whenSessionConflict_dialogShows_andKeepHere_NavigatesToSplash() {
-        // 1) aparece el dialog
         waitText(SESSION_CONFLICT_TITLE, composeRule)
-        // 2) click logout
+
         composeRule.onNodeWithText(SESSION_CONFLICT_KEEP_HERE).performClick()
 
-        // 3) navega a Splash
         waitTag(SPLASH_SCREEN, composeRule)
     }
 }
@@ -119,12 +118,17 @@ class SplashToMainAndroidTest :
     @Before
     fun setup() {
         Intents.init()
-
-        launchWithScenario(
-            TestScenario(
-                currentUserUid = "test_uid"
+        try {
+            launchWithScenario(
+                TestScenario(
+                    onboardingDone = true,
+                    currentUserUid = TestData.UID
+                )
             )
-        )
+        } catch (t: Throwable) {
+            Intents.release()
+            throw t
+        }
     }
 
     @After
@@ -134,7 +138,6 @@ class SplashToMainAndroidTest :
 
     @Test
     fun whenAllChecksOk_andUserPresent_startsMainActivity() {
-
         composeRule.waitUntil(timeoutMillis = 10_000) {
             try {
                 Intents.intended(hasComponent(MainActivity::class.java.name))
@@ -143,9 +146,8 @@ class SplashToMainAndroidTest :
                 false
             }
         }
-
-        Intents.intended(hasComponent(MainActivity::class.java.name))
     }
+
 }
 
 @HiltAndroidTest

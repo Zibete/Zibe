@@ -2,11 +2,6 @@ package com.zibete.proyecto1.ui.splash
 
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
-import com.zibete.proyecto1.testing.TestPermissionConfig
-import com.zibete.proyecto1.testing.TestScenario
-import com.zibete.proyecto1.testing.waitTag
-import com.zibete.proyecto1.testing.waitText
 import com.zibete.proyecto1.core.constants.BUTTON_START
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
@@ -16,12 +11,25 @@ import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.core.constants.DIALOG_OK
 import com.zibete.proyecto1.core.constants.PERMISSION_DENIED_TITLE
 import com.zibete.proyecto1.core.constants.PERMISSION_RATIONALE_TITLE
+import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
+import com.zibete.proyecto1.testing.TestData
+import com.zibete.proyecto1.testing.TestPermissionConfig
+import com.zibete.proyecto1.testing.TestScenario
+import com.zibete.proyecto1.testing.waitTag
+import com.zibete.proyecto1.testing.waitText
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Before
 import org.junit.Test
 
 @HiltAndroidTest
 class PermissionRoutingAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
+
+    @Before
+    fun resetPermissionConfig() {
+        TestPermissionConfig.shouldShowRationale = false
+        TestPermissionConfig.grantResult = true
+    }
 
     @Test
     fun flow_startClicked_withoutRationale_grantedTrue_navigatesToSplash() {
@@ -30,7 +38,9 @@ class PermissionRoutingAndroidTest :
 
         launchWithScenario(
             TestScenario(
-                currentUserUid = "test_uid",
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
                 hasLocationPermission = false
             )
         )
@@ -49,7 +59,9 @@ class PermissionRoutingAndroidTest :
 
         launchWithScenario(
             TestScenario(
-                currentUserUid = "test_uid",
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
                 hasLocationPermission = false
             )
         )
@@ -70,7 +82,9 @@ class PermissionRoutingAndroidTest :
 
         launchWithScenario(
             TestScenario(
-                currentUserUid = "test_uid",
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
                 hasLocationPermission = false
             )
         )
@@ -92,7 +106,9 @@ class PermissionRoutingAndroidTest :
 
         launchWithScenario(
             TestScenario(
-                currentUserUid = "test_uid",
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
                 hasLocationPermission = false
             )
         )
@@ -111,7 +127,14 @@ class PermissionRoutingAndroidTest :
         TestPermissionConfig.shouldShowRationale = true
         TestPermissionConfig.grantResult = false
 
-        launchWithScenario(TestScenario(currentUserUid = "test_uid", hasLocationPermission = false))
+        launchWithScenario(
+            TestScenario(
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
+                hasLocationPermission = false
+            )
+        )
 
         waitTag(PERMISSION_SCREEN, composeRule)
         composeRule.onNodeWithText(BUTTON_START).performClick()
