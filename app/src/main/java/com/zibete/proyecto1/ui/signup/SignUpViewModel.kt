@@ -89,12 +89,6 @@ class SignUpViewModel @Inject constructor(
             }
 
             // 4. Éxito
-//            _events.emit(
-//                SignUpUiEvent.ShowSnack(
-//                    message = SIGNUP_MSG_SUCCESS,
-//                    type = ZibeSnackType.SUCCESS
-//                )
-//            )
             snackBarManager.show(SIGNUP_MSG_SUCCESS, ZibeSnackType.SUCCESS)
 
             _uiState.update { it.copy(isLoading = false) }

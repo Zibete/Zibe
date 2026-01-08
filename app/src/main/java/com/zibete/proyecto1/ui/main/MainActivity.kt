@@ -102,7 +102,7 @@ class MainActivity : BaseToolbarActivity() {
 
         setupLocation()
 
-        mainViewModel.checkFirstLogin()
+        mainViewModel.checkFirstLoginDone()
 
         setupOnBackPressedDispatcher()
     }
@@ -145,7 +145,11 @@ class MainActivity : BaseToolbarActivity() {
         setSupportActionBar(materialToolbar)
 
         // Drawer
-        drawerLayout = binding.drawerLayout // <-- donde configuro la accion?
+        drawerLayout = binding.drawerLayout
+        materialToolbar?.setNavigationOnClickListener {
+            drawerLayout?.openDrawer(GravityCompat.START)
+        }
+
         navigationView = binding.navView
 
         // Header Info

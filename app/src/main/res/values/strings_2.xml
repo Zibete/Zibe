@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ZIBE</string>
+
+    <!-- ============================= -->
+    <!-- EditProfile -->
+    <!-- ============================= -->
+
+    <string name="editprofile_welcome_pager_1_title">¡Bienvenido a ZIBE! 🎉</string>
+    <string name="editprofile_welcome_pager_1_body">¡Estamos emocionados de tenerte aquí!. Para comenzar, te recomendamos completar tu perfil con información auténtica y una foto clara.</string>
+
+    <string name="editprofile_welcome_pager_2_title">Un perfil real conecta mejor ✅</string>
+    <string name="editprofile_welcome_pager_2_body">Una foto clara y datos reales ayudan a que otras personas te conozcan mejor y aumentan tus chances de hacer conexiones significativas.</string>
+
+    <string name="editprofile_welcome_pager_3_title">Listo para empezar 🌟</string>
+    <string name="editprofile_welcome_pager_3_body">Completá tu fecha de nacimiento y guardá los cambios para continuar. ¡Disfrutá la experiencia ZIBE!</string>
+
+    <string name="editprofile_welcome_prev">Anterior</string>
+    <string name="editprofile_welcome_next">Siguiente</string>
+    <string name="editprofile_welcome_done">Continuar</string>
+
+    <!-- ============================= -->
+    <!-- SignUp – textos animados -->
+    <!-- ============================= -->
+
+    <string-array name="signup_animated_messages">
+        <item>💬 Contá algo que te haga único — así otros pueden conectar con vos 😉</item>
+        <item>🌟 Compartí quién sos, qué te gusta o qué te inspira</item>
+        <item>✨ Un toque personal hace que tu perfil destaque entre los demás</item>
+        <item>⚡ Mostrate auténtico: tus intereses dicen más que mil palabras.</item>
+    </string-array>
+
+    <!-- ============================= -->
+    <!-- SignUp – éxito / error -->
+    <!-- ============================= -->
+    <string name="signup_msg_success">Registro completado 🎉</string>
+    <string name="signup_err_exception">El usuario no pudo ser creado.</string>
+
+    <!-- ============================= -->
+    <!-- Perfil -->
+    <!-- ============================= -->
+    <string name="msg_profile_saved">Perfil guardado con éxito</string>
+    <string name="msg_profile_save_error">Error guardando perfil</string>
+    <string name="msg_profile_load_error">No se pudo cargar el perfil</string>
+
+    <!-- ============================= -->
+    <!-- Cámara -->
+    <!-- ============================= -->
+    <string name="msg_camera_error">No se pudo abrir la cámara</string>
+    <string name="msg_camera_permission_required">
+            Necesitás otorgar permiso de cámara para sacar una foto.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Reset password -->
+    <!-- ============================= -->
+    <string name="reset_password_email_instruction">
+            Por favor, ingresá tu email para reestablecer la contraseña
+        </string>
+    <string name="reset_password_title">Reestablecimiento de contraseña</string>
+    <string name="reset_password_accept">Enviar e-mail</string>
+    <string name="reset_password_success">
+            Instrucciones enviadas a %1$s
+        </string>
+    <string name="reset_password_error">
+            No pudimos enviar el correo a %1$s. Verificá que esté correcto.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Sala / Chat -->
+    <!-- ============================= -->
+    <string name="msg_user_joined">se unió a la sala</string>
+    <string name="msg_user_leaved">abandonó la sala</string>
+    <string name="message_not_sent_user_blocked">
+            Mensaje no enviado: Estás bloqueado por el usuario.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Errores generales / Auth -->
+    <!-- ============================= -->
+    <string name="err_network_connection">No hay conexión a Internet.</string>
+    <string name="auth_err_user_not_found">Usuario no encontrado.</string>
+    <string name="auth_err_reauthentication_required">
+            Por seguridad, por favor volvé a iniciar sesión.
+        </string>
+    <string name="auth_err_invalid_credentials">
+            Email o contraseña incorrectos.
+        </string>
+    <string name="err_zibe">
+            Ocurrió un error inesperado. Intentá nuevamente.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Cuenta -->
+    <!-- ============================= -->
+    <string name="delete_account_success">La cuenta ha sido eliminada</string>
+    <string name="do_not_delete_account">La cuenta se mantendrá activa</string>
+
+    <!-- ============================= -->
+    <!-- Signup – validaciones -->
+    <!-- ============================= -->
+    <string name="err_email_required">Por favor, ingresá tu email</string>
+    <string name="err_password_required">Por favor, ingresá una contraseña</string>
+    <string name="signup_err_name_required">Por favor, ingresá tu nombre</string>
+    <string name="signup_err_birthday_required">
+            Por favor, ingresá tu fecha de nacimiento
+        </string>
+    <string name="err_under_age">
+            Lo sentimos, debés ser mayor de 18 años para utilizar la App
+        </string>
+
+    <!-- ============================= -->
+    <!-- Mensaje onboarding perfil -->
+    <!-- ============================= -->
+    <string name="signup_profile_message">
+            ¡Bienvenido a ZIBE! 🎉\n\n
+            Estamos emocionados de tenerte aquí. Para comenzar, te recomendamos completar tu perfil
+            con información auténtica y una foto clara. Esto ayudará a que otros usuarios te conozcan
+            mejor y aumentará tus posibilidades de hacer conexiones significativas.\n\n
+            ¡Disfrutá de la experiencia ZIBE y conectate con personas increíbles! 🌟
+        </string>
+
+    <!-- ============================= -->
+    <!-- Permisos -->
+    <!-- ============================= -->
+    <string name="permission_location_message">
+            Para ofrecerte una mejor experiencia, ZIBE utiliza tu ubicación mientras la app está en uso.
+            Esto nos permite mostrarte personas cercanas y mejorar tus coincidencias.
+        </string>
+
+    <string name="permission_legal_disclaimer">
+            Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad.
+        </string>
+
+    <string name="permission_rationale_title">Permiso de ubicación</string>
+    <string name="permission_rationale_message">
+            ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas.
+        </string>
+
+    <string name="permission_denied_title">Permiso denegado</string>
+    <string name="permission_denied_message">
+            Zibe necesita acceso a tu ubicación para funcionar correctamente.\n\n
+            Podés activar el permiso desde: Ajustes &gt; Aplicaciones &gt; Zibe &gt; Permisos &gt; Ubicación.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Sesión / Token -->
+    <!-- ============================= -->
+    <string name="token_dialog_title">Un momento…</string>
+    <string name="token_dialog_message">
+            Este dispositivo ya tiene una cuenta vinculada.\n
+            Continuar desvinculará la cuenta asociada a %1$s.
+        </string>
+
+    <string name="session_conflict_title">Atención</string>
+    <string name="session_conflict_message">
+            Se registró un inicio de sesión en otro dispositivo.\n
+            ¿Qué deseas hacer?
+        </string>
+
+    <string name="session_conflict_keep_here">
+            Continuar en este dispositivo
+        </string>
+    <string name="session_conflict_logout">Cerrar sesión</string>
+
+    <!-- ============================= -->
+    <!-- Auth UI -->
+    <!-- ============================= -->
+    <string name="auth_do_not_have_account">¿No tenés una cuenta?</string>
+    <string name="auth_do_not_delete_account">Ya no quiero eliminar mi cuenta</string>
+    <string name="auth_delete_account">Eliminar mi cuenta</string>
+    <string name="auth_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="auth_or_use_account">o utilizá tu cuenta</string>
+
+    <!-- ============================= -->
+    <!-- Botones -->
+    <!-- ============================= -->
+    <string name="button_start">Comenzar</string>
+    <string name="button_register">Registrarse</string>
+    <string name="button_next">Siguiente</string>
+    <string name="button_skip">Saltar</string>
+    <string name="button_back">Atrás</string>
+
+    <!-- ============================= -->
+    <!-- Diálogos -->
+    <!-- ============================= -->
+    <string name="dialog_accept">Aceptar</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_filter_on">Filtrar</string>
+    <string name="dialog_filter_off">Quitar filtro</string>
+    <string name="dialog_exit">Salir</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_continue">Continuar</string>
+
+    <!-- ============================= -->
+    <!-- Accesibilidad -->
+    <!-- ============================= -->
+    <string name="logo_content_desc">Logo de ZIBE</string>
+
+    <!-- ============================= -->
+    <!-- Onboarding -->
+    <!-- ============================= -->
+
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Comenzar</string>
+
+
+    <string name="onboarding_page_1_title">Chatea</string>
+    <string name="onboarding_page_1_body">Chatea con amigos en tiempo real.</string>
+
+    <string name="onboarding_page_2_title">Descubre</string>
+    <string name="onboarding_page_2_body">Encuentra personas cercanas.</string>
+
+    <string name="onboarding_page_3_title">Socializa</string>
+    <string name="onboarding_page_3_body">Únete a salas de chat!</string>
+
+</resources>

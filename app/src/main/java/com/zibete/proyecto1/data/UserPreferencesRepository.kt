@@ -20,6 +20,7 @@ data class GroupContext(
 interface UserPreferencesProvider {
     suspend fun isOnboardingDone(): Boolean
     suspend fun isFirstLoginDone(): Boolean
+    suspend fun isEditProfileWelcomeShown(): Boolean
     suspend fun isDeleteUser(): Boolean
     val groupContextFlow: Flow<GroupContext?>
     val inGroupFlow: Flow<Boolean>
@@ -35,9 +36,10 @@ interface UserPreferencesProvider {
 interface UserPreferencesActions {
     suspend fun setOnboardingDone(done: Boolean)
     suspend fun setFirstLoginDone(done: Boolean)
+    suspend fun setEditProfileWelcomeShown(done: Boolean)
     suspend fun setDeleteUser(done: Boolean)
     suspend fun resetGroupState()
-    suspend fun clearAllData()
+    suspend fun clearSessionData()
     suspend fun setApplyAgeFilter(value: Boolean)
     suspend fun setApplyOnlineFilter(value: Boolean)
     suspend fun setMinAge(value: Int)
@@ -47,7 +49,6 @@ interface UserPreferencesActions {
     suspend fun setIndividualNotifications(value: Boolean)
     suspend fun setGroupSession(groupName: String, userName: String, userType: Int)
 }
-
 
 @Singleton
 class UserPreferencesRepository @Inject constructor(
@@ -181,6 +182,13 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { it[Keys.FIRST_LOGIN_DONE] = done }
     }
 
+    override suspend fun isEditProfileWelcomeShown(): Boolean =
+        dataStore.data.first()[Keys.EDIT_PROFILE_WELCOME_SHOWN] ?: false
+
+    override suspend fun setEditProfileWelcomeShown(done: Boolean) {
+        dataStore.edit { it[Keys.EDIT_PROFILE_WELCOME_SHOWN] = done }
+    }
+
     override suspend fun isDeleteUser(): Boolean =
         dataStore.data.first()[Keys.DELETE_USER] ?: false
 
@@ -192,8 +200,7 @@ class UserPreferencesRepository @Inject constructor(
     // CLEANUP
     // ---------------------------------------------------------------------------------------------
 
-    /** Equivalente a tu clearAllData() actual */
-    override suspend fun clearAllData() {
+    override suspend fun clearSessionData() {
         resetGroupState()
         dataStore.edit { prefs ->
             prefs[Keys.FILTER_SWITCH] = false
@@ -202,7 +209,6 @@ class UserPreferencesRepository @Inject constructor(
             prefs[Keys.MIN_AGE] = 0
             prefs[Keys.MAX_AGE] = 0
 
-            prefs[Keys.ONBOARDING_DONE] = false
             prefs[Keys.FIRST_LOGIN_DONE] = false
             prefs[Keys.DELETE_USER] = false
         }

@@ -108,7 +108,7 @@ object UserMessageUtils {
         onCancel: (() -> Unit)? = null
     ) {
 
-        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.Zibe_AlertDialog))
             .setTitle(title)
             .setCancelable(false)
 
@@ -144,7 +144,7 @@ object UserMessageUtils {
         onConfirm: (() -> Unit)? = null
     ) {
         val builder = AlertDialog.Builder(
-            ContextThemeWrapper(context, R.style.AlertDialogApp)
+            ContextThemeWrapper(context, R.style.Zibe_AlertDialog)
         )
             .setCancelable(false)
             .setPositiveButton(positiveText) { dialog, _ ->
@@ -170,7 +170,7 @@ object UserMessageUtils {
         val view = LayoutInflater.from(context).inflate(R.layout.layout_progress_zibe, null)
         view.findViewById<TextView>(R.id.progress_text).text = message
 
-        val dialog = AlertDialog.Builder(ContextThemeWrapper(context, R.style.AlertDialogApp))
+        val dialog = AlertDialog.Builder(ContextThemeWrapper(context, R.style.Zibe_AlertDialog))
             .setView(view)
             .setCancelable(false)
             .create()

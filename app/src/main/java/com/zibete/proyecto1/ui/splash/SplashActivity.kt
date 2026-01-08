@@ -38,12 +38,6 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.core.constants.DIALOG_EXIT
-import com.zibete.proyecto1.core.constants.ONBOARDING_DESC_1
-import com.zibete.proyecto1.core.constants.ONBOARDING_DESC_2
-import com.zibete.proyecto1.core.constants.ONBOARDING_DESC_3
-import com.zibete.proyecto1.core.constants.ONBOARDING_TITLE_1
-import com.zibete.proyecto1.core.constants.ONBOARDING_TITLE_2
-import com.zibete.proyecto1.core.constants.ONBOARDING_TITLE_3
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
 import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_MESSAGE
@@ -113,14 +107,7 @@ class SplashActivity : ComponentActivity() {
                         }
                         // ======================================
                         composable(ONBOARDING_SCREEN) {
-                            val pages = listOf(
-                                OnboardingPage(R.raw.onboarding1,ONBOARDING_TITLE_1,ONBOARDING_DESC_1),
-                                OnboardingPage(R.raw.onboarding2,ONBOARDING_TITLE_2,ONBOARDING_DESC_2),
-                                OnboardingPage(R.raw.onboarding3,ONBOARDING_TITLE_3,ONBOARDING_DESC_3)
-                            )
-
                             OnboardingScreen(
-                                pages = pages,
                                 onFinished = {
                                     navController.navigate(AUTH_SCREEN) {
                                         popUpTo(ONBOARDING_SCREEN) { inclusive = true }

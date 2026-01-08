@@ -142,7 +142,7 @@ class UserSessionManager @Inject constructor(
         if (inGroup) { performExitGroupDataCleanup() }
 
         // 3) Limpiar prefs (DataStore)
-        userPreferencesActions.clearAllData()
+        userPreferencesActions.clearSessionData()
 
         // 4) Sign out
         firebaseAuth.signOut()

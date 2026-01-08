@@ -18,6 +18,8 @@ class FakeUserPreferencesProvider(
     // --- Provider ---
     override suspend fun isOnboardingDone(): Boolean = mutex.withLock { scenarioProvider().onboardingDone }
     override suspend fun isFirstLoginDone(): Boolean = mutex.withLock { scenarioProvider().firstLoginDone }
+    override suspend fun isEditProfileWelcomeShown(): Boolean = false
+
     override suspend fun isDeleteUser(): Boolean = mutex.withLock { scenarioProvider().deleteUser }
 
     override val groupContextFlow: Flow<GroupContext?> = flowOf(null)
@@ -41,10 +43,12 @@ class FakeUserPreferencesActions(
     // --- Actions ---
     override suspend fun setOnboardingDone(done: Boolean) { mutex.withLock { scenarioProvider().onboardingDone = done } }
     override suspend fun setFirstLoginDone(done: Boolean) { mutex.withLock { scenarioProvider().firstLoginDone = done } }
+    override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/ }
+
     override suspend fun setDeleteUser(done: Boolean) { mutex.withLock { scenarioProvider().deleteUser = done } }
 
     override  suspend fun resetGroupState() {}
-    override  suspend fun clearAllData() {}
+    override  suspend fun clearSessionData() {}
     override  suspend fun setApplyAgeFilter(value: Boolean) {}
     override suspend fun setApplyOnlineFilter(value: Boolean) {}
     override suspend fun setMinAge(value: Int) {}

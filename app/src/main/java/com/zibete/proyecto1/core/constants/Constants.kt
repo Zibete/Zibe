@@ -25,6 +25,7 @@ object Constants {
         const val ONBOARDING_SCREEN = "onboarding_screen"
         const val PERMISSION_SCREEN = "permission_screen"
         const val SIGNUP_SCREEN = "signup_screen"
+        const val EDIT_PROFILE_WELCOME_SHEET = "EditProfileWelcomeSheet"
     }
 
     object TestTags {
@@ -32,6 +33,7 @@ object Constants {
         const val PASSWORD = "PASSWORD"
         const val NAME = "NAME"
         const val BIRTHDATE = "BIRTHDATE"
+        const val BIRTHDATE_PICKER = "BIRTHDATE_PICKER"
         const val DESCRIPTION = "DESCRIPTION"
         const val BTN_REGISTER = "BTN_REGISTER"
     }

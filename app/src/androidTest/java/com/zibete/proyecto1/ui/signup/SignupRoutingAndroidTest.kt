@@ -251,7 +251,7 @@ fun fillValidForm(
     setText(TestTags.NAME, name, composeRule)
     if (birthdate.isNotBlank()){
         pickBirthDateSetText(
-            openDialogTag = TestTags.BIRTHDATE,
+            openDialogTag = TestTags.BIRTHDATE_PICKER,
             dateText = LocalDate.parse(birthdate).format(DateTimeFormatter.ofPattern("ddMMyyyy")),
             composeRule = composeRule
         )

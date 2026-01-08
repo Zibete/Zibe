@@ -15,7 +15,7 @@
         app:cardBackgroundColor="@android:color/transparent"
         app:strokeColor="#99FFFFFF"
         app:strokeWidth="0dp"
-        app:shapeAppearanceOverlay="@style/Shape.Zibe.Card.Large"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zibe.Card.Large"
         app:cardElevation="0dp">
 
         <FrameLayout

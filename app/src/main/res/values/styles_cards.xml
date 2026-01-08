@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Card (widget style) -->
+    <style name="Zibe.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/zibe_card</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">3dp</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- ShapeAppearance (para usar en app:shapeAppearanceOverlay) -->
+    <style name="ShapeAppearance.Zibe.Card" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Zibe.Card.Large" parent="ShapeAppearance.Zibe.Card">
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <!-- BottomNav active indicator pill -->
+    <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/glass_indicator</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.Rounded16</item>
+    </style>
+
+    <style name="ShapeAppearance.Zibe.Rounded16" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- Chat bubble (shape tokens “simples”) -->
+    <style name="Shape.Bubble">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <style name="Shape.Bubble.Right">
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="Shape.Bubble.Left">
+        <item name="cornerSizeBottomLeft">0dp</item>
+    </style>
+
+</resources>

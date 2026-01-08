@@ -1,0 +1,122 @@
+package com.zibete.proyecto1.ui.editprofile
+
+import android.app.Dialog
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.tabs.TabLayoutMediator
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.databinding.BottomSheetEditProfileWelcomeBinding
+
+class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
+
+    interface Listener {
+        fun onEditProfileWelcomeDismissed()
+    }
+
+    private lateinit var binding: BottomSheetEditProfileWelcomeBinding
+
+    override fun getTheme(): Int = R.style.Zibe_BottomSheetTheme
+
+    private val pages = listOf(
+        EditProfileWelcomePage(
+            R.string.editprofile_welcome_pager_1_title,
+            R.string.editprofile_welcome_pager_1_body
+        ),
+        EditProfileWelcomePage(
+            R.string.editprofile_welcome_pager_2_title,
+            R.string.editprofile_welcome_pager_2_body
+        ),
+        EditProfileWelcomePage(
+            R.string.editprofile_welcome_pager_3_title,
+            R.string.editprofile_welcome_pager_3_body
+        )
+    )
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = BottomSheetDialog(requireContext(), getTheme())
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
+        dialog.setCanceledOnTouchOutside(false)
+        return dialog
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = BottomSheetEditProfileWelcomeBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setupPager()
+        setupButtons()
+        setupBrand()
+    }
+
+    private fun setupPager() {
+        binding.viewPager.adapter = EditProfileWelcomePagerAdapter(pages)
+
+        TabLayoutMediator(binding.tabDots, binding.viewPager) { tab, _ ->
+            tab.text = "" // crea el tab, pero no muestra label
+        }.attach()
+
+        updateButtons(0)
+
+        binding.viewPager.registerOnPageChangeCallback(
+            object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    updateButtons(position)
+                }
+            }
+        )
+    }
+
+    private fun setupBrand() {
+        binding.tvBrand.setTextAppearance(R.style.Zibe_Text_Brand)
+
+        binding.tvBrand.text = getString(R.string.app_name)
+
+        binding.tvBrand.setTextColor(ContextCompat.getColor(requireContext(), R.color.zibe_pink))
+
+        binding.tvBrand.textSize = 38f
+
+        binding.tvBrand.textAlignment = View.TEXT_ALIGNMENT_CENTER
+    }
+
+    private fun setupButtons() {
+        binding.btnPrev.setOnClickListener {
+            val prev = binding.viewPager.currentItem - 1
+            if (prev >= 0) binding.viewPager.currentItem = prev
+        }
+
+        binding.btnNext.setOnClickListener {
+            val next = binding.viewPager.currentItem + 1
+            if (next < pages.size) {
+                binding.viewPager.currentItem = next
+            } else {
+                (parentFragment as? Listener)?.onEditProfileWelcomeDismissed()
+                dismissAllowingStateLoss()
+            }
+        }
+    }
+
+    private fun updateButtons(position: Int) {
+        binding.btnPrev.isEnabled = position > 0
+
+        if (position == pages.lastIndex) {
+            binding.btnNext.setText(R.string.editprofile_welcome_done)
+        } else {
+            binding.btnNext.setText(R.string.editprofile_welcome_next)
+        }
+    }
+}
+

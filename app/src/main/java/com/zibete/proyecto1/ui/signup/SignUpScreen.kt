@@ -219,7 +219,7 @@ fun SignUpScreen(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .testTag(TestTags.BIRTHDATE)
+                            .testTag(TestTags.BIRTHDATE_PICKER)
                             .clickable { showDatePicker = true }
                     )
                 }

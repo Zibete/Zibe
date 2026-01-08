@@ -68,6 +68,7 @@
     <!-- BOTONES -->
     <color name="zibe_btn_primary">#F6286D</color>
     <color name="zibe_btn_secondary">#8B3CFF</color>
+    <color name="zibe_btn_secondary_40">#668B3CFF</color>
     <color name="zibe_btn_disabled">#555E70</color>
 
     <!-- CAMPOS -->

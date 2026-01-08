@@ -94,13 +94,24 @@ class EditProfileViewModel @Inject constructor(
         _uiState.update { it.copy(birthDate = birthDate, age = age, saveEnabled = true) }
     }
 
-    suspend fun isFirstLoginDone(): Boolean {
-        return userPreferencesProvider.isFirstLoginDone()
+//    suspend fun isFirstLoginDone(): Boolean {
+//        return userPreferencesProvider.isFirstLoginDone()
+//    }
+//
+//    fun markFirstLoginAsDone() {
+//        viewModelScope.launch { userPreferencesActions.setFirstLoginDone(true) }
+//    }
+
+    suspend fun isEditProfileWelcomeShown(): Boolean {
+        return userPreferencesProvider.isEditProfileWelcomeShown()
     }
 
-    fun markFirstLoginAsDone() {
-        viewModelScope.launch { userPreferencesActions.setFirstLoginDone(true) }
+    fun markEditProfileWelcomeShown() {
+        viewModelScope.launch {
+            userPreferencesActions.setEditProfileWelcomeShown(true)
+        }
     }
+
 
     fun onPhotoSelected(uri: Uri) {
         _uiState.update {

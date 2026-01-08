@@ -3,17 +3,19 @@ package com.zibete.proyecto1.ui.editprofile
 import android.Manifest
 import android.app.Dialog
 import android.content.ContentValues
-import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -37,6 +39,8 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.TestTags.BIRTHDATE_PICKER
+import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_WELCOME_SHEET
 import com.zibete.proyecto1.core.constants.MSG_CAMERA_ERROR
 import com.zibete.proyecto1.core.constants.MSG_CAMERA_PERMISSION_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_PROFILE_MESSAGE
@@ -47,18 +51,19 @@ import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
+import com.zibete.proyecto1.ui.extensions.setTextIfChanged
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import androidx.core.graphics.drawable.toDrawable
 
 @AndroidEntryPoint
-class EditProfileFragment : Fragment() {
+class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
     private val editProfileViewModel: EditProfileViewModel by viewModels()
     private var _binding: FragmentEditProfileBinding? = null
     private val binding get() = _binding!!
     private var editPhotoDialog: Dialog? = null
     private var pendingCameraUri: Uri? = null
-    private val photoList: ArrayList<String> = arrayListOf()
 
     private val takePictureLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -114,32 +119,24 @@ class EditProfileFragment : Fragment() {
 
         setupOptionMenu()
 
-        binding.btnSave.isEnabled = false
+        binding.buttonSave.isEnabled = false
 
         binding.profilePhoto.setOnClickListener {
-            val url = editProfileViewModel.uiState.value.photoUrl
+            val photoUrl = editProfileViewModel.uiState.value.photoUrl
                 ?: DEFAULT_PROFILE_PHOTO_URL
-
-            photoList.clear()
-            if (url.isNotBlank()) photoList.add(url) else return@setOnClickListener
-
-            startActivity(
-                Intent(requireContext(), PhotoViewerActivity::class.java).apply {
-                    putExtra("photoList", photoList)
-                }
-            )
+            PhotoViewerActivity.startSingle(requireContext(), photoUrl)
         }
 
-        binding.btnEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
+        binding.actionButtonEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
         binding.datePickerBirthDay.setOnClickListener { showMaterialDatePicker() }
-        binding.btnSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
-        binding.btnDone.setOnClickListener { editProfileViewModel.onBackToMain() }
+        binding.buttonSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
+        binding.buttonDone.setOnClickListener { editProfileViewModel.onBackToMain() }
 
         // Watchers -> VM
-        binding.edtNameUser.addTextChangedListener(SimpleWatcher {
+        binding.inputUserName.addTextChangedListener(SimpleWatcher {
             editProfileViewModel.onNameChanged(it)
         })
-        binding.edtDesc.addTextChangedListener(SimpleWatcher {
+        binding.inputDescription.addTextChangedListener(SimpleWatcher {
             editProfileViewModel.onDescriptionChanged(it)
         })
 
@@ -147,14 +144,11 @@ class EditProfileFragment : Fragment() {
 
         collectUi()
 
-        setupOnboarding()
+        showWelcomeIfNeeded()
     }
 
     private fun collectUi() {
-
-        binding.btnDone.isVisible = false
-
-
+        binding.buttonDone.isVisible = false
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -162,17 +156,17 @@ class EditProfileFragment : Fragment() {
                 launch {
                     editProfileViewModel.uiState.collect { state ->
 
-                        binding.btnSave.isEnabled = state.saveEnabled && !state.isSaving
+                        binding.buttonSave.isEnabled = state.saveEnabled && !state.isSaving
 
-                        binding.edtNameUser.setTextIfChanged(state.displayName)
+                        binding.inputUserName.setTextIfChanged(state.displayName)
                         binding.datePickerBirthDay.setTextIfChanged(editProfileViewModel.birthDateUi)
-                        binding.edtDesc.setTextIfChanged(state.description)
+                        binding.inputDescription.setTextIfChanged(state.description)
 
                         binding.tvEdad.text = state.age?.toString().orEmpty()
 
                         binding.completeProfile.text = SIGNUP_PROFILE_MESSAGE
 
-                        binding.btnDone.isVisible = state.hasBirthDate
+                        binding.buttonDone.isVisible = state.hasBirthDate
 
                         val toLoad: Any = state.photoPreviewUri
                             ?: state.photoUrl
@@ -235,27 +229,18 @@ class EditProfileFragment : Fragment() {
             .into(binding.profilePhoto)
     }
 
-    private fun setupOnboarding() {
-
+    private fun showWelcomeIfNeeded() {
         viewLifecycleOwner.lifecycleScope.launch {
+            val shown = editProfileViewModel.isEditProfileWelcomeShown()
+            if (shown) return@launch
 
-            val isFirstLoginDone = editProfileViewModel.isFirstLoginDone()
+            // Evita duplicados si rota pantalla o se re-crea el fragment
+            if (parentFragmentManager.findFragmentByTag(EDIT_PROFILE_WELCOME_SHEET) != null) return@launch
 
-            if (!isFirstLoginDone) {
-                binding.linearOnBoardingProfile.isVisible = true
-                editProfileViewModel.markFirstLoginAsDone()
-            }
-        }
-
-        binding.btnOk.setOnClickListener {
-            binding.linearOnBoardingProfile.isVisible = false
-        }
-
-        binding.linearOnBoardingProfile.setOnClickListener {
-            binding.linearOnBoardingProfile.isVisible = false
+            EditProfileWelcomeSheet()
+                .show(parentFragmentManager, EDIT_PROFILE_WELCOME_SHEET)
         }
     }
-
 
     private fun startCamera() {
         runCatching {
@@ -271,7 +256,7 @@ class EditProfileFragment : Fragment() {
 
             val uri = pendingCameraUri
             if (uri == null) {
-                editProfileViewModel.onError("No se pudo preparar la captura")
+                editProfileViewModel.onError(requireContext().getString(R.string.msg_camera_error))
                 return
             }
 
@@ -282,15 +267,19 @@ class EditProfileFragment : Fragment() {
     }
 
     private fun showEditPhotoDialogInternal() {
-        val dialogBinding = SelectSourcePicBinding.inflate(layoutInflater)
+        val themedContext = ContextThemeWrapper(requireContext(), R.style.Zibe_Dialog)
+        val dialogBinding = SelectSourcePicBinding.inflate(LayoutInflater.from(themedContext))
 
         dialogBinding.cardEditDelete.isVisible = true
         dialogBinding.tvTitle.text = getString(R.string.editar_foto_de_perfil)
 
-        editPhotoDialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root)
-            .setCancelable(true)
-            .create()
+        editPhotoDialog = Dialog(themedContext).apply {
+            setContentView(dialogBinding.root)
+            setCancelable(true)
+            window?.setBackgroundDrawable(getDrawable(requireContext(),R.drawable.badge_round))
+            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            show()
+        }
 
         dialogBinding.deleteSelected.setOnClickListener {
             editProfileViewModel.onPhotoDeletedSetDefault()
@@ -308,9 +297,8 @@ class EditProfileFragment : Fragment() {
         }
 
         dialogBinding.imgCancelDialog.setOnClickListener { editPhotoDialog?.dismiss() }
-
-        editPhotoDialog?.show()
     }
+
 
     private fun showMaterialDatePicker() {
         val constraints = CalendarConstraints.Builder()
@@ -333,7 +321,7 @@ class EditProfileFragment : Fragment() {
             editProfileViewModel.onBirthDateChanged(isoDate)
         }
 
-        picker.show(parentFragmentManager, "ZIBE_BIRTHDATE_PICKER")
+        picker.show(parentFragmentManager, BIRTHDATE_PICKER)
     }
 
     private fun setupOptionMenu() {
@@ -356,19 +344,15 @@ class EditProfileFragment : Fragment() {
 
     fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
 
-    private fun EditText.setTextIfChanged(newValue: String) {
-        val current = text?.toString().orEmpty()
-        if (current == newValue) return
-        if (hasFocus()) return
-        setText(newValue)
-    }
-
-
     override fun onDestroyView() {
         editPhotoDialog?.dismiss()
         editPhotoDialog = null
         pendingCameraUri = null
         _binding = null
         super.onDestroyView()
+    }
+
+    override fun onEditProfileWelcomeDismissed() {
+        editProfileViewModel.markEditProfileWelcomeShown()
     }
 }

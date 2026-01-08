@@ -85,25 +85,25 @@
         <activity
             android:name=".ui.chat.ChatActivity"
             android:parentActivityName=".ui.main.MainActivity"
-            android:theme="@style/AppThemeChat"
+            android:theme="@style/AppTheme.Zibe.Chat"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.media.PhotoViewerActivity"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:theme="@style/AppTheme.Zibe.NoActionBar"/>
         <activity
             android:name=".ui.settings.SettingsActivity"
-            android:theme="@style/AppTheme.MainActivity" />
+            android:theme="@style/AppTheme.Zibe.NoActionBar" />
         <activity
             android:name=".ui.profile.ProfileActivity"
             android:parentActivityName=".ui.main.MainActivity"
-            android:theme="@style/AppTheme.MainActivity"
+            android:theme="@style/AppTheme.Zibe.NoActionBar"
             android:windowSoftInputMode="adjustPan" />
 
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
-            android:theme="@style/AppTheme.MainActivity">
+            android:theme="@style/AppTheme.Zibe.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -133,7 +133,7 @@
         <activity
             android:name=".ui.main.MainActivity"
             android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.MainActivity" />
+            android:theme="@style/AppTheme.Zibe.NoActionBar" />
 
         <!-- FCM -->
         <service

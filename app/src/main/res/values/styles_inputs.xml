@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Zibe.Input" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
+        <item name="boxBackgroundColor">@color/zibe_night_end</item>
+        <item name="boxStrokeColor">@color/zibe_purple</item>
+
+        <item name="android:textColorHint">@color/zibe_hint_text</item>
+        <item name="hintTextColor">@color/zibe_hint_text</item>
+
+        <item name="startIconTint">@color/zibe_text_muted</item>
+        <item name="endIconTint">@color/zibe_text_muted</item>
+    </style>
+
+    <style name="Zibe.EditText" parent="Widget.Material3.TextInputEditText.FilledBox.Dense">
+        <item name="android:textColor">@color/zibe_text_light</item>
+        <item name="hintTextColor">@color/zibe_hint_text</item>
+    </style>
+
+</resources>

@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,19 +32,11 @@ import androidx.compose.ui.zIndex
 import com.airbnb.lottie.compose.*
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.testTag
-import com.zibete.proyecto1.core.constants.BUTTON_BACK
-import com.zibete.proyecto1.core.constants.BUTTON_NEXT
-import com.zibete.proyecto1.core.constants.BUTTON_SKIP
-import com.zibete.proyecto1.core.constants.BUTTON_START
-import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 
-// ------------------------------------------------------
-//  TextButton estilizado (misma altura y forma que ZibeButton)
-// ------------------------------------------------------
 @Composable
 fun ZibeTextButton(
     text: String,
@@ -53,7 +47,7 @@ fun ZibeTextButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp),       // MISMA ALTURA que ZibeButton
+            .height(48.dp),
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.textButtonColors(
             contentColor = Color.White
@@ -71,14 +65,31 @@ fun ZibeTextButton(
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun OnboardingScreen(
-    pages: List<OnboardingPage>,
     onFinished: () -> Unit
 ) {
+
+    val skipText = stringResource(R.string.onboarding_skip)
+    val backText = stringResource(R.string.onboarding_back)
+    val nextText = stringResource(R.string.onboarding_next)
+    val startText = stringResource(R.string.onboarding_start)
+
+    val onboardingPage1Title = stringResource(R.string.onboarding_page_1_title)
+    val onboardingPage1Body = stringResource(R.string.onboarding_page_1_body)
+    val onboardingPage2Title = stringResource(R.string.onboarding_page_2_title)
+    val onboardingPage2Body = stringResource(R.string.onboarding_page_2_body)
+    val onboardingPage3Title = stringResource(R.string.onboarding_page_3_title)
+    val onboardingPage3Body = stringResource(R.string.onboarding_page_3_body)
+
+    val pages = listOf(
+        OnboardingPage(R.raw.onboarding1, onboardingPage1Title, onboardingPage1Body),
+        OnboardingPage(R.raw.onboarding2, onboardingPage2Title, onboardingPage2Body),
+        OnboardingPage(R.raw.onboarding3, onboardingPage3Title, onboardingPage3Body)
+    )
+
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { pages.size })
     val scope = rememberCoroutineScope()
     val lastIndex = pages.lastIndex
 
-    // Gradiente animado por página
     val (topColorTarget, bottomColorTarget) = when (pagerState.currentPage) {
         0 -> Color(0xFF4C3EFF) to Color(0xFF151226)
         1 -> Color(0xFF00C9A7) to Color(0xFF002D3A)
@@ -98,7 +109,6 @@ fun OnboardingScreen(
             .systemBarsPadding()
     ) {
 
-        // SALTAR arriba
         if (pagerState.currentPage < lastIndex) {
             TextButton(
                 onClick = onFinished,
@@ -108,7 +118,7 @@ fun OnboardingScreen(
                     .zIndex(1f)
             ) {
                 Text(
-                    text = BUTTON_SKIP,
+                    text = skipText,
                     color = Color.White,
                     style = MaterialTheme.typography.labelLarge
                 )
@@ -121,7 +131,6 @@ fun OnboardingScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // CARD central
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,9 +146,7 @@ fun OnboardingScreen(
                 ) { index ->
                     AnimatedContent(
                         targetState = pages[index],
-                        transitionSpec = {
-                            fadeIn(tween(250)) with fadeOut(tween(250))
-                        },
+                        transitionSpec = { fadeIn(tween(250)) with fadeOut(tween(250)) },
                         label = "pageContent"
                     ) { page ->
                         OnboardingPageContent(page)
@@ -149,7 +156,6 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Dots
             DotsIndicator(
                 totalDots = pages.size,
                 selectedIndex = pagerState.currentPage
@@ -157,18 +163,14 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ------------------------------------------------------
-            //      BOTONERA: siempre 50% + 50%
-            // ------------------------------------------------------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                // IZQUIERDA = ATRÁS (si page > 0), si no → invisible
                 if (pagerState.currentPage > 0) {
                     ZibeTextButton(
-                        text = BUTTON_BACK,
+                        text = backText,
                         modifier = Modifier.weight(1f)
                     ) {
                         scope.launch {
@@ -176,16 +178,14 @@ fun OnboardingScreen(
                         }
                     }
                 } else {
-                    // espacio igualado para mantener balance visual
                     Spacer(modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // DERECHA = SIGUIENTE / COMENZAR
                 if (pagerState.currentPage < lastIndex) {
                     ZibeTextButton(
-                        text = BUTTON_NEXT,
+                        text = nextText,
                         modifier = Modifier.weight(1f)
                     ) {
                         scope.launch {
@@ -193,9 +193,8 @@ fun OnboardingScreen(
                         }
                     }
                 } else {
-                    // última → COMENZAR = ZibeButton
                     ZibeButton(
-                        text = BUTTON_START,
+                        text = startText,
                         modifier = Modifier.weight(1f),
                         onClick = onFinished
                     )
@@ -255,9 +254,7 @@ fun DotsIndicator(totalDots: Int, selectedIndex: Int) {
     ) {
         repeat(totalDots) { i ->
             val isSelected = i == selectedIndex
-            val size by animateDpAsState(
-                if (isSelected) 10.dp else 8.dp, tween(250)
-            )
+            val size by animateDpAsState(if (isSelected) 10.dp else 8.dp, tween(250))
             val color by animateColorAsState(
                 if (isSelected) Color.White else Color.White.copy(alpha = 0.4f),
                 tween(250)
@@ -277,15 +274,8 @@ fun DotsIndicator(totalDots: Int, selectedIndex: Int) {
 @Preview(showSystemUi = true, showBackground = true)
 @Composable
 fun OnboardingPreviewFull() {
-    val demoPages = listOf(
-        OnboardingPage(R.raw.onboarding1, "Chatea", "Chatea con amigos en tiempo real."),
-        OnboardingPage(R.raw.onboarding2, "Descubre", "Encuentra personas cercanas."),
-        OnboardingPage(R.raw.onboarding3, "Socializa", "Únete a salas de chat!")
-    )
-
     ZibeTheme {
         OnboardingScreen(
-            pages = demoPages,
             onFinished = {}
         )
     }

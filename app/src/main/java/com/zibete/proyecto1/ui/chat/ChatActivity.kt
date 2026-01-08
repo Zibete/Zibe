@@ -484,7 +484,7 @@ class ChatActivity : BaseChatSessionActivity() {
         viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).isVisible = false
         title.text = getString(R.string.enviar_desde)
 
-        val dialog = AlertDialog.Builder(this, R.style.AlertDialogApp)
+        val dialog = AlertDialog.Builder(this, R.style.Zibe_AlertDialog)
             .setView(viewFilter)
             .create()
 

@@ -194,7 +194,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun checkFirstLogin() {
+    fun checkFirstLoginDone() {
         viewModelScope.launch {
             val done = userPreferencesProvider.isFirstLoginDone()
             if (!done) onEditProfileSelected()

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="ZibeDatePickerOverlay" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/zibe_purple</item>
+        <item name="colorSecondary">@color/zibe_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/zibe_card</item>
+    </style>
+
+    <style name="Zibe.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/zibe_card</item>
+        <item name="colorOnSurface">@color/zibe_text_light</item>
+
+        <item name="shapeAppearanceMediumComponent">@style/Zibe.Dialog.Shape</item>
+
+        <item name="materialAlertDialogTitleTextStyle">@style/Zibe.Dialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/Zibe.Dialog.Body</item>
+
+        <item name="materialButtonStyle">@style/Zibe.Dialog.TextButton</item>
+    </style>
+
+
+    <style name="Zibe.Dialog.Shape" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="Zibe.Dialog.TextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/zibe_pink</item>
+        <item name="rippleColor">@color/zibe_pink_24</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Zibe.Dialog.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="Zibe.Dialog.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/zibe_text_light</item>
+    </style>
+
+</resources>

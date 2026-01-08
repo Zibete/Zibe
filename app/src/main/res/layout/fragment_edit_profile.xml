@@ -76,17 +76,15 @@
                                 style="@style/Zibe.Input"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                app:startIconDrawable="@drawable/ic_person_24"
-                                app:boxBackgroundMode="filled">
+                                app:startIconDrawable="@drawable/ic_person_24">
 
                                 <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/edtNameUser"
+                                    android:id="@+id/input_user_name"
                                     style="@style/Zibe.EditText"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:hint="@string/name"
-                                    android:inputType="textPersonName"
-                                    tools:text="Zibe User"/>
+                                    android:inputType="textPersonName"/>
                             </com.google.android.material.textfield.TextInputLayout>
 
                             <!-- Fecha de nacimiento + Edad -->
@@ -151,7 +149,7 @@
                             app:boxBackgroundMode="filled">
 
                             <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtDesc"
+                                android:id="@+id/input_description"
                                 style="@style/Zibe.EditText"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -208,7 +206,7 @@
             android:padding="16dp">
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/btn_edit_photo"
+                android:id="@+id/action_button_edit_photo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
@@ -218,7 +216,7 @@
                 android:textColor="@color/white"/>
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/btn_save"
+                android:id="@+id/button_save"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/save"
@@ -227,7 +225,7 @@
                 android:textColor="@color/white"/>
 
             <TextView
-                android:id="@+id/btn_done"
+                android:id="@+id/button_done"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"

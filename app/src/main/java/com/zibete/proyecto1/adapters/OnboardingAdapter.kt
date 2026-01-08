@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils
 
 data class OnboardingPage(
     val animationRes: Int,
@@ -35,16 +36,15 @@ class OnboardingAdapter(
     override fun onBindViewHolder(holder: OnboardingViewHolder, position: Int) {
         val page = pages[position]
         val context = holder.itemView.context
-        val scale = context.resources.displayMetrics.density
 
         holder.image.setAnimation(page.animationRes)
         holder.title.text = page.title
         holder.title.textSize = 40f
         holder.description.text = page.description
 
-        // Mantengo tu comportamiento especial para "Socializa"
-        val size250 = (250 * scale + 0.5f).toInt()
-        val params = if (page.title == "Socializa") {
+        // Comportamiento especial para "Socializa"
+        val size250 = (250 * ScreenUtils.density + 0.5f).toInt()
+        val params = if (page.title == context.getString(R.string.onboarding_page_3_title)) {
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 size250
