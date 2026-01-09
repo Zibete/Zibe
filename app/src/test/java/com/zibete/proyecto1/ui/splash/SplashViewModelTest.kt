@@ -7,7 +7,7 @@ import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.UserSessionProvider
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
@@ -15,7 +15,7 @@ import com.zibete.proyecto1.fakes.FakeLogoutUseCase
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
-import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
+import com.zibete.proyecto1.fakes.FakeUserSessionProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import io.mockk.every
@@ -310,22 +310,22 @@ class SplashViewModelTest {
 
     private fun buildVm(
         scenario: TestScenario = TestScenario(),
-        authSessionProvider: AuthSessionProvider = FakeAuthSessionProvider(
+        savedStateHandle : SavedStateHandle = SavedStateHandle(),
+        appChecksProvider : AppChecksProvider = FakeAppChecksProvider { scenario },
+        userSessionProvider: UserSessionProvider = FakeUserSessionProvider(
             currentUser = scenario.currentUserUid?.let { uid ->
                 mockk<FirebaseUser> { every { this@mockk.uid } returns uid }
             }
         ),
-        savedStateHandle : SavedStateHandle = SavedStateHandle(),
-        appChecksProvider : AppChecksProvider = FakeAppChecksProvider { scenario },
         userPreferencesProvider : UserPreferencesProvider = FakeUserPreferencesProvider { scenario },
         userPreferencesActions : UserPreferencesActions = FakeUserPreferencesActions { scenario },
         sessionBootstrapper : SessionBootstrapper = FakeSessionBootstrapper { scenario },
         logoutUseCase : LogoutUseCase = FakeLogoutUseCase { scenario }
     ) : SplashViewModel {
         return SplashViewModel(
-            authSessionProvider = authSessionProvider,
             savedStateHandle = savedStateHandle,
             appChecksProvider = appChecksProvider,
+            userSessionProvider = userSessionProvider,
             userPreferencesProvider = userPreferencesProvider,
             userPreferencesActions = userPreferencesActions,
             sessionBootstrapper = sessionBootstrapper,

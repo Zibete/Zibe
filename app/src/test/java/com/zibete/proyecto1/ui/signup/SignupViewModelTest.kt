@@ -1,13 +1,17 @@
 package com.zibete.proyecto1.ui.signup
 
 import com.zibete.proyecto1.MainDispatcherRule
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
+import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
 import com.zibete.proyecto1.core.ui.SnackBarManager
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
-import com.zibete.proyecto1.fakes.FakeAuthSessionActions
+import com.zibete.proyecto1.fakes.FakeUserSessionActions
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -37,13 +41,13 @@ class SignUpViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var sessionBootstrapper: SessionBootstrapper
-    private lateinit var authSessionActions: AuthSessionActions
+    private lateinit var userSessionActions: UserSessionActions
     private lateinit var snackBarManager: SnackBarManager
 
     @Before
     fun setup() {
         sessionBootstrapper = mockk<SessionBootstrapper>(relaxed = true)
-        authSessionActions = mockk<AuthSessionActions>(relaxed = true)
+        userSessionActions = mockk<UserSessionActions>(relaxed = true)
         snackBarManager = mockk<SnackBarManager>(relaxed = true)
 
     }
@@ -52,7 +56,7 @@ class SignUpViewModelTest {
     fun flow_onRegister_blankEmail_emitsSnack_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )
@@ -74,11 +78,11 @@ class SignUpViewModelTest {
         val event = deferred.await()
         val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
 
-        assertEquals(UiText.StringRes(R.string.err_email_required), snack.uiText)
+        assertEquals(ERR_EMAIL_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertFalse(vm.uiState.value.isLoading)
 
-        coVerify { authSessionActions wasNot Called }
+        coVerify { userSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
@@ -86,7 +90,7 @@ class SignUpViewModelTest {
     fun flow_onRegister_blankPassword_emitsSnack_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )
@@ -108,11 +112,11 @@ class SignUpViewModelTest {
         val event = deferred.await()
         val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
 
-        assertEquals(UiText.StringRes(R.string.err_password_required), snack.uiText)
+        assertEquals(ERR_PASSWORD_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertFalse(vm.uiState.value.isLoading)
 
-        coVerify { authSessionActions wasNot Called }
+        coVerify { userSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
@@ -120,7 +124,7 @@ class SignUpViewModelTest {
     fun flow_onRegister_blankName_emitsSnack_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )
@@ -142,11 +146,11 @@ class SignUpViewModelTest {
         val event = deferred.await()
         val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
 
-        assertEquals(UiText.StringRes(R.string.signup_err_name_required), snack.uiText)
+        assertEquals(SIGNUP_ERR_NAME_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertFalse(vm.uiState.value.isLoading)
 
-        coVerify { authSessionActions wasNot Called }
+        coVerify { userSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
@@ -154,7 +158,7 @@ class SignUpViewModelTest {
     fun flow_onRegister_blankBirthdate_emitsSnack_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )
@@ -174,11 +178,11 @@ class SignUpViewModelTest {
         val event = deferred.await()
         val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
 
-        assertEquals(UiText.StringRes(R.string.signup_err_birthdate_required), snack.uiText)
+        assertEquals(SIGNUP_ERR_BIRTHDAY_REQUIRED, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertFalse(vm.uiState.value.isLoading)
 
-        coVerify { authSessionActions wasNot Called }
+        coVerify { userSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
@@ -186,7 +190,7 @@ class SignUpViewModelTest {
     fun flow_onRegister_underAge_emitsSnack_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )
@@ -206,11 +210,11 @@ class SignUpViewModelTest {
         val event = deferred.await()
         val snack = assertIs<SignUpUiEvent.ShowSnack>(event)
 
-        assertEquals(UiText.StringRes(R.string.err_under_age), snack.uiText)
+        assertEquals(ERR_UNDER_AGE, snack.message)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertFalse(vm.uiState.value.isLoading)
 
-        coVerify { authSessionActions wasNot Called }
+        coVerify { userSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
@@ -246,7 +250,7 @@ class SignUpViewModelTest {
         val event = deferred.await()
 
         assertTrue(sessionBootstrapper.wasCalled)
-        verify { snackBarManager.show(UiText.StringRes(R.string.signup_msg_success), ZibeSnackType.SUCCESS) }
+        verify { snackBarManager.show(SIGNUP_MSG_SUCCESS, ZibeSnackType.SUCCESS) }
         assertEquals(SignUpUiEvent.NavigateToSplash, event)
         assertFalse(vm.uiState.value.isLoading)
     }
@@ -290,12 +294,12 @@ class SignUpViewModelTest {
 
     private fun buildVm(
         scenario: TestScenario = TestScenario(),
-        authSessionActions: AuthSessionActions = FakeAuthSessionActions { scenario },
+        userSessionActions: UserSessionActions = FakeUserSessionActions { scenario },
         sessionBootstrapper: SessionBootstrapper = FakeSessionBootstrapper { scenario },
         snackBarManager: SnackBarManager
         ): SignUpViewModel =
         SignUpViewModel(
-            authSessionActions = authSessionActions,
+            userSessionActions = userSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             snackBarManager = snackBarManager
         )

@@ -122,11 +122,10 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 favoritesViewModel.events.collect { event ->
                     when (event) {
-                        is FavoritesUiEvent.ShowSnack -> {
+                        is FavoritesUiEvent.ShowMessage -> {
                             UserMessageUtils.showSnack(
-                                root = binding.root,
-                                message = event.uiText.asString(requireContext())
-                            )
+                                binding.root,
+                                event.message)
                         }
                     }
                 }

@@ -24,21 +24,18 @@
     <!-- SignUp – textos animados -->
     <!-- ============================= -->
 
-    <string name="signup_animated_message_1">💬 Contá algo que te haga único — así otros pueden conectar con vos 😉</string>
-    <string name="signup_animated_message_2">🌟 Compartí quién sos, qué te gusta o qué te inspira</string>
-    <string name="signup_animated_message_3">⚡ Mostrate auténtico: tus intereses dicen más que mil palabras.</string>
-
-    <string name="your_data">Tus datos</string>
+    <string-array name="signup_animated_messages">
+        <item>💬 Contá algo que te haga único — así otros pueden conectar con vos 😉</item>
+        <item>🌟 Compartí quién sos, qué te gusta o qué te inspira</item>
+        <item>✨ Un toque personal hace que tu perfil destaque entre los demás</item>
+        <item>⚡ Mostrate auténtico: tus intereses dicen más que mil palabras.</item>
+    </string-array>
 
     <!-- ============================= -->
     <!-- SignUp – éxito / error -->
     <!-- ============================= -->
     <string name="signup_msg_success">Registro completado 🎉</string>
     <string name="signup_err_exception">El usuario no pudo ser creado.</string>
-    <string name="signup_facebook_cancelled">Inicio con Facebook cancelado</string>
-    <string name="signup_facebook_error_prefix">Error con Facebook: </string>
-    <string name="signup_facebook_error">Error con Facebook</string>
-
 
     <!-- ============================= -->
     <!-- Perfil -->
@@ -51,80 +48,67 @@
     <!-- Cámara -->
     <!-- ============================= -->
     <string name="msg_camera_error">No se pudo abrir la cámara</string>
-    <string name="msg_camera_permission_required">Necesitás otorgar permiso de cámara para sacar una foto.</string>
-
-    <!-- ============================= -->
-    <!-- Audio -->
-    <!-- ============================= -->
-
-    <string name="chat_error_create_audio">No se pudo crear el archivo de audio</string>
-    <string name="chat_error_open_audio">No se pudo abrir el archivo de audio</string>
-    <string name="chat_error_no_music_dir">No hay directorio de música disponible</string>
-    <string name="chat_error_upload_audio">No se pudo subir el audio</string>
+    <string name="msg_camera_permission_required">
+            Necesitás otorgar permiso de cámara para sacar una foto.
+        </string>
 
     <!-- ============================= -->
     <!-- Reset password -->
     <!-- ============================= -->
-    <string name="reset_password_email_instruction">Ingresá tu email para reestablecer la contraseña</string>
+    <string name="reset_password_email_instruction">
+            Por favor, ingresá tu email para reestablecer la contraseña
+        </string>
     <string name="reset_password_title">Reestablecimiento de contraseña</string>
     <string name="reset_password_accept">Enviar e-mail</string>
-    <string name="reset_password_success">Instrucciones enviadas a %1$s</string>
-    <string name="reset_password_error">No pudimos enviar el correo a %1$s. Verificá que esté correcto.</string>
+    <string name="reset_password_success">
+            Instrucciones enviadas a %1$s
+        </string>
+    <string name="reset_password_error">
+            No pudimos enviar el correo a %1$s. Verificá que esté correcto.
+        </string>
 
     <!-- ============================= -->
     <!-- Sala / Chat -->
     <!-- ============================= -->
     <string name="msg_user_joined">se unió a la sala</string>
     <string name="msg_user_leaved">abandonó la sala</string>
-    <string name="message_not_sent_user_blocked">Mensaje no enviado: Estás bloqueado por el usuario.</string>
+    <string name="message_not_sent_user_blocked">
+            Mensaje no enviado: Estás bloqueado por el usuario.
+        </string>
 
     <!-- ============================= -->
-    <!-- Errores generales -->
+    <!-- Errores generales / Auth -->
     <!-- ============================= -->
     <string name="err_network_connection">No hay conexión a Internet.</string>
-
-
-    <string name="err_zibe">Ocurrió un error inesperado. Intentá nuevamente.</string>
-    <string name="err_zibe_prefix">Error inesperado: </string>
-
-    <string name="error_no_connection_title">Sin conexión</string>
-    <string name="error_no_connection_message">Revisá tu conexión e intentá nuevamente.</string>
-
+    <string name="auth_err_user_not_found">Usuario no encontrado.</string>
+    <string name="auth_err_reauthentication_required">
+            Por seguridad, por favor volvé a iniciar sesión.
+        </string>
+    <string name="auth_err_invalid_credentials">
+            Email o contraseña incorrectos.
+        </string>
+    <string name="err_zibe">
+            Ocurrió un error inesperado. Intentá nuevamente.
+        </string>
 
     <!-- ============================= -->
     <!-- Cuenta -->
     <!-- ============================= -->
-    <string name="account_not_found">Cuenta no encontrada.</string>
-    <string name="account_delete_success">La cuenta ha sido eliminada.</string>
-    <string name="account_delete_cancelled">La cuenta se mantendrá activa.</string>
+    <string name="delete_account_success">La cuenta ha sido eliminada</string>
+    <string name="do_not_delete_account">La cuenta se mantendrá activa</string>
 
     <!-- ============================= -->
-    <!-- Signup – Auth - Errors -->
+    <!-- Signup – validaciones -->
     <!-- ============================= -->
-    <string name="err_email_required">Ingresá tu email</string>
-    <string name="err_password_required">Ingresá una contraseña</string>
-    <string name="signup_err_invalid_format_password">Contraseña demasiado débil. Usá 6 caracteres o más.</string>
-    <string name="signup_err_invalid_format_email">El formato de correo es inválido.</string>
-
-    <string name="signup_err_name_required">Ingresá tu nombre</string>
-    <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
-    <string name="err_under_age">Lo sentimos, debés ser mayor de 18 años para utilizar la App</string>
-    <string name="signup_err_mail_in_use">El correo electrónico ya está registrado.</string>
-
-    <string name="login_err_cancelled">Inicio de sesión cancelado</string>
-    <string name="login_err_no_credentials">No hay cuentas disponibles para iniciar sesión con Google</string>
-    <string name="login_err_token_parsing">No se pudo validar el token de Google</string>
-    <string name="login_err_generic">No se pudo iniciar sesión con Google</string>
-
-    <string name="signup_err_prefix">Error creando el usuario: </string>
-    <string name="signup_err_generic">El usuario no pudo ser creado</string>
-
-    <string name="auth_err_user_not_found">Usuario no encontrado.</string>
-    <string name="auth_err_reauthentication_required">Por seguridad, volvé a iniciar sesión.</string>
-    <string name="auth_err_invalid_credentials">Email o contraseña incorrectos.</string>
-
-    <string name="auth_err_incorrect_password">Contraseña incorrecta.</string>
-    <string name="auth_err_incorrect_email">Email incorrecto.</string>
+    <string name="err_email_required">Por favor, ingresá tu email</string>
+    <string name="err_password_required">Por favor, ingresá una contraseña</string>
+    <string name="signup_err_name_required">Por favor, ingresá tu nombre</string>
+    <string name="signup_err_birthday_required">
+            Por favor, ingresá tu fecha de nacimiento
+        </string>
+    <string name="err_under_age">
+            Lo sentimos, debés ser mayor de 18 años para utilizar la App
+        </string>
 
     <!-- ============================= -->
     <!-- Mensaje onboarding perfil -->
@@ -169,7 +153,7 @@
             Continuar desvinculará la cuenta asociada a %1$s.
         </string>
 
-    <string name="attention_title">Atención</string>
+    <string name="session_conflict_title">Atención</string>
     <string name="session_conflict_message">
             Se registró un inicio de sesión en otro dispositivo.\n
             ¿Qué deseas hacer?
@@ -188,25 +172,26 @@
     <string name="auth_delete_account">Eliminar mi cuenta</string>
     <string name="auth_forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="auth_or_use_account">o utilizá tu cuenta</string>
-    <string name="continue_with_facebook">Continuar con Facebook</string>
-    <string name="continue_with_google">Continuar con Google</string>
 
     <!-- ============================= -->
-    <!-- Action Buttons -->
+    <!-- Botones -->
     <!-- ============================= -->
-    <string name="action_start">Comenzar</string>
-    <string name="action_register">Registrarse</string>
-    <string name="action_next">Siguiente</string>
-    <string name="action_skip">Saltar</string>
-    <string name="action_back">Atrás</string>
-    <string name="action_accept">Aceptar</string>
-    <string name="action_cancel">Cancelar</string>
+    <string name="button_start">Comenzar</string>
+    <string name="button_register">Registrarse</string>
+    <string name="button_next">Siguiente</string>
+    <string name="button_skip">Saltar</string>
+    <string name="button_back">Atrás</string>
 
-    <string name="action_filter_on">Filtrar</string>
-    <string name="action_filter_off">Quitar filtro</string>
-    <string name="action_exit">Salir</string>
-    <string name="action_continue">Continuar</string>
-    <string name="action_retry">Reintentar</string>
+    <!-- ============================= -->
+    <!-- Diálogos -->
+    <!-- ============================= -->
+    <string name="dialog_accept">Aceptar</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_filter_on">Filtrar</string>
+    <string name="dialog_filter_off">Quitar filtro</string>
+    <string name="dialog_exit">Salir</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_continue">Continuar</string>
 
     <!-- ============================= -->
     <!-- Accesibilidad -->
@@ -231,43 +216,5 @@
 
     <string name="onboarding_page_3_title">Socializa</string>
     <string name="onboarding_page_3_body">Únete a salas de chat!</string>
-
-    <!-- ============================= -->
-    <!-- Chat -->
-    <!-- ============================= -->
-
-    <string name="chat_error_delete_messages">Error al eliminar mensajes</string>
-    <string name="chat_error_crop_image">Fallo al recortar la imagen.</string>
-    <string name="chat_error_upload_image">No se pudo subir la imagen</string>
-    <string name="chat_error_get_cropped_image">Error al obtener la imagen recortada</string>
-
-    <!-- ============================= -->
-    <!-- Settings -->
-    <!-- ============================= -->
-
-    <string name="settings_err_change_email_provider">No puedes cambiar el email porque iniciaste sesión con %1$s.</string>
-    <string name="settings_err_change_password_provider">No puedes cambiar la contraseña porque iniciaste sesión con %1$s.</string>
-
-    <string name="settings_group_notifications_on">Notificaciones grupales encendidas</string>
-    <string name="settings_group_notifications_off">Notificaciones grupales apagadas</string>
-    <string name="settings_individual_notifications_on">Notificaciones individuales encendidas</string>
-    <string name="settings_individual_notifications_off">Notificaciones individuales apagadas</string>
-
-    <string name="settings_err_incorrect_password">La contraseña es incorrecta</string>
-
-    <string name="settings_success_actualize_email">Email actualizado correctamente</string>
-    <string name="settings_success_actualize_password">Contraseña actualizada correctamente</string>
-
-    <string name="dialog_delete_account_title">¿Seguro quiere eliminar su cuenta?</string>
-    <string name="dialog_delete_account_message">Esta acción eliminará toda la información y no se podrá recuperar</string>
-    <string name="action_yes">Sí</string>
-
-    <string name="dialog_delete_account_final_message">Si elimina la cuenta, no podrá recuperar sus datos</string>
-    <string name="action_delete_account">Eliminar cuenta</string>
-
-    <string name="dialog_logout_title">Cerrar sesión</string>
-    <string name="dialog_logout_message">¿Seguro quieres cerrar sesión?</string>
-
-    <string name="enter_your_password">"Introduzca su contraseña"</string>
 
 </resources>

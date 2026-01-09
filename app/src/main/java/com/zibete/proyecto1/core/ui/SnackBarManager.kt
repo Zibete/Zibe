@@ -7,7 +7,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 data class ZibeSnackEvent(
-    val uiText: UiText,
+    val message: String,
     val type: ZibeSnackType
 )
 
@@ -17,7 +17,7 @@ class SnackBarManager @Inject constructor() {
     private val _events = MutableSharedFlow<ZibeSnackEvent>(extraBufferCapacity = 1)
     val events = _events.asSharedFlow()
 
-    fun show(uiText: UiText, type: ZibeSnackType) {
-        _events.tryEmit(ZibeSnackEvent(uiText = uiText, type = type))
+    fun show(message: String, type: ZibeSnackType) {
+        _events.tryEmit(ZibeSnackEvent(message = message, type = type))
     }
 }

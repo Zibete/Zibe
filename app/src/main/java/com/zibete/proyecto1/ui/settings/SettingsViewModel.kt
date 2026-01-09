@@ -8,19 +8,13 @@ import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
-import com.zibete.proyecto1.core.ui.SnackBarManager
-import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
-import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
+import com.zibete.proyecto1.data.UserSessionManager
+import com.zibete.proyecto1.data.UserSessionManager.AuthProvider
 import com.zibete.proyecto1.domain.session.LogoutUseCase
-import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.BufferOverflow
@@ -38,16 +32,16 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
+    private val userSessionManager: UserSessionManager,
     private val userRepository: UserRepository,
-    private val logoutUseCase: LogoutUseCase,
-    private val authSessionProvider: AuthSessionProvider,
-    private val snackBarManager: SnackBarManager
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
-    val currentUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
-        }
+    private val firebaseUser = userRepository.firebaseUser
+
+    // -------------------------
+    // UI STATE
+    // -------------------------
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
@@ -58,10 +52,18 @@ class SettingsViewModel @Inject constructor(
     )
     val events = _events.asSharedFlow()
 
+    // -------------------------
+    // INIT
+    // -------------------------
+
     init {
         refreshStaticState()
         observePreferences()
     }
+
+    // -------------------------
+    // OBSERVERS (DataStore → UI)
+    // -------------------------
 
     private fun observePreferences() {
         viewModelScope.launch {
@@ -77,15 +79,14 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // -------------------------
+    // UI ACTIONS
+    // -------------------------
+
     fun onChangeEmailHeaderClicked() {
         val state = _uiState.value
         if (!state.canChangeCredentials) {
-            onError(
-                UiText.StringRes(
-                    R.string.settings_err_change_email_provider,
-                    listOf(state.providerLabel ?: "")
-                )
-            )
+            emitSnack("No puedes cambiar el email porque iniciaste sesión con ${state.providerLabel}.")
             return
         }
 
@@ -100,12 +101,7 @@ class SettingsViewModel @Inject constructor(
     fun onChangePasswordHeaderClicked() {
         val state = _uiState.value
         if (!state.canChangeCredentials) {
-            onError(
-                UiText.StringRes(
-                    R.string.settings_err_change_password_provider,
-                    listOf(state.providerLabel ?: "")
-                )
-            )
+            emitSnack("No puedes cambiar la contraseña porque iniciaste sesión con ${state.providerLabel}.")
             return
         }
 
@@ -120,9 +116,9 @@ class SettingsViewModel @Inject constructor(
     fun onGroupNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferencesActions.setGroupNotifications(enabled)
-            showSnack(
-                if (enabled) UiText.StringRes(R.string.settings_group_notifications_on)
-                else UiText.StringRes(R.string.settings_group_notifications_off)
+            emitSnack(
+                if (enabled) "Notificaciones grupales encendidas"
+                else "Notificaciones grupales apagadas"
             )
         }
     }
@@ -130,10 +126,9 @@ class SettingsViewModel @Inject constructor(
     fun onIndividualNotificationsToggled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferencesActions.setIndividualNotifications(enabled)
-            showSnack(
-                uiText =
-                    if (enabled) UiText.StringRes(R.string.settings_individual_notifications_on)
-                    else UiText.StringRes(R.string.settings_individual_notifications_off)
+            emitSnack(
+                if (enabled) "Notificaciones individuales encendidas"
+                else "Notificaciones individuales apagadas"
             )
         }
     }
@@ -142,59 +137,50 @@ class SettingsViewModel @Inject constructor(
     // EMAIL / PASSWORD
     // -------------------------
 
-    fun updateEmail(password: String, email: String) {
+    fun updateEmail(password: String, newEmail: String) {
         viewModelScope.launch {
-
-            _uiState.update { it.copy(isLoading = true) }
-
             val state = _uiState.value
 
             if (!state.canChangeCredentials) {
-                onError(
-                    UiText.StringRes(
-                        R.string.settings_err_change_email_provider,
-                        listOf(state.providerLabel ?: "")
-                    )
-                )
+                emitSnack("No puedes cambiar el email porque iniciaste sesión con ${state.providerLabel}.")
                 return@launch
             }
 
-            if (!validateInputs(email, password)) return@launch
-
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                onError(UiText.StringRes(R.string.auth_err_incorrect_email))
+            if (password.isBlank() || newEmail.isBlank()) {
+                emitSnack("No deje campos vacíos")
                 return@launch
             }
+
+            if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+                emitSnack("Introduzca un e-mail válido")
+                return@launch
+            }
+
+            emitProgress("Cambiando email...")
 
             if (!reauthenticate(AuthProvider.PASSWORD, password)) {
-                onError(UiText.StringRes(R.string.auth_err_incorrect_password))
+                emitHideProgress()
+                emitSnack("La contraseña es incorrecta")
                 return@launch
             }
 
-            runCatching { currentUser.updateEmail(email).await() }
-                .onFailure { e ->
-                    onError(
-                        UiText.StringRes(
-                            R.string.err_zibe_prefix,
-                            args = listOf(e.message ?: "")
-                        )
-                    )
+            runCatching { firebaseUser.updateEmail(newEmail).await() }
+                .onFailure {
+                    emitHideProgress()
+                    emitSnack("Error al actualizar email")
                     return@launch
-                }.onSuccess {
-                    userRepository.updateEmail(email)
-                    userRepository.updateLocalProfile(
-                        name = userRepository.myUserName,
-                        photoUrl = userRepository.myProfilePhotoUrl,
-                        email = email
-                    )
-
-                    snackBarManager.show(
-                        uiText = UiText.StringRes(R.string.settings_success_actualize_email),
-                        type = ZibeSnackType.SUCCESS
-                    )
-
-                    onNavigateToSplash()
                 }
+
+            userRepository.updateEmail(newEmail)
+            userRepository.updateLocalProfile(
+                name = userRepository.myUserName,
+                photoUrl = userRepository.myProfilePhotoUrl,
+                email = newEmail
+            )
+
+            emitHideProgress()
+            emitSnack("Email actualizado correctamente")
+            emitNavigateToSplash()
         }
     }
 
@@ -203,42 +189,33 @@ class SettingsViewModel @Inject constructor(
             val state = _uiState.value
 
             if (!state.canChangeCredentials) {
-                onError(
-                    UiText.StringRes(
-                        R.string.settings_err_change_password_provider,
-                        listOf(state.providerLabel ?: "")
-                    )
-                )
+                emitSnack("No puedes cambiar la contraseña porque iniciaste sesión con ${state.providerLabel}.")
                 return@launch
             }
 
             if (password.isBlank() || newPassword.length < 6) {
-                onError(UiText.StringRes(R.string.signup_err_invalid_format_password))
+                emitSnack("La contraseña debe tener al menos seis caracteres")
                 return@launch
             }
+
+            emitProgress("Cambiando contraseña...")
 
             if (!reauthenticate(AuthProvider.PASSWORD, password)) {
-                onError(UiText.StringRes(R.string.auth_err_incorrect_password))
+                emitHideProgress()
+                emitSnack("La contraseña es incorrecta")
                 return@launch
             }
 
-            runCatching { currentUser.updatePassword(newPassword).await() }
-                .onFailure { e ->
-                    onError(
-                        UiText.StringRes(
-                            R.string.err_zibe_prefix,
-                            args = listOf(e.message ?: "")
-                        )
-                    )
+            runCatching { firebaseUser.updatePassword(newPassword).await() }
+                .onFailure {
+                    emitHideProgress()
+                    emitSnack("Error al actualizar contraseña")
                     return@launch
-                }.onSuccess {
-                    snackBarManager.show(
-                        uiText = UiText.StringRes(R.string.settings_success_actualize_password),
-                        type = ZibeSnackType.SUCCESS
-                    )
-                    onNavigateToSplash()
                 }
 
+            emitHideProgress()
+            emitSnack("Contraseña actualizada correctamente")
+            emitNavigateToSplash()
         }
     }
 
@@ -248,26 +225,24 @@ class SettingsViewModel @Inject constructor(
 
     fun deleteAccount(passwordIfNeeded: String?) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            emitProgress("Eliminando cuenta...")
 
-            val providerType = authSessionProvider.authProvider()
+            val providerType = userSessionManager.authProvider()
             val requiresPassword = providerType == AuthProvider.PASSWORD
 
             if (requiresPassword) {
                 if (passwordIfNeeded.isNullOrBlank() ||
                     !reauthenticate(AuthProvider.PASSWORD, passwordIfNeeded)
                 ) {
-                    showSnack(
-                        UiText.StringRes(R.string.settings_err_incorrect_password),
-                        ZibeSnackType.ERROR
-                    )
-                    _uiState.update { it.copy(isLoading = false) }
+                    emitHideProgress()
+                    emitSnack("La contraseña es incorrecta")
                     return@launch
                 }
             }
 
             // Eliminación: Se decide en Splash
-            _uiState.update { it.copy(isLoading = false) }
+
+            emitHideProgress()
             onLogoutRequested()
         }
     }
@@ -275,7 +250,7 @@ class SettingsViewModel @Inject constructor(
     fun onLogoutRequested() {
         viewModelScope.launch {
             logoutUseCase.execute()
-            onNavigateToSplash()
+            emitNavigateToSplash()
         }
     }
 
@@ -284,13 +259,13 @@ class SettingsViewModel @Inject constructor(
     // -------------------------
 
     private fun refreshStaticState() {
-        val providerType = authSessionProvider.authProvider()
-        val providerLabel = authSessionProvider.authProviderLabel()
+        val providerType = userSessionManager.authProvider()
+        val providerLabel = userSessionManager.authProviderLabel()
         val canChange = providerType == AuthProvider.PASSWORD
 
         val emailBase = userRepository.myEmail
             .takeIf { it.isNotBlank() }
-            ?: (currentUser.email ?: "")
+            ?: (firebaseUser.email ?: "")
 
         val display = buildString {
             append(emailBase)
@@ -313,7 +288,7 @@ class SettingsViewModel @Inject constructor(
     ): Boolean {
         val credential = when (authProvider) {
             AuthProvider.PASSWORD -> {
-                val email = currentUser.email.orEmpty()
+                val email = firebaseUser.email.orEmpty()
                 if (email.isBlank() || password.isNullOrBlank()) return false
                 EmailAuthProvider.getCredential(email, password)
             }
@@ -329,46 +304,29 @@ class SettingsViewModel @Inject constructor(
                 FacebookAuthProvider.getCredential(token)
             }
 
-            else -> return false
+            AuthProvider.OTHER -> return false
         }
 
         return runCatching {
-            currentUser.reauthenticate(credential).await()
+            firebaseUser.reauthenticate(credential).await()
             true
         }.getOrDefault(false)
     }
 
-    fun onError(uiText: UiText) {
-        _uiState.update { it.copy(isLoading = false) }
-        showSnack(uiText, ZibeSnackType.ERROR)
+    private fun emitSnack(message: String) {
+        _events.tryEmit(SettingsUiEvent.ShowSnack(message))
     }
 
-    private fun showSnack(
-        uiText: UiText,
-        type: ZibeSnackType = ZibeSnackType.INFO
-    ) {
-        _events.tryEmit(
-            SettingsUiEvent.ShowSnack(
-                uiText = uiText,
-                type = type,
-            )
-        )
+    private fun emitProgress(message: String) {
+        _events.tryEmit(SettingsUiEvent.ShowProgress(message))
     }
 
-    private fun validateInputs(email: String, password: String): Boolean {
-
-        fun warn(uiText: UiText): Boolean {
-            onError(uiText)
-            return false
-        }
-
-        if (email.isBlank()) return warn(uiText = UiText.StringRes(R.string.err_email_required))
-        if (password.isBlank()) return warn(uiText = UiText.StringRes(R.string.err_password_required))
-        return true
+    private fun emitHideProgress() {
+        _events.tryEmit(SettingsUiEvent.HideProgress)
     }
 
-    private fun onNavigateToSplash() {
-        _events.tryEmit(SettingsUiEvent.NavigateToSplash)
+    private fun emitNavigateToSplash() {
+        _events.tryEmit(SettingsUiEvent.NavigateToSplash(finish = true))
     }
 }
 

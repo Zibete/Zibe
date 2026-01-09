@@ -1,14 +1,11 @@
 package com.zibete.proyecto1.ui.settings
 
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.ui.components.ZibeSnackType
+import android.content.Intent
+import com.zibete.proyecto1.ui.auth.AuthUiEvent
 
 sealed interface SettingsUiEvent {
-
-    data class ShowSnack(
-        val uiText: UiText,
-        val type: ZibeSnackType
-    ) : SettingsUiEvent
-
-    data object NavigateToSplash: SettingsUiEvent
+    data class ShowSnack(val message: String) : SettingsUiEvent
+    data class ShowProgress(val message: String) : SettingsUiEvent
+    data object HideProgress : SettingsUiEvent
+    data class NavigateToSplash(val finish: Boolean = true) : SettingsUiEvent
 }

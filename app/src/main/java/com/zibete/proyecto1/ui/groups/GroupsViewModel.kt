@@ -2,15 +2,13 @@ package com.zibete.proyecto1.ui.groups
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.core.constants.MSG_USER_JOINED
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -47,57 +45,45 @@ class GroupsViewModel @Inject constructor(
                 val groupsList = groupRepository.getAllGroups()
                 val sorted = groupsList.sortedBy { it.name.lowercase() }
 
-                _uiState.update { it.copy(isLoading = false, groups = sorted) }
-            } catch (e: Exception) {
-                onError(
-                    UiText.StringRes(
-                        R.string.err_zibe_prefix,
-                        args = listOf(e.message ?: "")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        groups = sorted
                     )
-                )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, groups = emptyList()) }
+                _events.tryEmit(GroupsUiEvent.ShowMessage(e.message))
             }
         }
-    }
-
-    fun onError(
-        uiText: UiText
-    ) {
-        _uiState.update { it.copy(isLoading = false, groups = emptyList()) }
-        viewModelScope.launch { _events.emit(GroupsUiEvent.ShowSnack(uiText, ZibeSnackType.ERROR)) }
     }
 
     private suspend fun joinGroupAndNavigate(
         groupName: String,
         userName: String,
-        userType: Int,
-        message: String
+        userType: Int
     ) {
         userPreferencesActions.setGroupSession(groupName, userName, userType)
 
         viewModelScope.launch {
             groupRepository.saveUserInGroup(groupName, userName, userType)
-            groupRepository.sendGroupMessage(groupName, userName, userType, MSG_INFO, message)
+            groupRepository.sendGroupMessage(groupName, userName, userType, MSG_INFO, MSG_USER_JOINED)
             _events.emit(GroupsUiEvent.NavigateToGroupHost)
         }
     }
 
-    fun onJoinGroupRequested(groupName: String, nick: String, type: Int, message: String) {
+    fun onJoinGroupRequested(groupName: String, nick: String, type: Int) {
         viewModelScope.launch {
             val inUse = groupRepository.isNickInUse(groupName, nick)
             if (inUse) {
                 _events.emit(GroupsUiEvent.NickInUse(nick))
             } else {
-                joinGroupAndNavigate(
-                    groupName = groupName,
-                    userName = nick,
-                    userType = type,
-                    message = message
-                )
+                joinGroupAndNavigate(groupName, nick, type)
             }
         }
     }
 
-    fun onCreateNewGroupClicked(groupName: String, groupData: String, message: String) {
+    fun onCreateNewGroupClicked(groupName: String, groupData: String) {
         viewModelScope.launch {
             if (groupRepository.isGroupNameInUse(groupName)) {
                 _events.emit(GroupsUiEvent.GroupNameInUse(groupName))
@@ -113,8 +99,7 @@ class GroupsViewModel @Inject constructor(
             joinGroupAndNavigate(
                 groupName = groupName,
                 userName = userRepository.myUserName,
-                userType = PUBLIC_USER,
-                message = message
+                userType = PUBLIC_USER
             )
         }
     }

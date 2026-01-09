@@ -18,11 +18,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.databinding.ActivitySettingsBinding
 import com.zibete.proyecto1.databinding.DialogSetpasswordBinding
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.report.ReportActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -100,7 +98,7 @@ class SettingsActivity : AppCompatActivity() {
         btnSaveEmail.setOnClickListener {
             viewModel.updateEmail(
                 password = edtPasswordEmail.text?.toString().orEmpty(),
-                email = edtNewMail.text?.toString().orEmpty()
+                newEmail = edtNewMail.text?.toString().orEmpty()
             )
         }
         btnSavePass.setOnClickListener {
@@ -165,23 +163,33 @@ class SettingsActivity : AppCompatActivity() {
                     when (event) {
 
                         is SettingsUiEvent.ShowSnack -> {
-                            UserMessageUtils.showSnack(
-                                root = binding.root,
-                                message = event.uiText.asString(this@SettingsActivity)
+                            val snack = Snackbar.make(
+                                binding.root,
+                                event.message,
+                                Snackbar.LENGTH_LONG
                             )
+                            snack.show()
                         }
+
+                        is SettingsUiEvent.ShowProgress -> showProgressDialog(event.message)
+
+                        is SettingsUiEvent.HideProgress -> hideProgressDialog()
 
                         is SettingsUiEvent.NavigateToSplash -> {
                             startActivity(Intent(applicationContext, SplashActivity::class.java).apply {
                                 flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK }
                             )
-                            finish()
+                            if (event.finish) finish()
                         }
                     }
                 }
             }
         }
     }
+
+    // -------------------------
+    // UI helpers
+    // -------------------------
 
     private fun setEmailSectionExpanded(expanded: Boolean) = with(binding) {
         linearChangeEmail.isVisible = expanded
@@ -196,67 +204,44 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showLogoutDialog() {
-        val title = UiText.StringRes(R.string.dialog_logout_title).asString(this@SettingsActivity)
-        val message = UiText.StringRes(R.string.dialog_logout_message).asString(this@SettingsActivity)
-        val actionYes = UiText.StringRes(R.string.action_yes).asString(this@SettingsActivity)
-
-        UserMessageUtils.confirm(
-            context = this,
-            title = title,
-            message = message,
-            positiveText = actionYes,
-            onConfirm = { viewModel.onLogoutRequested() }
-        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Cerrar sesión")
+            .setMessage("¿Seguro quieres cerrar sesión?")
+            .setPositiveButton("Sí") { _, _ -> viewModel.onLogoutRequested() }
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .show()
     }
 
     private fun showDeleteAccountDialogFlow() {
-
-        val title = UiText.StringRes(R.string.dialog_delete_account_title).asString(this@SettingsActivity)
-        val message = UiText.StringRes(R.string.dialog_delete_account_message).asString(this@SettingsActivity)
-        val actionYes = UiText.StringRes(R.string.action_yes).asString(this@SettingsActivity)
-
-        UserMessageUtils.confirm(
-            context = this,
-            title = title,
-            message = message,
-            positiveText = actionYes,
-            onConfirm = {
-
-                val attentionTitle = UiText.StringRes(R.string.attention_title).asString(this@SettingsActivity)
-                val finalMessage = UiText.StringRes(R.string.dialog_delete_account_final_message).asString(this@SettingsActivity)
-                val deleteAccount = UiText.StringRes(R.string.action_delete_account).asString(this@SettingsActivity)
-
-                UserMessageUtils.confirm(
-                    context = this,
-                    title = attentionTitle,
-                    message = finalMessage,
-                    positiveText = actionYes,
-                    negativeText = deleteAccount,
-                    onConfirm = {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("¿Seguro quiere eliminar su cuenta?")
+            .setMessage("Esta acción eliminará toda la información y no se podrá recuperar")
+            .setPositiveButton("Sí") { _, _ ->
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("Atención")
+                    .setMessage("Si elimina la cuenta, no podrá recuperar sus datos")
+                    .setPositiveButton("Eliminar cuenta") { _, _ ->
                         if (latestState.requiresPasswordForSensitiveActions) {
                             showPasswordDialogForDelete()
                         } else {
                             viewModel.deleteAccount(passwordIfNeeded = null)
                         }
                     }
-                )
+                    .setNegativeButton(DIALOG_CANCEL, null)
+                    .show()
             }
-        )
+            .setNegativeButton(DIALOG_CANCEL, null)
+            .show()
     }
 
     private fun showPasswordDialogForDelete() {
-        val deleteAccount = UiText.StringRes(R.string.action_delete_account).asString(this@SettingsActivity)
-        val actionCancel = UiText.StringRes(R.string.action_cancel).asString(this@SettingsActivity)
-        val enterYourPassword = UiText.StringRes(R.string.enter_your_password).asString(this@SettingsActivity)
-
-
         val dialogBinding = DialogSetpasswordBinding.inflate(layoutInflater)
 
         val alert = MaterialAlertDialogBuilder(this)
-            .setTitle(enterYourPassword)
+            .setTitle("Introduzca su contraseña")
             .setView(dialogBinding.root)
-            .setPositiveButton(deleteAccount, null)
-            .setNegativeButton(actionCancel, null)
+            .setPositiveButton("Eliminar cuenta", null)
+            .setNegativeButton(DIALOG_CANCEL, null)
             .create()
 
         alert.setOnShowListener {

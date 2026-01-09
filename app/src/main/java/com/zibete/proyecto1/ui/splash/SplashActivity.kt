@@ -30,16 +30,20 @@ import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.OnboardingPage
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
+import com.zibete.proyecto1.core.constants.DIALOG_EXIT
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_MESSAGE
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.core.di.SnackBarEntryPoint
 import com.zibete.proyecto1.core.ui.SnackBarManager
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
@@ -122,29 +126,38 @@ class SplashActivity : ComponentActivity() {
 
                             AuthScreen(
                                 deleteUser = uiState.deleteUser,
+
                                 onLogin = { email, password ->
                                     authViewModel.onEmailLogin(email, password)
                                 },
+
                                 onNavigateToSignUp = {
                                     navController.navigate(SIGNUP_SCREEN)
                                 },
+
                                 onResetPassword = { email ->
                                     authViewModel.onResetPassword(email)
                                 },
+
                                 onGoogleClick = {
                                     authViewModel.onGoogleClick(this@SplashActivity)
                                 },
+
                                 onFacebookClick = {
                                     facebookLauncher.launch(listOf("public_profile", "email"))
                                 },
+
                                 onDoNotDelete = {
                                     authViewModel.onDoNotDeleteAccountClicked()
                                 },
+
                                 onDeleteAccount = {
                                     authViewModel.onDeleteAccountClicked()
                                 },
+
                                 isLoading = uiState.isLoading,
                                 authEvents = authViewModel.events,
+
                                 onNavigateToSplash = {
                                     navController.navigate(SPLASH_SCREEN) {
                                         popUpTo(AUTH_SCREEN) { inclusive = true }
@@ -188,6 +201,7 @@ class SplashActivity : ComponentActivity() {
                                         popUpTo(PERMISSION_SCREEN) { inclusive = true }
                                     }
                                 },
+
                                 onPermissionDenied = {
                                     splashViewModel.onLogoutRequested()
                                 }
@@ -207,14 +221,14 @@ class SplashActivity : ComponentActivity() {
 
                     if (showSessionConflictDialog) {
                         ZibeDialog(
-                            title = getString(R.string.attention_title),
-                            textContent = { Text(getString(R.string.session_conflict_message)) },
-                            confirmText = getString(R.string.session_conflict_keep_here),
+                            title = SESSION_CONFLICT_TITLE,
+                            textContent = { Text(SESSION_CONFLICT_MESSAGE) },
+                            confirmText = SESSION_CONFLICT_KEEP_HERE,
                             onConfirm = {
                                 coroutineScope.launch { splashViewModel.onSessionConflictConfirmed() }
                                 showSessionConflictDialog = false
                             },
-                            dismissText = getString(R.string.session_conflict_logout),
+                            dismissText = SESSION_CONFLICT_LOGOUT,
                             onDismiss = {
                                 coroutineScope.launch { splashViewModel.onSessionConflictCancelled() }
                                 showSessionConflictDialog = false
@@ -225,14 +239,14 @@ class SplashActivity : ComponentActivity() {
                     // NO INTERNET DIALOG
                     if (noInternetDialog) {
                         ZibeDialog(
-                            title = getString(R.string.error_no_connection_title),
-                            textContent = { Text(getString(R.string.error_no_connection_message)) },
-                            confirmText = getString(R.string.action_retry),
+                            title = "Sin conexión",
+                            textContent = { Text("Revisá tu conexión e intentá nuevamente.") },
+                            confirmText = "Reintentar",
                             onConfirm = {
                                 noInternetDialog = false
                                 coroutineScope.launch { splashViewModel.start(this@SplashActivity, isRetry = true) }
                             },
-                            dismissText = getString(R.string.action_exit),
+                            dismissText = DIALOG_EXIT,
                             onDismiss = {
                                 noInternetDialog = false
                                 finish()
@@ -241,7 +255,9 @@ class SplashActivity : ComponentActivity() {
                     }
                 }
 
-                // ====== EVENTOS DEL SNACKBARMANAGER ======
+
+
+
                 val context = LocalContext.current
                 val snackBarManager: SnackBarManager = remember {
                     EntryPointAccessors.fromApplication(
@@ -251,11 +267,8 @@ class SplashActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(Unit) {
-                    snackBarManager.events.collect { event ->
-                        snackHostState.showZibeMessage(
-                            message = event.uiText.asString(context),
-                            type = event.type
-                        )
+                    snackBarManager.events.collect { e ->
+                        snackHostState.showZibeMessage(e.type, e.message)
                     }
                 }
 
@@ -265,10 +278,7 @@ class SplashActivity : ComponentActivity() {
                         when (event) {
 
                             is SplashUiEvent.ShowSnack ->
-                                snackHostState.showZibeMessage(
-                                    message = event.message.asString(context),
-                                    type = event.type
-                                )
+                                snackHostState.showZibeMessage(event.type, event.message)
 
                             is SplashUiEvent.ShowNoInternetDialog ->
                                 noInternetDialog = true
@@ -319,13 +329,12 @@ class SplashActivity : ComponentActivity() {
             }
 
             override fun onCancel() {
-                vm.showMessage(UiText.StringRes(R.string.signup_facebook_cancelled), ZibeSnackType.INFO)
+                vm.showMessage("Inicio con Facebook cancelado", ZibeSnackType.INFO)
             }
 
             override fun onError(error: FacebookException) {
-                vm.showMessage(getAuthErrorMessage(error), ZibeSnackType.ERROR)
+                vm.showMessage("ShowErrorDialog con Facebook: ${error.localizedMessage}", ZibeSnackType.ERROR)
             }
-
         })
     }
 }

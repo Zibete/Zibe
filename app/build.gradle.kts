@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
@@ -8,8 +6,6 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
-
-
 
 android {
     namespace = "com.zibete.proyecto1"
@@ -24,10 +20,6 @@ android {
 
         multiDexEnabled = true
         testInstrumentationRunner = "com.zibete.proyecto1.HiltTestRunner"
-
-        val props = Properties()
-        props.load(project.rootProject.file("local.properties").inputStream())
-        buildConfigField("String", "WEB_CLIENT_ID", "\"${props.getProperty("WEB_CLIENT_ID")}\"")
     }
 
     testOptions {
@@ -37,7 +29,6 @@ android {
     buildFeatures {
         viewBinding = true
         compose = true
-        buildConfig = true
     }
 
     compileOptions {
@@ -78,7 +69,6 @@ dependencies {
     implementation("androidx.viewpager:viewpager:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.annotation:annotation:1.9.1")
 
     // Navigation
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")

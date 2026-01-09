@@ -3,23 +3,21 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseUser
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
-import com.zibete.proyecto1.core.ui.SnackBarManager
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
-import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.constants.MSG_PROFILE_LOAD_ERROR
+import com.zibete.proyecto1.core.constants.MSG_PROFILE_SAVED
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,21 +30,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
-    private val authSessionProvider: AuthSessionProvider,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val userRepositoryProvider: UserRepositoryProvider,
-    private val updateProfileUseCase: UpdateProfileUseCase,
-    private val snackBarManager: SnackBarManager
+    private val updateProfileUseCase: UpdateProfileUseCase
 ) : ViewModel() {
 
-    val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
-        }
-
-    val myUid: String
-        get() = firebaseUser.uid
+    private val myUid: String get() = userRepositoryProvider.myUid
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -66,14 +56,14 @@ class EditProfileViewModel @Inject constructor(
 
                 if (u == null) {
                     _uiState.update { it.copy(isLoading = false) }
-                    onError(UiText.StringRes(R.string.msg_profile_load_error))
+                    onError(MSG_PROFILE_LOAD_ERROR)
                     return@runCatching
                 }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        name = u.name,
+                        displayName = u.name,
                         description = u.description,
                         birthDate = u.birthDate,
                         age = ageCalculator(u.birthDate),
@@ -84,19 +74,15 @@ class EditProfileViewModel @Inject constructor(
                         hasBirthDate = u.birthDate.isNotBlank()
                     )
                 }
-            }.onFailure {
-                onError(
-                    UiText.StringRes(
-                        R.string.err_zibe_prefix,
-                        args = listOf(it.message ?: "")
-                    )
-                )
+            }.onFailure { it ->
+                _uiState.update { it.copy(isLoading = false) }
+                onError(it.message ?: ERR_ZIBE)
             }
         }
     }
 
     fun onNameChanged(value: String) {
-        _uiState.update { it.copy(name = value, saveEnabled = true) }
+        _uiState.update { it.copy(displayName = value, saveEnabled = true) }
     }
 
     fun onDescriptionChanged(value: String) {
@@ -151,24 +137,31 @@ class EditProfileViewModel @Inject constructor(
         viewModelScope.launch {
 
             val state = _uiState.value
-            val birthDate = state.birthDate.trim()
+            val newBirthDate = state.birthDate.trim()
 
-            if (!validateInputs(state.name, birthDate)) return@launch
-            _uiState.update { it.copy(isLoading = true, isSaving = true) }
+            if (newBirthDate.isBlank()) {
+                onError(SIGNUP_ERR_BIRTHDAY_REQUIRED)
+                return@launch
+            }
 
-            val calculatedAge = ageCalculator(birthDate)
+            val calculatedAge = ageCalculator(newBirthDate)
+
+            if (calculatedAge < 18) {
+                onError(ERR_UNDER_AGE)
+                return@launch
+            }
+
+            _uiState.update { it.copy(isSaving = true) }
 
             updateProfileUseCase.execute(
-                newName = state.name.trim(),
+                newName = state.displayName.trim(),
                 newBirthDate = state.birthDate.trim(),
                 newDescription = state.description.trim(),
                 age = calculatedAge,
                 originalPhotoUrl = state.photoUrl,
                 photoPreviewUri = state.photoPreviewUri,
                 shouldDeletePhoto = state.deletePhoto
-            ).onFailure { e ->
-                handleError(e)
-            }.onSuccess {
+            ).onSuccess {
                 _uiState.update { it.copy(
                     isSaving = false,
                     photoUrl = it.photoUrl,
@@ -176,10 +169,10 @@ class EditProfileViewModel @Inject constructor(
                     deletePhoto = false,
                     saveEnabled = false
                 ) }
-
-                snackBarManager.show(UiText.StringRes(R.string.msg_profile_saved), ZibeSnackType.SUCCESS)
-
-                onBackToMain()
+                onBackToMain(MSG_PROFILE_SAVED)
+            }.onFailure { e ->
+                _uiState.update { it.copy(isSaving = false) }
+                onError(getAuthErrorMessage(e))
             }
         }
     }
@@ -190,46 +183,15 @@ class EditProfileViewModel @Inject constructor(
             ?.let { iso -> isoToUiDate(iso) }
             .orEmpty()
 
-    fun onBackToMain() {
+    fun onBackToMain(message: String = "") {
         viewModelScope.launch {
-            _events.emit(EditProfileUiEvent.OnBackToMain)
+            _events.emit(EditProfileUiEvent.OnBackToMain(message))
         }
     }
 
-    private fun handleError(e: Throwable) {
-        val uiText = getAuthErrorMessage(e)
-        onError(uiText)
+    fun onError(message: String) {
+        _events.tryEmit(EditProfileUiEvent.ShowMessage(
+            message = message,
+            type = ZibeSnackType.ERROR))
     }
-
-    fun onError(uiText: UiText) {
-        _events.tryEmit(
-            EditProfileUiEvent.ShowSnack(
-                uiText = uiText,
-                type = ZibeSnackType.ERROR
-            )
-        )
-        _uiState.update { it.copy(
-            isSaving = false,
-            isLoading = false
-        ) }
-    }
-
-    private suspend fun validateInputs(
-        name: String,
-        birthDate: String
-    ): Boolean {
-
-        suspend fun warn(uiText: UiText): Boolean {
-            onError(uiText)
-            return false
-        }
-
-        if (name.isBlank()) return warn(UiText.StringRes(R.string.signup_err_name_required))
-        if (birthDate.isBlank()) return warn(UiText.StringRes(R.string.signup_err_birthdate_required))
-        if (!isAdult(birthDate)) return warn(UiText.StringRes(R.string.err_under_age))
-
-        return true
-    }
-
-
 }

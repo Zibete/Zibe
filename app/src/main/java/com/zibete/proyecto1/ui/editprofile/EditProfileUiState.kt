@@ -6,7 +6,7 @@ data class EditProfileUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
 
-    val name: String = "",
+    val displayName: String = "",
     val description: String = "",
     val birthDate: String = "",
     val age: Int? = null,

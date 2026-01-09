@@ -29,8 +29,6 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -50,14 +48,17 @@ data class DeleteResult(
     val chatRemoved: Boolean
 )
 
+// ✅ Nuevo: events con item (incluye id)
+
+
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val authSessionProvider: AuthSessionProvider,
+    private val firebaseAuth: FirebaseAuth
 ) {
 
     val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
+        get() = checkNotNull(firebaseAuth.currentUser) {
+            "User must be logged in to access this property"
         }
 
     val myUid: String
@@ -144,7 +145,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getConversation(
-        firstUid: String = myUid,
+        firstUid: String,
         secondUid: String,
         nodeType: String
     ): Conversation? {
@@ -449,35 +450,5 @@ class ChatRepository @Inject constructor(
                 msgSnap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_RECEIVED).await()
             }
         }
-    }
-
-
-    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
-        val chatId = getChatId(otherUid)
-        val refChat = firebaseRefsContainer.refChatsRoot
-            .child(nodeType)
-            .child(chatId)
-
-        val photos = mutableListOf<String>()
-
-        fun collectFrom(snapshot: DataSnapshot) {
-            snapshot.children.forEach { msgSnap ->
-                val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java)
-                val senderUid = msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
-                val content = msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java)
-
-                // mantenemos tu regla: fotos enviadas por el otro
-                if (!senderUid.isNullOrBlank() && senderUid != myUid) {
-                    if (type == MSG_PHOTO || type == MSG_PHOTO_SENDER_DLT) {
-                        if (!content.isNullOrEmpty()) photos.add(content)
-                    }
-                }
-            }
-        }
-
-        val snap = refChat.get().await()
-        if (snap.exists()) collectFrom(snap)
-
-        return photos.distinct()
     }
 }
