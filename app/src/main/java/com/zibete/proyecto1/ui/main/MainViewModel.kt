@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
@@ -12,8 +15,9 @@ import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
+import com.zibete.proyecto1.domain.session.ExitGroupUseCase
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +42,7 @@ enum class CurrentScreen {
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val userSessionManager: UserSessionManager,
+    private val exitGroupUseCase: ExitGroupUseCase,
     private val userRepository: UserRepository,
     private val groupRepository: GroupRepository,
     private val sessionRepository: SessionRepository,
@@ -57,12 +61,12 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _navEvents = MutableSharedFlow<MainNavEvent>()
-    val navEvents: SharedFlow<MainNavEvent> = _navEvents.asSharedFlow()
+    private val _uiEvents = MutableSharedFlow<MainUiEvent>()
+    val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
 
     private var installIdListener: ValueEventListener? = null
 
-    fun startPresence(){
+    fun startPresence() {
         viewModelScope.launch {
             presenceRepository.startPresence()
         }
@@ -149,15 +153,15 @@ class MainViewModel @Inject constructor(
             myInstallId = installId
         ) {
             viewModelScope.launch {
-                _navEvents.emit(MainNavEvent.NavigateToSplash(sessionConflict = true))
+                _uiEvents.emit(MainUiEvent.NavigateToSplash(sessionConflict = true))
             }
         }
     }
 
     // --- FUNCIONES DE UI ---
 
-    fun emit(event: MainNavEvent) {
-        viewModelScope.launch { _navEvents.emit(event) }
+    fun emit(event: MainUiEvent) {
+        viewModelScope.launch { _uiEvents.emit(event) }
     }
 
     fun setScreen(screen: CurrentScreen) {
@@ -190,7 +194,7 @@ class MainViewModel @Inject constructor(
     fun onLogoutConfirmed() {
         viewModelScope.launch {
             logoutUseCase.execute()
-            _navEvents.emit(MainNavEvent.NavigateToSplash())
+            _uiEvents.emit(MainUiEvent.NavigateToSplash())
         }
     }
 
@@ -201,12 +205,29 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun onExitGroupConfirmed() {
+    fun onExitGroupConfirmed(message: String) {
         viewModelScope.launch {
-            userSessionManager.performExitGroupDataCleanup()
-            setScreen(CurrentScreen.GROUPS)
-            _navEvents.emit(MainNavEvent.ToGroupsAfterExit)
+            exitGroupUseCase.performExitGroupDataCleanup(message)
+                .onSuccess {
+                    setScreen(CurrentScreen.GROUPS)
+                    _uiEvents.emit(MainUiEvent.ToGroupsAfterExit)
+                }
+                .onFailure { e ->
+                    UiText.StringRes(
+                        R.string.err_zibe_prefix,
+                        args = listOf(e.message ?: "")
+                    )
+                }
         }
+    }
+
+    suspend fun onError(message: UiText) {
+        _uiEvents.emit(
+            MainUiEvent.ShowSnack(
+                uiText = message,
+                type = ZibeSnackType.ERROR
+            )
+        )
     }
 
     fun onBottomItemSelected(itemId: Int) {
@@ -222,7 +243,7 @@ class MainViewModel @Inject constructor(
                 showBottomNav(true)
 
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.ToUsers)
+                    _uiEvents.emit(MainUiEvent.ToUsers)
                 }
             }
 
@@ -239,7 +260,7 @@ class MainViewModel @Inject constructor(
                 showBottomNav(true)
 
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.ToFavorites)
+                    _uiEvents.emit(MainUiEvent.ToFavorites)
                 }
             }
 
@@ -258,7 +279,7 @@ class MainViewModel @Inject constructor(
         showBottomNav(true)
 
         viewModelScope.launch {
-            _navEvents.emit(MainNavEvent.ToChat)
+            _uiEvents.emit(MainUiEvent.ToChat)
         }
     }
 
@@ -282,15 +303,15 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun toGroupHost(){
+    fun toGroupHost() {
         viewModelScope.launch {
-            _navEvents.emit(MainNavEvent.ToGroupHost)
+            _uiEvents.emit(MainUiEvent.ToGroupHost)
         }
     }
 
-    fun toGroupsSelect(){
+    fun toGroupsSelect() {
         viewModelScope.launch {
-            _navEvents.emit(MainNavEvent.ToGroupsSelect)
+            _uiEvents.emit(MainUiEvent.ToGroupsSelect)
         }
     }
 
@@ -303,7 +324,7 @@ class MainViewModel @Inject constructor(
         showLayoutSettings(false)
 
         viewModelScope.launch {
-            _navEvents.emit(MainNavEvent.ToEditProfile)
+            _uiEvents.emit(MainUiEvent.ToEditProfile)
         }
     }
 
@@ -312,22 +333,22 @@ class MainViewModel @Inject constructor(
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.BackFromEditProfile())
+                    _uiEvents.emit(MainUiEvent.BackFromEditProfile)
                 }
             }
 
             CurrentScreen.CHAT,
             CurrentScreen.USERS,
             CurrentScreen.FAVORITES,
-            CurrentScreen.GROUPS-> {
+            CurrentScreen.GROUPS -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.BackExitAppOrCloseSearch)
+                    _uiEvents.emit(MainUiEvent.BackExitAppOrCloseSearch)
                 }
             }
 
             else -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.BackToChat)
+                    _uiEvents.emit(MainUiEvent.BackToChat)
                 }
             }
         }
@@ -345,7 +366,7 @@ class MainViewModel @Inject constructor(
 
             R.id.action_settings -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.ToSettings)
+                    _uiEvents.emit(MainUiEvent.ToSettings)
                 }
             }
 
@@ -355,7 +376,7 @@ class MainViewModel @Inject constructor(
 
             R.id.action_exit_group -> {
                 viewModelScope.launch {
-                    _navEvents.emit(MainNavEvent.ConfirmExitGroup)
+                    _uiEvents.emit(MainUiEvent.ConfirmExitGroup)
                 }
             }
         }

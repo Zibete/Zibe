@@ -95,4 +95,10 @@ object TimeUtils {
 
     fun now(): Long = System.currentTimeMillis()
 
+    fun isAdult(birthStr: String): Boolean = try {
+        ageCalculator(birthStr) >= 18
+    } catch (_: Exception) {
+        false
+    }
+
 }

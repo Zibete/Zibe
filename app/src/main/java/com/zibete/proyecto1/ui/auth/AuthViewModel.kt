@@ -6,21 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
-import com.zibete.proyecto1.core.constants.DELETE_ACCOUNT_SUCCESS
-import com.zibete.proyecto1.core.constants.DO_NOT_DELETE_ACCOUNT
-import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
-import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
-import com.zibete.proyecto1.core.constants.resetPasswordError
-import com.zibete.proyecto1.core.constants.resetPasswordSuccess
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
+import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -35,8 +29,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val userSessionProvider: UserSessionProvider,
-    private val userSessionActions: UserSessionActions,
+    private val authSessionProvider: AuthSessionProvider,
+    private val authSessionActions: AuthSessionActions,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val deleteAccountUseCase: DeleteAccountUseCase,
@@ -64,7 +58,7 @@ class AuthViewModel @Inject constructor(
 
             _uiState.update { it.copy(isLoading = true) }
 
-            userSessionActions.signInWithEmail(
+            authSessionActions.signInWithEmail(
                 email = email.trim(),
                 password = password.trim()
             ).onSuccess {
@@ -86,16 +80,19 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            userSessionActions.sendPasswordResetEmail(
+            authSessionActions.sendPasswordResetEmail(
                 email = email.trim()
             ).onSuccess {
                 showMessage(
-                    message = resetPasswordSuccess(email),
+                    message = UiText.StringRes(
+                        R.string.reset_password_success,
+                        args = listOf(email)
+                    ),
                     type = ZibeSnackType.SUCCESS
                 )
             }.onFailure {
                 showMessage(
-                    message = resetPasswordError(email),
+                    message = UiText.StringRes(R.string.reset_password_error, args = listOf(email)),
                     type = ZibeSnackType.ERROR
                 )
             }
@@ -118,7 +115,7 @@ class AuthViewModel @Inject constructor(
                 .onSuccess { idToken ->
                     val credential = GoogleAuthProvider.getCredential(idToken!!, null)
 
-                    userSessionActions.signInWithCredential(credential)
+                    authSessionActions.signInWithCredential(credential)
                         .onSuccess { handleAuthSuccess() }
                         .onFailure { e ->
                             showMessage(
@@ -138,7 +135,7 @@ class AuthViewModel @Inject constructor(
 
             val facebookCredential = FacebookAuthProvider.getCredential(token.token)
 
-            userSessionActions.signInWithCredential(facebookCredential)
+            authSessionActions.signInWithCredential(facebookCredential)
                 .onSuccess { handleAuthSuccess() }
                 .onFailure { e ->
                     showMessage(
@@ -158,7 +155,7 @@ class AuthViewModel @Inject constructor(
             deleteAccountUseCase.execute()
                 .onSuccess {
                     showMessage(
-                        message = DELETE_ACCOUNT_SUCCESS,
+                        message = UiText.StringRes(R.string.account_delete_success),
                         type = ZibeSnackType.INFO,
                         stopLoading = false
                     )
@@ -185,7 +182,7 @@ class AuthViewModel @Inject constructor(
 
     fun onDoNotDeleteAccountClicked() {
         showMessage(
-            message = DO_NOT_DELETE_ACCOUNT,
+            message = UiText.StringRes(R.string.account_delete_cancelled),
             type = ZibeSnackType.INFO,
             stopLoading = false
         )
@@ -202,9 +199,9 @@ class AuthViewModel @Inject constructor(
     // ================= SUCCESS ROUTING =================
 
     private fun handleAuthSuccess() {
-        val user = userSessionProvider.currentUser
+        val user = authSessionProvider.currentUser
         if (user == null) {
-            showMessage(ERR_ZIBE, ZibeSnackType.ERROR)
+            showMessage(message = UiText.StringRes(R.string.err_zibe), ZibeSnackType.ERROR)
             return
         }
 
@@ -217,7 +214,7 @@ class AuthViewModel @Inject constructor(
     // ================= HELPERS =================
 
     fun showMessage(
-        message: String,
+        message: UiText,
         type: ZibeSnackType,
         stopLoading: Boolean = true
     ) {
@@ -227,13 +224,13 @@ class AuthViewModel @Inject constructor(
 
     private fun validateInputs(email: String, password: String): Boolean {
 
-        fun warn(msg: String): Boolean {
-            showMessage(msg, ZibeSnackType.WARNING, stopLoading = false)
+        fun warn(message: UiText): Boolean {
+            showMessage(message = message, type = ZibeSnackType.WARNING, stopLoading = false)
             return false
         }
 
-        if (email.isBlank()) return warn(ERR_EMAIL_REQUIRED)
-        if (password.isBlank()) return warn(ERR_PASSWORD_REQUIRED)
+        if (email.isBlank()) return warn(message = UiText.StringRes(R.string.err_email_required))
+        if (password.isBlank()) return warn(message = UiText.StringRes(R.string.err_password_required))
         return true
     }
 }

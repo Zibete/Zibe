@@ -1,14 +1,14 @@
 package com.zibete.proyecto1.domain.profile
 
 import android.net.Uri
-import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.data.auth.AuthSessionActions
 import javax.inject.Inject
 
 interface UpdateProfileUseCase {
@@ -26,7 +26,7 @@ interface UpdateProfileUseCase {
 class DefaultUpdateProfileUseCase @Inject constructor(
     private val userRepositoryActions: UserRepositoryActions,
     private val userRepositoryProvider: UserRepositoryProvider,
-    private val userSessionActions: UserSessionActions
+    private val authSessionActions: AuthSessionActions
 ) : UpdateProfileUseCase {
 
     override suspend fun execute(
@@ -64,7 +64,6 @@ class DefaultUpdateProfileUseCase @Inject constructor(
             }
 
             userRepositoryActions.updateUserFields(updates)
-            userSessionActions.updateAuthProfile(newName, finalPhotoUrl).getOrThrow()
+            authSessionActions.updateAuthProfile(newName, finalPhotoUrl).getOrThrow()
         }
-
     }

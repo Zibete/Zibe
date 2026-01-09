@@ -2,15 +2,11 @@ package com.zibete.proyecto1.ui.splash
 
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.zibete.proyecto1.core.constants.BUTTON_START
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
-import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.DIALOG_OK
-import com.zibete.proyecto1.core.constants.PERMISSION_DENIED_TITLE
-import com.zibete.proyecto1.core.constants.PERMISSION_RATIONALE_TITLE
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestPermissionConfig
@@ -20,10 +16,18 @@ import com.zibete.proyecto1.testing.waitText
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class PermissionRoutingAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
+
+    val actionStart = context.getString(R.string.action_start)
+    val actionAccept = context.getString(R.string.action_accept)
+    val actionCancel = context.getString(R.string.action_cancel)
+    val rationaleTitle = context.getString(R.string.permission_rationale_title)
+    val deniedTitle = context.getString(R.string.permission_denied_title)
 
     @Before
     fun resetPermissionConfig() {
@@ -47,7 +51,7 @@ class PermissionRoutingAndroidTest :
 
         waitTag(PERMISSION_SCREEN, composeRule)
 
-        composeRule.onNodeWithText(BUTTON_START).performClick()
+        composeRule.onNodeWithText(actionStart).performClick()
 
         waitTag(SPLASH_SCREEN, composeRule)
     }
@@ -67,10 +71,10 @@ class PermissionRoutingAndroidTest :
         )
 
         waitTag(PERMISSION_SCREEN, composeRule)
-        composeRule.onNodeWithText(BUTTON_START).performClick()
+        composeRule.onNodeWithText(actionStart).performClick()
 
-        waitText(PERMISSION_RATIONALE_TITLE, composeRule)
-        composeRule.onNodeWithText(DIALOG_ACCEPT).performClick()
+        waitText(rationaleTitle, composeRule)
+        composeRule.onNodeWithText(actionAccept).performClick()
 
         waitTag(SPLASH_SCREEN, composeRule)
     }
@@ -90,13 +94,13 @@ class PermissionRoutingAndroidTest :
         )
 
         waitTag(PERMISSION_SCREEN, composeRule)
-        composeRule.onNodeWithText(BUTTON_START).performClick()
+        composeRule.onNodeWithText(actionStart).performClick()
 
-        waitText(PERMISSION_RATIONALE_TITLE, composeRule)
-        composeRule.onNodeWithText(DIALOG_CANCEL).performClick()
+        waitText(rationaleTitle, composeRule)
+        composeRule.onNodeWithText(actionCancel).performClick()
 
-        composeRule.onNodeWithText(PERMISSION_RATIONALE_TITLE).assertDoesNotExist()
-        composeRule.onNodeWithText(BUTTON_START).assertExists()
+        composeRule.onNodeWithText(rationaleTitle).assertDoesNotExist()
+        composeRule.onNodeWithText(actionStart).assertExists()
     }
 
     @Test
@@ -114,10 +118,10 @@ class PermissionRoutingAndroidTest :
         )
 
         waitTag(PERMISSION_SCREEN, composeRule)
-        composeRule.onNodeWithText(BUTTON_START).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.action_start)).performClick()
 
-        waitText(PERMISSION_DENIED_TITLE, composeRule)
-        composeRule.onNodeWithText(DIALOG_OK).performClick()
+        waitText(deniedTitle, composeRule)
+        composeRule.onNodeWithText(actionAccept).performClick()
 
         waitTag(AUTH_SCREEN, composeRule)
     }
@@ -137,15 +141,14 @@ class PermissionRoutingAndroidTest :
         )
 
         waitTag(PERMISSION_SCREEN, composeRule)
-        composeRule.onNodeWithText(BUTTON_START).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.action_start)).performClick()
 
-        waitText(PERMISSION_RATIONALE_TITLE, composeRule)
-        composeRule.onNodeWithText(DIALOG_ACCEPT).performClick()
+        waitText(rationaleTitle, composeRule)
+        composeRule.onNodeWithText(actionAccept).performClick()
 
-        waitText(PERMISSION_DENIED_TITLE, composeRule)
-        composeRule.onNodeWithText(DIALOG_OK).performClick()
+        waitText(deniedTitle, composeRule)
+        composeRule.onNodeWithText(actionAccept).performClick()
 
         waitTag(AUTH_SCREEN, composeRule)
     }
-
 }

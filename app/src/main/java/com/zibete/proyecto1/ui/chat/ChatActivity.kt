@@ -60,7 +60,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -380,7 +380,10 @@ class ChatActivity : BaseChatSessionActivity() {
     override fun onDestroy() {
         super.onDestroy()
         AdapterChat.mediaPlayer?.let { player ->
-            try { player.stop() } catch (_: Exception) {}
+            try {
+                player.stop()
+            } catch (_: Exception) {
+            }
             AdapterChat.mediaPlayer = null
         }
         chatViewModel.onThreadScreenStopped()
@@ -408,14 +411,17 @@ class ChatActivity : BaseChatSessionActivity() {
                 chatViewModel.onToggleNotificationsClicked()
                 return true
             }
+
             R.id.action_bloq -> {
                 chatViewModel.onBlockClicked()
                 return true
             }
+
             R.id.action_desbloq -> {
                 chatViewModel.onUnblockClicked()
                 return true
             }
+
             R.id.action_delete_chat -> {
                 chatViewModel.onDeleteChatClicked()
                 return true
@@ -463,7 +469,12 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun ensurePermissions(perms: Array<String>, onGranted: () -> Unit) {
-        val need = perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        val need = perms.any {
+            ContextCompat.checkSelfPermission(
+                this,
+                it
+            ) != PackageManager.PERMISSION_GRANTED
+        }
         if (need) {
             onPermissionsGranted = onGranted
             requestPermissionsLauncher.launch(perms)
@@ -518,10 +529,11 @@ class ChatActivity : BaseChatSessionActivity() {
             }
         }
 
-        imageUriCamera = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        imageUriCamera =
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 
         if (imageUriCamera == null) {
-            chatViewModel.onError("No se pudo abrir la cámara")
+            chatViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
             return
         }
 
@@ -562,14 +574,15 @@ class ChatActivity : BaseChatSessionActivity() {
                 currentAudioUri = contentResolver.insert(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     values
-                ) ?: return chatViewModel.onError("No se pudo crear el archivo de audio")
+                )
+                    ?: return chatViewModel.onError(UiText.StringRes(R.string.chat_error_create_audio))
 
                 currentPfd = contentResolver.openFileDescriptor(currentAudioUri!!, "w")
-                    ?: return chatViewModel.onError("No se pudo abrir el archivo de audio")
+                    ?: return chatViewModel.onError(UiText.StringRes(R.string.chat_error_open_audio))
 
             } else {
                 val dir = getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-                    ?: return chatViewModel.onError("No hay directorio de música disponible")
+                    ?: return chatViewModel.onError(UiText.StringRes(R.string.chat_error_no_music_dir))
 
                 val outFile = File(dir, pendingAudioName!!)
                 currentAudioUri = FileProvider.getUriForFile(
@@ -584,7 +597,12 @@ class ChatActivity : BaseChatSessionActivity() {
                 )
             }
         } catch (e: Exception) {
-            chatViewModel.onError(e.message ?: ERR_ZIBE)
+            chatViewModel.onError(
+                UiText.StringRes(
+                    R.string.err_zibe_prefix,
+                    args = listOf(e.message ?: "")
+                )
+            )
             currentPfd?.closeQuietly()
             currentPfd = null
             currentAudioUri = null
@@ -618,7 +636,12 @@ class ChatActivity : BaseChatSessionActivity() {
 
             currentAudioUri = null
             mediaRecorder = null
-            chatViewModel.onError(e.message ?: ERR_ZIBE)
+            chatViewModel.onError(
+                UiText.StringRes(
+                    R.string.err_zibe_prefix,
+                    args = listOf(e.message ?: "")
+                )
+            )
             return
         }
 
@@ -645,8 +668,14 @@ class ChatActivity : BaseChatSessionActivity() {
 
         try {
             mediaRecorder?.apply {
-                try { stop() } catch (_: Exception) {}
-                try { release() } catch (_: Exception) {}
+                try {
+                    stop()
+                } catch (_: Exception) {
+                }
+                try {
+                    release()
+                } catch (_: Exception) {
+                }
             }
         } finally {
             mediaRecorder = null
@@ -684,7 +713,7 @@ class ChatActivity : BaseChatSessionActivity() {
             )
 
             if (url == null) {
-                chatViewModel.onError("No se pudo subir el audio")
+                chatViewModel.onError(UiText.StringRes(R.string.chat_error_open_audio))
                 return@launch
             }
 

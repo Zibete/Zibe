@@ -44,13 +44,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.DIALOG_EXIT
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment
@@ -59,8 +58,6 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
-import com.zibete.proyecto1.core.utils.UserMessageUtils
-import com.zibete.proyecto1.core.utils.ZibeApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -202,7 +199,8 @@ class MainActivity : BaseToolbarActivity() {
     }
 
     private fun setupNavigation() {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment?
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment?
         navController = navHostFragment?.navController
 
         appBarConfiguration = AppBarConfiguration(
@@ -210,7 +208,8 @@ class MainActivity : BaseToolbarActivity() {
                 R.id.nav_chat,
                 R.id.nav_users,
                 R.id.nav_groups,
-                R.id.nav_favorites),
+                R.id.nav_favorites
+            ),
             drawerLayout
         )
 
@@ -254,10 +253,10 @@ class MainActivity : BaseToolbarActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Navegación
                 launch {
-                    mainViewModel.navEvents.collect { event ->
+                    mainViewModel.uiEvents.collect { event ->
                         when (event) {
 
-                            is MainNavEvent.ToUsers -> {
+                            is MainUiEvent.ToUsers -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_users)
                                 materialToolbar?.setTitle(R.string.menu_users)
@@ -266,7 +265,7 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
-                            is MainNavEvent.ToChat -> {
+                            is MainUiEvent.ToChat -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_chat)
                                 materialToolbar?.setTitle(R.string.menu_chat)
@@ -275,11 +274,11 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
-                            is MainNavEvent.BackToChat -> {
+                            is MainUiEvent.BackToChat -> {
                                 mainViewModel.onChatTabSelected()
                             }
 
-                            is MainNavEvent.ToGroupHost -> {
+                            is MainUiEvent.ToGroupHost -> {
                                 mainViewModel.showToolbar(true)
                                 invalidateOptionsMenu()
 
@@ -291,7 +290,7 @@ class MainActivity : BaseToolbarActivity() {
                                 bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
                             }
 
-                            is MainNavEvent.ToGroupsSelect -> {
+                            is MainUiEvent.ToGroupsSelect -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_groups)
                                 materialToolbar?.setTitle(R.string.menu_groups)
@@ -299,7 +298,7 @@ class MainActivity : BaseToolbarActivity() {
                                 bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
                             }
 
-                            is MainNavEvent.ToFavorites -> {
+                            is MainUiEvent.ToFavorites -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_favorites)
                                 materialToolbar?.setTitle(R.string.menu_favorites)
@@ -307,7 +306,7 @@ class MainActivity : BaseToolbarActivity() {
                                 bottomNavigationView?.selectedItemId = R.id.navBottomFavorites
                             }
 
-                            is MainNavEvent.ToEditProfile -> {
+                            is MainUiEvent.ToEditProfile -> {
                                 invalidateOptionsMenu()
                                 navController?.navigate(R.id.nav_editPerfil)
                                 materialToolbar?.setTitle(R.string.menu_edit_profile)
@@ -315,15 +314,18 @@ class MainActivity : BaseToolbarActivity() {
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
-                            is MainNavEvent.NavigateToSplash -> {
+                            is MainUiEvent.NavigateToSplash -> {
                                 val intent = Intent(this@MainActivity, SplashActivity::class.java)
-                                if (event.sessionConflict) intent.putExtra(EXTRA_SESSION_CONFLICT, true)
+                                if (event.sessionConflict) intent.putExtra(
+                                    EXTRA_SESSION_CONFLICT,
+                                    true
+                                )
                                 stopLocationUpdates()
                                 finish()
                                 startActivity(intent)
                             }
 
-                            is MainNavEvent.ToGroupsAfterExit -> {
+                            is MainUiEvent.ToGroupsAfterExit -> {
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, GroupsFragment())
                                     .commit()
@@ -333,18 +335,11 @@ class MainActivity : BaseToolbarActivity() {
                                 bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
                             }
 
-                            is MainNavEvent.BackFromEditProfile -> {
-                                if (!event.message.isNullOrEmpty()) {
-                                    UserMessageUtils.showSnack(
-                                        root = binding.root,
-                                        message = event.message,
-                                        type = ZibeSnackType.SUCCESS
-                                    )
-                                }
+                            is MainUiEvent.BackFromEditProfile -> {
                                 handleBackFromEditProfile()
                             }
 
-                            is MainNavEvent.BackExitAppOrCloseSearch -> {
+                            is MainUiEvent.BackExitAppOrCloseSearch -> {
                                 if (searchView?.isIconified == false) {
                                     searchView?.onActionViewCollapsed()
                                 } else {
@@ -352,38 +347,43 @@ class MainActivity : BaseToolbarActivity() {
                                 }
                             }
 
-                            is MainNavEvent.ToSettings -> {
-                                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                            }
-
-                            is MainNavEvent.ConfirmExitGroup -> {
-                                UserMessageUtils.confirm(
-                                    context = this@MainActivity,
-                                    title = DIALOG_EXIT,
-                                    message = "¿Desea abandonar ${mainViewModel.groupName.value}?",
-                                    positiveText = DIALOG_ACCEPT,
-                                    negativeText = DIALOG_CANCEL,
-                                    onConfirm = { mainViewModel.onExitGroupConfirmed() }
+                            is MainUiEvent.ToSettings -> {
+                                startActivity(
+                                    Intent(
+                                        this@MainActivity,
+                                        SettingsActivity::class.java
+                                    )
                                 )
                             }
 
-                            is MainNavEvent.ConfirmLogout -> {
+                            is MainUiEvent.ConfirmExitGroup -> {
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = getString(R.string.action_exit),
+                                    message = "¿Desea abandonar ${mainViewModel.groupName.value}?",
+                                    onConfirm = {
+                                        mainViewModel.onExitGroupConfirmed(getString(R.string.msg_user_leaved))
+                                    }
+                                )
+                            }
+
+                            is MainUiEvent.ConfirmLogout -> {
                                 UserMessageUtils.confirm(
                                     context = this@MainActivity,
                                     title = "Cerrar sesión",
                                     message = "¿Está seguro de cerrar su sesión?",
-                                    positiveText = DIALOG_ACCEPT,
-                                    negativeText = DIALOG_CANCEL,
+                                    positiveText = getString(R.string.action_accept),
+                                    negativeText = getString(R.string.action_cancel),
                                     onConfirm = {
                                         mainViewModel.onLogoutConfirmed()
                                     }
                                 )
                             }
 
-                            is MainNavEvent.ShowMessage -> {
+                            is MainUiEvent.ShowSnack -> {
                                 UserMessageUtils.showSnack(
                                     root = binding.root,
-                                    message = event.message,
+                                    message = event.uiText.asString(this@MainActivity),
                                     type = event.type
                                 )
                             }
@@ -441,26 +441,38 @@ class MainActivity : BaseToolbarActivity() {
     }
 
     private fun ensureLocationSettingsAndStart() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             startActivity(Intent(this, SplashActivity::class.java))
             finish()
             return
         }
 
-        val settingsRequest = LocationSettingsRequest.Builder().addLocationRequest(locationRequest!!).setAlwaysShow(true).build()
+        val settingsRequest =
+            LocationSettingsRequest.Builder().addLocationRequest(locationRequest!!)
+                .setAlwaysShow(true).build()
         settingsClient?.checkLocationSettings(settingsRequest)
             ?.addOnSuccessListener { startLocationUpdates() }
             ?.addOnFailureListener { e ->
                 if (e is ResolvableApiException) {
-                    try { e.startResolutionForResult(this, 0x1) }
-                    catch (_: IntentSender.SendIntentException) {}
+                    try {
+                        e.startResolutionForResult(this, 0x1)
+                    } catch (_: IntentSender.SendIntentException) {
+                    }
                 }
             }
     }
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocationUpdates() {
-        fusedLocationProviderClient?.requestLocationUpdates(locationRequest!!, locationCallback!!, mainLooper)
+        fusedLocationProviderClient?.requestLocationUpdates(
+            locationRequest!!,
+            locationCallback!!,
+            mainLooper
+        )
     }
 
     private fun stopLocationUpdates() {
@@ -524,6 +536,9 @@ class MainActivity : BaseToolbarActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        return NavigationUI.navigateUp(findNavController(R.id.nav_host_fragment), appBarConfiguration) || super.onSupportNavigateUp()
+        return NavigationUI.navigateUp(
+            findNavController(R.id.nav_host_fragment),
+            appBarConfiguration
+        ) || super.onSupportNavigateUp()
     }
 }

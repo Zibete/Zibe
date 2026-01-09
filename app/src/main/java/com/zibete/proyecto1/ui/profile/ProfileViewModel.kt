@@ -3,12 +3,12 @@ package com.zibete.proyecto1.ui.profile
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
@@ -16,7 +16,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,7 +37,6 @@ class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val userRepository: UserRepository,
     private val userRepositoryProvider: UserRepositoryProvider,
-    private val userSessionManager: UserSessionManager,
     private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
     private val locationRepository: LocationRepository,
@@ -73,7 +72,8 @@ class ProfileViewModel @Inject constructor(
                 return@launch
             }
 
-            val userState = userRepositoryProvider.getChatStateWith(userId, _uiState.value.chatState)
+            val userState =
+                userRepositoryProvider.getChatStateWith(userId, _uiState.value.chatState)
 
             _uiState.value = ProfileUiState(
                 isLoading = false,
@@ -81,7 +81,7 @@ class ProfileViewModel @Inject constructor(
                 chatState = userState
             )
 
-            val photos = userRepositoryProvider.getChatPhotosWithUser(userId, NODE_DM)
+            val photos = chatRepository.getChatPhotosWithUser(userId, NODE_DM)
             _photosFromChat.value = photos
 
             loadFavoriteAndBlockState()
@@ -91,8 +91,8 @@ class ProfileViewModel @Inject constructor(
 
     fun getDistanceToUser(profile: Users): String {
         val distanceMeters = locationRepository.getDistanceMeters(
-            userSessionManager.latitude,
-            userSessionManager.longitude,
+            locationRepository.latitude,
+            locationRepository.longitude,
             profile.latitude,
             profile.longitude
         )
@@ -180,9 +180,19 @@ class ProfileViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmBlock(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_BLOQ)
+                        userRepository.updateStateChatWith(
+                            userId,
+                            userName,
+                            nodeType,
+                            CHAT_STATE_BLOQ
+                        )
                         _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
-                        _uiState.update { it.copy(iBlockedUser = true, chatState = CHAT_STATE_BLOQ) }
+                        _uiState.update {
+                            it.copy(
+                                iBlockedUser = true,
+                                chatState = CHAT_STATE_BLOQ
+                            )
+                        }
                     }
                 )
             )
@@ -224,10 +234,18 @@ class ProfileViewModel @Inject constructor(
                     onConfirm = { deleteMessages ->
                         viewModelScope.launch {
                             try {
-                                val result = chatRepository.deleteMessages(chatRefs, null, deleteMessages)
+                                val result =
+                                    chatRepository.deleteMessages(chatRefs, null, deleteMessages)
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
                             } catch (e: Exception) {
-                                _events.emit(ChatSessionUiEvent.ShowErrorDialog(e.message ?: ERR_ZIBE))
+                                _events.emit(
+                                    ChatSessionUiEvent.ShowErrorDialog(
+                                        UiText.StringRes(
+                                            R.string.err_zibe_prefix,
+                                            args = listOf(e.message ?: "")
+                                        )
+                                    )
+                                )
                             }
                         }
                     }

@@ -1,10 +1,13 @@
 package com.zibete.proyecto1.data
 
 import android.location.Location
+import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LONGITUDE
+import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -19,27 +22,46 @@ import kotlin.math.sqrt
 
 @Singleton
 class LocationRepository @Inject constructor(
-    private val userRepository: UserRepository,
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    private val authSessionProvider: AuthSessionProvider
 ) {
 
-    private val myUid: String get() = userRepository.myUid
+    val firebaseUser: FirebaseUser
+        get() = checkNotNull(authSessionProvider.currentUser) {
+            USER_PROVIDER_ERR_EXCEPTION
+        }
+
+    val myUid: String
+        get() = firebaseUser.uid
 
 
     // ============================================================
     // LOCATION
     // ============================================================
 
+    var latitude: Double = 0.0
+    var longitude: Double = 0.0
+
+//    val latitude: Double get() = latitude
+//    val longitude: Double get() = longitude
+
     suspend fun updateLocation(location: Location) {
-        userRepository.updateUserFields(
+        updateUserFields(
             mapOf(
                 LATITUDE to location.latitude,
                 LONGITUDE to location.longitude
             )
         )
     }
+    private fun accountRef(uid: String = myUid) =
+        firebaseRefsContainer.refAccounts.child(uid)
 
-    private suspend fun getLocation(uid : String): Pair<Double, Double> {
+    suspend fun updateUserFields(fields: Map<String, Any?>) {
+        val clean = fields.filterValues { it != null }
+        if (clean.isEmpty()) return
+        accountRef().updateChildren(clean).await()
+    }
+    private suspend fun getLocation(uid : String = myUid): Pair<Double, Double> {
         val snapshot = firebaseRefsContainer.refAccounts.child(uid).get().await()
         val user = snapshot.getValue(Users::class.java)
             ?: throw Exception("User not found")
@@ -47,7 +69,7 @@ class LocationRepository @Inject constructor(
     }
 
     suspend fun getDistanceToUser(userId: String): String {
-        val (myLat, myLng) = getLocation(myUid)
+        val (myLat, myLng) = getLocation()
         val (otherLat, otherLng) = getLocation(userId)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
         return formatDistance(distance)

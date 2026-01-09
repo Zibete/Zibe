@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,28 +46,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.AUTH_DELETE_ACCOUNT
-import com.zibete.proyecto1.core.constants.AUTH_DO_NOT_DELETE_ACCOUNT
-import com.zibete.proyecto1.core.constants.BUTTON_REGISTER
+import com.zibete.proyecto1.core.constants.Constants
+import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
+import com.zibete.proyecto1.core.constants.PASSWORD_VISIBILITY_CONTENT_DESC
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.AUTH_DO_NOT_HAVE_AN_ACCOUNT
-import com.zibete.proyecto1.core.constants.AUTH_FORGOT_PASSWORD
-import com.zibete.proyecto1.core.constants.AUTH_OR_USE_YOUR_ACCOUNT
-import com.zibete.proyecto1.core.constants.Constants
-import com.zibete.proyecto1.core.constants.RESET_PASSWORD_ACCEPT
-import com.zibete.proyecto1.core.constants.RESET_PASSWORD_TITLE
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun AuthScreen(
@@ -91,6 +83,7 @@ fun AuthScreen(
     var resetEmail by rememberSaveable { mutableStateOf("") }
 
     val zibeColors = LocalZibeExtendedColors.current
+    val context = LocalContext.current
 
     val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -104,7 +97,7 @@ fun AuthScreen(
                     is AuthUiEvent.ShowSnack -> {
                         scope.launch {
                             snackHostState.showZibeMessage(
-                                message = event.message,
+                                message = event.message.asString(context),
                                 type = event.type
                             )
                         }
@@ -148,8 +141,8 @@ fun AuthScreen(
                         contentDescription = stringResource(id = R.string.app_name),
                         modifier = Modifier
                             .padding(
-                                start = 24.dp,
-                                end = 24.dp,
+                                start = 30.dp,
+                                end = 30.dp,
                                 bottom = 8.dp,
                                 top = 0.dp)
                     )
@@ -159,14 +152,14 @@ fun AuthScreen(
 
                         // GOOGLE
                         SocialButton(
-                            text = "Continuar con Google",
+                            text = stringResource(R.string.continue_with_google),
                             iconRes = R.drawable.ic_google,
                             onClick = onGoogleClick
                         )
 
                         // FACEBOOK
                         SocialButton(
-                            text = "Continuar con Facebook",
+                            text = stringResource(R.string.continue_with_facebook),
                             iconRes = R.drawable.ic_facebook,
                             onClick = onFacebookClick
                         )
@@ -174,7 +167,7 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = AUTH_OR_USE_YOUR_ACCOUNT,
+                            text = stringResource(R.string.auth_or_use_account),
                             style = MaterialTheme.typography.headlineSmall,
                             color = zibeColors.mutedText,
                         )
@@ -203,13 +196,13 @@ fun AuthScreen(
                         ZibeInputField(
                             value = password,
                             onValueChange = { password = it },
-                            label = "Contraseña",
+                            label = stringResource(id = R.string.password),
 
                             modifier = Modifier.fillMaxWidth(),
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_lock_24),
-                                    contentDescription = "Contraseña"
+                                    contentDescription = stringResource(id = R.string.password)
                                 )
                             },
                             trailingIcon = {
@@ -221,7 +214,7 @@ fun AuthScreen(
                                             else
                                                 R.drawable.ic_baseline_visibility_off_24
                                         ),
-                                        contentDescription = "Contraseña visible/invisible"
+                                        contentDescription = PASSWORD_VISIBILITY_CONTENT_DESC
                                     )
                                 }
                             },
@@ -236,7 +229,7 @@ fun AuthScreen(
                         )
 
                         Text(
-                            text = AUTH_FORGOT_PASSWORD,
+                            text = stringResource(R.string.auth_forgot_password),
                             modifier = Modifier
                                 .align(Alignment.End)
                                 .padding(bottom = 8.dp)
@@ -265,7 +258,7 @@ fun AuthScreen(
                             modifier = Modifier.padding(vertical = 10.dp)
                         ) {
                             Text(
-                                text = AUTH_DO_NOT_HAVE_AN_ACCOUNT,
+                                text = stringResource(R.string.auth_do_not_have_account),
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     color = zibeColors.mutedText
                                 )
@@ -274,7 +267,7 @@ fun AuthScreen(
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Text(
-                                text = BUTTON_REGISTER,
+                                text = stringResource(R.string.action_register),
                                 modifier = Modifier
                                     .clickable { onNavigateToSignUp() }
                                     .testTag(Constants.TestTags.BTN_REGISTER),
@@ -289,14 +282,14 @@ fun AuthScreen(
                         // Modo "reactivar cuenta"
 
                         ZibeButton(
-                            text = AUTH_DO_NOT_DELETE_ACCOUNT,
+                            text = stringResource(R.string.auth_do_not_delete_account),
                             onClick = { onDoNotDelete() },
                             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
                         ZibeButton(
-                            text = AUTH_DELETE_ACCOUNT,
+                            text = stringResource(R.string.delete_account),
                             onClick = { onDeleteAccount() },
                             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                             enabled = !isLoading,
@@ -308,7 +301,7 @@ fun AuthScreen(
 
                 if (showResetDialog) {
                     ZibeDialog(
-                        title = RESET_PASSWORD_TITLE,
+                        title = stringResource(R.string.reset_password_title),
                         textContent = {
                             ZibeInputField(
                                 value = resetEmail,
@@ -318,7 +311,7 @@ fun AuthScreen(
                                 enabled = !isLoading
                             )
                         },
-                        confirmText = RESET_PASSWORD_ACCEPT,
+                        confirmText = stringResource(R.string.reset_password_accept),
                         confirmEnabled = resetEmail.isNotBlank() && !isLoading,
                         onConfirm = {
                             if (resetEmail.isNotBlank()) {
@@ -326,7 +319,6 @@ fun AuthScreen(
                                 showResetDialog = false
                             }
                         },
-                        dismissText = DIALOG_CANCEL,
                         onDismiss = { if (!isLoading) showResetDialog = false },
                         enabled = !isLoading
                     )

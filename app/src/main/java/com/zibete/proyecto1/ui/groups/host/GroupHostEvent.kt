@@ -1,13 +1,16 @@
 package com.zibete.proyecto1.ui.groups.host
 
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 
 sealed class GroupHostEvent {
-    data class OpenPrivateChat(val otherUid: String, val nodeType: String) : GroupHostEvent()
 
     data class ShowSnack(
-        val message: String,
+        val message: UiText,
         val type: ZibeSnackType
     ) : GroupHostEvent()
-
+    data class OpenPrivateChat(
+        val otherUid: String,
+        val nodeType: String
+    ) : GroupHostEvent()
 }

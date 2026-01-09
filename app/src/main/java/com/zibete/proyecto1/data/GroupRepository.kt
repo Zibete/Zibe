@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -10,13 +11,6 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.di.qualifiers.ApplicationScope
-import com.zibete.proyecto1.model.ChatGroup
-import com.zibete.proyecto1.model.GroupChatChildEvent
-import com.zibete.proyecto1.model.ChatGroupItem
-import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.core.constants.Constants.ChatGroupKeys
 import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
@@ -29,7 +23,18 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
+import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.zibeCatching
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.di.qualifiers.ApplicationScope
+import com.zibete.proyecto1.model.ChatGroup
+import com.zibete.proyecto1.model.ChatGroupItem
+import com.zibete.proyecto1.model.GroupChatChildEvent
+import com.zibete.proyecto1.model.Groups
+import com.zibete.proyecto1.model.UserGroup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -47,10 +52,15 @@ import kotlin.coroutines.resumeWithException
 @Singleton
 class GroupRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userRepository: UserRepository,
-    @ApplicationScope private val appScope: CoroutineScope
+    private val authSessionProvider: AuthSessionProvider,
 ) {
-    private val myUid: String get() = userRepository.myUid
+    val firebaseUser: FirebaseUser
+        get() = checkNotNull(authSessionProvider.currentUser) {
+            USER_PROVIDER_ERR_EXCEPTION
+        }
+
+    val myUid: String
+        get() = firebaseUser.uid
 
     // EVENTS
     fun observeGroupChatEvents(groupName: String): Flow<GroupChatChildEvent> = callbackFlow {
@@ -166,7 +176,6 @@ class GroupRepository @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }.flowOn(Dispatchers.IO)
 
-    // ChatViewModel.kt
     fun observeIsUserInGroup(groupName: String, userId: String): Flow<Boolean> = callbackFlow {
 
         val ref = groupUsersRef(groupName)
@@ -395,7 +404,7 @@ class GroupRepository @Inject constructor(
         chatType: Int,
         content: String,
         senderName: String = myUid
-    ) {
+    ): ZibeResult<Unit> = zibeCatching {
         val chatMap = mutableMapOf(
             ChatGroupKeys.CONTENT to content,
             ChatGroupKeys.TIMESTAMP to ServerValue.TIMESTAMP,
@@ -404,7 +413,6 @@ class GroupRepository @Inject constructor(
             ChatGroupKeys.CHAT_TYPE to chatType,
             ChatGroupKeys.USER_TYPE to userType,
         )
-
         pushGroupMessage(groupName, chatMap)
     }
 
@@ -430,7 +438,7 @@ class GroupRepository @Inject constructor(
     suspend fun removeUserFromGroup(
         groupName: String,
         userId: String = myUid
-    ) {
+    ): ZibeResult<Unit> = zibeCatching {
         groupUsersRef(groupName)
             .child(userId)
             .removeValue()
@@ -488,7 +496,7 @@ class GroupRepository @Inject constructor(
     /**
      * Borra la lista local de conversaciones privadas (group_dm) del user en Users/Data.
      */
-    suspend fun removeMyGroupChatList() {
+    suspend fun removeMyGroupChatList(): ZibeResult<Unit> = zibeCatching {
         groupPrivateConversationsRef().removeValue().await()
     }
 
@@ -496,7 +504,7 @@ class GroupRepository @Inject constructor(
      * Borra chats privados dentro de /Chats/group_dm cuyo key contenga userId.
      * (Como venías haciendo; es “global”, no por groupName)
      */
-    suspend fun removeMyPrivateGroupChats(userId: String = myUid) {
+    suspend fun removeMyPrivateGroupChats(userId: String = myUid): ZibeResult<Unit> = zibeCatching {
         val snapshot = firebaseRefsContainer.refChatsGroupDm.get().await()
         for (child in snapshot.children) {
             val key = child.key ?: continue

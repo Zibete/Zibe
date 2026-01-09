@@ -1,15 +1,17 @@
 package com.zibete.proyecto1
 
 import android.util.Log
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.notifications.NotificationHelper
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
+import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,20 +23,25 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
+    @Inject lateinit var authSessionProvider: AuthSessionProvider
     @Inject lateinit var userPreferencesProvider: UserPreferencesProvider
-    @Inject lateinit var userRepository: UserRepository
     @Inject lateinit var chatRepository: ChatRepository
     @Inject lateinit var groupRepository: GroupRepository
     @Inject lateinit var notificationHelper: NotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    val firebaseUser: FirebaseUser
+        get() = checkNotNull(authSessionProvider.currentUser) {
+            USER_PROVIDER_ERR_EXCEPTION
+        }
+
+    val myUid: String
+        get() = firebaseUser.uid
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
         if (data.isEmpty()) return
-
-        val myUid = userRepository.myUid
-        if (myUid.isBlank()) return
 
         serviceScope.launch {
             try {

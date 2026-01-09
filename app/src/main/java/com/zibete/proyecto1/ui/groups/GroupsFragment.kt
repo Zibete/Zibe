@@ -28,7 +28,7 @@ import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
@@ -114,10 +114,10 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             )
                         }
 
-                        is GroupsUiEvent.ShowMessage -> {
+                        is GroupsUiEvent.ShowSnack -> {
                             UserMessageUtils.showSnack(
                                 root = binding.root,
-                                message = event.message ?: ERR_ZIBE,
+                                message = event.message.asString(requireContext()),
                                 type = ZibeSnackType.INFO
                             )
                         }
@@ -179,7 +179,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             groupsViewModel.onJoinGroupRequested(
                 groupName = group.name,
                 nick = displayName,
-                type = PUBLIC_USER
+                type = PUBLIC_USER,
+                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
             )
         }
 
@@ -188,7 +189,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             groupsViewModel.onJoinGroupRequested(
                 groupName = group.name,
                 nick = nick,
-                type = ANONYMOUS_USER
+                type = ANONYMOUS_USER,
+                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
             )
         }
 
@@ -223,7 +225,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         dialogBinding.btnCreateNewChat.setOnClickListener {
             groupsViewModel.onCreateNewGroupClicked(
                 groupName = dialogBinding.edtNameNewGroup.text.toString(),
-                groupData = dialogBinding.edtDataNewGroup.text.toString()
+                groupData = dialogBinding.edtDataNewGroup.text.toString(),
+                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
             )
         }
 

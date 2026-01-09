@@ -1,14 +1,14 @@
 package com.zibete.proyecto1.fakes
 
 import android.app.Activity
+import com.zibete.proyecto1.core.constants.GOOGLE_SIGN_IN_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 
-
-class FakeGoogleSignInUseCase (
-): GoogleSignInUseCase {
+class FakeGoogleSignInUseCase(
+) : GoogleSignInUseCase {
     var shouldFail: Boolean = false
-    var failure: Throwable = IllegalStateException("Google Sign-In failed")
+    var failure: Throwable = IllegalStateException(GOOGLE_SIGN_IN_ERR_EXCEPTION)
     var returnedIdToken: String = "fake-google-id-token"
 
     override suspend operator fun invoke(activity: Activity): ZibeResult<String> {

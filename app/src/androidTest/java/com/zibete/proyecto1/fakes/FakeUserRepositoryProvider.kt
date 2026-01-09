@@ -7,8 +7,7 @@ import com.zibete.proyecto1.testing.TestData.RUNTIME_EXCEPTION
 
 class FakeUserRepositoryProvider(
     var shouldFail: Boolean = false,
-    val runtimeException: Throwable = RuntimeException(RUNTIME_EXCEPTION),
-    override val myUid: String = TestData.UID
+    val runtimeException: Throwable = RuntimeException(RUNTIME_EXCEPTION)
 ) : UserRepositoryProvider {
 
     override suspend fun accountExists(uid: String): Boolean =
@@ -33,11 +32,4 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
-    override suspend fun getChatPhotosWithUser(
-        otherUid: String,
-        nodeType: String
-    ): List<String> {
-        if (shouldFail) throw runtimeException
-        return emptyList()
-    }
 }

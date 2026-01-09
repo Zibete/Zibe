@@ -4,18 +4,18 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.data.UserSessionProvider
-import com.zibete.proyecto1.testing.TestData
+import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
 import com.zibete.proyecto1.testing.TestScenario
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import io.mockk.mockk
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
-class FakeUserSessionProvider(
+class FakeAuthSessionProvider(
     private val scenarioProvider: () -> TestScenario
-) : UserSessionProvider {
+) : AuthSessionProvider {
 
     override val currentUser: FirebaseUser?
         get() {
@@ -25,19 +25,24 @@ class FakeUserSessionProvider(
                 doReturn(uid).whenever(this).uid
             }
         }
+
+    override fun authProvider(): AuthProvider {
+        TODO("Not yet implemented")
+    }
+
+    override fun authProviderLabel(): String {
+        TODO("Provide the return value")
+    }
 }
 
-class FakeUserSessionActions(
+class FakeAuthSessionActions(
     private val scenarioProvider: () -> TestScenario
-) : UserSessionActions {
+) : AuthSessionActions {
 
     var lastEmail: String? = null
     var lastPassword: String? = null
-
     private val shouldFail: Boolean get() = scenarioProvider().shouldFail
     private val runtimeException: Throwable get() = scenarioProvider().runtimeException
-
-    override suspend fun logOutCleanup() = Unit
 
     override suspend fun signInWithEmail(
         email: String,
@@ -67,6 +72,10 @@ class FakeUserSessionActions(
     override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
+    override suspend fun signOutFirebaseUser(): ZibeResult<Unit> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun updateAuthProfile(
         userName: String,
         photoUrl: String?
@@ -82,7 +91,6 @@ class FakeUserSessionActions(
         return if (shouldFail) {
             ZibeResult.Failure(runtimeException)
         } else {
-            scenarioProvider().currentUserUid = TestData.UID
             ZibeResult.Success(mockk(relaxed = true))
         }
     }

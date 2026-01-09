@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.core.utils
 
-import androidx.appcompat.app.AlertDialog
 import android.content.Context
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -8,12 +7,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 
 /**
  * Utilidades centralizadas para mensajes al usuario:
@@ -86,8 +85,6 @@ object UserMessageUtils {
         snackbar.show()
     }
 
-
-
     // ========= DIÁLOGOS =========
 
     /**
@@ -99,40 +96,35 @@ object UserMessageUtils {
         context: Context,
         title: String,
         message: String,
-        positiveText: String = DIALOG_ACCEPT,
-        negativeText: String = DIALOG_CANCEL,
+        positiveText: String = context.getString(R.string.action_accept),
+        negativeText: String = context.getString(R.string.action_cancel),
         choices: Array<String>? = null,
         selectedIndex: Int = -1,
         onChoiceSelected: ((index: Int) -> Unit)? = null,
         onConfirm: () -> Unit,
         onCancel: (() -> Unit)? = null
     ) {
-
-        val builder = AlertDialog.Builder(ContextThemeWrapper(context, R.style.Zibe_AlertDialog))
+        MaterialAlertDialogBuilder(context, R.style.Zibe_AlertDialog)
             .setTitle(title)
             .setCancelable(false)
-
-        if (choices != null) {
-            // Modo lista de selección única
-            builder.setSingleChoiceItems(choices, selectedIndex) { _, index ->
-                onChoiceSelected?.invoke(index)
+            .apply {
+                if (choices != null) {
+                    setSingleChoiceItems(choices, selectedIndex) { _, index ->
+                        onChoiceSelected?.invoke(index)
+                    }
+                } else {
+                    setMessage(message)
+                }
             }
-        } else {
-            // Modo mensaje normal
-            builder.setMessage(message)
-        }
-
-        builder.setPositiveButton(positiveText) { dialog, _ ->
-            dialog.dismiss()
-            onConfirm()
-        }
-
-        builder.setNegativeButton(negativeText) { dialog, _ ->
-            dialog.dismiss()
-            onCancel?.invoke()
-        }
-
-        builder.show()
+            .setPositiveButton(positiveText) { dialog, _ ->
+                onConfirm()
+                dialog.dismiss()
+            }
+            .setNegativeButton(negativeText) { dialog, _ ->
+                onCancel?.invoke()
+                dialog.dismiss()
+            }
+            .show()
     }
 
     @JvmStatic
@@ -140,44 +132,18 @@ object UserMessageUtils {
         context: Context,
         message: String,
         title: String? = null,
-        positiveText: String = DIALOG_ACCEPT,
+        positiveText: String = context.getString(R.string.action_accept),
         onConfirm: (() -> Unit)? = null
     ) {
-        val builder = AlertDialog.Builder(
-            ContextThemeWrapper(context, R.style.Zibe_AlertDialog)
-        )
+        MaterialAlertDialogBuilder(context, R.style.Zibe_AlertDialog)
             .setCancelable(false)
+            .setTitle(title)
+            .setMessage(message)
             .setPositiveButton(positiveText) { dialog, _ ->
-                dialog.dismiss()
                 onConfirm?.invoke()
+                dialog.dismiss()
             }
-
-        if (!title.isNullOrBlank()) {
-            builder.setTitle(title)
-        }
-
-        builder.setMessage(message)
-        builder.show()
+            .show()
     }
-    // ========= PROGRESS DIALOG =========
-
-    /**
-     * Muestra un diálogo de progreso moderno, estilo Zibe.
-     * Retorna el AlertDialog para poder ocultarlo luego con .dismiss().
-     */
-    @JvmStatic
-    fun showProgress(context: Context, message: String): AlertDialog {
-        val view = LayoutInflater.from(context).inflate(R.layout.layout_progress_zibe, null)
-        view.findViewById<TextView>(R.id.progress_text).text = message
-
-        val dialog = AlertDialog.Builder(ContextThemeWrapper(context, R.style.Zibe_AlertDialog))
-            .setView(view)
-            .setCancelable(false)
-            .create()
-
-        dialog.show()
-        return dialog
-    }
-
 
 }

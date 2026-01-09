@@ -3,17 +3,18 @@ package com.zibete.proyecto1.ui.groups.host
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.ChatGroupItem
+import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
-import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +70,7 @@ class GroupHostViewModel @Inject constructor(
             val groupMeta = groupRepository.getGroup(groupName)
 
             if (groupMeta == null) {
-                onError("Grupo '$groupName' ya no existe")
+                showSnack(UiText.Dynamic("Grupo '$groupName' ya no existe"), ZibeSnackType.WARNING)
                 return@launch
             }
 
@@ -169,19 +170,13 @@ class GroupHostViewModel @Inject constructor(
                     chatType = MSG_TEXT,
                     content = content.trim()
                 )
+                _uiState.update { it.copy(isSending = false) }
             } catch (e: Exception) {
-                onError(e.message)
+                onError(e)
             } finally {
                 _uiState.update { it.copy(isSending = false) }
             }
         }
-    }
-
-    suspend fun onError(message: String?){
-        _events.send(GroupHostEvent.ShowSnack(
-            message = message ?: ERR_ZIBE,
-            type = ZibeSnackType.ERROR)
-        )
     }
 
     fun sendPhotoMessage(photoUri: Uri) {
@@ -197,18 +192,38 @@ class GroupHostViewModel @Inject constructor(
                     userType = groupContext.userType
                 )
             } catch (e: Exception) {
-                onError(e.message)
+                onError(e)
             } finally {
                 _uiState.update { it.copy(isSending = false) }
             }
         }
     }
 
+    suspend fun onError(e: Exception) {
+        val uiText = UiText.StringRes(
+            R.string.err_zibe_prefix,
+            args = listOf(e.message ?: "")
+        )
+
+        showSnack(uiText, ZibeSnackType.ERROR)
+    }
+
+    suspend fun showSnack(uiText: UiText, type: ZibeSnackType) {
+        _events.send(
+            GroupHostEvent.ShowSnack(
+                message = uiText,
+                type = type
+            )
+        )
+    }
+
     fun onNotImplementedYet() {
         viewModelScope.launch {
-            _events.send(GroupHostEvent.ShowSnack(
-                message = "No implemented",
-                type = ZibeSnackType.WARNING)
+            _events.send(
+                GroupHostEvent.ShowSnack(
+                    message = UiText.Dynamic("No implemented"),
+                    type = ZibeSnackType.WARNING
+                )
             )
         }
     }

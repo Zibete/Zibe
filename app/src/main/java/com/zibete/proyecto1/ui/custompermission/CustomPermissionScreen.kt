@@ -5,42 +5,43 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.BUTTON_START
+import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
+import com.zibete.proyecto1.core.constants.LOGO_CONTENT_DESC
 import com.zibete.proyecto1.di.PermissionRequesterEntryPoint
 import com.zibete.proyecto1.di.RationaleEntryPoint
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeOkDialog
-import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
-import com.zibete.proyecto1.core.constants.DIALOG_ACCEPT
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.DIALOG_OK
-import com.zibete.proyecto1.core.constants.LOGO_CONTENT_DESC
-import com.zibete.proyecto1.core.constants.PERMISSION_DENIED_MESSAGE
-import com.zibete.proyecto1.core.constants.PERMISSION_DENIED_TITLE
-import com.zibete.proyecto1.core.constants.PERMISSION_LEGAL_DISCLAIMER
-import com.zibete.proyecto1.core.constants.PERMISSION_LOCATION_MESSAGE
-import com.zibete.proyecto1.core.constants.PERMISSION_RATIONALE_MESSAGE
-import com.zibete.proyecto1.core.constants.PERMISSION_RATIONALE_TITLE
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.EntryPointAccessors
@@ -130,7 +131,7 @@ fun CustomPermissionScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = PERMISSION_LOCATION_MESSAGE,
+                        text = stringResource(R.string.permission_location_message),
                         color = zibeColors.mutedText,
                         fontSize = 16.sp,
                         style = MaterialTheme.typography.bodyMedium
@@ -139,7 +140,7 @@ fun CustomPermissionScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = PERMISSION_LEGAL_DISCLAIMER,
+                        text = stringResource(R.string.permission_legal_disclaimer),
                         color = zibeColors.mutedText,
                         fontSize = 14.sp,
                         style = MaterialTheme.typography.bodySmall
@@ -149,7 +150,7 @@ fun CustomPermissionScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 ZibeButton(
-                    text = BUTTON_START,
+                    text = stringResource(R.string.action_start),
                     onClick = { permissionViewModel.onStartClicked(rationaleProvider.shouldShowRationale()) },
                     modifier = Modifier.fillMaxWidth(),
                     isLoading = false
@@ -160,34 +161,32 @@ fun CustomPermissionScreen(
 
     if (uiState.showRationaleDialog) {
         ZibeDialog(
-            title = PERMISSION_RATIONALE_TITLE,
+            title = stringResource(R.string.permission_rationale_title),
             textContent = {
                 Text(
-                    text = PERMISSION_RATIONALE_MESSAGE,
+                    text = stringResource(R.string.permission_rationale_message),
                     textAlign = TextAlign.Start,
                     color = LocalZibeExtendedColors.current.mutedText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmText = DIALOG_ACCEPT,
             onConfirm = { permissionViewModel.onRationaleAccept() },
-            dismissText = DIALOG_CANCEL,
             onDismiss = { permissionViewModel.onRationaleDismiss() }
         )
     }
 
     if (uiState.showDeniedDialog) {
         ZibeOkDialog(
-            title = PERMISSION_DENIED_TITLE,
+            title = stringResource(R.string.permission_denied_title),
             textContent = {
                 Text(
-                    text = PERMISSION_DENIED_MESSAGE,
+                    text = stringResource(R.string.permission_denied_message),
                     textAlign = TextAlign.Start,
                     color = LocalZibeExtendedColors.current.mutedText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmText = DIALOG_OK,
+            confirmText = stringResource(R.string.action_accept),
             onConfirm = { permissionViewModel.onDeniedOkClicked() }
         )
     }

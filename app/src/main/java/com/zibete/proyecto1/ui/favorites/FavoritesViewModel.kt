@@ -2,12 +2,14 @@ package com.zibete.proyecto1.ui.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
-import com.zibete.proyecto1.core.constants.ERR_ZIBE
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,18 +90,32 @@ class FavoritesViewModel @Inject constructor(
                 if (result.isEmpty()) showEmptyFavoritesMessage()
 
             } catch (t: Throwable) {
-                _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
-                _events.emit(FavoritesUiEvent.ShowMessage(
-                    t.message ?: ERR_ZIBE
-                )
+                onError(
+                    UiText.StringRes(
+                        resId = R.string.err_zibe_prefix,
+                        args = listOf(t.message ?: "")
+                    )
                 )
             }
         }
     }
 
+    fun onError(uiText: UiText) {
+        _events.tryEmit(
+            FavoritesUiEvent.ShowSnack(
+                uiText = uiText,
+                type = ZibeSnackType.ERROR
+            )
+        )
+        _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
+    }
+
     fun showEmptyFavoritesMessage() {
         viewModelScope.launch {
-            _events.emit(FavoritesUiEvent.ShowMessage("Aún no hay favoritos"))
+            _events.emit(FavoritesUiEvent.ShowSnack(
+                UiText.Dynamic("Aún no hay favoritos"),
+                type = ZibeSnackType.INFO)
+            )
         }
     }
 }

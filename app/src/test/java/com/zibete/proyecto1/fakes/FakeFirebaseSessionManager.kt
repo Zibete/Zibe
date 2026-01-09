@@ -4,26 +4,32 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.data.UserSessionActions
-import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
 import com.zibete.proyecto1.testing.TestScenario
 import io.mockk.mockk
 
-class FakeUserSessionProvider(
+class FakeAuthSessionProvider(
     override var currentUser: FirebaseUser? = null
-) : UserSessionProvider
+) : AuthSessionProvider {
+    override fun authProvider(): AuthProvider {
+        TODO("Not yet implemented")
+    }
 
-class FakeUserSessionActions(
+    override fun authProviderLabel(): String {
+        TODO("Provide the return value")
+    }
+}
+
+class FakeAuthSessionActions(
     private val scenarioProvider: () -> TestScenario
-) : UserSessionActions {
+) : AuthSessionActions {
 
     var lastEmail: String? = null
     var lastPassword: String? = null
-
     private val shouldFail: Boolean get() = scenarioProvider().shouldFail
     private val runtimeException: Throwable get() = scenarioProvider().runtimeException
-
-    override suspend fun logOutCleanup() = Unit
 
     override suspend fun signInWithEmail(
         email: String,
@@ -52,6 +58,10 @@ class FakeUserSessionActions(
 
     override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
+
+    override suspend fun signOutFirebaseUser(): ZibeResult<Unit> {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun updateAuthProfile(
         userName: String,

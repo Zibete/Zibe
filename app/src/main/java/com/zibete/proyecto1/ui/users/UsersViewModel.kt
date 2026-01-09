@@ -2,14 +2,13 @@ package com.zibete.proyecto1.ui.users
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.UserSessionManager
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +27,7 @@ class UsersViewModel @Inject constructor(
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val userSessionManager: UserSessionManager,
-    val locationRepository: LocationRepository,
+    private val locationRepository: LocationRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -71,8 +69,8 @@ class UsersViewModel @Inject constructor(
                     user.age = ageCalculator(user.birthDate)
 
                     user.distanceMeters = locationRepository.getDistanceMeters(
-                        userSessionManager.latitude,
-                        userSessionManager.longitude,
+                        locationRepository.latitude,
+                        locationRepository.longitude,
                         user.latitude,
                         user.longitude
                     )
@@ -153,5 +151,8 @@ class UsersViewModel @Inject constructor(
     suspend fun currentApplyOnlineFilter(): Boolean {
         return userPreferencesProvider.applyOnlineFilterFlow.first()
     }
+
+    fun formatDistance(meters: Double): String =
+        locationRepository.formatDistance(meters)
 
 }

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.testing
 
+import android.content.Context
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasAnyDescendant
@@ -16,7 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
-import com.zibete.proyecto1.core.constants.DIALOG_OK
+import com.zibete.proyecto1.R
 
 private const val DEFAULT_TIMEOUT_MS = 10_000L
 
@@ -64,10 +65,13 @@ fun setText(
 fun pickBirthDateSetText(
     openDialogTag: String,
     dateText: String,
-    composeRule: ComposeTestRule
+    composeRule: ComposeTestRule,
+    context: Context
 ) {
+    val dialogOk = context.getString(R.string.action_accept)
+
     waitTag(openDialogTag, composeRule).performClick()
-    waitText(DIALOG_OK, composeRule)
+    waitText(dialogOk, composeRule)
 
     val pencilBtn = hasClickAction().and(
         hasAnyDescendant(
@@ -86,7 +90,7 @@ fun pickBirthDateSetText(
     composeRule.onNode(dialogInput, useUnmergedTree = true)
         .performTextReplacement(dateText)
 
-    waitText(DIALOG_OK, composeRule).performClick()
+    waitText(dialogOk, composeRule).performClick()
 }
 
 

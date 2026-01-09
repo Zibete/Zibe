@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -45,9 +46,6 @@ import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.DIALOG_OK
-import com.zibete.proyecto1.core.constants.stringsSignUpScreen
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
@@ -83,6 +81,8 @@ fun SignUpScreen(
     val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         signUpEvents.collect { event ->
             when (event) {
@@ -90,7 +90,7 @@ fun SignUpScreen(
                     scope.launch {
                         snackHostState.showZibeMessage(
                             type = event.type,
-                            message = event.message
+                            message = event.uiText.asString(context)
                         )
                     }
                 }
@@ -109,7 +109,7 @@ fun SignUpScreen(
         },
         topBar = {
             ZibeToolbar(
-                title = "Tus datos",
+                title = stringResource(id = R.string.your_data),
                 onBack = onBack
             )
         }
@@ -239,11 +239,11 @@ fun SignUpScreen(
                                     birthDate = millisToIso(ms)
                                 }
                                 showDatePicker = false
-                            }) { Text(DIALOG_OK) }
+                            }) { Text(stringResource(R.string.action_accept)) }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
-                                Text(DIALOG_CANCEL) }
+                                Text(stringResource(R.string.action_cancel)) }
                         }
                     ) {
                         DatePicker(state = datePickerState)
@@ -275,7 +275,11 @@ fun SignUpScreen(
 
                 // 💡 Tip dinámico
                 ZibeAnimatedQuotesCard(
-                    strings = stringsSignUpScreen,
+                    strings = listOf(
+                        stringResource(R.string.signup_animated_message_1),
+                        stringResource(R.string.signup_animated_message_2),
+                        stringResource(R.string.signup_animated_message_3)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 12.dp)

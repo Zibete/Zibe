@@ -66,7 +66,7 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
                     scope.launch {
                         snackHostState.showZibeMessage(
                             type = event.type,
-                            message = event.message
+                            message = event.message.asString(context)
                         )
                     }
                 }

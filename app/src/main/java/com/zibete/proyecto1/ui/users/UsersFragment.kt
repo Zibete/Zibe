@@ -20,18 +20,16 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterUsers
-import com.zibete.proyecto1.databinding.FilterLayoutBinding
-import com.zibete.proyecto1.databinding.FragmentUsersBinding
-import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
-import com.zibete.proyecto1.core.constants.DIALOG_FILTER_OFF
-import com.zibete.proyecto1.core.constants.DIALOG_FILTER_ON
+import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.databinding.FilterLayoutBinding
+import com.zibete.proyecto1.databinding.FragmentUsersBinding
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
@@ -135,7 +133,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
                         .putStringArrayListExtra(EXTRA_USER_IDS, ids)
                         .putExtra(EXTRA_START_INDEX, position)
                 ) },
-            formatDistance = { meters -> usersViewModel.locationRepository.formatDistance(meters) }
+            formatDistance = { meters -> usersViewModel.formatDistance(meters) }
         )
 
         binding.rv.adapter = adapterUsers
@@ -175,9 +173,13 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
             dialogBinding.spinerMaxAge.isEnabled = checked
         }
 
+        val filterOn = UiText.StringRes(R.string.action_filter_on).asString(ctx)
+        val filterOff = UiText.StringRes(R.string.action_filter_off).asString(ctx)
+        val actionCancel = UiText.StringRes(R.string.action_cancel).asString(ctx)
+
         AlertDialog.Builder(ctx)
             .setView(dialogBinding.root)
-            .setPositiveButton(DIALOG_FILTER_ON) { _, _ ->
+            .setPositiveButton(filterOn) { _, _ ->
                 val applyAgeFilter = dialogBinding.switchAge.isChecked
                 val applyOnlineFilter = dialogBinding.switchOnline.isChecked
                 val minAge = ages[dialogBinding.spinnerMinAge.selectedItemPosition]
@@ -190,8 +192,8 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
                     maxAge = maxAge
                 )
             }
-            .setNegativeButton(DIALOG_CANCEL, null)
-            .setNeutralButton(DIALOG_FILTER_OFF) { _, _ ->
+            .setNegativeButton(actionCancel, null)
+            .setNeutralButton(filterOff) { _, _ ->
                 usersViewModel.clearFilters()
             }
             .create()

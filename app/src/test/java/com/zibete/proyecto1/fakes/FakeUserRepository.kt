@@ -25,7 +25,7 @@ class FakeUserRepositoryProvider(
     private val scenarioProvider: () -> TestScenario
 ) : UserRepositoryProvider {
 
-    override val myUid: String
+    val myUid: String
         get() = scenarioProvider().currentUserUid ?: TestData.UID
 
     private fun failIfNeeded() {
@@ -62,7 +62,7 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
-    override suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
+    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
         failIfNeeded()
         return emptyList()
     }
@@ -77,7 +77,11 @@ class FakeUserRepositoryActions(
         if (s.shouldFail) throw s.runtimeException
     }
 
-    override suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String) {
+    override suspend fun createUserNode(
+        firebaseUser: FirebaseUser,
+        birthDate: String,
+        description: String
+    ) {
         val s = scenarioProvider()
         if (s.shouldFail) throw s.runtimeException
         else lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, birthDate, description)

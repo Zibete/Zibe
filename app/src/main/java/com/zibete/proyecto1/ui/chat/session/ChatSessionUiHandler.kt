@@ -141,7 +141,7 @@ object ChatSessionUiHandler {
                 UserMessageUtils.alert(
                     context = context,
                     title = "ShowErrorDialog",
-                    message = event.message
+                    message = event.uiText.asString(context)
                 )
             }
 
