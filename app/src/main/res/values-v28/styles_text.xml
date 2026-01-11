@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Zibe.Text.Regular" parent="Zibe.Text.Base">
+        <item name="android:textFontWeight">400</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Zibe.Text.Medium" parent="Zibe.Text.Base">
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Zibe.Text.SemiBold" parent="Zibe.Text.Base">
+        <item name="android:textFontWeight">600</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+
+</resources>
