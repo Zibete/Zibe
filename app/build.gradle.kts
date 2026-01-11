@@ -29,9 +29,11 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "com.zibete.proyecto1.HiltTestRunner"
 
-        val props = Properties()
-        props.load(project.rootProject.file("local.properties").inputStream())
-        buildConfigField("String", "WEB_CLIENT_ID", "\"${props.getProperty("WEB_CLIENT_ID")}\"")
+        val webClientId = (localProperties.getProperty("WEB_CLIENT_ID")
+            ?: System.getenv("WEB_CLIENT_ID")
+            ?: "").trim()
+
+        buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
     }
 
     testOptions {
