@@ -1,4 +1,10 @@
 import java.util.Properties
+import java.io.FileInputStream
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
 
 plugins {
     id("com.android.application")
@@ -8,8 +14,6 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
-
-
 
 android {
     namespace = "com.zibete.proyecto1"
