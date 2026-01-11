@@ -9,13 +9,11 @@
         <item name="fontFamily">@font/poppins</item>
 
         <item name="textAppearanceHeadlineMedium">@style/Zibe.Text.Bold</item>
-        <item name="textAppearanceBodyMedium">@style/Zibe.Text.Regular</item>
-        <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
 
-        <item name="textAppearanceBodyLarge">@style/Zibe.Typography</item>
-        <item name="textAppearanceBodyMedium">@style/Zibe.Typography</item>
-        <item name="textAppearanceBodySmall">@style/Zibe.Typography</item>
-        <item name="textAppearanceLabelLarge">@style/Zibe.Typography</item>
+        <item name="textAppearanceBodyMedium">@style/Zibe.Text.Regular</item>
+        <item name="textAppearanceBodyLarge">@style/Zibe.Text.SemiBold</item>
+
+        <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
 
         <!-- Core colors -->
         <item name="colorPrimary">@color/zibe_purple</item>
