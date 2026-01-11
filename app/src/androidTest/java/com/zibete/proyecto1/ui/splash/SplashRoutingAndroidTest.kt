@@ -1,39 +1,40 @@
 package com.zibete.proyecto1.ui.splash
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
+import com.zibete.proyecto1.testing.TestScenario
+import com.zibete.proyecto1.testing.waitTag
+import com.zibete.proyecto1.testing.waitText
+import com.zibete.proyecto1.core.constants.BUTTON_NEXT
+import com.zibete.proyecto1.core.constants.BUTTON_SKIP
+import com.zibete.proyecto1.core.constants.BUTTON_START
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
-import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_KEEP_HERE
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_LOGOUT
+import com.zibete.proyecto1.core.constants.SESSION_CONFLICT_TITLE
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.testing.TestScenario
-import com.zibete.proyecto1.testing.waitTag
-import com.zibete.proyecto1.testing.waitText
 import com.zibete.proyecto1.ui.main.MainActivity
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class SplashSessionConflictAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
 
-    val logout = context.getString(R.string.session_conflict_logout)
-    val keepHere = context.getString(R.string.session_conflict_keep_here)
-    val attentionTitle = context.getString(R.string.attention_title)
-
     @Before
     fun setup() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
         val intent = Intent(context, SplashActivity::class.java).apply {
             putExtra(EXTRA_SESSION_CONFLICT, true)
         }
@@ -49,35 +50,31 @@ class SplashSessionConflictAndroidTest :
 
     @Test
     fun smoke_whenSessionConflict_dialogShows() {
-        waitText(attentionTitle, composeRule)
+        waitText(SESSION_CONFLICT_TITLE, composeRule)
     }
 
     @Test
     fun flow_whenSessionConflict_dialogShows_andLogout_NavigatesToAuth() {
-        waitText(attentionTitle, composeRule)
+        waitText(SESSION_CONFLICT_TITLE, composeRule)
 
-        composeRule.onNodeWithText(logout).performClick()
+        composeRule.onNodeWithText(SESSION_CONFLICT_LOGOUT).performClick()
 
         waitTag(AUTH_SCREEN, composeRule)
     }
 
     @Test
     fun flow_whenSessionConflict_dialogShows_andKeepHere_NavigatesToSplash() {
-        waitText(attentionTitle, composeRule)
+        waitText(SESSION_CONFLICT_TITLE, composeRule)
 
-        composeRule.onNodeWithText(keepHere).performClick()
+        composeRule.onNodeWithText(SESSION_CONFLICT_KEEP_HERE).performClick()
 
         waitTag(SPLASH_SCREEN, composeRule)
     }
 }
 
-@RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class SplashOnboardingAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
-    val next = context.getString(R.string.onboarding_next)
-    val start = context.getString(R.string.onboarding_start)
 
     @Before
     fun setup() {
@@ -97,7 +94,7 @@ class SplashOnboardingAndroidTest :
     fun flow_whenOnboardingNotDone_navigatesToOnboarding_andSkip_NavigatesToAuth() {
         waitTag(ONBOARDING_SCREEN, composeRule)
 
-        composeRule.onNodeWithText(context.getString(R.string.onboarding_skip)).performClick()
+        composeRule.onNodeWithText(BUTTON_SKIP).performClick()
 
         waitTag(AUTH_SCREEN, composeRule)
     }
@@ -106,15 +103,14 @@ class SplashOnboardingAndroidTest :
     fun flow_whenOnboardingNotDone_navigatesToOnboarding_andNext_andNext_andStart_NavigatesToAuth() {
         waitTag(ONBOARDING_SCREEN, composeRule)
 
-        composeRule.onNodeWithText(next).performClick()
-        composeRule.onNodeWithText(next).performClick()
-        composeRule.onNodeWithText(start).performClick()
+        composeRule.onNodeWithText(BUTTON_NEXT).performClick()
+        composeRule.onNodeWithText(BUTTON_NEXT).performClick()
+        composeRule.onNodeWithText(BUTTON_START).performClick()
 
         waitTag(AUTH_SCREEN, composeRule)
     }
 }
 
-@RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class SplashToMainAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
@@ -151,9 +147,9 @@ class SplashToMainAndroidTest :
             }
         }
     }
+
 }
 
-@RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class SplashToAuthAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {

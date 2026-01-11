@@ -12,6 +12,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.ChatRefs
+import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.model.ChatChildEvent
+import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
@@ -27,21 +40,8 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.constants.ERR_ZIBE
 import com.zibete.proyecto1.core.utils.TimeUtils.now
-import com.zibete.proyecto1.data.ChatRefs
-import com.zibete.proyecto1.data.ChatRepository
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.SessionRepository
-import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.model.ChatChildEvent
-import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.model.ChatMessageItem
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -58,6 +58,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import javax.inject.Inject
+import kotlin.collections.filterNot
+import kotlin.collections.map
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -331,7 +333,7 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     _events.emit(
                         ChatSessionUiEvent.ShowErrorDialog(
-                            uiText = UiText.StringRes(R.string.chat_error_get_cropped_image)
+                            message = "Error al obtener la imagen recortada"
                         )
                     )
                 }
@@ -348,7 +350,7 @@ class ChatViewModel @Inject constructor(
                 if (url == null) {
                     _events.emit(
                         ChatSessionUiEvent.ShowErrorDialog(
-                            uiText = UiText.StringRes(R.string.chat_error_upload_image)
+                            message = "No se pudo subir la imagen"
                         )
                     )
                 } else {
@@ -361,7 +363,7 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch {
                 _events.emit(
                     ChatSessionUiEvent.ShowErrorDialog(
-                        uiText = UiText.StringRes(R.string.chat_error_crop_image)
+                        message = "Fallo al recortar la imagen."
                     )
                 )
             }
@@ -433,7 +435,7 @@ class ChatViewModel @Inject constructor(
             val refData = when (path) {
                 PATH_AUDIOS -> refs.refAudios
                 PATH_PHOTOS -> refs.refPhotos
-                else -> throw IllegalArgumentException(context.getString(R.string.err_zibe))
+                else -> throw IllegalArgumentException(ERR_ZIBE)
             }
 
             chatRepository.uploadMedia(
@@ -516,7 +518,7 @@ class ChatViewModel @Inject constructor(
             state = otherState,
             unreadCount = otherCountMsgReceivedUnread + 1
         )
-        chatRepository.saveConversation(otherUid, nodeType, myUid, otherNewConversation)
+        chatRepository.saveConversation(otherUid, nodeType,myUid,otherNewConversation)
 
         _chatState.update {
             it.copy(
@@ -527,10 +529,10 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    suspend fun onError(message: UiText) {
+    suspend fun onError(message: String) {
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
-                uiText = message
+                message = message
             )
         )
     }
@@ -673,7 +675,7 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 _events.emit(
                     ChatSessionUiEvent.ShowErrorDialog(
-                        UiText.StringRes(R.string.chat_error_delete_messages)
+                        e.message ?: "Error al eliminar mensajes"
                     )
                 )
             }
@@ -696,10 +698,10 @@ class ChatViewModel @Inject constructor(
                                     deleteMessages
                                 )
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
                                 _events.emit(
                                     ChatSessionUiEvent.ShowErrorDialog(
-                                        UiText.StringRes(R.string.chat_error_delete_messages)
+                                        e.message ?: "Error al eliminar mensajes"
                                     )
                                 )
                             }

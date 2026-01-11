@@ -1,7 +1,5 @@
 package com.zibete.proyecto1.ui.chat.session
 
-import com.zibete.proyecto1.core.ui.UiText
-
 sealed class ChatSessionUiEvent {
 
     // ------- HIDE CHAT (solo lo usarás en la lista) -------
@@ -48,10 +46,12 @@ sealed class ChatSessionUiEvent {
     ) : ChatSessionUiEvent()
 
     data class ShowErrorDialog(
-        val uiText: UiText
+        val message: String
     ): ChatSessionUiEvent()
 
     data object CloseChat : ChatSessionUiEvent()
+
+
 }
 
 

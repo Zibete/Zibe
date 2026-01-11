@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Dialog
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -32,23 +34,27 @@ import com.bumptech.glide.request.target.Target
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
+import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.TestTags.BIRTHDATE_PICKER
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_WELCOME_SHEET
-import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.constants.MSG_CAMERA_ERROR
+import com.zibete.proyecto1.core.constants.MSG_CAMERA_PERMISSION_REQUIRED
+import com.zibete.proyecto1.core.constants.SIGNUP_PROFILE_MESSAGE
+import com.zibete.proyecto1.ui.main.MainActivity
+import com.zibete.proyecto1.ui.main.MainNavEvent
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
-import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
-import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
-import com.zibete.proyecto1.ui.main.MainActivity
-import com.zibete.proyecto1.ui.main.MainUiEvent
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import androidx.core.graphics.drawable.toDrawable
 
 @AndroidEntryPoint
 class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
@@ -72,9 +78,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) startCamera()
-            else editProfileViewModel.onError(
-                UiText.StringRes(R.string.msg_camera_permission_required)
-            )
+            else editProfileViewModel.onError(MSG_CAMERA_PERMISSION_REQUIRED)
         }
 
     private val galleryLauncher =
@@ -154,13 +158,13 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                         binding.buttonSave.isEnabled = state.saveEnabled && !state.isSaving
 
-                        binding.inputUserName.setTextIfChanged(state.name)
+                        binding.inputUserName.setTextIfChanged(state.displayName)
                         binding.datePickerBirthDay.setTextIfChanged(editProfileViewModel.birthDateUi)
                         binding.inputDescription.setTextIfChanged(state.description)
 
                         binding.tvEdad.text = state.age?.toString().orEmpty()
 
-                        binding.completeProfile.text = getString(R.string.signup_profile_message) // TODO --> Sheet
+                        binding.completeProfile.text = SIGNUP_PROFILE_MESSAGE
 
                         binding.buttonDone.isVisible = state.hasBirthDate
 
@@ -175,17 +179,17 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 launch {
                     editProfileViewModel.events.collect { event ->
                         when (event) {
-                            is EditProfileUiEvent.ShowSnack -> {
+                            is EditProfileUiEvent.ShowMessage -> {
                                 UserMessageUtils.showSnack(
                                     root = binding.root,
-                                    message = event.uiText.asString(requireContext()),
+                                    message = event.message,
                                     type = event.type
                                 )
                             }
 
                             is EditProfileUiEvent.OnBackToMain -> {
                                 (activity as? MainActivity)?.mainViewModel?.emit(
-                                    MainUiEvent.BackFromEditProfile)
+                                    MainNavEvent.BackFromEditProfile(event.message))
                             }
                         }
                     }
@@ -252,13 +256,13 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
             val uri = pendingCameraUri
             if (uri == null) {
-                editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+                editProfileViewModel.onError(requireContext().getString(R.string.msg_camera_error))
                 return
             }
 
             takePictureLauncher.launch(uri)
         }.onFailure {
-            editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+            editProfileViewModel.onError(MSG_CAMERA_ERROR)
         }
     }
 

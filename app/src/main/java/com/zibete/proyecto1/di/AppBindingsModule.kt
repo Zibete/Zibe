@@ -1,31 +1,35 @@
 package com.zibete.proyecto1.di
 
-import com.zibete.proyecto1.core.utils.AppChecksProvider
-import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
+
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
-import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
+
+import com.zibete.proyecto1.data.UserSessionProvider
+import com.zibete.proyecto1.data.UserSessionActions
+import com.zibete.proyecto1.data.UserSessionManager
+
 import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.auth.AuthSessionActions
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
-import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
-import com.zibete.proyecto1.data.auth.FirebaseSessionManager
-import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdateProfileUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
-import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
-import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
-import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
-import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
-import com.zibete.proyecto1.domain.session.ExitGroupUseCase
-import com.zibete.proyecto1.domain.session.LogoutUseCase
+
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
+
+import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
+import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
+import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
+import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -41,6 +45,18 @@ abstract class AppBindingsModule {
     abstract fun bindAppChecksProvider(
         impl: DefaultAppChecksProvider
     ): AppChecksProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindUserSessionProvider(
+        impl: UserSessionManager
+    ): UserSessionProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindUserSessionActions(
+        impl: UserSessionManager
+    ): UserSessionActions
 
     @Binds
     @Singleton
@@ -72,11 +88,6 @@ abstract class AppBindingsModule {
     abstract fun bindDeleteAccountUseCase(
         impl: DefaultDeleteAccountUseCase
     ): DeleteAccountUseCase
-
-    @Binds
-    abstract fun bindExitGroupUseCase(
-        impl: DefaultExitGroupUseCase
-    ): ExitGroupUseCase
 
     @Binds
     @Singleton
@@ -113,14 +124,4 @@ abstract class AppBindingsModule {
     abstract fun bindUserRepositoryProvider(
         impl: UserRepository
     ): UserRepositoryProvider
-
-    @Binds
-    abstract fun bindAuthSessionProvider(
-        impl: FirebaseSessionManager
-    ): AuthSessionProvider
-
-    @Binds
-    abstract fun bindAuthSessionActions(
-        impl: FirebaseSessionManager
-    ): AuthSessionActions
 }

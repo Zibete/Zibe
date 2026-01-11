@@ -5,13 +5,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.zibete.proyecto1.core.constants.DIALOG_OK
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
 fun ZibeOkDialog(
     title: String,
     textContent: @Composable () -> Unit,
-    confirmText: String,
+    confirmText: String = DIALOG_OK,
     onConfirm: () -> Unit,
     enabled: Boolean = true
 ) {

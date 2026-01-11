@@ -5,17 +5,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.DIALOG_CANCEL
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
 fun ZibeDialog(
     title: String,
     textContent: @Composable () -> Unit,
-    confirmText: String = stringResource(R.string.action_accept),
+    confirmText: String,
     onConfirm: () -> Unit,
-    dismissText: String = stringResource(R.string.action_cancel),
+    dismissText: String = DIALOG_CANCEL,
     onDismiss: () -> Unit,
     enabled: Boolean = true,
     confirmEnabled: Boolean = true // <-- Nuevo parámetro

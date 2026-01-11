@@ -5,18 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.data.ChatRepository
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -25,16 +25,20 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
+    private val myUid: String get() = userRepository.myUid
+
     private val chatRef
-        get() = userRepository.conversationsRootRef(nodeType = NODE_DM)
+        get() = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_DM)
 
     private var chatListListener: ValueEventListener? = null
     private var observing = false
@@ -67,8 +71,7 @@ class ChatListViewModel @Inject constructor(
                     return
                 }
 
-                val all = snapshot.children.mapNotNull { it.getValue(Conversation::class.java) }
-                    .toMutableList()
+                val all = snapshot.children.mapNotNull { it.getValue(Conversation::class.java) }.toMutableList()
 
                 all.sort()
 
@@ -130,7 +133,7 @@ class ChatListViewModel @Inject constructor(
 
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val chatWith = chatRepository.getConversation(secondUid = userId, nodeType = nodeType)
+            val chatWith = chatRepository.getConversation(myUid, userId, nodeType)
             val currentState = chatWith?.state
 
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
@@ -147,12 +150,7 @@ class ChatListViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmBlock(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(
-                            userId,
-                            userName,
-                            nodeType,
-                            CHAT_STATE_BLOQ
-                        )
+                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_BLOQ)
                         _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
                     }
                 )
@@ -166,12 +164,7 @@ class ChatListViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmHideChat(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(
-                            userId,
-                            userName,
-                            nodeType,
-                            CHAT_STATE_HIDE
-                        )
+                        userRepository.updateStateChatWith(userId, userName, nodeType, CHAT_STATE_HIDE)
                         _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
                     }
                 )
@@ -196,10 +189,10 @@ class ChatListViewModel @Inject constructor(
                                     deleteMessages = deleteMessages
                                 )
                                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
                                 _events.emit(
                                     ChatSessionUiEvent.ShowErrorDialog(
-                                        UiText.StringRes(R.string.chat_error_delete_messages)
+                                        e.message ?: "Error al eliminar mensajes"
                                     )
                                 )
                             }

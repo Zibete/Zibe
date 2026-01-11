@@ -8,7 +8,7 @@ import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.UserSessionProvider
 import javax.inject.Inject
 
 interface SessionBootstrapper {
@@ -16,15 +16,15 @@ interface SessionBootstrapper {
         uid: String,
         birthDate: String = "",
         description: String = "",
-    ): ZibeResult<Unit>
+    ) : ZibeResult<Unit>
 }
 
 class DefaultSessionBootstrapper @Inject constructor(
-    private val authSessionProvider: AuthSessionProvider,
     private val sessionRepositoryActions: SessionRepositoryActions,
     private val sessionRepositoryProvider: SessionRepositoryProvider,
     private val userRepositoryActions: UserRepositoryActions,
     private val userRepositoryProvider: UserRepositoryProvider,
+    private val userSessionProvider: UserSessionProvider,
     private val userPreferencesActions: UserPreferencesActions
 ) : SessionBootstrapper {
 
@@ -57,12 +57,12 @@ class DefaultSessionBootstrapper @Inject constructor(
         uid: String,
         birthDate: String,
         description: String,
-    ) {
+        ) {
         val accountExists = userRepositoryProvider.accountExists(uid)
 
         // Usuario nuevo
         if (!accountExists) {
-            authSessionProvider.currentUser?.let { user: FirebaseUser ->
+            userSessionProvider.currentUser?.let { user: FirebaseUser ->
                 userRepositoryActions.createUserNode(user, birthDate, description)
             }
             userPreferencesActions.setFirstLoginDone(false)

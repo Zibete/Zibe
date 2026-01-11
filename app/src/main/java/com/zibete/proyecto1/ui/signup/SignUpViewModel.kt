@@ -2,16 +2,20 @@ package com.zibete.proyecto1.ui.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.ERR_EMAIL_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_PASSWORD_REQUIRED
+import com.zibete.proyecto1.core.constants.ERR_UNDER_AGE
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_BIRTHDAY_REQUIRED
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
+import com.zibete.proyecto1.core.constants.SIGNUP_ERR_NAME_REQUIRED
+import com.zibete.proyecto1.core.constants.SIGNUP_MSG_SUCCESS
 import com.zibete.proyecto1.core.ui.SnackBarManager
-import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
-import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.UserSessionActions
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +29,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val authSessionActions: AuthSessionActions,
+    private val userSessionActions: UserSessionActions,
     private val sessionBootstrapper: SessionBootstrapper,
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
@@ -51,7 +55,7 @@ class SignUpViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             // 1. Crear Usuario
-            authSessionActions.createUser(
+            userSessionActions.createUser(
                 email = email.trim(),
                 password = password.trim()
             ).onFailure { e ->
@@ -76,7 +80,7 @@ class SignUpViewModel @Inject constructor(
             }
 
             // 3. Guardar Perfil de Auth
-            authSessionActions.updateAuthProfile(
+            userSessionActions.updateAuthProfile(
                 userName = name,
                 photoUrl = DEFAULT_PROFILE_PHOTO_URL
             ).onFailure { e ->
@@ -85,7 +89,7 @@ class SignUpViewModel @Inject constructor(
             }
 
             // 4. Éxito
-            snackBarManager.show(UiText.StringRes(R.string.signup_msg_success), ZibeSnackType.SUCCESS)
+            snackBarManager.show(SIGNUP_MSG_SUCCESS, ZibeSnackType.SUCCESS)
 
             _uiState.update { it.copy(isLoading = false) }
 
@@ -95,16 +99,22 @@ class SignUpViewModel @Inject constructor(
     }
 
     private suspend fun handleRegisterError(e: Throwable) {
-        val uiText = getAuthErrorMessage(e)
+        val message = getAuthErrorMessage(e)
 
         _events.emit(
             SignUpUiEvent.ShowSnack(
-                uiText = uiText,
+                message = message,
                 type = ZibeSnackType.ERROR
             )
         )
 
         _uiState.update { it.copy(isLoading = false) }
+    }
+
+    private fun isAdult(birthStr: String): Boolean = try {
+        ageCalculator(birthStr) >= 18
+    } catch (_: Exception) {
+        false
     }
 
     private suspend fun validateInputs(
@@ -114,25 +124,24 @@ class SignUpViewModel @Inject constructor(
         birthDate: String
     ): Boolean {
 
-        suspend fun warn(uiText: UiText): Boolean {
+        suspend fun warn(msg: String): Boolean {
             _uiState.update { it.copy(isLoading = false) }
             _events.emit(
                 SignUpUiEvent.ShowSnack(
-                    uiText = uiText,
+                    message = msg,
                     type = ZibeSnackType.WARNING
                 )
             )
             return false
         }
 
-        if (email.isBlank()) return warn(UiText.StringRes(R.string.err_email_required))
-        if (password.isBlank()) return warn(UiText.StringRes(R.string.err_password_required))
-        if (name.isBlank()) return warn(UiText.StringRes(R.string.signup_err_name_required))
-        if (birthDate.isBlank()) return warn(UiText.StringRes(R.string.signup_err_birthdate_required))
-        if (!isAdult(birthDate)) return warn(UiText.StringRes(R.string.err_under_age))
+        if (email.isBlank()) return warn(ERR_EMAIL_REQUIRED)
+        if (password.isBlank()) return warn(ERR_PASSWORD_REQUIRED)
+        if (name.isBlank()) return warn(SIGNUP_ERR_NAME_REQUIRED)
+        if (birthDate.isBlank()) return warn(SIGNUP_ERR_BIRTHDAY_REQUIRED)
+        if (!isAdult(birthDate)) return warn(ERR_UNDER_AGE)
 
         return true
     }
-
 
 }

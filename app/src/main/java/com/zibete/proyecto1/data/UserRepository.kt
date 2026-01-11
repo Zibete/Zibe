@@ -2,6 +2,7 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -9,14 +10,21 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.model.Users
+
+import com.zibete.proyecto1.core.constants.Constants.StatusKeys
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
-import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
+import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
+
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
 import com.zibete.proyecto1.core.constants.Constants.EMPTY
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
@@ -29,18 +37,11 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
-import com.zibete.proyecto1.core.constants.Constants.StatusKeys
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.model.Users
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -58,7 +59,8 @@ interface UserRepositoryProvider {
     suspend fun getProfilePhotoUrl(): String?
     suspend fun getAccount(uid: String): Users?
     suspend fun getChatStateWith(otherUid: String, nodeType: String): String
-
+    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String>
+    val myUid: String
 }
 
 interface UserRepositoryActions {
@@ -71,12 +73,15 @@ interface UserRepositoryActions {
     suspend fun updateUserFields(fields: Map<String, Any?>)
 }
 
+
+
 private suspend fun Query.awaitSnapshot(): DataSnapshot = get().await() // Atajo para lecturas one-shot con coroutines
 
 @Singleton
 class UserRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
-    private val authSessionProvider: AuthSessionProvider,
+    private val chatRepository: ChatRepository,
+    private val firebaseAuth: FirebaseAuth,
     private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
 ) : UserRepositoryProvider, UserRepositoryActions {
@@ -84,13 +89,23 @@ class UserRepository @Inject constructor(
     // ============================================================
     // SESSION (cache local)
     // ============================================================
+    val currentUser: FirebaseUser?
+        get() = firebaseAuth.currentUser
+
     val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
+        get() = checkNotNull(firebaseAuth.currentUser) {
+            "User must be logged in to access this property"
         }
 
-    val myUid: String
+    override val myUid: String
         get() = firebaseUser.uid
+
+
+
+
+
+//    val myUid get() = userSessionManager.myUid
+//    val firebaseUser get() = userSessionManager.firebaseUser
 
     var myUserName: String = ""
         private set
@@ -107,6 +122,8 @@ class UserRepository @Inject constructor(
         myEmail = email
     }
 
+
+
     // ============================================================
     // Refs helpers (RTDB)
     // ============================================================
@@ -120,7 +137,7 @@ class UserRepository @Inject constructor(
     private fun favoriteListRef(uid: String = myUid) =
         dataRef(uid).child(NODE_FAVORITE_LIST)
 
-    fun conversationsRootRef(ownerUid: String = myUid, nodeType: String) =
+    private fun conversationsRootRef(ownerUid: String, nodeType: String) =
         firebaseRefsContainer.refData
             .child(ownerUid)
             .child(nodeType)
@@ -374,6 +391,34 @@ class UserRepository @Inject constructor(
     // CHAT PHOTOS (lee /Chats/{nodeType}/{chatId})
     // ============================================================
 
+    override suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
+        val chatId = chatRepository.getChatId(otherUid)
+        val refChat = firebaseRefsContainer.refChatsRoot
+            .child(nodeType)
+            .child(chatId)
+
+        val photos = mutableListOf<String>()
+
+        fun collectFrom(snapshot: DataSnapshot) {
+            snapshot.children.forEach { msgSnap ->
+                val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java)
+                val senderUid = msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
+                val content = msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java)
+
+                // mantenemos tu regla: fotos enviadas por el otro
+                if (!senderUid.isNullOrBlank() && senderUid != myUid) {
+                    if (type == MSG_PHOTO || type == MSG_PHOTO_SENDER_DLT) {
+                        if (!content.isNullOrEmpty()) photos.add(content)
+                    }
+                }
+            }
+        }
+
+        val snap = refChat.awaitSnapshot()
+        if (snap.exists()) collectFrom(snap)
+
+        return photos.distinct()
+    }
 
     // ============================================================
     // UNREAD COUNTS (legacy helpers)
