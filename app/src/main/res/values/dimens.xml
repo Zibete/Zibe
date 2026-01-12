@@ -53,4 +53,12 @@
     <dimen name="corner_medium">12dp</dimen>
     <dimen name="corner_large">20dp</dimen>
 
+    <!--Buttons-->
+
+    <dimen name="zibe_btn_height">48dp</dimen>
+    <dimen name="zibe_btn_elevation">4dp</dimen>
+    <dimen name="zibe_btn_elevation_pressed">2dp</dimen>
+    <dimen name="zibe_btn_corner">12dp</dimen>
+    <dimen name="zibe_text_size_label">14sp</dimen>
+
 </resources>
