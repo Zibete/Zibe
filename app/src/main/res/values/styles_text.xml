@@ -15,10 +15,16 @@
         <item name="android:textSize">22sp</item>
     </style>
 
-    <style name="Zibe.Text.Brand" parent="Zibe.Text.Bold">
-        <item name="android:textSize">24sp</item>
+    <style name="Zibe.Text.Brand.Large" parent="Zibe.Text.Bold">
+        <item name="android:textSize">@dimen/text_size_brand_large</item>
         <item name="android:letterSpacing">0.05</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">@color/accent</item>
+    </style>
+
+    <style name="Zibe.Text.Brand.Medium" parent="Zibe.Text.Bold">
+        <item name="android:textSize">@dimen/text_size_brand_medium</item>
+        <item name="android:letterSpacing">0.05</item>
+        <item name="android:textColor">@color/zibe_btn_secondary</item>
     </style>
 
 </resources>

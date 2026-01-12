@@ -59,7 +59,7 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupPager()
         setupButtons()
-        setupBrand()
+//        setupBrand()
     }
 
     private fun setupPager() {
@@ -80,17 +80,16 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         )
     }
 
-    private fun setupBrand() {
-        binding.tvBrand.setTextAppearance(R.style.Zibe_Text_Brand)
-
-        binding.tvBrand.text = getString(R.string.app_name)
-
-        binding.tvBrand.setTextColor(ContextCompat.getColor(requireContext(), R.color.zibe_pink))
-
-        binding.tvBrand.textSize = 38f
-
-        binding.tvBrand.textAlignment = View.TEXT_ALIGNMENT_CENTER
-    }
+//    private fun setupBrand() {
+//        binding.tvBrand.setTextAppearance(R.style.Zibe_Text_Brand)
+//
+//        binding.tvBrand.text = getString(R.string.app_name)
+//
+//        binding.tvBrand.setTextColor(ContextCompat.getColor(requireContext(), R.color.zibe_pink))
+//
+//        binding.tvBrand.textSize = 38f
+//
+//    }
 
     private fun setupButtons() {
         binding.btnPrev.setOnClickListener {

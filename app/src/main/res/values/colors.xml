@@ -40,6 +40,8 @@
     <color name="zibe_gradient_start">#FF3B93</color>
     <color name="zibe_gradient_medium">#8B3CFF</color>
     <color name="zibe_gradient_end">#3A54BF</color>
+    <color name="pink_bubble">#F6286D</color>
+    <color name="blue_bubble">#3A54BF</color>
     <color name="zibe_pink_24">#40FF4081</color>
 
 
@@ -73,6 +75,8 @@
 
     <!-- CAMPOS -->
     <color name="zibe_input_bg">#1E2A38</color>
+    <color name="snackbar_surface">#1E2A38</color>
+
     <color name="zibe_input_border">#3E4A5A</color>
     <color name="zibe_hint_text">#8894A8</color>
 

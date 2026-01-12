@@ -197,6 +197,7 @@
     <string name="action_start">Comenzar</string>
     <string name="action_register">Registrarse</string>
     <string name="action_next">Siguiente</string>
+    <string name="action_previous">Anterior</string>
     <string name="action_skip">Saltar</string>
     <string name="action_back">Atrás</string>
     <string name="action_accept">Aceptar</string>
