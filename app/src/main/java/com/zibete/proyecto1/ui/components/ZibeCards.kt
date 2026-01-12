@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import LocalZibeExtendedColors
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -24,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import kotlinx.coroutines.delay
 
 @Composable

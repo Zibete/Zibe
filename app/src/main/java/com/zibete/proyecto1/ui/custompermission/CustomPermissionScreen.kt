@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.custompermission
 
+import LocalZibeExtendedColors
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,7 +43,6 @@ import com.zibete.proyecto1.di.RationaleEntryPoint
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeOkDialog
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.EntryPointAccessors
 

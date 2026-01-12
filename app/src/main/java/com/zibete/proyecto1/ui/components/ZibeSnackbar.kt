@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 enum class ZibeSnackType { SUCCESS, ERROR, WARNING, INFO }
 
