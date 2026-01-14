@@ -14,15 +14,15 @@
         <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
 
         <!-- Core colors -->
-        <item name="colorPrimary">@color/zibe_purple</item>
-        <item name="colorSecondary">@color/zibe_pink</item>
+        <item name="colorPrimary">@color/zibe_pink</item>
+        <item name="colorSecondary">@color/zibe_purple</item>
         <item name="colorControlActivated">@color/zibe_purple</item>
         <item name="colorOnSurfaceVariant">@color/zibe_hint_text</item>
 
         <!-- Material 3 recommended tokens -->
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">@color/zibe_card_bg</item>
+        <item name="colorSurface">@color/zibe_dark_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
         <item name="colorOutline">@color/zibe_hint_text</item>
 
@@ -98,7 +98,7 @@
 
     <style name="Zibe.BottomSheet.Internal" parent="Widget.Material3.BottomSheet.Modal">
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.BottomSheet</item>
-        <item name="backgroundTint">@color/zibe_card_bg</item>
+        <item name="backgroundTint">@color/zibe_dark_bg</item>
     </style>
 
     <style name="ShapeAppearance.Zibe.BottomSheet" parent="ShapeAppearance.Material3.Corner.Medium">
@@ -111,7 +111,7 @@
 
     <!-- ===== Misc ===== -->
     <style name="Zibe.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="android:background">@color/zibe_card_bg</item>
+        <item name="android:background">@color/zibe_dark_bg</item>
         <item name="android:textColor">@color/zibe_text_light</item>
     </style>
 

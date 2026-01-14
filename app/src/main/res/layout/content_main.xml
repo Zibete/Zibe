@@ -26,12 +26,10 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view3"
         android:layout_width="match_parent"
+        android:layout_margin="6dp"
         android:layout_height="64dp"
-        android:background="@drawable/bg_bottom_nav_glass"
         android:elevation="0dp"
-        android:paddingHorizontal="10dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="10dp"
+        android:background="@drawable/bg_glow_zibe_2"
         app:menu="@menu/bottom_nav_menu"
         app:labelVisibilityMode="unlabeled"
         app:itemIconSize="28dp"/>

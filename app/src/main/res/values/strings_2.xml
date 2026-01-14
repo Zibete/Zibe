@@ -22,7 +22,7 @@
     <string name="age">Edad</string>
     <string name="birth_date">Fecha de nacimiento</string>
     <string name="description">¿Algo sobre vos?</string>
-    <string name="picture">Foto</string>
+    <string name="edit_picture">Editar foto</string>
 
 
     <string name="content_description_save">Guardar cambios</string>
@@ -215,7 +215,7 @@
     <string name="action_back">Atrás</string>
     <string name="action_accept">Aceptar</string>
     <string name="action_cancel">Cancelar</string>
-    <string name="action_save">Guardar</string>
+    <string name="action_save">Listo</string>
 
     <string name="action_filter_on">Filtrar</string>
     <string name="action_filter_off">Quitar filtro</string>

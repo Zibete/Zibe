@@ -31,7 +31,7 @@ fun ZibeTheme(content: @Composable () -> Unit) {
         surface = colorResource(R.color.zibe_night_start),
         onSurface = colorResource(R.color.zibe_text_light),
         error = colorResource(R.color.zibe_red),
-        surfaceContainerHigh = colorResource(R.color.zibe_card_bg)
+        surfaceContainerHigh = colorResource(R.color.zibe_dark_bg)
     )
 
     CompositionLocalProvider(

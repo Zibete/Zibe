@@ -4,14 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
+import com.zibete.proyecto1.ui.base.BaseToolbarActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class PhotoViewerActivity : AppCompatActivity() {
+class PhotoViewerActivity : BaseToolbarActivity() {
 
     private lateinit var binding: SlideActivityBinding
 
@@ -21,9 +21,9 @@ class PhotoViewerActivity : AppCompatActivity() {
         binding = SlideActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar2)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = ""
+        setupToolbar(
+            toolbar = binding.toolbar
+        )
 
         val photoList =
             intent.getStringArrayListExtra(EXTRA_PHOTO_LIST) ?: arrayListOf()
@@ -44,8 +44,6 @@ class PhotoViewerActivity : AppCompatActivity() {
         binding.viewPager.adapter = adapter
         binding.viewPager.setCurrentItem(position, false)
         binding.viewPager.rotationY = rotationY.toFloat()
-
-        binding.toolbar2.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     companion object {

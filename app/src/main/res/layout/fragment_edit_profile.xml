@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:padding="@dimen/screen_padding">
+        android:paddingHorizontal="@dimen/screen_padding">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -182,7 +182,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@string/content_description_edit_photo"
-            android:text="@string/picture"
+            android:text="@string/edit_picture"
             style="@style/Zibe.Button.Secondary"
             android:textColor="@color/white"
             app:icon="@drawable/ic_baseline_add_a_photo_24"
@@ -197,7 +197,7 @@
             android:text="@string/action_save"
             style="@style/Zibe.Button.Secondary"
             android:textColor="@color/white"
-            app:icon="@drawable/ic_baseline_save_24"
+            app:icon="@drawable/ic_check_24"
             app:iconTint="@color/white"
             android:layout_marginBottom="@dimen/element_spacing_medium"/>
 

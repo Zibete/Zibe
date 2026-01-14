@@ -54,7 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp"
-                app:cardBackgroundColor="@color/zibe_card_bg"
+                app:cardBackgroundColor="@color/zibe_dark_bg"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="6dp"
                 app:strokeWidth="0dp">
@@ -122,7 +122,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="12dp"
-                app:cardBackgroundColor="@color/zibe_card_bg"
+                app:cardBackgroundColor="@color/zibe_dark_bg"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="6dp"
                 app:strokeWidth="0dp">

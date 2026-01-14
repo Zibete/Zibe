@@ -3,7 +3,7 @@
 
     <!-- Card (widget style) -->
     <style name="Zibe.Card" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardBackgroundColor">@color/zibe_card_bg</item>
+        <item name="cardBackgroundColor">@color/zibe_dark_bg</item>
         <item name="cardCornerRadius">@dimen/corner_large</item>
         <item name="cardElevation">@dimen/zibe_card_elevation</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
