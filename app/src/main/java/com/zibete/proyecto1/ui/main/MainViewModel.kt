@@ -35,11 +35,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Enum para controlar la pantalla actual desde el VM
-enum class CurrentScreen {
-    CHAT, USERS, GROUPS, EDIT_PROFILE, FAVORITES, OTHER
-}
-
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val exitGroupUseCase: ExitGroupUseCase,
@@ -72,7 +67,17 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun initStartOnChat() {
+        // Dejá el estado como está (ya es CHAT), pero forzá el evento de navegación
+        viewModelScope.launch {
+            _uiEvents.emit(MainUiEvent.ToChat)
+        }
+    }
+
     init {
+
+//        // UI initial
+//        initStartOnChat()
 
         // 1) Setup sesión (una vez)
         viewModelScope.launch {
@@ -169,19 +174,15 @@ class MainViewModel @Inject constructor(
     }
 
     fun showToolbar(show: Boolean) {
-        _uiState.update { it.copy(toolbarVisible = show) }
+        _uiState.update { it.copy(showToolbar = show) }
     }
 
     fun showLayoutSettings(show: Boolean) {
-        _uiState.update { it.copy(layoutSettingsVisible = show) }
+        _uiState.update { it.copy(showSettingsLayout = show) }
     }
 
     fun showBottomNav(show: Boolean) {
-        _uiState.update { it.copy(bottomNavVisible = show) }
-    }
-
-    fun setToolbarTitle(title: String) {
-        _uiState.update { it.copy(toolbarTitle = title) }
+        _uiState.update { it.copy(showBottomNav = show) }
     }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
@@ -291,16 +292,13 @@ class MainViewModel @Inject constructor(
         showLayoutSettings(false)
 
         viewModelScope.launch {
-            groupContext.collect { groupContext ->
-                val inGroup = groupContext?.inGroup ?: false
-                if (!inGroup) {
-                    toGroupsSelect()
-                } else {
-                    showToolbar(true)
-                    toGroupHost()
-                }
+            val ctx = groupContext.value
+            val inGroup = ctx?.inGroup ?: false
+            if (!inGroup) toGroupsSelect() else {
+                showToolbar(true); toGroupHost()
             }
         }
+
     }
 
     fun toGroupHost() {
@@ -379,6 +377,7 @@ class MainViewModel @Inject constructor(
                     _uiEvents.emit(MainUiEvent.ConfirmExitGroup)
                 }
             }
+
             R.id.action_skip -> {
                 viewModelScope.launch {
                     _uiEvents.emit(MainUiEvent.BackFromEditProfile)

@@ -5,11 +5,11 @@
         <item name="colorPrimary">@color/zibe_purple</item>
         <item name="colorSecondary">@color/zibe_purple</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/zibe_card_bg</item>
+        <item name="colorSurface">@color/zibe_dark_bg</item>
     </style>
 
     <style name="Zibe.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorSurface">@color/zibe_card_bg</item>
+        <item name="colorSurface">@color/zibe_dark_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
 
         <item name="shapeAppearanceMediumComponent">@style/Zibe.Dialog.Shape</item>

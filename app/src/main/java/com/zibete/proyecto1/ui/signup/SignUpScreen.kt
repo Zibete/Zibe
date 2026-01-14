@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -83,6 +84,14 @@ fun SignUpScreen(
 
     val context = LocalContext.current
 
+    val zibeColors = LocalZibeExtendedColors.current
+    val lightText = zibeColors.lightText
+
+    val elementSpacing8 = dimensionResource(R.dimen.element_spacing_xs)
+    val elementSpacing12 = dimensionResource(R.dimen.element_spacing_small)
+    val elementSpacing16 = dimensionResource(R.dimen.element_spacing_medium)
+    val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
+
     LaunchedEffect(Unit) {
         signUpEvents.collect { event ->
             when (event) {
@@ -126,8 +135,8 @@ fun SignUpScreen(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
                     .padding(
-                        start = 16.dp,
-                        end = 16.dp,
+                        start = elementSpacing16,
+                        end = elementSpacing16,
                         bottom = innerPadding.calculateTopPadding(),
                         top = innerPadding.calculateTopPadding()
                     )
@@ -214,14 +223,23 @@ fun SignUpScreen(
                             )
                         },
                         enabled = !isLoading,
-                        readOnly = true,
+                        readOnly = true
                     )
                     Box(
                         modifier = Modifier
                             .matchParentSize()
                             .testTag(TestTags.BIRTHDATE_PICKER)
                             .clickable { showDatePicker = true }
-                    )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_baseline_keyboard_arrow_down_24),
+                            contentDescription = "Abrir selector de fecha",
+                            tint = colorResource(id = R.color.zibe_hint_text),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = elementSpacing12)
+                        )
+                    }
                 }
 
                 if (showDatePicker) {
@@ -282,13 +300,13 @@ fun SignUpScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp)
+                        .padding(vertical = elementSpacing12)
                 )
 
                 // BOTÓN REGISTRAR
                 ZibeButton(
                     modifier = Modifier
-                        .padding(top = 8.dp)
+                        .padding(top = elementSpacing8)
                         .testTag(TestTags.BTN_REGISTER),
                     text = stringResource(R.string.finish_registration),
                     onClick = { onRegister(email, password, name, birthDate, description) },

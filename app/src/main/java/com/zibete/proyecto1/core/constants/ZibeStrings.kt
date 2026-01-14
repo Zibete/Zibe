@@ -74,6 +74,7 @@ const val USER_LOGOUT_ERR_EXCEPTION = "Firebase Logout failed"
 const val SIGNUP_ERR_EMAIL_IN_USE = "SIGNUP_ERR_EMAIL_IN_USE"
 const val ERROR_WEAK_PASSWORD = "ERROR_WEAK_PASSWORD"
 const val ERROR_INVALID_EMAIL = "ERROR_INVALID_EMAIL"
+const val ERROR_NAV_HOST_FRAGMENT = "Missing NavHostFragment in activity_main.xml (R.id.nav_host_fragment)"
 
 
 //const val SIGNUP_ERR_INVALID_PASSWORD = "Contraseña demasiado débil. Usá 6 caracteres o más."

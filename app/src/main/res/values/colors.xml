@@ -40,7 +40,9 @@
     <!-- Background colors -->
     <color name="zibe_night_start">#0D1B2A</color>
     <color name="zibe_night_end">#1B263B</color>
-    <color name="zibe_background">#0D1B2A</color>
+
+    <color name="zibe_dark_bg">#0D1B2A</color>
+    <color name="zibe_light_bg">#1E2A38</color>
     <color name="zibe_surface">#233042</color>
     <color name="zibe_overlay">#331B263B</color>
 
@@ -63,7 +65,7 @@
     <color name="zibe_shadow">#1A000000</color>
 
     <!-- CARDS -->
-    <color name="zibe_card_bg">@color/zibe_background</color>
+
 
     <!-- NAVEGACIÓN -->
     <color name="zibe_nav_active">#F6286D</color>
@@ -82,7 +84,7 @@
     <color name="zibe_btn_disabled">#555E70</color>
 
     <!-- INPUT -->
-    <color name="zibe_input_bg">#1E2A38</color>
+
     <color name="zibe_input_border">#3E4A5A</color>
 
     <!-- MISC -->

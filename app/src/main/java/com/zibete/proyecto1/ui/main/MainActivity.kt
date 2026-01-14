@@ -7,6 +7,7 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.PorterDuff
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
@@ -45,6 +46,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
@@ -68,14 +70,15 @@ class MainActivity : BaseToolbarActivity() {
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
-    private var navController: NavController? = null
+    private lateinit var navController: NavController
+    private lateinit var materialToolbar: MaterialToolbar
+    private lateinit var bottomNavigationView: BottomNavigationView
+    private var currentScreen: CurrentScreen = CurrentScreen.OTHER
     private var drawerLayout: DrawerLayout? = null
     private var navigationView: NavigationView? = null
-    private var materialToolbar: MaterialToolbar? = null
     private var layoutSettings: View? = null
     private var filterButton: ImageView? = null
     private var refreshButton: ImageView? = null
-    private var bottomNavigationView: BottomNavigationView? = null
     private var searchView: SearchView? = null
     private var badgeDrawableChat: BadgeDrawable? = null
     private var badgeDrawableGroup: BadgeDrawable? = null
@@ -83,6 +86,8 @@ class MainActivity : BaseToolbarActivity() {
     private var settingsClient: SettingsClient? = null
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
+
+    override val toolbarMenuRes: Int = R.menu.menu_main
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,11 +144,15 @@ class MainActivity : BaseToolbarActivity() {
             enableTransitionType(LayoutTransition.CHANGING)
         }
 
-        setSupportActionBar(materialToolbar)
+        setupToolbar(
+            toolbar = materialToolbar,
+            showBack = false,
+            handleBackInBase = false
+        )
 
         // Drawer
         drawerLayout = binding.drawerLayout
-        materialToolbar?.setNavigationOnClickListener {
+        materialToolbar.setNavigationOnClickListener {
             drawerLayout?.openDrawer(GravityCompat.START)
         }
 
@@ -185,13 +194,13 @@ class MainActivity : BaseToolbarActivity() {
 
     private fun setupBadges() {
         // Chat Badge
-        badgeDrawableChat = bottomNavigationView?.getOrCreateBadge(R.id.navBottomChat)?.apply {
+        badgeDrawableChat = bottomNavigationView.getOrCreateBadge(R.id.navBottomChat)?.apply {
             backgroundColor = getColorCompat(R.color.accent)
             badgeTextColor = getColorCompat(R.color.white)
             isVisible = false
         }
         // Group Badge
-        badgeDrawableGroup = bottomNavigationView?.getOrCreateBadge(R.id.navBottomGrupos)?.apply {
+        badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGrupos)?.apply {
             backgroundColor = getColorCompat(R.color.accent)
             badgeTextColor = getColorCompat(R.color.white)
             isVisible = false
@@ -199,9 +208,11 @@ class MainActivity : BaseToolbarActivity() {
     }
 
     private fun setupNavigation() {
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment?
-        navController = navHostFragment?.navController
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment?
+            ?: error(ERROR_NAV_HOST_FRAGMENT)
+
+        navController = navHostFragment.navController
 
         appBarConfiguration = AppBarConfiguration(
             setOf(
@@ -213,15 +224,18 @@ class MainActivity : BaseToolbarActivity() {
             drawerLayout
         )
 
-        navController?.let { nav ->
+        navController.let { nav ->
             NavigationUI.setupActionBarWithNavController(this, nav, appBarConfiguration)
             navigationView?.let { nv -> NavigationUI.setupWithNavController(nv, nav) }
         }
 
-        setupBottomNavListeners()
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            mainViewModel.onBottomItemSelected(item.itemId)
+            true
+        }
 
-        // Estado inicial
-        chatNavigation()
+//        // Estado inicial
+        goToChatTab()
     }
 
     private fun setupObservers() {
@@ -231,21 +245,28 @@ class MainActivity : BaseToolbarActivity() {
 
                 mainViewModel.uiState.collect { state ->
                     // Visibilidad
-                    materialToolbar?.isVisible = state.toolbarVisible
-                    layoutSettings?.isVisible = state.layoutSettingsVisible
-                    bottomNavigationView?.isVisible = state.bottomNavVisible
+                    materialToolbar.isVisible = state.showToolbar
+                    layoutSettings?.isVisible = state.showSettingsLayout
+                    bottomNavigationView.isVisible = state.showBottomNav
                     // Badges
                     badgeDrawableChat?.isVisible = state.chatListBadgeCount > 0
                     badgeDrawableChat?.number = state.chatListBadgeCount
                     badgeDrawableGroup?.isVisible = state.groupBadgeCount > 0
                     badgeDrawableGroup?.number = state.groupBadgeCount
+                    // Título
+                    materialToolbar.title = state.currentScreen.titleRes.asString(this@MainActivity)
+
+                    currentScreen = state.currentScreen
+
+                    invalidateOptionsMenu()
                 }
+
             }
         }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.groupName.collect { materialToolbar?.title = it }
+                mainViewModel.groupName.collect { materialToolbar.title = it }
             }
         }
 
@@ -257,60 +278,43 @@ class MainActivity : BaseToolbarActivity() {
                         when (event) {
 
                             is MainUiEvent.ToUsers -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_users)
-                                materialToolbar?.setTitle(R.string.menu_users)
-
-                                bottomNavigationView?.selectedItemId = R.id.navBottomUsers
+                                navController.navigate(R.id.nav_users)
+                                bottomNavigationView.selectedItemId = R.id.navBottomUsers
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainUiEvent.ToChat -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_chat)
-                                materialToolbar?.setTitle(R.string.menu_chat)
-
-                                bottomNavigationView?.selectedItemId = R.id.navBottomChat
+                                navController.navigate(R.id.nav_chat)
+                                bottomNavigationView.selectedItemId = R.id.navBottomChat
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainUiEvent.BackToChat -> {
-                                mainViewModel.onChatTabSelected()
+                                goToChatTab()
                             }
 
                             is MainUiEvent.ToGroupHost -> {
                                 mainViewModel.showToolbar(true)
-                                invalidateOptionsMenu()
-
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, GroupHostFragment())
 //                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
                                     .commit()
 
-                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
                             }
 
                             is MainUiEvent.ToGroupsSelect -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_groups)
-                                materialToolbar?.setTitle(R.string.menu_groups)
-
-                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                                navController.navigate(R.id.nav_groups)
+                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
                             }
 
                             is MainUiEvent.ToFavorites -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_favorites)
-                                materialToolbar?.setTitle(R.string.menu_favorites)
-
-                                bottomNavigationView?.selectedItemId = R.id.navBottomFavorites
+                                navController.navigate(R.id.nav_favorites)
+                                bottomNavigationView.selectedItemId = R.id.navBottomFavorites
                             }
 
                             is MainUiEvent.ToEditProfile -> {
-                                invalidateOptionsMenu()
-                                navController?.navigate(R.id.nav_editPerfil)
-                                materialToolbar?.setTitle(R.string.menu_edit_profile)
-
+                                navController.navigate(R.id.nav_editPerfil)
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
@@ -329,10 +333,7 @@ class MainActivity : BaseToolbarActivity() {
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, GroupsFragment())
                                     .commit()
-
-                                materialToolbar?.setTitle(R.string.menu_groups)
-                                invalidateOptionsMenu()
-                                bottomNavigationView?.selectedItemId = R.id.navBottomGrupos
+                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
                             }
 
                             is MainUiEvent.BackFromEditProfile -> {
@@ -394,14 +395,7 @@ class MainActivity : BaseToolbarActivity() {
         }
     }
 
-    private fun setupBottomNavListeners() {
-        bottomNavigationView?.setOnItemSelectedListener { item ->
-            mainViewModel.onBottomItemSelected(item.itemId)
-            true
-        }
-    }
-
-    fun chatNavigation() {
+    fun goToChatTab() {
         mainViewModel.onChatTabSelected()
     }
 
@@ -422,7 +416,7 @@ class MainActivity : BaseToolbarActivity() {
                 return
             }
         }
-        mainViewModel.onChatTabSelected()
+        goToChatTab()
     }
 
     private fun setupLocation() {
@@ -479,12 +473,56 @@ class MainActivity : BaseToolbarActivity() {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
     }
 
-    override fun onSearchViewReady(searchView: SearchView) {
+//    override fun onSearchViewReady(searchView: SearchView) {
+//        this.searchView = searchView
+//
+//        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+//            override fun onQueryTextSubmit(query: String?) = false
+//
+//            override fun onQueryTextChange(newText: String?): Boolean {
+//                val active = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+//                    ?.childFragmentManager
+//                    ?.primaryNavigationFragment
+//
+//                (active as? SearchHandler)?.onSearchQueryChanged(newText)
+//                return true
+//            }
+//        })
+//    }
+
+    override val toolbarMenuVisiblePredicate: (Menu) -> Unit = { menu ->
+        for (i in 0 until menu.size()) menu.getItem(i).isVisible = false
+
+        when (currentScreen) {
+            CurrentScreen.USERS -> {
+                menu.findItem(R.id.action_search)?.isVisible = true
+                menu.findItem(R.id.action_settings)?.isVisible = true
+            }
+
+            CurrentScreen.CHAT -> {
+                menu.findItem(R.id.action_settings)?.isVisible = true
+            }
+
+            CurrentScreen.GROUPS -> {
+                menu.findItem(R.id.action_unhide_chats)?.isVisible = true
+            }
+
+            CurrentScreen.FAVORITES -> {
+                menu.findItem(R.id.action_favorites)?.isVisible = true
+            }
+
+            else -> Unit
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+
+        val searchView = (menu.findItem(R.id.action_search)?.actionView as? SearchView)
         this.searchView = searchView
 
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
-
             override fun onQueryTextChange(newText: String?): Boolean {
                 val active = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
                     ?.childFragmentManager
@@ -494,8 +532,16 @@ class MainActivity : BaseToolbarActivity() {
                 return true
             }
         })
+        return true
     }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // 1) delegás al VM
+        mainViewModel.onToolbarItemSelected(item.itemId)
+
+        // 2) dejás que el framework maneje lo demás (home/up incluido)
+        return super.onOptionsItemSelected(item)
+    }
 
     private fun setupOnBackPressedDispatcher() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -511,11 +557,6 @@ class MainActivity : BaseToolbarActivity() {
                 mainViewModel.onBackPressed()
             }
         })
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        mainViewModel.onToolbarItemSelected(item.itemId)
-        return true
     }
 
     override fun onStart() {

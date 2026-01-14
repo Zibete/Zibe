@@ -128,10 +128,13 @@ class ChatActivity : BaseChatSessionActivity() {
     // ==================================== Setup ====================================
 
     private fun setupToolbar() {
-        val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
-        setSupportActionBar(toolbar)
-        supportActionBar?.title = ""
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+//        val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
+//        setSupportActionBar(toolbar)
+//        supportActionBar?.title = ""
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        setupToolbar(
+            toolbar = binding.toolbarChat
+        )
     }
 
     private fun setupRecycler() {

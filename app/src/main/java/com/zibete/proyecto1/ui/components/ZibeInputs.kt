@@ -13,7 +13,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.input.VisualTransformation
 import com.zibete.proyecto1.R
@@ -39,10 +38,12 @@ fun ZibeInputField(
     val zibeColors = LocalZibeExtendedColors.current
 
     val containerColor = zibeColors.inputBackground
-    val borderColor = zibeColors.border
+    val accentColor = zibeColors.border
     val hintColor = zibeColors.hintText
     val iconTint = zibeColors.hintText
-    val textColor = Color.White
+    val textColor = zibeColors.lightText
+    val errorColor = zibeColors.zibeRed
+    val inputBackground = zibeColors.inputBackground
 
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
     val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
@@ -74,10 +75,10 @@ fun ZibeInputField(
                 focusedContainerColor = containerColor,
                 unfocusedContainerColor = containerColor,
                 disabledContainerColor = containerColor,
-                focusedIndicatorColor = borderColor,
-                unfocusedIndicatorColor = borderColor,
-                disabledIndicatorColor = borderColor,
-                errorIndicatorColor = borderColor,
+                focusedIndicatorColor = accentColor,
+                unfocusedIndicatorColor = accentColor,
+                disabledIndicatorColor = inputBackground,
+                errorIndicatorColor = errorColor,
                 focusedTextColor = textColor,
                 unfocusedTextColor = textColor,
                 focusedLabelColor = hintColor,
@@ -86,7 +87,7 @@ fun ZibeInputField(
                 unfocusedLeadingIconColor = iconTint,
                 focusedTrailingIconColor = iconTint,
                 unfocusedTrailingIconColor = iconTint,
-                cursorColor = borderColor
+                cursorColor = accentColor
             ),
 
             visualTransformation = visualTransformation,
