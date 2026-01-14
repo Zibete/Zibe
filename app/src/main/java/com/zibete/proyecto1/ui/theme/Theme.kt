@@ -31,7 +31,7 @@ fun ZibeTheme(content: @Composable () -> Unit) {
         surface = colorResource(R.color.zibe_night_start),
         onSurface = colorResource(R.color.zibe_text_light),
         error = colorResource(R.color.zibe_red),
-        surfaceContainerHigh = colorResource(R.color.zibe_card)
+        surfaceContainerHigh = colorResource(R.color.zibe_card_bg)
     )
 
     CompositionLocalProvider(
@@ -51,7 +51,7 @@ fun rememberZibeShapes(): Shapes {
     return Shapes(
         small = RoundedCornerShape(dimensionResource(R.dimen.corner_small)),
         medium = RoundedCornerShape(dimensionResource(R.dimen.corner_medium)),
-        large = RoundedCornerShape(dimensionResource(R.dimen.corner_large))
+        large = RoundedCornerShape(dimensionResource(R.dimen.corner_xl))
     )
 }
 

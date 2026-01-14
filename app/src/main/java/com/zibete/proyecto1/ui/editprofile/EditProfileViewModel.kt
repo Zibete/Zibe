@@ -32,21 +32,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
-    private val authSessionProvider: AuthSessionProvider,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val userRepositoryProvider: UserRepositoryProvider,
     private val updateProfileUseCase: UpdateProfileUseCase,
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
-
-    val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
-        }
-
-    val myUid: String
-        get() = firebaseUser.uid
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -62,7 +53,7 @@ class EditProfileViewModel @Inject constructor(
 
             runCatching {
 
-                val u = userRepositoryProvider.getAccount(myUid)
+                val u = userRepositoryProvider.getMyAccount()
 
                 if (u == null) {
                     _uiState.update { it.copy(isLoading = false) }
@@ -87,7 +78,7 @@ class EditProfileViewModel @Inject constructor(
             }.onFailure {
                 onError(
                     UiText.StringRes(
-                        R.string.err_zibe_prefix,
+                        resId = R.string.err_zibe_prefix,
                         args = listOf(it.message ?: "")
                     )
                 )
@@ -107,6 +98,8 @@ class EditProfileViewModel @Inject constructor(
         val age = ageCalculator(birthDate)
         _uiState.update { it.copy(birthDate = birthDate, age = age, saveEnabled = true) }
     }
+
+    fun showSkip() : Boolean = uiState.value.hasBirthDate
 
 //    suspend fun isFirstLoginDone(): Boolean {
 //        return userPreferencesProvider.isFirstLoginDone()
@@ -169,15 +162,22 @@ class EditProfileViewModel @Inject constructor(
             ).onFailure { e ->
                 handleError(e)
             }.onSuccess {
-                _uiState.update { it.copy(
-                    isSaving = false,
-                    photoUrl = it.photoUrl,
-                    photoPreviewUri = null,
-                    deletePhoto = false,
-                    saveEnabled = false
-                ) }
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        photoUrl = it.photoUrl,
+                        photoPreviewUri = null,
+                        deletePhoto = false,
+                        saveEnabled = false
+                    )
+                }
 
-                snackBarManager.show(UiText.StringRes(R.string.msg_profile_saved), ZibeSnackType.SUCCESS)
+                val uiTextProfileSaved = UiText.StringRes(resId = R.string.msg_profile_saved)
+
+                snackBarManager.show(
+                    uiText = uiTextProfileSaved,
+                    type = ZibeSnackType.SUCCESS
+                )
 
                 onBackToMain()
             }
@@ -208,10 +208,12 @@ class EditProfileViewModel @Inject constructor(
                 type = ZibeSnackType.ERROR
             )
         )
-        _uiState.update { it.copy(
-            isSaving = false,
-            isLoading = false
-        ) }
+        _uiState.update {
+            it.copy(
+                isSaving = false,
+                isLoading = false
+            )
+        }
     }
 
     private suspend fun validateInputs(

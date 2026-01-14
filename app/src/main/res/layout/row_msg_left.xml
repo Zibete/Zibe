@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:text="@string/imagen_no_disponible"
-                    android:textColor="@color/zibe_text_muted"
+                    android:textColor="@color/zibe_hint_text"
                     android:paddingVertical="15dp"
                     android:visibility="gone" />
 

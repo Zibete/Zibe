@@ -1,16 +1,16 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
 
-    <string name="name">Nombre/Apodo</string>
+
     <string name="email">Correo electrónico</string>
     <string name="password">Contraseña</string>
     <string name="repeat_password">Repita la contraseña</string>
 
 
     <string name="fin_registro">Finalizar registro</string>
-    <string name="birthDate">Fecha de nacimiento</string>
-    <string name="Edad">Edad</string>
-    <string name="description">¿Algo sobre vos?</string>
+
+
+
     <string name="Entrar">Entrar</string>
     <string name="Logout">Cerrar sesión</string>
     <string name="datos">Complete sus datos</string>
@@ -26,7 +26,6 @@
     <string name="usuario">Usuario</string>
     <string name="atras">Atrás</string>
     <string name="siguiente">Siguiente</string>
-    <string name="comenzar">Comenzar</string>
     <string name="saltar">Saltar</string>
 
     <string name="facebook_app_id">fb971156603326191</string>
@@ -124,7 +123,6 @@
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
     <string name="notifications">Notificaciones</string>
-    <string name="save">Guardar</string>
     <string name="cerrar">cerrar</string>
     <string name="chatlist_onboarding_title">Aquí verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>

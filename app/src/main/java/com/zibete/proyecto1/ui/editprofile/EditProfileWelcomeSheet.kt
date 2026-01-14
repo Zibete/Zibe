@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -59,14 +58,13 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupPager()
         setupButtons()
-//        setupBrand()
     }
 
     private fun setupPager() {
         binding.viewPager.adapter = EditProfileWelcomePagerAdapter(pages)
 
         TabLayoutMediator(binding.tabDots, binding.viewPager) { tab, _ ->
-            tab.text = "" // crea el tab, pero no muestra label
+            tab.text = ""
         }.attach()
 
         updateButtons(0)
@@ -79,17 +77,6 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
             }
         )
     }
-
-//    private fun setupBrand() {
-//        binding.tvBrand.setTextAppearance(R.style.Zibe_Text_Brand)
-//
-//        binding.tvBrand.text = getString(R.string.app_name)
-//
-//        binding.tvBrand.setTextColor(ContextCompat.getColor(requireContext(), R.color.zibe_pink))
-//
-//        binding.tvBrand.textSize = 38f
-//
-//    }
 
     private fun setupButtons() {
         binding.btnPrev.setOnClickListener {
@@ -112,9 +99,11 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         binding.btnPrev.isEnabled = position > 0
 
         if (position == pages.lastIndex) {
-            binding.btnNext.setText(R.string.editprofile_welcome_done)
+//            binding.btnNext.setBackgroundColor(R.color.zibe_pink)
+            binding.btnNext.setText(R.string.action_continue)
         } else {
-            binding.btnNext.setText(R.string.editprofile_welcome_next)
+//            binding.btnNext.setBackgroundColor(R.color.zibe_purple)
+            binding.btnNext.setText(R.string.action_next)
         }
     }
 }

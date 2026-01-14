@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Legacy -->
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
@@ -22,45 +23,47 @@
     <color name="backSplash">#182632</color>
     <color name="primary_text">#212121</color>
 
+    <!-- Zibe Colors -->
+
+    <color name="zibe_pink">#F6286D</color>
+    <color name="zibe_purple">#8B3CFF</color>
+
+    <color name="zibe_purple_dark">#6A28C8</color>
+
+    <color name="zibe_gradient_start">#FF3B93</color>
+    <color name="zibe_gradient_medium">#8B3CFF</color>
+    <color name="zibe_gradient_end">#3A54BF</color>
+
+    <color name="pink_bubble">#F6286D</color>
+    <color name="blue_bubble">#3A54BF</color>
+
+    <!-- Background colors -->
+    <color name="zibe_night_start">#0D1B2A</color>
+    <color name="zibe_night_end">#1B263B</color>
+    <color name="zibe_background">#0D1B2A</color>
+    <color name="zibe_surface">#233042</color>
+    <color name="zibe_overlay">#331B263B</color>
+
+    <!-- Text colors -->
+    <color name="zibe_text_light">#CDFFFFFF</color>
+    <color name="zibe_text_dark">@color/zibe_night_end</color>
+    <color name="zibe_text_pink">#FF3B93</color>
+    <color name="zibe_hint_text">#8894A8</color>
 
 
-    <!-- colors.xml -->
+    <!-- SNACK -->
+    <color name="snackbar_surface">#1E2A38</color>
+
     <color name="zibe_red">#FF4C4C</color>
     <color name="zibe_yellow">#FFD93B</color>
     <color name="zibe_green">#4CAF50</color>
     <color name="zibe_blue">#3A7BFF</color>
 
-
-
-
-    <!-- COLORES PRINCIPALES -->
-    <color name="zibe_pink">#F6286D</color>
-    <color name="zibe_purple">#8B3CFF</color>
-    <color name="zibe_purple_dark">#6A28C8</color>
-    <color name="zibe_gradient_start">#FF3B93</color>
-    <color name="zibe_gradient_medium">#8B3CFF</color>
-    <color name="zibe_gradient_end">#3A54BF</color>
-    <color name="pink_bubble">#F6286D</color>
-    <color name="blue_bubble">#3A54BF</color>
-    <color name="zibe_pink_24">#40FF4081</color>
-
-
-    <!-- FONDOS -->
-    <color name="zibe_night_start">#0D1B2A</color>
-    <color name="zibe_night_end">#1B263B</color>
-    <color name="zibe_card">#1E2A38</color>
-    <color name="zibe_surface">#233042</color>
-    <color name="zibe_overlay">#331B263B</color>
-
-    <!-- TEXTO -->
-    <color name="zibe_text_light">#FFFFFF</color>
-    <color name="zibe_text_dark">#0D1B2A</color>
-    <color name="zibe_text_muted">#A3B1C6</color>
-    <color name="zibe_text_pink">#FF3B93</color>
-
-
     <!-- ESTADOS -->
     <color name="zibe_shadow">#1A000000</color>
+
+    <!-- CARDS -->
+    <color name="zibe_card_bg">@color/zibe_background</color>
 
     <!-- NAVEGACIÓN -->
     <color name="zibe_nav_active">#F6286D</color>
@@ -68,17 +71,19 @@
     <color name="zibe_nav_bg">#0D1B2A</color>
 
     <!-- BOTONES -->
-    <color name="zibe_btn_primary">#F6286D</color>
-    <color name="zibe_btn_secondary">#8B3CFF</color>
-    <color name="zibe_btn_secondary_40">#668B3CFF</color>
+    <color name="zibe_btn_primary">@color/zibe_pink</color>
+    <color name="zibe_btn_primary_50">#80FF4081</color>
+    <color name="zibe_btn_primary_24">#3DFF4081</color>
+
+    <color name="zibe_btn_secondary">@color/zibe_purple</color>
+    <color name="zibe_btn_secondary_50">#808B3CFF</color>
+    <color name="zibe_btn_secondary_24">#3D8B3CFF</color>
+
     <color name="zibe_btn_disabled">#555E70</color>
 
-    <!-- CAMPOS -->
+    <!-- INPUT -->
     <color name="zibe_input_bg">#1E2A38</color>
-    <color name="snackbar_surface">#1E2A38</color>
-
     <color name="zibe_input_border">#3E4A5A</color>
-    <color name="zibe_hint_text">#8894A8</color>
 
     <!-- MISC -->
     <color name="transparent">#00000000</color>
