@@ -303,7 +303,7 @@
                             android:hint="Escribe un mensaje"
                             android:inputType="textCapSentences"
                             android:textColor="@color/blanco"
-                            android:textColorHint="@color/zibe_text_muted"
+                            android:textColorHint="@color/zibe_hint_text"
                             android:visibility="visible" />
 
                         <LinearLayout

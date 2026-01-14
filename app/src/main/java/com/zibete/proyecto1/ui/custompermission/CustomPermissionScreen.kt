@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
-import com.zibete.proyecto1.core.constants.LOGO_CONTENT_DESC
 import com.zibete.proyecto1.di.PermissionRequesterEntryPoint
 import com.zibete.proyecto1.di.RationaleEntryPoint
 import com.zibete.proyecto1.ui.components.ZibeButton
@@ -85,10 +84,12 @@ fun CustomPermissionScreen(
                 permissionViewModel.consumeEvent()
                 onPermissionGranted()
             }
+
             PermissionUiEvent.PermissionDenied -> {
                 permissionViewModel.consumeEvent()
                 onPermissionDenied()
             }
+
             null -> Unit
         }
     }
@@ -123,7 +124,7 @@ fun CustomPermissionScreen(
                 ) {
                     Image(
                         painter = painterResource(id = R.mipmap.logo_zibe_icon),
-                        contentDescription = LOGO_CONTENT_DESC,
+                        contentDescription = stringResource(R.string.logo_content_desc),
                         modifier = Modifier.height(90.dp),
                         contentScale = ContentScale.Fit
                     )
@@ -132,7 +133,7 @@ fun CustomPermissionScreen(
 
                     Text(
                         text = stringResource(R.string.permission_location_message),
-                        color = zibeColors.mutedText,
+                        color = zibeColors.hintText,
                         fontSize = 16.sp,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -141,7 +142,7 @@ fun CustomPermissionScreen(
 
                     Text(
                         text = stringResource(R.string.permission_legal_disclaimer),
-                        color = zibeColors.mutedText,
+                        color = zibeColors.hintText,
                         fontSize = 14.sp,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -166,7 +167,7 @@ fun CustomPermissionScreen(
                 Text(
                     text = stringResource(R.string.permission_rationale_message),
                     textAlign = TextAlign.Start,
-                    color = LocalZibeExtendedColors.current.mutedText,
+                    color = LocalZibeExtendedColors.current.hintText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -182,7 +183,7 @@ fun CustomPermissionScreen(
                 Text(
                     text = stringResource(R.string.permission_denied_message),
                     textAlign = TextAlign.Start,
-                    color = LocalZibeExtendedColors.current.mutedText,
+                    color = LocalZibeExtendedColors.current.hintText,
                     style = MaterialTheme.typography.bodyMedium
                 )
             },

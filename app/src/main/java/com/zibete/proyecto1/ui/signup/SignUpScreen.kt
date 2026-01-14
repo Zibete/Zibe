@@ -203,14 +203,14 @@ fun SignUpScreen(
                     ZibeInputField(
                         value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
                         onValueChange = { },
-                        label = stringResource(R.string.birthDate),
+                        label = stringResource(R.string.birth_date),
                         modifier = Modifier
                             .fillMaxWidth(),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar_24),
-                                contentDescription = stringResource(R.string.birthDate),
-                                tint = colorResource(id = R.color.zibe_text_muted)
+                                contentDescription = stringResource(R.string.birth_date),
+                                tint = colorResource(id = R.color.zibe_hint_text)
                             )
                         },
                         enabled = !isLoading,

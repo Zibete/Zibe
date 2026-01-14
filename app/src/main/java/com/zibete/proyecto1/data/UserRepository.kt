@@ -58,6 +58,7 @@ interface UserRepositoryProvider {
     suspend fun getProfilePhotoUrl(): String?
     suspend fun getAccount(uid: String): Users?
     suspend fun getChatStateWith(otherUid: String, nodeType: String): String
+    suspend fun getMyAccount(): Users?
 
 }
 
@@ -219,6 +220,9 @@ class UserRepository @Inject constructor(
         getAccountSnapshot(uid)
             .takeIf { it.exists() }
             ?.getValue(Users::class.java)
+
+    override suspend fun getMyAccount(): Users? =
+        getAccount(myUid)
 
     // ============================================================
     // EDIT PROFILE (updates)

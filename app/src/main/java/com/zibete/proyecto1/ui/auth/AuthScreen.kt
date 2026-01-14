@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +33,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,11 +44,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
-import com.zibete.proyecto1.core.constants.PASSWORD_VISIBILITY_CONTENT_DESC
 import com.zibete.proyecto1.ui.components.ZibeButton
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
@@ -85,6 +82,13 @@ fun AuthScreen(
     val zibeColors = LocalZibeExtendedColors.current
     val context = LocalContext.current
 
+    val lightText = zibeColors.lightText
+
+    val elementSpacingXs = dimensionResource(R.dimen.element_spacing_xs)
+    val elementSpacingSmall = dimensionResource(R.dimen.element_spacing_small)
+    val elementSpacingMedium = dimensionResource(R.dimen.element_spacing_medium)
+    val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
+
     val snackHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -102,6 +106,7 @@ fun AuthScreen(
                             )
                         }
                     }
+
                     is AuthUiEvent.NavigateToSplash -> {
                         onNavigateToSplash()
                     }
@@ -129,50 +134,53 @@ fun AuthScreen(
                         .align(Alignment.Center)
                         .verticalScroll(rememberScrollState())
                         .fillMaxSize()
-                        .padding(start = 16.dp,
-                            end = 16.dp,
+                        .padding(
+                            start = elementSpacingMedium,
+                            end = elementSpacingMedium,
                             bottom = innerPadding.calculateTopPadding(),
-                            top = innerPadding.calculateTopPadding()),
+                            top = innerPadding.calculateTopPadding()
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // LOGO
                     Image(
                         painter = painterResource(id = R.mipmap.logo_zibe),
-                        contentDescription = stringResource(id = R.string.app_name),
+                        contentDescription = stringResource(R.string.logo_content_desc),
                         modifier = Modifier
                             .padding(
-                                start = 30.dp,
-                                end = 30.dp,
-                                bottom = 8.dp,
-                                top = 0.dp)
+                                start = elementSpacingXl,
+                                end = elementSpacingXl,
+                                bottom = elementSpacingXs,
+                                top = dimensionResource(R.dimen.zero_dp)
+                            )
                     )
 
-                    // Si no está marcada para eliminación, mostramos login normal
                     if (!deleteUser) {
-
                         // GOOGLE
-                        SocialButton(
+                        ZibeButton(
                             text = stringResource(R.string.continue_with_google),
                             iconRes = R.drawable.ic_google,
                             onClick = onGoogleClick
                         )
 
+                        Spacer(modifier = Modifier.height(elementSpacingXs))
+
                         // FACEBOOK
-                        SocialButton(
+                        ZibeButton(
                             text = stringResource(R.string.continue_with_facebook),
                             iconRes = R.drawable.ic_facebook,
                             onClick = onFacebookClick
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(elementSpacingXs))
 
                         Text(
                             text = stringResource(R.string.auth_or_use_account),
                             style = MaterialTheme.typography.headlineSmall,
-                            color = zibeColors.mutedText,
+                            color = lightText,
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(elementSpacingMedium))
 
                         // EMAIL
                         ZibeInputField(
@@ -214,7 +222,7 @@ fun AuthScreen(
                                             else
                                                 R.drawable.ic_baseline_visibility_off_24
                                         ),
-                                        contentDescription = PASSWORD_VISIBILITY_CONTENT_DESC
+                                        contentDescription = stringResource(R.string.password_content_desc)
                                     )
                                 }
                             },
@@ -232,39 +240,44 @@ fun AuthScreen(
                             text = stringResource(R.string.auth_forgot_password),
                             modifier = Modifier
                                 .align(Alignment.End)
-                                .padding(bottom = 8.dp)
+                                .padding(bottom = elementSpacingSmall)
                                 .clickable {
-                                    resetEmail = email   // rellenamos con el mail del formulario
-                                    showResetDialog = true },
+                                    resetEmail = email
+                                    showResetDialog = true
+                                },
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = zibeColors.mutedText
+                                color = lightText
                             )
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(elementSpacingMedium))
 
                         ZibeButton(
                             text = stringResource(id = R.string.Entrar),
                             onClick = { onLogin(email.trim(), password) },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            modifier = Modifier.padding(
+                                top = elementSpacingXs,
+                                bottom = elementSpacingSmall
+                            ),
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
 
+                        Spacer(modifier = Modifier.height(elementSpacingSmall))
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(vertical = 10.dp)
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 text = stringResource(R.string.auth_do_not_have_account),
                                 style = MaterialTheme.typography.headlineSmall.copy(
-                                    color = zibeColors.mutedText
+                                    color = lightText
                                 )
                             )
 
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(elementSpacingXs))
 
                             Text(
                                 text = stringResource(R.string.action_register),
@@ -273,7 +286,7 @@ fun AuthScreen(
                                     .testTag(Constants.TestTags.BTN_REGISTER),
                                 style = MaterialTheme.typography.headlineSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = zibeColors.mutedText
+                                    color = lightText
                                 )
                             )
                         }
@@ -284,18 +297,23 @@ fun AuthScreen(
                         ZibeButton(
                             text = stringResource(R.string.auth_do_not_delete_account),
                             onClick = { onDoNotDelete() },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            modifier = Modifier.padding(
+                                top = elementSpacingXs,
+                                bottom = elementSpacingSmall
+                            ),
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
                         ZibeButton(
                             text = stringResource(R.string.delete_account),
                             onClick = { onDeleteAccount() },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                            modifier = Modifier.padding(
+                                top = elementSpacingXs,
+                                bottom = elementSpacingSmall
+                            ),
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
-
                     }
                 }
 
@@ -328,34 +346,6 @@ fun AuthScreen(
     }
 }
 
-@Composable
-private fun SocialButton(
-    text: String,
-    iconRes: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .padding(bottom = 8.dp)
-            .fillMaxWidth()
-            .height(52.dp)
-            .shadow(8.dp, MaterialTheme.shapes.medium),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = null,
-            tint = Color.Unspecified
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge
-        )
-    }
-}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

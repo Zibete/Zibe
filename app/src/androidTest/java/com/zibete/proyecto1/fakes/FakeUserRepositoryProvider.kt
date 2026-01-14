@@ -32,4 +32,8 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
+    override suspend fun getMyAccount(): Users? {
+        TODO("Not yet implemented")
+    }
+
 }

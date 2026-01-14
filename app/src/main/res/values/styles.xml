@@ -9,10 +9,8 @@
         <item name="fontFamily">@font/poppins</item>
 
         <item name="textAppearanceHeadlineMedium">@style/Zibe.Text.Bold</item>
-
         <item name="textAppearanceBodyMedium">@style/Zibe.Text.Regular</item>
         <item name="textAppearanceBodyLarge">@style/Zibe.Text.SemiBold</item>
-
         <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
 
         <!-- Core colors -->
@@ -21,25 +19,25 @@
         <item name="colorControlActivated">@color/zibe_purple</item>
         <item name="colorOnSurfaceVariant">@color/zibe_hint_text</item>
 
-        <!-- Material 3 recommended tokens (map a tus colores actuales) -->
+        <!-- Material 3 recommended tokens -->
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">@color/zibe_card</item>
+        <item name="colorSurface">@color/zibe_card_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
-        <item name="colorOutline">@color/zibe_text_muted</item>
+        <item name="colorOutline">@color/zibe_hint_text</item>
 
         <!-- Sistema -->
         <item name="android:statusBarColor">@color/zibe_night_start</item>
         <item name="android:navigationBarColor">@color/zibe_night_end</item>
         <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
 
-        <!-- Texto legacy (OK mantener) -->
+        <!-- Texto legacy -->
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
-        <item name="android:textColorSecondary">@color/zibe_text_muted</item>
+        <item name="android:textColorSecondary">@color/zibe_hint_text</item>
         <item name="android:textColorHint">@color/zibe_hint_text</item>
 
         <!-- Defaults de widgets -->
-        <item name="materialButtonStyle">@style/Zibe.Button</item>
+        <item name="materialButtonStyle">@style/Zibe.Button.Secondary</item>
         <item name="textInputStyle">@style/Zibe.Input</item>
         <item name="bottomNavigationStyle">@style/Zibe.BottomNav</item>
         <item name="toolbarStyle">@style/Zibe.Toolbar</item>
@@ -63,7 +61,7 @@
     <!-- ===== NavigationView (drawer) ===== -->
     <style name="NavViewStyle" parent="Widget.Material3.NavigationView">
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
-        <item name="android:textColorSecondary">@color/zibe_text_muted</item>
+        <item name="android:textColorSecondary">@color/zibe_hint_text</item>
         <item name="itemIconTint">@color/zibe_nav_inactive</item>
         <item name="itemTextColor">@color/zibe_nav_inactive</item>
         <item name="itemRippleColor">@color/zibe_pink</item>
@@ -89,31 +87,31 @@
     <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="android:background">@drawable/bg_gradient_zibe</item>
         <item name="android:titleTextColor">@color/white</item>
-        <item name="android:subtitleTextColor">@color/zibe_text_muted</item>
+        <item name="android:subtitleTextColor">@color/zibe_hint_text</item>
     </style>
 
     <!-- ===== BottomSheet (overlay minimalista) ===== -->
     <style name="Zibe.BottomSheetTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Zibe.BottomSheet.Internal</item>
-        <item name="materialButtonStyle">@style/Zibe.Button</item>
+        <item name="materialButtonStyle">@style/Zibe.Button.Secondary</item>
     </style>
 
     <style name="Zibe.BottomSheet.Internal" parent="Widget.Material3.BottomSheet.Modal">
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.BottomSheet</item>
-        <item name="backgroundTint">@color/zibe_card</item>
+        <item name="backgroundTint">@color/zibe_card_bg</item>
     </style>
 
     <style name="ShapeAppearance.Zibe.BottomSheet" parent="ShapeAppearance.Material3.Corner.Medium">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeTopLeft">24dp</item>
-        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeTopLeft">@dimen/corner_xxl</item>
+        <item name="cornerSizeTopRight">@dimen/corner_xxl</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
     <!-- ===== Misc ===== -->
     <style name="Zibe.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="android:background">@color/zibe_card</item>
+        <item name="android:background">@color/zibe_card_bg</item>
         <item name="android:textColor">@color/zibe_text_light</item>
     </style>
 

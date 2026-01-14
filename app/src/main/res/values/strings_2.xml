@@ -7,18 +7,29 @@
     <!-- EditProfile -->
     <!-- ============================= -->
 
-    <string name="editprofile_welcome_pager_1_title">¡Bienvenido a ZIBE! 🎉</string>
+    <string name="editprofile_welcome_pager_1_title">¡Bienvenido a ZIBE!</string>
     <string name="editprofile_welcome_pager_1_body">¡Estamos emocionados de tenerte aquí!. Para comenzar, te recomendamos completar tu perfil con información auténtica y una foto clara.</string>
 
-    <string name="editprofile_welcome_pager_2_title">Un perfil real conecta mejor ✅</string>
+    <string name="editprofile_welcome_pager_2_title">Un perfil real conecta mejor</string>
     <string name="editprofile_welcome_pager_2_body">Una foto clara y datos reales ayudan a que otras personas te conozcan mejor y aumentan tus chances de hacer conexiones significativas.</string>
 
-    <string name="editprofile_welcome_pager_3_title">Listo para empezar 🌟</string>
+    <string name="editprofile_welcome_pager_3_title">Listo para empezar</string>
     <string name="editprofile_welcome_pager_3_body">Completá tu fecha de nacimiento y guardá los cambios para continuar. ¡Disfrutá la experiencia ZIBE!</string>
 
-    <string name="editprofile_welcome_prev">Anterior</string>
-    <string name="editprofile_welcome_next">Siguiente</string>
-    <string name="editprofile_welcome_done">Continuar</string>
+    <string name="edit_profile_hints_text">Una foto clara y una buena descripción aumentan tus coincidencias.</string>
+
+    <string name="name">Nombre/Apodo</string>
+    <string name="age">Edad</string>
+    <string name="birth_date">Fecha de nacimiento</string>
+    <string name="description">¿Algo sobre vos?</string>
+    <string name="picture">Foto</string>
+
+
+    <string name="content_description_save">Guardar cambios</string>
+    <string name="content_description_photo">Foto de perfil. Tocar para agrandar</string>
+    <string name="content_description_edit_photo">Editar foto de perfil</string>
+
+
 
     <!-- ============================= -->
     <!-- SignUp – textos animados -->
@@ -190,6 +201,8 @@
     <string name="auth_or_use_account">o utilizá tu cuenta</string>
     <string name="continue_with_facebook">Continuar con Facebook</string>
     <string name="continue_with_google">Continuar con Google</string>
+    <string name="password_content_desc">Contraseña visible/invisible</string>
+    <string name="logo_content_desc">Logo de ZIBE</string>
 
     <!-- ============================= -->
     <!-- Action Buttons -->
@@ -202,6 +215,7 @@
     <string name="action_back">Atrás</string>
     <string name="action_accept">Aceptar</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_save">Guardar</string>
 
     <string name="action_filter_on">Filtrar</string>
     <string name="action_filter_off">Quitar filtro</string>
@@ -209,10 +223,7 @@
     <string name="action_continue">Continuar</string>
     <string name="action_retry">Reintentar</string>
 
-    <!-- ============================= -->
-    <!-- Accesibilidad -->
-    <!-- ============================= -->
-    <string name="logo_content_desc">Logo de ZIBE</string>
+
 
     <!-- ============================= -->
     <!-- Onboarding -->

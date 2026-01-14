@@ -2,18 +2,24 @@
 <resources>
 
     <style name="Zibe.Input" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
-        <item name="boxBackgroundColor">@color/zibe_night_end</item>
-        <item name="boxStrokeColor">@color/zibe_purple</item>
+        <item name="boxBackgroundColor">@color/zibe_input_bg</item>
+        <item name="boxStrokeColor">@color/zibe_pink</item>
 
         <item name="android:textColorHint">@color/zibe_hint_text</item>
         <item name="hintTextColor">@color/zibe_hint_text</item>
+        <item name="hintTextColor">@color/zibe_hint_text</item>
+        <item name="boxBackgroundMode">filled</item>
 
-        <item name="startIconTint">@color/zibe_text_muted</item>
-        <item name="endIconTint">@color/zibe_text_muted</item>
+        <item name="startIconTint">@color/zibe_hint_text</item>
+        <item name="endIconTint">@color/zibe_hint_text</item>
+        <item name="boxCornerRadiusTopStart">@dimen/zibe_input_corner_top</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/zibe_input_corner_top</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/zibe_input_corner_bottom</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/zibe_input_corner_bottom</item>
     </style>
 
     <style name="Zibe.EditText" parent="Widget.Material3.TextInputEditText.FilledBox.Dense">
-        <item name="android:textColor">@color/zibe_text_light</item>
+        <item name="android:textColor">@color/white</item>
         <item name="hintTextColor">@color/zibe_hint_text</item>
     </style>
 

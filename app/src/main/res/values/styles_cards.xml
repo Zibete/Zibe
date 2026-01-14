@@ -3,20 +3,20 @@
 
     <!-- Card (widget style) -->
     <style name="Zibe.Card" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardBackgroundColor">@color/zibe_card</item>
-        <item name="cardCornerRadius">12dp</item>
-        <item name="cardElevation">3dp</item>
+        <item name="cardBackgroundColor">@color/zibe_card_bg</item>
+        <item name="cardCornerRadius">@dimen/corner_large</item>
+        <item name="cardElevation">@dimen/zibe_card_elevation</item>
         <item name="android:foreground">?attr/selectableItemBackground</item>
     </style>
 
     <!-- ShapeAppearance (para usar en app:shapeAppearanceOverlay) -->
     <style name="ShapeAppearance.Zibe.Card" parent="ShapeAppearance.Material3.Corner.Medium">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">12dp</item>
+        <item name="cornerSize">@dimen/corner_medium</item>
     </style>
 
     <style name="ShapeAppearance.Zibe.Card.Large" parent="ShapeAppearance.Zibe.Card">
-        <item name="cornerSize">20dp</item>
+        <item name="cornerSize">@dimen/corner_large</item>
     </style>
 
     <!-- BottomNav active indicator pill -->

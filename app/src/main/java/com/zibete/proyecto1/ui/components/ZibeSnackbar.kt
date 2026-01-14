@@ -104,7 +104,7 @@ fun ZibeSnackHost(
                             .shadow(10.dp, RoundedCornerShape(16.dp)),
                         shape = RoundedCornerShape(16.dp),
                         containerColor = zibeColors.snackbarSurface,
-                        contentColor = zibeColors.mutedText
+                        contentColor = zibeColors.hintText
                     ) {
                         Box(
                             modifier = Modifier.fillMaxWidth(),

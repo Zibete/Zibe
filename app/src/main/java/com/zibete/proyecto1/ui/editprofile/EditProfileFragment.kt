@@ -95,8 +95,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     }
 
     private fun onCameraClicked() {
-        val granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
+        val granted =
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
 
         if (granted) startCamera() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
@@ -113,9 +114,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupOptionMenu()
-
-        binding.buttonSave.isEnabled = false
+        binding.fabSave.isEnabled = false
 
         binding.profilePhoto.setOnClickListener {
             val photoUrl = editProfileViewModel.uiState.value.photoUrl
@@ -123,10 +122,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             PhotoViewerActivity.startSingle(requireContext(), photoUrl)
         }
 
-        binding.actionButtonEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
-        binding.datePickerBirthDay.setOnClickListener { showMaterialDatePicker() }
-        binding.buttonSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
-        binding.buttonDone.setOnClickListener { editProfileViewModel.onBackToMain() }
+        binding.fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
+        binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
+        binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
         // Watchers -> VM
         binding.inputUserName.addTextChangedListener(SimpleWatcher {
@@ -141,10 +139,12 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         collectUi()
 
         showWelcomeIfNeeded()
+
+        setupOptionMenu()
     }
 
     private fun collectUi() {
-        binding.buttonDone.isVisible = false
+//        binding.fabSkip.isVisible = false
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -152,23 +152,36 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 launch {
                     editProfileViewModel.uiState.collect { state ->
 
-                        binding.buttonSave.isEnabled = state.saveEnabled && !state.isSaving
+                        binding.fabSave.isEnabled = state.saveEnabled && !state.isSaving
 
                         binding.inputUserName.setTextIfChanged(state.name)
-                        binding.datePickerBirthDay.setTextIfChanged(editProfileViewModel.birthDateUi)
+                        binding.pickerBirthDate.setTextIfChanged(editProfileViewModel.birthDateUi)
                         binding.inputDescription.setTextIfChanged(state.description)
 
-                        binding.tvEdad.text = state.age?.toString().orEmpty()
+                        binding.inputAge.setText(state.age?.toString().orEmpty())
 
-                        binding.completeProfile.text = getString(R.string.signup_profile_message) // TODO --> Sheet
 
-                        binding.buttonDone.isVisible = state.hasBirthDate
+//                        binding.fabSkip.isVisible = state.hasBirthDate
 
                         val toLoad: Any = state.photoPreviewUri
                             ?: state.photoUrl
                             ?: DEFAULT_PROFILE_PHOTO_URL
 
                         loadProfilePhoto(toLoad)
+
+                        var lastScrollY = 0
+
+                        binding.scrollable.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                            // Si la posición actual es mayor a la anterior, el usuario baja
+                            if (scrollY > lastScrollY) {
+                                binding.fabSave.shrink()
+                                binding.fabEditPhoto.shrink()
+                            } else {
+                                binding.fabSave.extend()
+                                binding.fabEditPhoto.extend()
+                            }
+                            lastScrollY = scrollY
+                        }
                     }
                 }
 
@@ -185,7 +198,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                             is EditProfileUiEvent.OnBackToMain -> {
                                 (activity as? MainActivity)?.mainViewModel?.emit(
-                                    MainUiEvent.BackFromEditProfile)
+                                    MainUiEvent.BackFromEditProfile
+                                )
                             }
                         }
                     }
@@ -272,8 +286,11 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         editPhotoDialog = Dialog(themedContext).apply {
             setContentView(dialogBinding.root)
             setCancelable(true)
-            window?.setBackgroundDrawable(getDrawable(requireContext(),R.drawable.badge_round))
-            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            window?.setBackgroundDrawable(getDrawable(requireContext(), R.drawable.badge_round))
+            window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             show()
         }
 
@@ -302,7 +319,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             .build()
 
         val picker = MaterialDatePicker.Builder.datePicker()
-            .setTitleText(getString(R.string.birthDate))
+            .setTitleText(getString(R.string.birth_date))
             .setCalendarConstraints(constraints)
             .setTheme(R.style.ZibeDatePickerOverlay)
             .setSelection(
@@ -329,6 +346,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                 override fun onPrepareMenu(menu: Menu) {
                     menu.findItem(R.id.action_settings)?.isVisible = true
+                    menu.findItem(R.id.action_skip)?.isVisible = !editProfileViewModel.showSkip()
                 }
 
                 override fun onMenuItemSelected(menuItem: android.view.MenuItem): Boolean = false

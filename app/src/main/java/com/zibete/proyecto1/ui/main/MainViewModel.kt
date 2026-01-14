@@ -379,6 +379,11 @@ class MainViewModel @Inject constructor(
                     _uiEvents.emit(MainUiEvent.ConfirmExitGroup)
                 }
             }
+            R.id.action_skip -> {
+                viewModelScope.launch {
+                    _uiEvents.emit(MainUiEvent.BackFromEditProfile)
+                }
+            }
         }
     }
 

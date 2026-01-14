@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,283 +7,200 @@
     android:background="@drawable/bg_gradient_zibe"
     tools:context=".ui.editprofile.EditProfileFragment">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollable"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:padding="@dimen/screen_padding">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/scrollable"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:padding="20dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <!-- Tarjeta contenedora -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Zibe.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/element_spacing_medium">
+
+                <com.zibete.proyecto1.ui.ResizableImageViewProfile
+                    android:id="@+id/profile_photo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:contentDescription="@string/content_description_photo" />
+
+                <ProgressBar
+                    android:id="@+id/loadingPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminate="true" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Content -->
             <LinearLayout
+                android:id="@+id/edit_profile_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Tarjeta contenedora -->
-                <com.google.android.material.card.MaterialCardView
-                    style="@style/Zibe.Card"
-                    app:cardCornerRadius="15dp"
+                <!-- Name -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Zibe.Input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardElevation="4dp">
+                    android:paddingBottom="@dimen/element_spacing_xs"
+                    app:startIconDrawable="@drawable/ic_person_24">
 
-                    <com.zibete.proyecto1.ui.ResizableImageViewProfile
-                        android:layout_gravity="center"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/profilePhoto"/>
-
-                    <ProgressBar
-                        android:id="@+id/loadingPhoto"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:indeterminate="true"
-                        android:layout_gravity="center"/>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Tarjeta contenedora -->
-                <com.google.android.material.card.MaterialCardView
-                    style="@style/Zibe.Card"
-                    app:cardCornerRadius="15dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardElevation="4dp">
-
-                    <!-- CONTENIDO flotante (CARD con sombra) -->
-                    <LinearLayout
-                        android:id="@+id/contentCard"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/input_user_name"
+                        style="@style/Zibe.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingTop="35dp"
-                        android:translationY="-24dp">
+                        android:hint="@string/name"
+                        android:inputType="textPersonName" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-                        <LinearLayout
-                            android:id="@+id/contenidoPerfil"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:paddingHorizontal="16dp">
-
-                            <!-- Nombre -->
-                            <com.google.android.material.textfield.TextInputLayout
-                                style="@style/Zibe.Input"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                app:startIconDrawable="@drawable/ic_person_24">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/input_user_name"
-                                    style="@style/Zibe.EditText"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:hint="@string/name"
-                                    android:inputType="textPersonName"/>
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <!-- Fecha de nacimiento + Edad -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:paddingTop="8dp">
-
-                                <com.google.android.material.textfield.TextInputLayout
-                                    style="@style/Zibe.Input"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    app:startIconDrawable="@drawable/ic_calendar_24"
-                                    app:endIconMode="custom"
-                                    app:endIconDrawable="@drawable/ic_baseline_keyboard_arrow_down_24"
-                                    app:boxBackgroundMode="filled">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/datePickerBirthDay"
-                                        style="@style/Zibe.EditText"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:hint="@string/birthDate"
-                                        android:focusable="false"
-                                        android:clickable="true"
-                                        android:inputType="date"/>
-                                </com.google.android.material.textfield.TextInputLayout>
-
-                                <LinearLayout
-                                    android:layout_width="80dp"
-                                    android:layout_height="match_parent"
-                                    android:gravity="center"
-                                    android:orientation="vertical"
-                                    android:paddingStart="12dp">
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="Edad"
-                                        android:textColor="@color/zibe_text_muted"
-                                        android:textSize="12sp"/>
-
-                                    <TextView
-                                        android:id="@+id/tvEdad"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:textColor="@color/white"
-                                        android:textStyle="bold"
-                                        android:textSize="20sp"
-                                        tools:text="28"/>
-                                </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Descripción -->
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Zibe.Input"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            app:boxBackgroundMode="filled">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/input_description"
-                                style="@style/Zibe.EditText"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="top"
-                                android:hint="@string/description"
-                                android:inputType="textMultiLine|textCapSentences"
-                                android:maxLines="5"
-                                android:minLines="3"
-                                tools:text="Amante de los memes y el buen chat." />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Tip/Hints -->
-                <com.google.android.material.card.MaterialCardView
-                    style="@style/Zibe.Card"
+                <!-- Fecha de nacimiento + Edad -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/zibe_surface">
+                    android:baselineAligned="false"
+                    android:orientation="horizontal"
+                    android:paddingBottom="@dimen/element_spacing_xs">
 
-                    <TextView
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Zibe.Input"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:endIconDrawable="@drawable/ic_baseline_keyboard_arrow_down_24"
+                        app:endIconMode="custom"
+                        app:startIconDrawable="@drawable/ic_calendar_24">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/picker_birth_date"
+                            style="@style/Zibe.EditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:hint="@string/birth_date"
+                            android:inputType="date" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Zibe.Input"
+                        android:layout_width="80dp"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="none"
+                        android:paddingStart="@dimen/element_spacing_xs">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/input_age"
+                            style="@style/Zibe.EditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:hint="@string/age"
+                            android:inputType="none"
+                            android:textAlignment="center"
+                            tools:text="28" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </LinearLayout>
+
+                <!-- Description -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Zibe.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:startIconDrawable="@drawable/ic_info_24">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/input_description"
+                        style="@style/Zibe.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:padding="15dp"
-                        android:gravity="center_vertical"
-                        android:textColor="@color/zibe_text_muted"
-                        android:textSize="13sp"
-                        android:text="Una foto clara y una buena descripción aumentan tus coincidencias."
-                        android:drawableStart="@drawable/ic_lightbulb_24"
-                        android:drawablePadding="8dp"
-                        app:drawableTint="@color/zibe_hint_text" />
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="150dp"/>
+                        android:gravity="top"
+                        android:hint="@string/description"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:maxLines="5"
+                        android:minLines="3"
+                        tools:text="Amante de los memes y el buen chat." />
+                </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
 
-        </androidx.core.widget.NestedScrollView>
-        <!-- FABs y Onboarding (sin cambios) -->
-        <LinearLayout
-            android:id="@+id/linearButtonsEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:gravity="end"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/action_button_edit_photo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="Foto"
-                app:icon="@drawable/ic_baseline_add_a_photo_24"
-                app:iconTint="@color/white"
-                android:textColor="@color/white"/>
-
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/button_save"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/save"
-                app:icon="@drawable/ic_baseline_save_24"
-                app:iconTint="@color/white"
-                android:textColor="@color/white"/>
-
-            <TextView
-                android:id="@+id/button_done"
+            <!-- Tip/Hints -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Zibe.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="end"
-                android:paddingEnd="6dp"
-                android:paddingTop="6dp"
-                android:text="@string/comenzar"
-                android:textSize="16dp"
-                android:textColor="@color/zibe_text_muted"
-                android:visibility="gone"/>
+                app:cardBackgroundColor="@color/zibe_surface"
+                android:layout_marginTop="@dimen/element_spacing_medium">
+
+                <TextView
+                    android:id="@+id/edit_profile_hints"
+                    style="@style/Zibe.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="@dimen/element_spacing_xs"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/element_spacing_medium"
+                    android:text="@string/edit_profile_hints_text"
+                    android:textColor="@color/zibe_hint_text"
+                    app:drawableStartCompat="@drawable/ic_lightbulb_24"
+                    app:drawableTint="@color/zibe_hint_text" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/bottom_padding" />
 
         </LinearLayout>
 
-        <LinearLayout
-        android:id="@+id/linearOnBoardingProfile"
+    </androidx.core.widget.NestedScrollView>
+    <!-- FABs y Onboarding (sin cambios) -->
+    <LinearLayout
+        android:id="@+id/linear_fabs"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CC000000"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:gravity="end"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:visibility="gone">
+        android:padding="@dimen/screen_padding">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="Bienvenido a"
-                android:textSize="32sp"
-                android:textColor="@color/white"/>
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab_edit_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/content_description_edit_photo"
+            android:text="@string/picture"
+            style="@style/Zibe.Button.Secondary"
+            android:textColor="@color/white"
+            app:icon="@drawable/ic_baseline_add_a_photo_24"
+            app:iconTint="@color/white"
+            android:layout_marginBottom="@dimen/element_spacing_medium"/>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/axis_extra_bold_800"
-                android:gravity="center"
-                android:text="ZIBE"
-                android:textColor="@color/accent"
-                android:textSize="52sp"/>
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/content_description_save"
+            android:text="@string/action_save"
+            style="@style/Zibe.Button.Secondary"
+            android:textColor="@color/white"
+            app:icon="@drawable/ic_baseline_save_24"
+            app:iconTint="@color/white"
+            android:layout_marginBottom="@dimen/element_spacing_medium"/>
 
-            <TextView
-                android:id="@+id/completeProfile"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:gravity="center|top"
-                android:paddingTop="10dp"
-                android:textColor="@color/zibe_text_light"
-                android:textSize="22sp"
-                tools:text="Completá tu perfil para empezar."/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_ok"
-                style="@style/Zibe.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Continuar"/>
-
-        </LinearLayout>
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

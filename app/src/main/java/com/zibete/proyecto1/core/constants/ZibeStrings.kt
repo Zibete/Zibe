@@ -146,8 +146,8 @@ const val ERROR_INVALID_EMAIL = "ERROR_INVALID_EMAIL"
 //
 //
 // Content description
-const val LOGO_CONTENT_DESC = "Logo de ZIBE"
-const val PASSWORD_VISIBILITY_CONTENT_DESC = "Contraseña visible/invisible"
+
+
 //
 //
 //

@@ -22,9 +22,9 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="@dimen/bottom_padding"
         android:overScrollMode="never"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginBottom="@dimen/element_spacing_xxs" />
 
     <!-- Dots -->
     <com.google.android.material.tabs.TabLayout
@@ -37,20 +37,21 @@
         app:tabMode="fixed"
         app:tabGravity="fill"
         app:tabInlineLabel="true"
-        app:tabMinWidth="0dp" />
+        app:tabMinWidth="0dp"
+        android:layout_marginBottom="@dimen/element_spacing_medium" />
 
     <!-- Buttons -->
     <LinearLayout
         android:id="@+id/rowButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="16dp">
+        android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPrev"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            style="@style/Zibe.Button.Secondary"
             android:layout_weight="1"
             android:text="@string/action_previous" />
 
@@ -58,8 +59,9 @@
             android:id="@+id/btnNext"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            style="@style/Zibe.Button.Primary"
             android:layout_weight="1"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="@dimen/element_spacing_small"
             android:text="@string/action_next" />
     </LinearLayout>
 

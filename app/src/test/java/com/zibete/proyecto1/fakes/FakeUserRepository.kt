@@ -62,6 +62,10 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
+    override suspend fun getMyAccount(): Users? {
+        TODO("Not yet implemented")
+    }
+
     suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
         failIfNeeded()
         return emptyList()

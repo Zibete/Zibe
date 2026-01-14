@@ -5,11 +5,11 @@
         <item name="colorPrimary">@color/zibe_purple</item>
         <item name="colorSecondary">@color/zibe_purple</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/zibe_card</item>
+        <item name="colorSurface">@color/zibe_card_bg</item>
     </style>
 
     <style name="Zibe.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorSurface">@color/zibe_card</item>
+        <item name="colorSurface">@color/zibe_card_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
 
         <item name="shapeAppearanceMediumComponent">@style/Zibe.Dialog.Shape</item>
@@ -28,7 +28,7 @@
 
     <style name="Zibe.Dialog.TextButton" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">@color/zibe_pink</item>
-        <item name="rippleColor">@color/zibe_pink_24</item>
+        <item name="rippleColor">@color/zibe_btn_primary_24</item>
         <item name="android:textAllCaps">false</item>
     </style>
 

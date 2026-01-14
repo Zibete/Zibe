@@ -41,7 +41,13 @@
 
     <item
         android:id="@+id/action_exit_group"
-        android:title="@string/menu_exit_group"
+        android:title="@string/action_exit"
+        android:orderInCategory="100"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_skip"
+        android:title="@string/action_skip"
         android:orderInCategory="100"
         app:showAsAction="always" />
 

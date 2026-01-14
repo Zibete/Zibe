@@ -24,7 +24,7 @@
     <style name="Zibe.Text.Brand.Medium" parent="Zibe.Text.Bold">
         <item name="android:textSize">@dimen/text_size_brand_medium</item>
         <item name="android:letterSpacing">0.05</item>
-        <item name="android:textColor">@color/zibe_btn_secondary</item>
+        <item name="android:textColor">@color/zibe_purple</item>
     </style>
 
 </resources>

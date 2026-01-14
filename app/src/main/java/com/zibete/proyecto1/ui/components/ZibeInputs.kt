@@ -14,8 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import com.zibete.proyecto1.R
 
 @Composable
 fun ZibeInputField(
@@ -34,21 +35,25 @@ fun ZibeInputField(
     readOnly: Boolean = false,
 
     enabled: Boolean = true
-)
- {
-     val zibeColors = LocalZibeExtendedColors.current
+) {
+    val zibeColors = LocalZibeExtendedColors.current
 
-     val containerColor = zibeColors.inputBackground
-     val borderColor = zibeColors.border
-     val hintColor = zibeColors.mutedText
-     val iconTint = zibeColors.mutedText
-     val textColor = Color.White
+    val containerColor = zibeColors.inputBackground
+    val borderColor = zibeColors.border
+    val hintColor = zibeColors.hintText
+    val iconTint = zibeColors.hintText
+    val textColor = Color.White
+
+    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+    val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
+    val inputCornerTop = dimensionResource(R.dimen.zibe_input_corner_top)
+    val inputCornerBottom = dimensionResource(R.dimen.zibe_input_corner_bottom)
 
     Box(
         modifier = Modifier
-            .padding(bottom = 8.dp)
+            .padding(bottom = inputPadding)
             .fillMaxWidth()
-            .shadow(8.dp)
+            .shadow(inputElevation)
     ) {
         TextField(
             value = value,
@@ -59,10 +64,10 @@ fun ZibeInputField(
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
             shape = RoundedCornerShape(
-                topStart = 12.dp,
-                topEnd = 12.dp,
-                bottomStart = 0.dp,
-                bottomEnd = 0.dp
+                topStart = inputCornerTop,
+                topEnd = inputCornerTop,
+                bottomStart = inputCornerBottom,
+                bottomEnd = inputCornerBottom
             ),
 
             colors = TextFieldDefaults.colors(

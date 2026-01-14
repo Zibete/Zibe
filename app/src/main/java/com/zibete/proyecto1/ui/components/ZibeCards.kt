@@ -21,10 +21,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.zibete.proyecto1.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -35,8 +37,11 @@ fun ZibeAnimatedQuotesCard(
 ) {
     val zibeColors = LocalZibeExtendedColors.current
 
-    val containerColor = zibeColors.cardQuotesBackground
-    val textColor = zibeColors.mutedText
+    val cardQuotesBackground = zibeColors.cardQuotesBackground
+    val textColor = zibeColors.hintText
+
+    val cardPadding = dimensionResource(R.dimen.zibe_card_quotes_padding)
+    val cardElevation = dimensionResource(R.dimen.zibe_card_elevation)
 
     var index by remember { mutableIntStateOf(0) }
 
@@ -50,21 +55,20 @@ fun ZibeAnimatedQuotesCard(
     Card(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = cardQuotesBackground),
+        elevation = CardDefaults.cardElevation(defaultElevation = cardElevation)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(cardPadding),
             contentAlignment = Alignment.Center
         ) {
             AnimatedContent(
                 targetState = strings[index],
                 transitionSpec = {
                     fadeIn(tween(600)) togetherWith fadeOut(tween(600))
-                },
-                label = "FrasesLoop"
+                }
             ) { text ->
                 Text(
                     text = text,
@@ -91,6 +95,6 @@ fun ZibeAnimatedQuotesCardPreview() {
 
     ZibeAnimatedQuotesCard(
         strings = sampleQuotes,
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(24.dp)
     )
 }
