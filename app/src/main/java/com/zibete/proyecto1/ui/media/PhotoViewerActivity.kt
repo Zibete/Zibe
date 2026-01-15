@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.media
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
@@ -13,6 +14,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class PhotoViewerActivity : BaseEdgeToEdgeActivity() {
 
+    override fun activityRootView(): View = binding.root
+    override fun appBarContainerView(): View = binding.toolbar
+
     private lateinit var binding: SlideActivityBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +26,9 @@ class PhotoViewerActivity : BaseEdgeToEdgeActivity() {
         setContentView(binding.root)
 
         setupToolbar(
-            toolbar = binding.toolbar
+            toolbar = binding.toolbar,
+            showBack = true,
+            handleBackInBase = true
         )
 
         val photoList =

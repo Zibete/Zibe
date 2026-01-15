@@ -6,7 +6,7 @@ import com.zibete.proyecto1.core.ui.UiText
 data class ToolbarState(
     val showToolbar: Boolean = true,
     val showBack: Boolean = true,
-    val showSettings: Boolean = true,
+    val showUsersFragmentSettings: Boolean = true,
     val showBottomNav: Boolean = true,
     val currentScreen: CurrentScreen = CurrentScreen.OTHER,
 )

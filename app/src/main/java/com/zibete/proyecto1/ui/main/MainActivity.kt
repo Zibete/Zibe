@@ -19,8 +19,6 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Lifecycle
@@ -78,7 +76,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     private var currentScreen: CurrentScreen = CurrentScreen.OTHER
     private var drawerLayout: DrawerLayout? = null
     private var navigationView: NavigationView? = null
-    private var layoutSettings: View? = null
+    private var usersFragmentSettings: View? = null
     private var filterButton: ImageView? = null
     private var refreshButton: ImageView? = null
     private var searchView: SearchView? = null
@@ -124,7 +122,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
         // Toolbar & Layouts
         val appBarMain = binding.appBarMain
         materialToolbar = appBarMain.materialToolbar
-        layoutSettings = appBarMain.linearLayoutSettings
+        usersFragmentSettings = appBarMain.usersFragmentSettings
         filterButton = appBarMain.filterButton
         refreshButton = appBarMain.refreshButton
 
@@ -264,7 +262,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                 mainViewModel.toolbarState.collect { state ->
                     // Visibilidad
                     materialToolbar.isVisible = state.showToolbar
-                    layoutSettings?.isVisible = state.showSettings
+                    usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
                     bottomNavigationView.isVisible = state.showBottomNav
 
                     // title
@@ -487,23 +485,6 @@ class MainActivity : BaseEdgeToEdgeActivity() {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
     }
 
-//    override fun onSearchViewReady(searchView: SearchView) {
-//        this.searchView = searchView
-//
-//        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-//            override fun onQueryTextSubmit(query: String?) = false
-//
-//            override fun onQueryTextChange(newText: String?): Boolean {
-//                val active = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
-//                    ?.childFragmentManager
-//                    ?.primaryNavigationFragment
-//
-//                (active as? SearchHandler)?.onSearchQueryChanged(newText)
-//                return true
-//            }
-//        })
-//    }
-
     override val toolbarMenuVisiblePredicate: (Menu) -> Unit = { menu ->
         for (i in 0 until menu.size()) menu.getItem(i).isVisible = false
 
@@ -523,6 +504,11 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
             CurrentScreen.FAVORITES -> {
                 menu.findItem(R.id.action_favorites)?.isVisible = true
+            }
+
+            CurrentScreen.EDIT_PROFILE -> {
+                menu.findItem(R.id.action_settings)?.isVisible = true
+                menu.findItem(R.id.action_skip)?.isVisible = true
             }
 
             else -> Unit

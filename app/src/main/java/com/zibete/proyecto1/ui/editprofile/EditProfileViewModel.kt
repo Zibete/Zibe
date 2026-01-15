@@ -3,9 +3,7 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
@@ -17,7 +15,6 @@ import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -99,7 +96,7 @@ class EditProfileViewModel @Inject constructor(
         _uiState.update { it.copy(birthDate = birthDate, age = age, saveEnabled = true) }
     }
 
-    fun showSkip() : Boolean = uiState.value.hasBirthDate
+    fun showSkipButton() : Boolean = uiState.value.hasBirthDate
 
 //    suspend fun isFirstLoginDone(): Boolean {
 //        return userPreferencesProvider.isFirstLoginDone()
