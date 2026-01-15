@@ -20,7 +20,7 @@
             android:orientation="vertical"
             android:paddingTop="@dimen/screen_padding">
 
-            <!-- Tarjeta contenedora -->
+            <!-- Card de ImageView -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Zibe.Card"
                 android:layout_width="match_parent"
@@ -36,7 +36,10 @@
                         android:layout_width="0dp"
                         android:layout_height="0dp"
                         android:contentDescription="@string/content_description_photo"
+                        android:importantForAccessibility="yes"
                         android:scaleType="centerCrop"
+                        app:layout_constrainedHeight="true"
+                        app:layout_constrainedWidth="true"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -47,6 +50,8 @@
                         android:id="@+id/loadingPhoto"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:contentDescription="@string/content_description_loading"
+                        android:indeterminate="true"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -76,11 +81,13 @@
                         style="@style/Zibe.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:autofillHints="name"
                         android:hint="@string/name"
-                        android:inputType="textPersonName" />
+                        android:inputType="textPersonName"
+                        android:imeOptions="actionNext" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Fecha de nacimiento + Edad -->
+                <!-- Birthdate + Age -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -105,7 +112,8 @@
                             android:clickable="true"
                             android:focusable="false"
                             android:hint="@string/birth_date"
-                            android:inputType="date" />
+                            android:importantForAccessibility="yes"
+                            android:inputType="none" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -144,6 +152,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="top"
                         android:hint="@string/description"
+                        android:imeOptions="actionDone"
                         android:inputType="textMultiLine|textCapSentences"
                         android:maxLines="5"
                         android:minLines="3" />
@@ -176,7 +185,8 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
-    <!-- FABs y Onboarding (sin cambios) -->
+
+    <!-- FABs y Onboarding -->
     <LinearLayout
         android:id="@+id/linear_fabs"
         android:layout_width="match_parent"
