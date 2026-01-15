@@ -207,12 +207,12 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
             object : MenuProvider {
 
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    // No-op: el menú lo infla BaseToolbarActivity
+                    // No-op: el menú lo infla BaseEdgeToEdgeActivity
                 }
 
                 override fun onPrepareMenu(menu: Menu) {
                     // Mostramos SOLO lo que Users necesita.
-                    // El resto ya queda oculto por BaseToolbarActivity.
+                    // El resto ya queda oculto por BaseEdgeToEdgeActivity.
                     menu.findItem(R.id.action_settings)?.isVisible = true
                     menu.findItem(R.id.action_unblock_users)?.isVisible = true
                     menu.findItem(R.id.action_unhide_chats)?.isVisible = true
@@ -224,7 +224,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
 
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                     // No manejamos clicks desde el fragment:
-                    // se delega a BaseToolbarActivity/MainActivity
+                    // se delega a BaseEdgeToEdgeActivity/MainActivity
                     return false
                 }
             },

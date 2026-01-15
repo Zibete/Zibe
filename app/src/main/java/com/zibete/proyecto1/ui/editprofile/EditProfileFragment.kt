@@ -163,27 +163,25 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             val bottomInset = maxOf(systemBars.bottom, ime.bottom)
 
-            // 1) FABs: que suban siempre por arriba de nav/gestos/teclado
+            // 1) FABs arriba de nav/gestos/teclado
             binding.linearFabs.updatePadding(bottom = bottomInset)
 
-            // 2) Scroll: aseguramos que el contenido no quede debajo de los FABs
-            // Necesitamos la altura real de los FABs, por eso usamos doOnLayout.
-            binding.linearFabs.doOnLayout {
+            // 2) Scroll: espacio = FABs + inset + spacing
+            binding.linearFabs.doOnLayout { fabs ->
                 val extraSpacing =
                     view.resources.getDimensionPixelSize(R.dimen.element_spacing_medium)
+
                 binding.scrollable.updatePadding(
-                    bottom = it.height + extraSpacing
+                    bottom = bottomInset + fabs.height + extraSpacing
                 )
             }
         }
 
-        // Listener de insets
         ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
             apply(insets)
             insets
         }
 
-        // Forzamos primer pase
         ViewCompat.requestApplyInsets(view)
     }
 

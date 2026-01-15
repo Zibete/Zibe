@@ -270,7 +270,7 @@ class ProfileFragment : BaseChatSessionFragment() {
             object : MenuProvider {
 
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    // menu_main ya está inflado por BaseToolbarActivity
+                    // menu_main ya está inflado por BaseEdgeToEdgeActivity
                 }
 
                 override fun onPrepareMenu(menu: Menu) {

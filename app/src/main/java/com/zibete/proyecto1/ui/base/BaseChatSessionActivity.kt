@@ -8,7 +8,7 @@ import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-open class BaseChatSessionActivity : BaseToolbarActivity() {
+open class BaseChatSessionActivity : BaseEdgeToEdgeActivity() {
 
     protected fun observeChatSessionEvents(
         events: Flow<ChatSessionUiEvent>

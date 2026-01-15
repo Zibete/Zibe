@@ -7,11 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
-import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class PhotoViewerActivity : BaseToolbarActivity() {
+class PhotoViewerActivity : BaseEdgeToEdgeActivity() {
 
     private lateinit var binding: SlideActivityBinding
 

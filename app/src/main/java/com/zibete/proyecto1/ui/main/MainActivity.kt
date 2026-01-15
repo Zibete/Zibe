@@ -19,6 +19,8 @@ import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Lifecycle
@@ -50,7 +52,7 @@ import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
-import com.zibete.proyecto1.ui.base.BaseToolbarActivity
+import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
@@ -64,7 +66,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MainActivity : BaseToolbarActivity() {
+class MainActivity : BaseEdgeToEdgeActivity() {
 
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
@@ -90,10 +92,9 @@ class MainActivity : BaseToolbarActivity() {
     override val toolbarMenuRes: Int = R.menu.menu_main
 
     override fun activityRootView(): View = binding.root
-
-    override fun bottomNavView(): View = binding.appBarMain.contentMain.navView3
-
     override fun appBarContainerView(): View = binding.appBarMain.materialToolbar
+    override fun bottomNavView(): View = binding.appBarMain.contentMain.navView3
+    override fun contentViewForInsets(): View = binding.appBarMain.contentMain.navHostFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

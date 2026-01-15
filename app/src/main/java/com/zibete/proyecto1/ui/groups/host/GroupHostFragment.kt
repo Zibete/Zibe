@@ -64,7 +64,7 @@ class GroupHostFragment : Fragment() {
             object : MenuProvider {
 
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    // No-op: el menú lo infla BaseToolbarActivity
+                    // No-op: el menú lo infla BaseEdgeToEdgeActivity
                 }
 
                 override fun onPrepareMenu(menu: Menu) {
