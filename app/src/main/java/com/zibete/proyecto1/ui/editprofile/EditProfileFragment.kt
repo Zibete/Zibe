@@ -4,20 +4,29 @@ import android.Manifest
 import android.app.Dialog
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.core.content.ContextCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -44,8 +53,10 @@ import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
+import com.zibete.proyecto1.ui.main.CurrentScreen
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -83,9 +94,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         }
 
     private fun onGalleryClicked() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             photoPickerLauncher.launch(
-                androidx.activity.result.PickVisualMediaRequest(
+                PickVisualMediaRequest(
                     ActivityResultContracts.PickVisualMedia.ImageOnly
                 )
             )
@@ -114,7 +125,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.fabSave.isEnabled = false
+        setupInsets(view)
 
         binding.profilePhoto.setOnClickListener {
             val photoUrl = editProfileViewModel.uiState.value.photoUrl
@@ -124,6 +135,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
         binding.fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
         binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
+
+        binding.fabSave.isEnabled = false
         binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
         // Watchers -> VM
@@ -136,11 +149,42 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
         editProfileViewModel.load()
 
+
         collectUi()
 
         showWelcomeIfNeeded()
 
         setupOptionMenu()
+    }
+
+    private fun setupInsets(view: View) {
+        fun apply(insets: WindowInsetsCompat) {
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val bottomInset = maxOf(systemBars.bottom, ime.bottom)
+
+            // 1) FABs: que suban siempre por arriba de nav/gestos/teclado
+            binding.linearFabs.updatePadding(bottom = bottomInset)
+
+            // 2) Scroll: aseguramos que el contenido no quede debajo de los FABs
+            // Necesitamos la altura real de los FABs, por eso usamos doOnLayout.
+            binding.linearFabs.doOnLayout {
+                val extraSpacing =
+                    view.resources.getDimensionPixelSize(R.dimen.element_spacing_medium)
+                binding.scrollable.updatePadding(
+                    bottom = it.height + extraSpacing
+                )
+            }
+        }
+
+        // Listener de insets
+        ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
+            apply(insets)
+            insets
+        }
+
+        // Forzamos primer pase
+        ViewCompat.requestApplyInsets(view)
     }
 
     private fun collectUi() {
@@ -214,11 +258,11 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         Glide.with(requireContext())
             .load(model)
             .apply(RequestOptions().dontTransform())
-            .listener(object : RequestListener<android.graphics.drawable.Drawable?> {
+            .listener(object : RequestListener<Drawable?> {
                 override fun onLoadFailed(
                     e: GlideException?,
                     model: Any?,
-                    target: Target<android.graphics.drawable.Drawable?>,
+                    target: Target<Drawable?>,
                     isFirstResource: Boolean
                 ): Boolean {
                     binding.loadingPhoto.isVisible = false
@@ -226,9 +270,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 }
 
                 override fun onResourceReady(
-                    resource: android.graphics.drawable.Drawable?,
+                    resource: Drawable?,
                     model: Any?,
-                    target: Target<android.graphics.drawable.Drawable?>?,
+                    target: Target<Drawable?>?,
                     dataSource: DataSource?,
                     isFirstResource: Boolean
                 ): Boolean {
@@ -341,7 +385,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         val menuHost = requireActivity() as MenuHost
         menuHost.addMenuProvider(
             object : MenuProvider {
-                override fun onCreateMenu(menu: Menu, menuInflater: android.view.MenuInflater) =
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) =
                     Unit
 
                 override fun onPrepareMenu(menu: Menu) {
@@ -349,7 +393,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                     menu.findItem(R.id.action_skip)?.isVisible = !editProfileViewModel.showSkip()
                 }
 
-                override fun onMenuItemSelected(menuItem: android.view.MenuItem): Boolean = false
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
             },
             viewLifecycleOwner,
             Lifecycle.State.RESUMED
@@ -364,6 +408,21 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         pendingCameraUri = null
         _binding = null
         super.onDestroyView()
+    }
+
+    val mainViewModel: MainViewModel by viewModels()
+
+    fun setToolbarForEditProfile() {
+        mainViewModel.setToolbarState(
+            showBack = true,
+            showSettings = true,
+            currentScreen = CurrentScreen.EDIT_PROFILE
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setToolbarForEditProfile()
     }
 
     override fun onEditProfileWelcomeDismissed() {

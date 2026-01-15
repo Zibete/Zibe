@@ -69,10 +69,10 @@
 
     <!-- ===== BottomNavigation ===== -->
     <style name="Zibe.BottomNav" parent="Widget.Material3.BottomNavigationView">
-        <item name="backgroundTint">@color/zibe_nav_bg</item>
-        <item name="itemIconTint">@color/zibe_nav_inactive</item>
-        <item name="itemTextColor">@color/zibe_nav_inactive</item>
-        <item name="itemRippleColor">@color/zibe_pink</item>
+<!--        <item name="backgroundTint">@color/zibe_nav_bg</item>-->
+<!--        <item name="itemIconTint">@color/zibe_nav_inactive</item>-->
+<!--        <item name="itemTextColor">@color/zibe_nav_inactive</item>-->
+<!--        <item name="itemRippleColor">@color/zibe_pink</item>-->
     </style>
 
     <!-- Overlay BottomNav (si lo aplicás por theme overlay en layout) -->
@@ -85,8 +85,9 @@
 
     <!-- ===== Toolbar ===== -->
     <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
-        <item name="android:background">@drawable/bg_gradient_zibe</item>
-        <item name="android:titleTextColor">@color/white</item>
+<!--        <item name="android:background">@color/transparent</item>-->
+        <item name="android:titleTextColor">@color/zibe_text_light</item>
+        <item name="android:iconTint">@color/zibe_text_light</item>
         <item name="android:subtitleTextColor">@color/zibe_hint_text</item>
     </style>
 

@@ -8,8 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color         // 👈 ESTE ES EL CORRECTO
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.zibete.proyecto1.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,14 +30,14 @@ fun ZibeToolbar(
             IconButton(onClick = onBack) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_baseline_arrow_back_24),
-                    contentDescription = "Volver"
+                    contentDescription = stringResource(R.string.content_description_back)
                 )
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = Color.Transparent,
-            titleContentColor = Color.White,
-            navigationIconContentColor = Color.White
+            containerColor = colorResource(R.color.transparent),
+            titleContentColor = colorResource(R.color.zibe_text_light),
+            navigationIconContentColor = colorResource(R.color.zibe_text_light)
         )
     )
 }

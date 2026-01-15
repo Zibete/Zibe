@@ -4,20 +4,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_zibe"
     tools:context=".ui.editprofile.EditProfileFragment">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollable"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
         android:fillViewport="true"
         android:paddingHorizontal="@dimen/screen_padding">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingTop="@dimen/screen_padding">
 
             <!-- Tarjeta contenedora -->
             <com.google.android.material.card.MaterialCardView
@@ -26,19 +27,27 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/element_spacing_medium">
 
-                <com.zibete.proyecto1.ui.ResizableImageViewProfile
-                    android:id="@+id/profile_photo"
-                    android:layout_width="wrap_content"
+                <FrameLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:contentDescription="@string/content_description_photo" />
+                    android:foregroundGravity="center">
 
-                <ProgressBar
-                    android:id="@+id/loadingPhoto"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:indeterminate="true" />
+                    <com.zibete.proyecto1.ui.ResizableImageViewProfile
+                        android:id="@+id/profile_photo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:contentDescription="@string/content_description_photo" />
+
+                    <ProgressBar
+                        android:id="@+id/loading_photo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:indeterminate="true" />
+
+                </FrameLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Content -->
@@ -53,7 +62,7 @@
                     style="@style/Zibe.Input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingBottom="@dimen/element_spacing_xs"
+                    android:layout_marginBottom="@dimen/element_spacing_xs"
                     app:startIconDrawable="@drawable/ic_person_24">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -69,9 +78,9 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/element_spacing_xs"
                     android:baselineAligned="false"
-                    android:orientation="horizontal"
-                    android:paddingBottom="@dimen/element_spacing_xs">
+                    android:orientation="horizontal">
 
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Zibe.Input"
@@ -109,8 +118,8 @@
                             android:focusable="false"
                             android:hint="@string/age"
                             android:inputType="none"
-                            android:textAlignment="center"
-                            tools:text="28" />
+                            android:text="28"
+                            android:textAlignment="center" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -131,8 +140,7 @@
                         android:hint="@string/description"
                         android:inputType="textMultiLine|textCapSentences"
                         android:maxLines="5"
-                        android:minLines="3"
-                        tools:text="Amante de los memes y el buen chat." />
+                        android:minLines="3" />
                 </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
@@ -142,12 +150,11 @@
                 style="@style/Zibe.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/zibe_surface"
-                android:layout_marginTop="@dimen/element_spacing_medium">
+                android:layout_marginTop="@dimen/element_spacing_medium"
+                app:cardBackgroundColor="@color/zibe_surface">
 
                 <TextView
                     android:id="@+id/edit_profile_hints"
-                    style="@style/Zibe.Card"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:drawablePadding="@dimen/element_spacing_xs"
@@ -159,10 +166,6 @@
                     app:drawableTint="@color/zibe_hint_text" />
 
             </com.google.android.material.card.MaterialCardView>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/bottom_padding" />
 
         </LinearLayout>
 
@@ -179,27 +182,23 @@
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/fab_edit_photo"
+            style="@style/Zibe.ExtendedFab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/element_spacing_medium"
             android:contentDescription="@string/content_description_edit_photo"
             android:text="@string/edit_picture"
-            style="@style/Zibe.Button.Secondary"
-            android:textColor="@color/white"
-            app:icon="@drawable/ic_baseline_add_a_photo_24"
-            app:iconTint="@color/white"
-            android:layout_marginBottom="@dimen/element_spacing_medium"/>
+            app:icon="@drawable/ic_baseline_add_a_photo_24" />
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/fab_save"
+            style="@style/Zibe.ExtendedFab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/element_spacing_medium"
             android:contentDescription="@string/content_description_save"
             android:text="@string/action_save"
-            style="@style/Zibe.Button.Secondary"
-            android:textColor="@color/white"
-            app:icon="@drawable/ic_check_24"
-            app:iconTint="@color/white"
-            android:layout_marginBottom="@dimen/element_spacing_medium"/>
+            app:icon="@drawable/ic_check_24" />
 
     </LinearLayout>
 

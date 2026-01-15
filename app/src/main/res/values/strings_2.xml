@@ -281,5 +281,6 @@
     <string name="dialog_logout_message">¿Seguro quieres cerrar sesión?</string>
 
     <string name="enter_your_password">"Introduzca su contraseña"</string>
+    <string name="content_description_back">Volver</string>
 
 </resources>
