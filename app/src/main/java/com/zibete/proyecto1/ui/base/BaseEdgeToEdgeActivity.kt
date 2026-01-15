@@ -122,9 +122,7 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
 
                 v.updatePadding(
                     left = base.l + sys.left,
-                    top = base.t,
-                    right = base.r + sys.right,
-                    bottom = base.b
+                    right = base.r + sys.right
                 )
                 insets
             }

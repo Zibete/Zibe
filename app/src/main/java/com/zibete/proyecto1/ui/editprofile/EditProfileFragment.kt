@@ -11,20 +11,14 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.core.content.ContextCompat
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
@@ -52,11 +46,11 @@ import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
+import com.zibete.proyecto1.ui.extensions.loadProfileImageSafe
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
 import com.zibete.proyecto1.ui.main.CurrentScreen
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainUiEvent
-import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -64,54 +58,52 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
+    // --- ViewModel
     private val editProfileViewModel: EditProfileViewModel by viewModels()
+
+    // --- ViewBinding
     private var _binding: FragmentEditProfileBinding? = null
     private val binding get() = _binding!!
+
+    // --- UI State / Runtime
     private var editPhotoDialog: Dialog? = null
     private var pendingCameraUri: Uri? = null
+    private var lastLoadedPhotoModel: Any? = null
 
+    // Insets/FABs
+    private var fabsHeightPx: Int = 0
+    private var fabsBaseBottomPadding: Int = 0
+    private var extraSpacingPx: Int = 0
+
+    // Scroll behavior
+    private var lastScrollY: Int = 0
+    private var scrollListenerInstalled = false
+
+    // --- ActivityResult launchers
     private val takePictureLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            if (success) pendingCameraUri?.let { editProfileViewModel.onPhotoSelected(it) }
+            if (success) pendingCameraUri?.let(editProfileViewModel::onPhotoSelected)
         }
 
     private val photoPickerLauncher =
         registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            uri?.let { editProfileViewModel.onPhotoSelected(it) }
+            uri?.let(editProfileViewModel::onPhotoSelected)
+        }
+
+    private val galleryLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let(editProfileViewModel::onPhotoSelected)
         }
 
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) startCamera()
-            else editProfileViewModel.onError(
-                UiText.StringRes(R.string.msg_camera_permission_required)
-            )
+            else editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_permission_required))
         }
 
-    private val galleryLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let { editProfileViewModel.onPhotoSelected(it) }
-        }
-
-    private fun onGalleryClicked() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            photoPickerLauncher.launch(
-                PickVisualMediaRequest(
-                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                )
-            )
-        } else {
-            galleryLauncher.launch("image/*")
-        }
-    }
-
-    private fun onCameraClicked() {
-        val granted =
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
-                    PackageManager.PERMISSION_GRANTED
-
-        if (granted) startCamera() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-    }
+    // ==========================================
+    // Lifecycle
+    // ==========================================
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -125,105 +117,144 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupInsets(view)
+        extraSpacingPx = view.resources.getDimensionPixelSize(R.dimen.element_spacing_medium)
+        fabsBaseBottomPadding = binding.linearFabs.paddingBottom
 
-        binding.profilePhoto.setOnClickListener {
-            val photoUrl = editProfileViewModel.uiState.value.photoUrl
-                ?: DEFAULT_PROFILE_PHOTO_URL
+        setToolbarForEditProfile()
+
+        setupInsets(view)
+        setupListeners(savedInstanceState)
+        installScrollBehavior()
+        collectUi()
+        showWelcomeIfNeeded()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setToolbarForEditProfile()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelable(KEY_PENDING_CAMERA_URI, pendingCameraUri)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+
+        pendingCameraUri =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState?.getParcelable(KEY_PENDING_CAMERA_URI, Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState?.getParcelable(KEY_PENDING_CAMERA_URI)
+            }
+    }
+
+    override fun onDestroyView() {
+        editPhotoDialog?.dismiss()
+        editPhotoDialog = null
+        pendingCameraUri = null
+        lastLoadedPhotoModel = null
+        _binding = null
+        super.onDestroyView()
+    }
+
+    // ==========================================
+    // Public API
+    // ==========================================
+
+    fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
+
+    // ==========================================
+    // UI setup
+    // ==========================================
+
+    private fun setupListeners(savedInstanceState: Bundle?) = with(binding) {
+        profilePhoto.setOnClickListener {
+            val photoUrl = editProfileViewModel.uiState.value.photoUrl ?: DEFAULT_PROFILE_PHOTO_URL
             PhotoViewerActivity.startSingle(requireContext(), photoUrl)
         }
 
-        binding.fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
-        binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
+        fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
+        pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
 
-        binding.fabSave.isEnabled = false
-        binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
+        fabSave.isEnabled = false
+        fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
-        // Watchers -> VM
-        binding.inputUserName.addTextChangedListener(SimpleWatcher {
-            editProfileViewModel.onNameChanged(it)
-        })
-        binding.inputDescription.addTextChangedListener(SimpleWatcher {
-            editProfileViewModel.onDescriptionChanged(it)
-        })
+        inputUserName.addTextChangedListener(SimpleWatcher(editProfileViewModel::onNameChanged))
+        inputDescription.addTextChangedListener(SimpleWatcher(editProfileViewModel::onDescriptionChanged))
 
-        editProfileViewModel.load()
-
-
-        collectUi()
-
-        showWelcomeIfNeeded()
-
-        setupOptionMenu()
+        if (savedInstanceState == null) {
+            editProfileViewModel.load()
+        }
     }
 
-    private fun setupInsets(view: View) {
-        fun apply(insets: WindowInsetsCompat) {
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            val bottomInset = maxOf(systemBars.bottom, ime.bottom)
-
-            // 1) FABs arriba de nav/gestos/teclado
-            binding.linearFabs.updatePadding(bottom = bottomInset)
-
-            // 2) Scroll: espacio = FABs + inset + spacing
-            binding.linearFabs.doOnLayout { fabs ->
-                val extraSpacing =
-                    view.resources.getDimensionPixelSize(R.dimen.element_spacing_medium)
-
-                binding.scrollable.updatePadding(
-                    bottom = bottomInset + fabs.height + extraSpacing
-                )
+    private fun setupInsets(root: View) {
+        // Medimos altura de FABs y pedimos re-apply cuando cambie (shrink/extend, rotación, etc.)
+        binding.linearFabs.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+            val newHeight = v.height
+            if (newHeight != fabsHeightPx) {
+                fabsHeightPx = newHeight
+                ViewCompat.requestApplyInsets(root)
             }
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
-            apply(insets)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val bottomInset = maxOf(sys.bottom, ime.bottom)
+
+            // 1) FABs arriba de nav/gestos/teclado (sin doble sumar)
+            binding.linearFabs.updatePadding(bottom = fabsBaseBottomPadding + bottomInset)
+
+            // 2) Scroll: espacio = inset + altura FABs + spacing
+            binding.scrollable.updatePadding(bottom = bottomInset + fabsHeightPx + extraSpacingPx)
+
             insets
         }
 
-        ViewCompat.requestApplyInsets(view)
+        ViewCompat.requestApplyInsets(root)
     }
 
-    private fun collectUi() {
-//        binding.fabSkip.isVisible = false
+    private fun installScrollBehavior() {
+        if (scrollListenerInstalled) return
+        scrollListenerInstalled = true
 
+        binding.scrollable.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            if (scrollY > lastScrollY) {
+                binding.fabSave.shrink()
+                binding.fabEditPhoto.shrink()
+            } else {
+                binding.fabSave.extend()
+                binding.fabEditPhoto.extend()
+            }
+            lastScrollY = scrollY
+        }
+    }
+
+    // ==========================================
+    // Collectors
+    // ==========================================
+
+    private fun collectUi() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 launch {
                     editProfileViewModel.uiState.collect { state ->
-
                         binding.fabSave.isEnabled = state.saveEnabled && !state.isSaving
 
                         binding.inputUserName.setTextIfChanged(state.name)
                         binding.pickerBirthDate.setTextIfChanged(editProfileViewModel.birthDateUi)
                         binding.inputDescription.setTextIfChanged(state.description)
-
-                        binding.inputAge.setText(state.age?.toString().orEmpty())
-
-
-//                        binding.fabSkip.isVisible = state.hasBirthDate
+                        binding.inputAge.setTextIfChanged(state.age?.toString().orEmpty())
 
                         val toLoad: Any = state.photoPreviewUri
                             ?: state.photoUrl
                             ?: DEFAULT_PROFILE_PHOTO_URL
 
-                        loadProfilePhoto(toLoad)
-
-                        var lastScrollY = 0
-
-                        binding.scrollable.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-                            // Si la posición actual es mayor a la anterior, el usuario baja
-                            if (scrollY > lastScrollY) {
-                                binding.fabSave.shrink()
-                                binding.fabEditPhoto.shrink()
-                            } else {
-                                binding.fabSave.extend()
-                                binding.fabEditPhoto.extend()
-                            }
-                            lastScrollY = scrollY
-                        }
+                        maybeLoadProfilePhoto(toLoad)
                     }
                 }
 
@@ -248,6 +279,23 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 }
             }
         }
+    }
+
+    // ==========================================
+    // Photo
+    // ==========================================
+
+    private fun maybeLoadProfilePhoto(model: Any) {
+        if (lastLoadedPhotoModel == model) return
+        lastLoadedPhotoModel = model
+//        loadProfilePhoto(model)
+
+        binding.profilePhoto.loadProfileImageSafe(
+            model = model,
+            centerCrop = true,
+            onLoading = { isLoading -> binding.loadingPhoto.isVisible = isLoading }
+        )
+
     }
 
     private fun loadProfilePhoto(model: Any) {
@@ -279,43 +327,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 }
             })
             .into(binding.profilePhoto)
-    }
-
-    private fun showWelcomeIfNeeded() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val shown = editProfileViewModel.isEditProfileWelcomeShown()
-            if (shown) return@launch
-
-            // Evita duplicados si rota pantalla o se re-crea el fragment
-            if (parentFragmentManager.findFragmentByTag(EDIT_PROFILE_WELCOME_SHEET) != null) return@launch
-
-            EditProfileWelcomeSheet()
-                .show(parentFragmentManager, EDIT_PROFILE_WELCOME_SHEET)
-        }
-    }
-
-    private fun startCamera() {
-        runCatching {
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis().toString())
-            }
-
-            pendingCameraUri = requireContext().contentResolver.insert(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                values
-            )
-
-            val uri = pendingCameraUri
-            if (uri == null) {
-                editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
-                return
-            }
-
-            takePictureLauncher.launch(uri)
-        }.onFailure {
-            editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
-        }
     }
 
     private fun showEditPhotoDialogInternal() {
@@ -354,6 +365,52 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         dialogBinding.imgCancelDialog.setOnClickListener { editPhotoDialog?.dismiss() }
     }
 
+    private fun onGalleryClicked() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            photoPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        } else {
+            galleryLauncher.launch("image/*")
+        }
+    }
+
+    private fun onCameraClicked() {
+        val granted = ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (granted) startCamera() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    private fun startCamera() {
+        runCatching {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis().toString())
+            }
+
+            pendingCameraUri = requireContext().contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values
+            )
+
+            val uri = pendingCameraUri
+            if (uri == null) {
+                editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+                return
+            }
+
+            takePictureLauncher.launch(uri)
+        }.onFailure {
+            editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+        }
+    }
+
+    // ==========================================
+    // Date picker
+    // ==========================================
 
     private fun showMaterialDatePicker() {
         val constraints = CalendarConstraints.Builder()
@@ -379,51 +436,42 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         picker.show(parentFragmentManager, BIRTHDATE_PICKER)
     }
 
-    private fun setupOptionMenu() {
-        val menuHost = requireActivity() as MenuHost
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) =
-                    Unit
+    // ==========================================
+    // Welcome
+    // ==========================================
 
-                override fun onPrepareMenu(menu: Menu) {
-                    menu.findItem(R.id.action_settings)?.isVisible = true
-                    menu.findItem(R.id.action_skip)?.isVisible = !editProfileViewModel.showSkip()
-                }
+    private fun showWelcomeIfNeeded() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val shown = editProfileViewModel.isEditProfileWelcomeShown()
+            if (shown) return@launch
 
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
-            },
-            viewLifecycleOwner,
-            Lifecycle.State.RESUMED
-        )
-    }
+            // Evita duplicados si rota pantalla o se re-crea el fragment
+            if (parentFragmentManager.findFragmentByTag(EDIT_PROFILE_WELCOME_SHEET) != null) return@launch
 
-    fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
-
-    override fun onDestroyView() {
-        editPhotoDialog?.dismiss()
-        editPhotoDialog = null
-        pendingCameraUri = null
-        _binding = null
-        super.onDestroyView()
-    }
-
-    val mainViewModel: MainViewModel by viewModels()
-
-    fun setToolbarForEditProfile() {
-        mainViewModel.setToolbarState(
-            showBack = true,
-            showSettings = true,
-            currentScreen = CurrentScreen.EDIT_PROFILE
-        )
-    }
-
-    override fun onResume() {
-        super.onResume()
-        setToolbarForEditProfile()
+            EditProfileWelcomeSheet()
+                .show(parentFragmentManager, EDIT_PROFILE_WELCOME_SHEET)
+        }
     }
 
     override fun onEditProfileWelcomeDismissed() {
         editProfileViewModel.markEditProfileWelcomeShown()
+    }
+
+    // ==========================================
+    // Toolbar (lives in Activity)
+    // ==========================================
+
+    private fun setToolbarForEditProfile() {
+        (activity as? MainActivity)?.mainViewModel?.setToolbarState(
+            showToolbar = true,
+            showBack = true,
+            showUsersFragmentSettings = false,
+            showBottomNav = false,
+            currentScreen = CurrentScreen.EDIT_PROFILE
+        )
+    }
+
+    private companion object {
+        const val KEY_PENDING_CAMERA_URI = "pending_camera_uri"
     }
 }

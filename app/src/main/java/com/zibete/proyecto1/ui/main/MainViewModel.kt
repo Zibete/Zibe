@@ -171,7 +171,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun showLayoutSettings(show: Boolean) {
-        _toolbarState.update { it.copy(showSettings = show) }
+        _toolbarState.update { it.copy(showUsersFragmentSettings = show) }
     }
 
     fun showBottomNav(show: Boolean) {
@@ -380,15 +380,19 @@ class MainViewModel @Inject constructor(
     }
 
     fun setToolbarState(
-        currentScreen: CurrentScreen,
+        showToolbar: Boolean,
         showBack: Boolean,
-        showSettings: Boolean
+        showUsersFragmentSettings: Boolean,
+        showBottomNav: Boolean,
+        currentScreen: CurrentScreen
     ) {
         _toolbarState.update {
             it.copy(
-                currentScreen = currentScreen,
+                showToolbar = showToolbar,
                 showBack = showBack,
-                showSettings = showSettings
+                showUsersFragmentSettings = showUsersFragmentSettings,
+                showBottomNav = showBottomNav,
+                currentScreen = currentScreen
             )
         }
     }

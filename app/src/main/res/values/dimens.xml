@@ -111,4 +111,8 @@
     <dimen name="zibe_input_corner_top">12dp</dimen>
     <dimen name="zibe_input_corner_bottom">@dimen/zero_dp</dimen>
 
+    <!--ImageView-->
+
+    <dimen name="profile_photo_height">240dp</dimen>
+
 </resources>
