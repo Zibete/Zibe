@@ -79,7 +79,7 @@
                         android:paddingVertical="15dp"/>
 
                     <ProgressBar
-                        android:id="@+id/loadingPhoto"
+                        android:id="@+id/loading_photo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:indeterminate="true"

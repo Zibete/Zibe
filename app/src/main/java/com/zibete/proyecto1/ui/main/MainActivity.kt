@@ -89,6 +89,12 @@ class MainActivity : BaseToolbarActivity() {
 
     override val toolbarMenuRes: Int = R.menu.menu_main
 
+    override fun activityRootView(): View = binding.root
+
+    override fun bottomNavView(): View = binding.appBarMain.contentMain.navView3
+
+    override fun appBarContainerView(): View = binding.appBarMain.materialToolbar
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -194,13 +200,13 @@ class MainActivity : BaseToolbarActivity() {
 
     private fun setupBadges() {
         // Chat Badge
-        badgeDrawableChat = bottomNavigationView.getOrCreateBadge(R.id.navBottomChat)?.apply {
+        badgeDrawableChat = bottomNavigationView.getOrCreateBadge(R.id.navBottomChat).apply {
             backgroundColor = getColorCompat(R.color.accent)
             badgeTextColor = getColorCompat(R.color.white)
             isVisible = false
         }
         // Group Badge
-        badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGrupos)?.apply {
+        badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGrupos).apply {
             backgroundColor = getColorCompat(R.color.accent)
             badgeTextColor = getColorCompat(R.color.white)
             isVisible = false
@@ -242,25 +248,32 @@ class MainActivity : BaseToolbarActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-
                 mainViewModel.uiState.collect { state ->
-                    // Visibilidad
-                    materialToolbar.isVisible = state.showToolbar
-                    layoutSettings?.isVisible = state.showSettingsLayout
-                    bottomNavigationView.isVisible = state.showBottomNav
                     // Badges
                     badgeDrawableChat?.isVisible = state.chatListBadgeCount > 0
                     badgeDrawableChat?.number = state.chatListBadgeCount
                     badgeDrawableGroup?.isVisible = state.groupBadgeCount > 0
                     badgeDrawableGroup?.number = state.groupBadgeCount
-                    // Título
-                    materialToolbar.title = state.currentScreen.titleRes.asString(this@MainActivity)
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                mainViewModel.toolbarState.collect { state ->
+                    // Visibilidad
+                    materialToolbar.isVisible = state.showToolbar
+                    layoutSettings?.isVisible = state.showSettings
+                    bottomNavigationView.isVisible = state.showBottomNav
+
+                    // title
+                    materialToolbar.title =
+                        state.currentScreen.titleRes.asString(this@MainActivity)
 
                     currentScreen = state.currentScreen
 
                     invalidateOptionsMenu()
                 }
-
             }
         }
 
@@ -567,9 +580,11 @@ class MainActivity : BaseToolbarActivity() {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
+        val screen = mainViewModel.toolbarState.value.currentScreen
+        materialToolbar.title = screen.titleRes.asString(this)
+        invalidateOptionsMenu()
         startLocationUpdates()
     }
-
 
     override fun onPause() {
         super.onPause()

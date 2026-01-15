@@ -24,9 +24,31 @@
         <item name="android:backgroundTint">@color/zibe_button_secondary_selector</item>
     </style>
 
+    <style name="Zibe.ExtendedFab" parent="Widget.MaterialComponents.ExtendedFloatingActionButton">
+        <item name="backgroundTint">@color/zibe_extfab_bg_selector</item>
+        <item name="iconTint">@color/zibe_extfab_content_selector</item>
+        <item name="android:textColor">@color/zibe_extfab_content_selector</item>
+
+        <item name="cornerRadius">@dimen/zibe_btn_corner</item>
+        <item name="android:minHeight">@dimen/zibe_btn_height</item>
+        <item name="android:elevation">@dimen/zibe_btn_elevation</item>
+
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">@dimen/zibe_text_size_label</item>
+        <item name="fontFamily">@font/poppins_medium</item>
+
+        <item name="android:minWidth">@dimen/zibe_extfab_min_width</item>
+        <item name="android:paddingStart">@dimen/zibe_extfab_padding_h</item>
+        <item name="android:paddingEnd">@dimen/zibe_extfab_padding_h</item>
+        <item name="iconPadding">@dimen/zibe_extfab_icon_padding</item>
+
+    </style>
+
+
     <style name="Shape.Button">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/zibe_btn_corner</item>
     </style>
+
 
 </resources>

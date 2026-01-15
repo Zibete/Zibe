@@ -4,7 +4,6 @@
     android:id="@+id/rootChatList"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_fragment_glass"
     android:orientation="vertical">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -26,8 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:orientation="vertical"
-            android:background="@drawable/background_text">
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -63,8 +61,8 @@
                 android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="@string/chatlist_onboarding_title"
-                android:textSize="@dimen/text_size_xlarge"
-                android:textStyle="bold" />
+                android:textAppearance="@style/Zibe.Text.Regular"
+                android:textSize="@dimen/text_size_xlarge"/>
         </LinearLayout>
 
         <!-- Progress de carga -->

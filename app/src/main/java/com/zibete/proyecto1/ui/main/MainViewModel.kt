@@ -56,6 +56,9 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _toolbarState = MutableStateFlow(ToolbarState())
+    val toolbarState = _toolbarState.asStateFlow()
+
     private val _uiEvents = MutableSharedFlow<MainUiEvent>()
     val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
 
@@ -67,17 +70,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun initStartOnChat() {
-        // Dejá el estado como está (ya es CHAT), pero forzá el evento de navegación
-        viewModelScope.launch {
-            _uiEvents.emit(MainUiEvent.ToChat)
-        }
-    }
-
     init {
-
-//        // UI initial
-//        initStartOnChat()
 
         // 1) Setup sesión (una vez)
         viewModelScope.launch {
@@ -170,19 +163,19 @@ class MainViewModel @Inject constructor(
     }
 
     fun setScreen(screen: CurrentScreen) {
-        _uiState.update { it.copy(currentScreen = screen) }
+        _toolbarState.update { it.copy(currentScreen = screen) }
     }
 
     fun showToolbar(show: Boolean) {
-        _uiState.update { it.copy(showToolbar = show) }
+        _toolbarState.update { it.copy(showToolbar = show) }
     }
 
     fun showLayoutSettings(show: Boolean) {
-        _uiState.update { it.copy(showSettingsLayout = show) }
+        _toolbarState.update { it.copy(showSettings = show) }
     }
 
     fun showBottomNav(show: Boolean) {
-        _uiState.update { it.copy(showBottomNav = show) }
+        _toolbarState.update { it.copy(showBottomNav = show) }
     }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
@@ -236,7 +229,7 @@ class MainViewModel @Inject constructor(
 
             R.id.navBottomUsers -> {
 
-                if (_uiState.value.currentScreen == CurrentScreen.USERS) return
+                if (_toolbarState.value.currentScreen == CurrentScreen.USERS) return
 
                 setScreen(CurrentScreen.USERS)
                 showToolbar(true)
@@ -253,7 +246,7 @@ class MainViewModel @Inject constructor(
             }
 
             R.id.navBottomFavorites -> {
-                if (_uiState.value.currentScreen == CurrentScreen.FAVORITES) return
+                if (_toolbarState.value.currentScreen == CurrentScreen.FAVORITES) return
 
                 setScreen(CurrentScreen.FAVORITES)
                 showToolbar(true)
@@ -272,7 +265,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onChatTabSelected() {
-        if (_uiState.value.currentScreen == CurrentScreen.CHAT) return
+        if (_toolbarState.value.currentScreen == CurrentScreen.CHAT) return
 
         setScreen(CurrentScreen.CHAT)
         showToolbar(true)
@@ -285,7 +278,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onGroupsTabSelected() {
-        if (_uiState.value.currentScreen == CurrentScreen.GROUPS) return
+        if (_toolbarState.value.currentScreen == CurrentScreen.GROUPS) return
 
         setScreen(CurrentScreen.GROUPS)
         showBottomNav(true)
@@ -314,7 +307,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onEditProfileSelected() {
-        if (_uiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
+        if (_toolbarState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
 
         setScreen(CurrentScreen.EDIT_PROFILE)
         showToolbar(true)
@@ -327,7 +320,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onBackPressed() {
-        when (_uiState.value.currentScreen) {
+        when (_toolbarState.value.currentScreen) {
 
             CurrentScreen.EDIT_PROFILE -> {
                 viewModelScope.launch {
@@ -383,6 +376,20 @@ class MainViewModel @Inject constructor(
                     _uiEvents.emit(MainUiEvent.BackFromEditProfile)
                 }
             }
+        }
+    }
+
+    fun setToolbarState(
+        currentScreen: CurrentScreen,
+        showBack: Boolean,
+        showSettings: Boolean
+    ) {
+        _toolbarState.update {
+            it.copy(
+                currentScreen = currentScreen,
+                showBack = showBack,
+                showSettings = showSettings
+            )
         }
     }
 
