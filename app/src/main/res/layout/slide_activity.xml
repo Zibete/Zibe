@@ -24,7 +24,6 @@
         android:layout_height="?attr/actionBarSize"
         android:background="@color/transparent"
         android:elevation="@dimen/toolbar_elevation"
-        app:navigationIconTint="@color/white"
-        android:theme="@style/Arrow" />
+        app:navigationIconTint="?attr/colorOnSurface" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

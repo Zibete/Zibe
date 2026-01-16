@@ -22,25 +22,24 @@
     <!-- BottomNav active indicator pill -->
     <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/glass_indicator</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.Rounded16</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zibe</item>
     </style>
 
-    <style name="ShapeAppearance.Zibe.Rounded16" parent="ShapeAppearance.Material3.Corner.Medium">
+    <style name="ShapeAppearance.Zibe" parent="ShapeAppearance.Material3.Corner.Medium">>
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">16dp</item>
     </style>
 
     <!-- Chat bubble (shape tokens “simples”) -->
-    <style name="Shape.Bubble">
-        <item name="cornerFamily">rounded</item>
+    <style name="ShapeAppearance.Zibe.Bubble" parent="ShapeAppearance.Zibe">
         <item name="cornerSize">18dp</item>
     </style>
 
-    <style name="Shape.Bubble.Right">
+    <style name="ShapeAppearance.Zibe.Bubble.Right">
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
-    <style name="Shape.Bubble.Left">
+    <style name="ShapeAppearance.Zibe.Bubble.Left">
         <item name="cornerSizeBottomLeft">0dp</item>
     </style>
 

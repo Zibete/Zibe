@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -73,6 +74,13 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("com.google.android.material:material:1.13.0")
+    }
+}
+
+
 dependencies {
 
     // -------------------------------
@@ -83,7 +91,7 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.viewpager:viewpager:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
-    implementation("com.google.android.material:material:1.13.0")
+//    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.annotation:annotation:1.9.1")
 
     // Navigation
@@ -142,7 +150,7 @@ dependencies {
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     implementation("com.squareup.picasso:picasso:2.71828")
 
-    // Glide (ojo: 5.x NO tiene compiler compatible → usamos solo runtime)
+    // Glide
     implementation("com.github.bumptech.glide:glide:5.0.5")
     implementation("jp.wasabeef:glide-transformations:4.3.0")
 
@@ -157,7 +165,6 @@ dependencies {
     // -------------------------------
     // GOOGLE / FIREBASE
     // -------------------------------
-//    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))

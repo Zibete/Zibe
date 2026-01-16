@@ -219,7 +219,7 @@
         android:id="@+id/toolbar_profile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Arrow"
+        app:navigationIconTint="?attr/colorOnSurface"
         android:background="@color/transparent"/>
 
     <com.github.clans.fab.FloatingActionMenu

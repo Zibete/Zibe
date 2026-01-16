@@ -1,31 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- =========================================================
+         TextInputLayout (Filled)
+         ========================================================= -->
     <style name="Zibe.Input" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
-        <item name="boxBackgroundColor">@color/zibe_dark_bg</item>
-        <item name="boxStrokeColor">@color/text_input_stroke</item>
 
+        <!-- Fondo / borde -->
+        <item name="boxBackgroundColor">?attr/colorSurface</item>
+        <item name="boxStrokeColor">?attr/colorOutline</item>
 
         <item name="boxStrokeWidthFocused">2dp</item>
         <item name="boxStrokeWidth">1dp</item>
 
-        <item name="android:textColorHint">@color/zibe_hint_text</item>
-        <item name="hintTextColor">@color/zibe_hint_text</item>
+        <!-- Hint + icons -->
+        <item name="hintTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="startIconTint">?attr/colorOnSurfaceVariant</item>
+        <item name="endIconTint">?attr/colorOnSurfaceVariant</item>
 
-        <item name="boxBackgroundMode">filled</item>
-
-        <item name="startIconTint">@color/zibe_hint_text</item>
-        <item name="endIconTint">@color/zibe_hint_text</item>
-
+        <!-- Shape -->
         <item name="boxCornerRadiusTopStart">@dimen/zibe_input_corner_top</item>
         <item name="boxCornerRadiusTopEnd">@dimen/zibe_input_corner_top</item>
         <item name="boxCornerRadiusBottomStart">@dimen/zibe_input_corner_bottom</item>
         <item name="boxCornerRadiusBottomEnd">@dimen/zibe_input_corner_bottom</item>
     </style>
 
+    <!-- =========================================================
+         TextInputEditText (dentro de Zibe.Input)
+         ========================================================= -->
     <style name="Zibe.EditText" parent="Widget.Material3.TextInputEditText.FilledBox.Dense">
-        <item name="android:textColor">@color/white</item>
-        <item name="hintTextColor">@color/zibe_hint_text</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColorHint">?attr/colorOnSurfaceVariant</item>
     </style>
 
 </resources>

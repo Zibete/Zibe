@@ -330,7 +330,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     // --------------------------------------------
 
     private fun showEditPhotoDialogInternal() {
-        val themedContext = ContextThemeWrapper(requireContext(), R.style.Zibe_Dialog)
+        val themedContext = ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Zibe_AlertDialog)
         val dialogBinding = SelectSourcePicBinding.inflate(LayoutInflater.from(themedContext))
 
         dialogBinding.cardEditDelete.isVisible = true
@@ -426,7 +426,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         cropLauncher.launch(intent)
     }
 
-
     private fun showMaterialDatePicker() {
         val constraints = CalendarConstraints.Builder()
             .setValidator(DateValidatorPointBackward.now())
@@ -435,7 +434,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         val picker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(getString(R.string.birth_date))
             .setCalendarConstraints(constraints)
-            .setTheme(R.style.ZibeDatePickerOverlay)
+            .setTheme(R.style.ThemeOverlay_Zibe_MaterialCalendar)
             .setSelection(
                 editProfileViewModel.uiState.value.birthDate
                     .let { iso -> isoToMillis(iso) }
