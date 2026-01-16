@@ -1,0 +1,9 @@
+<!-- res/layout/menu_item_custom.xml -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:textSize="15sp"
+    android:textColor="?attr/colorOnSurface" />

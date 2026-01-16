@@ -76,7 +76,7 @@ fun ZibeInputField(
                 unfocusedContainerColor = containerColor,
                 disabledContainerColor = containerColor,
                 focusedIndicatorColor = accentColor,
-                unfocusedIndicatorColor = accentColor,
+                unfocusedIndicatorColor = containerColor,
                 disabledIndicatorColor = inputBackground,
                 errorIndicatorColor = errorColor,
                 focusedTextColor = textColor,

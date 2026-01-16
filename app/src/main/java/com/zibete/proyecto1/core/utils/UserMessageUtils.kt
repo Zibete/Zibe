@@ -1,13 +1,11 @@
 package com.zibete.proyecto1.core.utils
 
 import android.content.Context
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -104,7 +102,7 @@ object UserMessageUtils {
         onConfirm: () -> Unit,
         onCancel: (() -> Unit)? = null
     ) {
-        MaterialAlertDialogBuilder(context, R.style.Zibe_AlertDialog)
+        MaterialAlertDialogBuilder(context)
             .setTitle(title)
             .setCancelable(false)
             .apply {
@@ -135,7 +133,7 @@ object UserMessageUtils {
         positiveText: String = context.getString(R.string.action_accept),
         onConfirm: (() -> Unit)? = null
     ) {
-        MaterialAlertDialogBuilder(context, R.style.Zibe_AlertDialog)
+        MaterialAlertDialogBuilder(context)
             .setCancelable(false)
             .setTitle(title)
             .setMessage(message)

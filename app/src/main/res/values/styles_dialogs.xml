@@ -1,43 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="ZibeDatePickerOverlay" parent="ThemeOverlay.Material3.MaterialCalendar">
-        <item name="colorPrimary">@color/zibe_purple</item>
-        <item name="colorSecondary">@color/zibe_purple</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/zibe_dark_bg</item>
+    <!-- =========================================================
+         AlertDialog (Material 3)
+         ========================================================= -->
+    <style name="ThemeOverlay.Zibe.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <!-- tokens del theme -->
+        <item name="android:background">@color/snackbar_surface</item>
+
+        <!-- Shape -->
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zibe</item>
+
+        <!-- Text -->
+        <item name="titleTextStyle">@style/TextAppearance.Zibe.Dialog.Title</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.Zibe.Dialog.Body</item>
+
+        <!-- Buttons -->
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Zibe.Dialog.TextButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Zibe.Dialog.TextButton</item>
     </style>
 
-    <style name="Zibe.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorSurface">@color/zibe_dark_bg</item>
-        <item name="colorOnSurface">@color/zibe_text_light</item>
-
-        <item name="shapeAppearanceMediumComponent">@style/Zibe.Dialog.Shape</item>
-
-        <item name="materialAlertDialogTitleTextStyle">@style/Zibe.Dialog.Title</item>
-        <item name="materialAlertDialogBodyTextStyle">@style/Zibe.Dialog.Body</item>
-
-        <item name="materialButtonStyle">@style/Zibe.Dialog.TextButton</item>
-    </style>
-
-
-    <style name="Zibe.Dialog.Shape" parent="ShapeAppearance.Material3.MediumComponent">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">16dp</item>
-    </style>
-
-    <style name="Zibe.Dialog.TextButton" parent="Widget.Material3.Button.TextButton">
-        <item name="android:textColor">@color/zibe_pink</item>
-        <item name="rippleColor">@color/zibe_btn_primary_24</item>
+    <style name="Widget.Zibe.Dialog.TextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
-    <style name="Zibe.Dialog.Title" parent="TextAppearance.Material3.TitleLarge">
-        <item name="android:textColor">@color/white</item>
+    <style name="TextAppearance.Zibe.Dialog.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
-    <style name="Zibe.Dialog.Body" parent="TextAppearance.Material3.BodyMedium">
-        <item name="android:textColor">@color/zibe_text_light</item>
+    <style name="TextAppearance.Zibe.Dialog.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- =========================================================
+         MaterialCalendar / DatePicker overlay
+         ========================================================= -->
+    <style name="ThemeOverlay.Zibe.MaterialCalendar" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="materialCalendarStyle">@style/Widget.Zibe.MaterialCalendar</item>
+    </style>
+
+    <style name="Widget.Zibe.MaterialCalendar" parent="Widget.Material3.MaterialCalendar">
+        <item name="backgroundTint">@color/zibe_dark_bg</item>
     </style>
 
 </resources>

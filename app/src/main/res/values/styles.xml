@@ -1,82 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- ===== TEMA BASE APP (Material 3) ===== -->
-    <style name="AppTheme.Zibe" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- =========================================================
+         COMPONENT STYLES (Views)
+         ========================================================= -->
 
-        <!-- Font family -->
-        <item name="android:fontFamily">@font/poppins</item>
-        <item name="fontFamily">@font/poppins</item>
-
-        <item name="textAppearanceHeadlineMedium">@style/Zibe.Text.Bold</item>
-        <item name="textAppearanceBodyMedium">@style/Zibe.Text.Regular</item>
-        <item name="textAppearanceBodyLarge">@style/Zibe.Text.SemiBold</item>
-        <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
-
-        <!-- Core colors -->
-        <item name="colorPrimary">@color/zibe_pink</item>
-        <item name="colorSecondary">@color/zibe_purple</item>
-        <item name="colorControlActivated">@color/zibe_purple</item>
-        <item name="colorOnSurfaceVariant">@color/zibe_hint_text</item>
-
-        <!-- Material 3 recommended tokens -->
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSurface">@color/zibe_dark_bg</item>
-        <item name="colorOnSurface">@color/zibe_text_light</item>
-        <item name="colorOutline">@color/zibe_hint_text</item>
-
-        <!-- Sistema -->
-        <item name="android:statusBarColor">@color/zibe_night_start</item>
-        <item name="android:navigationBarColor">@color/zibe_night_end</item>
-        <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
-
-        <!-- Texto legacy -->
-        <item name="android:textColorPrimary">@color/zibe_text_light</item>
-        <item name="android:textColorSecondary">@color/zibe_hint_text</item>
-        <item name="android:textColorHint">@color/zibe_hint_text</item>
-
-        <!-- Defaults de widgets -->
-        <item name="materialButtonStyle">@style/Zibe.Button.Secondary</item>
-        <item name="textInputStyle">@style/Zibe.Input</item>
-        <item name="bottomNavigationStyle">@style/Zibe.BottomNav</item>
-        <item name="toolbarStyle">@style/Zibe.Toolbar</item>
-        <item name="materialAlertDialogTheme">@style/Zibe.Dialog</item>
+    <!-- Toolbar -->
+    <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <!-- Para iconos: usar app:navigationIconTint en el XML del toolbar -->
     </style>
 
-    <!-- ===== Activities ===== -->
-    <style name="AppTheme.Zibe.NoActionBar" parent="AppTheme.Zibe">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="AppTheme.Zibe.Chat" parent="AppTheme.Zibe.NoActionBar">
-        <item name="android:windowSoftInputMode">adjustResize</item>
-    </style>
-
-    <!-- app_bar_main.xml / activity_chat.xml -->
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
-
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
-
-    <!-- ===== NavigationView (drawer) ===== -->
-    <style name="NavViewStyle" parent="Widget.Material3.NavigationView">
-        <item name="android:textColorPrimary">@color/zibe_text_light</item>
-        <item name="android:textColorSecondary">@color/zibe_hint_text</item>
+    <!-- Navigation drawer -->
+    <style name="Zibe.NavigationView" parent="Widget.Material3.NavigationView">
         <item name="itemIconTint">@color/zibe_nav_inactive</item>
         <item name="itemTextColor">@color/zibe_nav_inactive</item>
         <item name="itemRippleColor">@color/zibe_pink</item>
     </style>
 
-    <!-- ===== BottomNavigation ===== -->
-    <style name="Zibe.BottomNav" parent="Widget.Material3.BottomNavigationView">
-        <!--        <item name="backgroundTint">@color/zibe_nav_bg</item>-->
-        <!--        <item name="itemIconTint">@color/zibe_nav_inactive</item>-->
-        <!--        <item name="itemTextColor">@color/zibe_nav_inactive</item>-->
-        <!--        <item name="itemRippleColor">@color/zibe_pink</item>-->
-    </style>
+    <!-- BottomNavigation -->
+    <style name="Zibe.BottomNav" parent="Widget.Material3.BottomNavigationView" />
 
-    <!-- Overlay BottomNav (si lo aplicás por theme overlay en layout) -->
     <style name="ThemeOverlay.Zibe.BottomNav" parent="ThemeOverlay.Material3.BottomNavigationView">
         <item name="itemIconTint">@drawable/bottom_nav_selector</item>
         <item name="itemTextColor">@drawable/bottom_nav_selector</item>
@@ -84,15 +29,7 @@
         <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
 
-    <!-- ===== Toolbar ===== -->
-    <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
-        <!--        <item name="android:background">@color/transparent</item>-->
-        <item name="android:titleTextColor">@color/zibe_text_light</item>
-        <item name="android:iconTint">@color/zibe_text_light</item>
-        <item name="android:subtitleTextColor">@color/zibe_hint_text</item>
-    </style>
-
-    <!-- ===== BottomSheet (overlay minimalista) ===== -->
+    <!-- BottomSheet -->
     <style name="Zibe.BottomSheetTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Zibe.BottomSheet.Internal</item>
         <item name="materialButtonStyle">@style/Zibe.Button.Secondary</item>
@@ -100,7 +37,7 @@
 
     <style name="Zibe.BottomSheet.Internal" parent="Widget.Material3.BottomSheet.Modal">
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.BottomSheet</item>
-        <item name="backgroundTint">@color/zibe_dark_bg</item>
+        <item name="backgroundTint">?attr/colorSurface</item>
     </style>
 
     <style name="ShapeAppearance.Zibe.BottomSheet" parent="ShapeAppearance.Material3.Corner.Medium">
@@ -111,20 +48,9 @@
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
-    <!-- ===== Misc ===== -->
-    <style name="Zibe.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="android:background">@color/zibe_dark_bg</item>
-        <item name="android:textColor">@color/zibe_text_light</item>
-    </style>
-
-    <style name="Arrow">
-        <item name="colorControlNormal">@android:color/white</item>
-    </style>
-
-    <style name="Shape">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">16dp</item>
-    </style>
+    <!-- =========================================================
+         WIDGETS (ZIBE reusable)
+         ========================================================= -->
 
     <style name="Widget.Zibe.CircularLoading" parent="Widget.Material3.CircularProgressIndicator">
         <item name="indicatorSize">48dp</item>
@@ -133,5 +59,19 @@
         <item name="trackColor">?attr/colorSurfaceVariant</item>
     </style>
 
+    <style name="Widget.Zibe.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">?attr/colorSurface</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:elevation">6dp</item>
+    </style>
+
+    <style name="Widget.Zibe.SearchView" parent="Widget.AppCompat.SearchView">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColorHint">?attr/colorOnSurfaceVariant</item>
+        <item name="closeIcon">@drawable/ic_baseline_close_24</item>
+        <item name="searchIcon">@drawable/ic_baseline_search_24</item>
+        <item name="queryBackground">@null</item>
+        <item name="submitBackground">@null</item>
+    </style>
 
 </resources>
