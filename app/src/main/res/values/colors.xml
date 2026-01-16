@@ -4,7 +4,7 @@
     <!-- Legacy -->
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
+    <color name="colorAccent">@color/accent</color>
     <color name="blanco">#FFFFFF</color>
     <color name="colorDark">#323339</color>
     <color name="Violeta">#3C455C</color>

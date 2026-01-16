@@ -46,11 +46,12 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintDimensionRatio="3:4" />
 
-                    <ProgressBar
-                        android:id="@+id/loadingPhoto"
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/circular_loading"
+                        style="@style/Widget.Zibe.CircularLoading"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:contentDescription="@string/content_description_loading"
+                        android:layout_gravity="center"
                         android:indeterminate="true"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"

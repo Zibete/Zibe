@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.isVisible
+import androidx.viewpager2.widget.ViewPager2
 import com.zibete.proyecto1.adapters.SliderPhotoAdapter
 import com.zibete.proyecto1.databinding.SlideActivityBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
@@ -43,12 +44,27 @@ class PhotoViewerActivity : BaseEdgeToEdgeActivity() {
 
         val adapter = SliderPhotoAdapter(
             urls = photoList,
-            onLoadStart = { binding.progressbarImage.isVisible = true },
-            onLoadEnd = { binding.progressbarImage.isVisible = false }
+            onLoadStart = { pos ->
+                if (pos == binding.viewPager.currentItem) {
+                    binding.circularLoading.isVisible = true
+                }
+            },
+            onLoadEnd = { pos ->
+                if (pos == binding.viewPager.currentItem) {
+                    binding.circularLoading.isVisible = false
+                }
+            }
         )
 
         binding.viewPager.adapter = adapter
         binding.viewPager.setCurrentItem(position, false)
+
+        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                binding.circularLoading.isVisible = true
+            }
+        })
+
         binding.viewPager.rotationY = rotationY.toFloat()
     }
 

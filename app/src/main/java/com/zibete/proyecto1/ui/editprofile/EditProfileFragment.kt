@@ -179,8 +179,16 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         binding.fabSave.isEnabled = false
         binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
-        binding.inputUserName.addTextChangedListener(SimpleWatcher { editProfileViewModel.onNameChanged(it) })
-        binding.inputDescription.addTextChangedListener(SimpleWatcher { editProfileViewModel.onDescriptionChanged(it) })
+        binding.inputUserName.addTextChangedListener(SimpleWatcher {
+            editProfileViewModel.onNameChanged(
+                it
+            )
+        })
+        binding.inputDescription.addTextChangedListener(SimpleWatcher {
+            editProfileViewModel.onDescriptionChanged(
+                it
+            )
+        })
 
         if (savedInstanceState == null) {
             editProfileViewModel.load()
@@ -265,6 +273,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                                     type = event.type
                                 )
                             }
+
                             is EditProfileUiEvent.OnBackToMain -> {
                                 (activity as? MainActivity)?.mainViewModel?.emit(MainUiEvent.BackFromEditProfile)
                             }
@@ -286,7 +295,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     }
 
     private fun loadProfilePhoto(model: Any) {
-        binding.loadingPhoto.isVisible = true
+        binding.circularLoading.isVisible = true
 
         Glide.with(this)
             .load(model)
@@ -298,7 +307,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                     target: Target<Drawable?>,
                     isFirstResource: Boolean
                 ): Boolean {
-                    binding.loadingPhoto.isVisible = false
+                    binding.circularLoading.isVisible = false
                     return false
                 }
 
@@ -309,13 +318,12 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                     dataSource: DataSource?,
                     isFirstResource: Boolean
                 ): Boolean {
-                    binding.loadingPhoto.isVisible = false
+                    binding.circularLoading.isVisible = false
                     return false
                 }
             })
             .into(binding.profilePhoto)
     }
-
 
     // --------------------------------------------
     // Dialog / Pickers
@@ -332,7 +340,10 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             setContentView(dialogBinding.root)
             setCancelable(true)
             window?.setBackgroundDrawable(getDrawable(requireContext(), R.drawable.badge_round))
-            window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
             show()
         }
 
@@ -365,8 +376,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     }
 
     private fun onCameraClicked() {
-        val granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
+        val granted =
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
         if (granted) startCamera() else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 

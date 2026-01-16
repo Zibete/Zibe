@@ -115,4 +115,13 @@
 
     <dimen name="profile_photo_height">240dp</dimen>
 
+    <!--Toolbar-->
+
+    <dimen name="toolbar_elevation">10dp</dimen>
+
+    <!--Progressbar-->
+
+    <dimen name="progressbar_elevation">8dp</dimen>
+    <dimen name="progressbar_size">48dp</dimen>
+
 </resources>
