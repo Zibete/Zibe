@@ -12,8 +12,11 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.content.res.AppCompatResources.getDrawable
@@ -44,6 +47,7 @@ import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
+import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
@@ -190,8 +194,20 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             )
         })
 
+        binding.inputDescription.makeScrollableInsideScroll()
+
         if (savedInstanceState == null) {
             editProfileViewModel.load()
+        }
+    }
+
+    fun EditText.makeScrollableInsideScroll() {
+        setOnTouchListener { v, event ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+            if ((event.action and MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {
+                v.parent.requestDisallowInterceptTouchEvent(false)
+            }
+            false
         }
     }
 
