@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
@@ -18,6 +19,7 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -178,12 +180,18 @@ class MainViewModel @Inject constructor(
         _toolbarState.update { it.copy(showBottomNav = show) }
     }
 
+    fun showSkipButton(show: Boolean) {
+        _toolbarState.update { it.copy(showSkipButton = show) }
+    }
+
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
             locationRepository.updateLocation(location)
         }
     }
+
+    val showSkipButton = _toolbarState.value.showSkipButton
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
@@ -384,7 +392,8 @@ class MainViewModel @Inject constructor(
         showBack: Boolean,
         showUsersFragmentSettings: Boolean,
         showBottomNav: Boolean,
-        currentScreen: CurrentScreen
+        currentScreen: CurrentScreen,
+        showSkipButton: Boolean = false
     ) {
         _toolbarState.update {
             it.copy(
@@ -392,7 +401,8 @@ class MainViewModel @Inject constructor(
                 showBack = showBack,
                 showUsersFragmentSettings = showUsersFragmentSettings,
                 showBottomNav = showBottomNav,
-                currentScreen = currentScreen
+                currentScreen = currentScreen,
+                showSkipButton = showSkipButton
             )
         }
     }
