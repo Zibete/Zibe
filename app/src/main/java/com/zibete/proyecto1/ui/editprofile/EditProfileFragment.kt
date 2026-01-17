@@ -13,7 +13,6 @@ import android.provider.MediaStore
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.MotionEvent
-import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -38,8 +37,9 @@ import com.bumptech.glide.request.target.Target
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointBackward
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.yalantis.ucrop.UCrop
+import com.yalantis.ucrop.model.AspectRatio
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.TestTags.BIRTHDATE_PICKER
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_WELCOME_SHEET
 import com.zibete.proyecto1.core.ui.UiText
@@ -47,7 +47,6 @@ import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
-import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
@@ -109,12 +108,12 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             if (result.resultCode != android.app.Activity.RESULT_OK) return@registerForActivityResult
 
             val data = result.data ?: return@registerForActivityResult
-            val outputUri = com.yalantis.ucrop.UCrop.getOutput(data)
+            val outputUri = UCrop.getOutput(data)
 
             if (outputUri != null) {
                 editProfileViewModel.onPhotoSelected(outputUri)
             } else {
-                val error = com.yalantis.ucrop.UCrop.getError(data)
+                val error = UCrop.getError(data)
                 editProfileViewModel.onError(
                     UiText.StringRes(
                         R.string.err_zibe_prefix,
@@ -140,17 +139,11 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setToolbarForEditProfile()
-        setupInsets(view)
         setupListeners(savedInstanceState)
+        setupInsets(view)
         installScrollBehavior()
         collectUi()
         showWelcomeIfNeeded()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        setToolbarForEditProfile()
     }
 
     override fun onDestroyView() {
@@ -167,20 +160,11 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
     private fun setupListeners(savedInstanceState: Bundle?) {
         binding.profilePhoto.setOnClickListener {
-            val state = editProfileViewModel.uiState.value
-            val model: Any = state.photoPreviewUri
-                ?: state.photoUrl
-                ?: DEFAULT_PROFILE_PHOTO_URL
-
-            // Si PhotoViewerActivity hoy acepta String:
-            PhotoViewerActivity.startSingle(requireContext(), model.toString())
+            val toLoad = editProfileViewModel.resolveProfilePhotoToLoad()
+            PhotoViewerActivity.startSingle(requireContext(), toLoad.toString())
         }
-
-
         binding.fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
         binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
-
-        binding.fabSave.isEnabled = false
         binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
         binding.inputUserName.addTextChangedListener(SimpleWatcher {
@@ -265,17 +249,19 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 launch {
                     editProfileViewModel.uiState.collect { state ->
                         binding.fabSave.isEnabled = state.saveEnabled && !state.isSaving
+                        binding.fabEditPhoto.isEnabled = !state.isSaving && !state.isLoading
+                        binding.pickerBirthDate.isEnabled = !state.isSaving && !state.isLoading
+                        binding.inputUserName.isEnabled = !state.isSaving && !state.isLoading
+                        binding.inputDescription.isEnabled = !state.isSaving && !state.isLoading
 
                         binding.inputUserName.setTextIfChanged(state.name)
                         binding.pickerBirthDate.setTextIfChanged(editProfileViewModel.birthDateUi)
                         binding.inputDescription.setTextIfChanged(state.description)
                         binding.inputAge.setTextIfChanged(state.age?.toString().orEmpty())
 
-                        val toLoad: Any = state.photoPreviewUri
-                            ?: state.photoUrl
-                            ?: DEFAULT_PROFILE_PHOTO_URL
-
+                        val toLoad = editProfileViewModel.resolveProfilePhotoToLoad()
                         maybeLoadProfilePhoto(toLoad)
+                        setToolbarForEditProfile(state.hasBirthDate)
                     }
                 }
 
@@ -304,13 +290,13 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     // Image loading (Glide)
     // --------------------------------------------
 
-    private fun maybeLoadProfilePhoto(model: Any) {
+    private fun maybeLoadProfilePhoto(model: Any?) {
         if (lastLoadedPhotoModel == model) return
         lastLoadedPhotoModel = model
         loadProfilePhoto(model)
     }
 
-    private fun loadProfilePhoto(model: Any) {
+    private fun loadProfilePhoto(model: Any?) {
         binding.circularLoading.isVisible = true
 
         Glide.with(this)
@@ -346,7 +332,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     // --------------------------------------------
 
     private fun showEditPhotoDialogInternal() {
-        val themedContext = ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Zibe_AlertDialog)
+        val themedContext =
+            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Zibe_AlertDialog)
         val dialogBinding = SelectSourcePicBinding.inflate(LayoutInflater.from(themedContext))
 
         dialogBinding.cardEditDelete.isVisible = true
@@ -429,9 +416,19 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         )
         val destUri = Uri.fromFile(destFile)
 
-        val uCrop = com.yalantis.ucrop.UCrop.of(source, destUri)
-            // Elegí lo que quieras:
-            .withAspectRatio(3f, 4f) // consistente con tu ratio 3:4
+        val options = UCrop.Options().apply {
+            setFreeStyleCropEnabled(true)
+            setAspectRatioOptions(
+                0,
+                AspectRatio("Original", 0f, 0f),
+                AspectRatio("3:4", 3f, 4f),
+                AspectRatio("9:16", 9f, 16f)
+            )
+        }
+
+        val uCrop = UCrop.of(source, destUri)
+            .withOptions(options)
+            .useSourceImageAspectRatio()
             .withMaxResultSize(1440, 1920) // evita bitmaps gigantes
 
         val intent = uCrop.getIntent(requireContext()).apply {
@@ -481,13 +478,14 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
     fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
 
-    private fun setToolbarForEditProfile() {
+    private fun setToolbarForEditProfile(showSkipButton: Boolean) {
         (activity as? MainActivity)?.mainViewModel?.setToolbarState(
             showToolbar = true,
             showBack = true,
             showUsersFragmentSettings = false,
             showBottomNav = false,
-            currentScreen = CurrentScreen.EDIT_PROFILE
+            currentScreen = CurrentScreen.EDIT_PROFILE,
+            showSkipButton = showSkipButton
         )
     }
 

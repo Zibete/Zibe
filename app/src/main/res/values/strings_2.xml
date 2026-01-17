@@ -97,7 +97,7 @@
 
 
     <string name="err_zibe">Ocurrió un error inesperado. Intentá nuevamente.</string>
-    <string name="err_zibe_prefix">Error inesperado: </string>
+    <string name="err_zibe_prefix">Error inesperado: %1$s</string>
 
     <string name="error_no_connection_title">Sin conexión</string>
     <string name="error_no_connection_message">Revisá tu conexión e intentá nuevamente.</string>

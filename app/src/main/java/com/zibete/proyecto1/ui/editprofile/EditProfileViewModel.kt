@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
@@ -42,6 +43,9 @@ class EditProfileViewModel @Inject constructor(
     private val _events = MutableSharedFlow<EditProfileUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<EditProfileUiEvent> = _events.asSharedFlow()
 
+    val showSkipButton: Boolean = uiState.value.hasBirthDate
+    val photoPreviewUri: Uri? = uiState.value.photoPreviewUri
+
     fun load() {
 
         viewModelScope.launch {
@@ -58,45 +62,87 @@ class EditProfileViewModel @Inject constructor(
                     return@runCatching
                 }
 
-                _uiState.update {
+                val birthDate = u.birthDate.trim()
+
+                _uiState.update { it ->
                     it.copy(
                         isLoading = false,
                         name = u.name,
                         description = u.description,
-                        birthDate = u.birthDate,
-                        age = ageCalculator(u.birthDate),
+                        birthDate = birthDate,
+                        age = birthDate.takeIf { it.isNotBlank() }?.let { ageCalculator(it) },
                         photoUrl = u.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
                         saveEnabled = false,
-                        hasBirthDate = u.birthDate.isNotBlank()
+                        hasBirthDate = birthDate.isNotBlank(),
+                        originalName = u.name,
+                        originalDescription = u.description,
+                        originalBirthDate = birthDate,
+                        originalPhotoUrl = u.photoUrl
                     )
                 }
-            }.onFailure {
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false) }
                 onError(
                     UiText.StringRes(
                         resId = R.string.err_zibe_prefix,
-                        args = listOf(it.message ?: "")
+                        args = listOf(e.message.orEmpty())
                     )
                 )
             }
         }
     }
 
+    private fun recomputeSaveEnabled(state: EditProfileUiState): Boolean {
+        val changedName = state.name.trim() != state.originalName.trim()
+        val changedDesc = state.description.trim() != state.originalDescription.trim()
+        val changedBirth = state.birthDate.trim() != state.originalBirthDate.trim()
+
+        val pickedNewPhoto = state.photoPreviewUri != null
+        val requestedDelete = state.deletePhoto
+
+        val changedPhoto = pickedNewPhoto || requestedDelete
+
+        return changedName || changedDesc || changedBirth || changedPhoto
+    }
+
     fun onNameChanged(value: String) {
-        _uiState.update { it.copy(name = value, saveEnabled = true) }
+        _uiState.update { s ->
+            val ns = s.copy(name = value)
+            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        }
     }
 
     fun onDescriptionChanged(value: String) {
-        _uiState.update { it.copy(description = value, saveEnabled = true) }
+        _uiState.update { s ->
+            val ns = s.copy(description = value)
+            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        }
     }
 
     fun onBirthDateChanged(birthDate: String) {
         val age = ageCalculator(birthDate)
-        _uiState.update { it.copy(birthDate = birthDate, age = age, saveEnabled = true) }
+        _uiState.update { s ->
+            val ns = s.copy(birthDate = birthDate, age = age)
+            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        }
     }
 
-    fun showSkipButton() : Boolean = uiState.value.hasBirthDate
+    fun onPhotoSelected(uri: Uri) {
+        _uiState.update { s ->
+            val ns = s.copy(photoPreviewUri = uri, deletePhoto = false)
+            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        }
+    }
+
+    fun onPhotoDeletedSetDefault() {
+        _uiState.update { s ->
+            val ns = s.copy(photoPreviewUri = null, deletePhoto = true)
+            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        }
+    }
+
 
 //    suspend fun isFirstLoginDone(): Boolean {
 //        return userPreferencesProvider.isFirstLoginDone()
@@ -106,6 +152,14 @@ class EditProfileViewModel @Inject constructor(
 //        viewModelScope.launch { userPreferencesActions.setFirstLoginDone(true) }
 //    }
 
+    fun resolveProfilePhotoToLoad(): Any? =
+        when {
+            _uiState.value.photoPreviewUri != null -> _uiState.value.photoPreviewUri
+            _uiState.value.deletePhoto -> DEFAULT_PROFILE_PHOTO_URL
+            !_uiState.value.photoUrl.isNullOrBlank() -> _uiState.value.photoUrl
+            else -> DEFAULT_PROFILE_PHOTO_URL
+        }
+
     suspend fun isEditProfileWelcomeShown(): Boolean {
         return userPreferencesProvider.isEditProfileWelcomeShown()
     }
@@ -113,27 +167,6 @@ class EditProfileViewModel @Inject constructor(
     fun markEditProfileWelcomeShown() {
         viewModelScope.launch {
             userPreferencesActions.setEditProfileWelcomeShown(true)
-        }
-    }
-
-
-    fun onPhotoSelected(uri: Uri) {
-        _uiState.update {
-            it.copy(
-                photoPreviewUri = uri,
-                deletePhoto = false,
-                saveEnabled = true
-            )
-        }
-    }
-
-    fun onPhotoDeletedSetDefault() {
-        _uiState.update {
-            it.copy(
-                photoPreviewUri = null,
-                deletePhoto = true,
-                saveEnabled = true
-            )
         }
     }
 
@@ -159,13 +192,22 @@ class EditProfileViewModel @Inject constructor(
             ).onFailure { e ->
                 handleError(e)
             }.onSuccess {
-                _uiState.update {
-                    it.copy(
+                _uiState.update { s ->
+                    val newPhotoUrl = when {
+                        s.deletePhoto -> null
+                        else -> s.photoUrl
+                    }
+
+                    s.copy(
+                        isLoading = false,
                         isSaving = false,
-                        photoUrl = it.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
-                        saveEnabled = false
+                        saveEnabled = false,
+                        originalName = s.name.trim(),
+                        originalDescription = s.description.trim(),
+                        originalBirthDate = s.birthDate.trim(),
+                        originalPhotoUrl = newPhotoUrl
                     )
                 }
 
@@ -213,12 +255,12 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    private suspend fun validateInputs(
+    private fun validateInputs(
         name: String,
         birthDate: String
     ): Boolean {
 
-        suspend fun warn(uiText: UiText): Boolean {
+        fun warn(uiText: UiText): Boolean {
             onError(uiText)
             return false
         }

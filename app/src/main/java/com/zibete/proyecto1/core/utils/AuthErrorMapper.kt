@@ -42,7 +42,7 @@ fun getAuthErrorMessage(e: Throwable?): UiText {
         is FirebaseAuthUserNullException -> UiText.StringRes(R.string.signup_err_prefix)
 
         // Facebook
-        is FacebookException -> UiText.StringRes( R.string.signup_facebook_error_prefix, args = listOf(e.localizedMessage))
+        is FacebookException -> UiText.StringRes( R.string.signup_facebook_error_prefix, args = listOf(e.localizedMessage ?: ""))
 
         is FirebaseAuthException -> {
             when (e.errorCode) {
@@ -54,6 +54,6 @@ fun getAuthErrorMessage(e: Throwable?): UiText {
             }
         }
 
-        else -> UiText.StringRes( R.string.err_zibe_prefix, args = listOf(e.javaClass.simpleName))
+        else -> UiText.StringRes( R.string.err_zibe_prefix, args = listOf(e.message ?: ""))
     }
 }

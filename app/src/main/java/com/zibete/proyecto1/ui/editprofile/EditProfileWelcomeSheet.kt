@@ -9,6 +9,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.dialog.MaterialDialogs
 import com.google.android.material.tabs.TabLayoutMediator
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.BottomSheetEditProfileWelcomeBinding
@@ -38,7 +39,7 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         )
     )
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+    override fun onCreateDialog(savedInstanceState: Bundle?): BottomSheetDialog {
         val dialog = BottomSheetDialog(requireContext(), getTheme())
         dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         dialog.behavior.skipCollapsed = true
@@ -99,12 +100,9 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         binding.btnPrev.isEnabled = position > 0
 
         if (position == pages.lastIndex) {
-//            binding.btnNext.setBackgroundColor(R.color.zibe_pink)
             binding.btnNext.setText(R.string.action_continue)
         } else {
-//            binding.btnNext.setBackgroundColor(R.color.zibe_purple)
             binding.btnNext.setText(R.string.action_next)
         }
     }
 }
-

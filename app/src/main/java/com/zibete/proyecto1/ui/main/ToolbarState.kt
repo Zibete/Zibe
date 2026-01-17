@@ -9,6 +9,7 @@ data class ToolbarState(
     val showUsersFragmentSettings: Boolean = true,
     val showBottomNav: Boolean = true,
     val currentScreen: CurrentScreen = CurrentScreen.OTHER,
+    val showSkipButton: Boolean = false
 )
 
 enum class CurrentScreen(val titleRes: UiText) {

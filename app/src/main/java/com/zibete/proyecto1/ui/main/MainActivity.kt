@@ -74,6 +74,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     private lateinit var materialToolbar: MaterialToolbar
     private lateinit var bottomNavigationView: BottomNavigationView
     private var currentScreen: CurrentScreen = CurrentScreen.OTHER
+    private var showSkipButton: Boolean = false
     private var drawerLayout: DrawerLayout? = null
     private var navigationView: NavigationView? = null
     private var usersFragmentSettings: View? = null
@@ -264,6 +265,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                     materialToolbar.isVisible = state.showToolbar
                     usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
                     bottomNavigationView.isVisible = state.showBottomNav
+                    showSkipButton = state.showSkipButton
 
                     // title
                     materialToolbar.title =
@@ -508,7 +510,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
             CurrentScreen.EDIT_PROFILE -> {
                 menu.findItem(R.id.action_settings)?.isVisible = true
-                menu.findItem(R.id.action_skip)?.isVisible = true
+                menu.findItem(R.id.action_skip)?.isVisible = showSkipButton
             }
 
             else -> Unit
