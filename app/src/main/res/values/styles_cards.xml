@@ -1,17 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Card (widget style) -->
+    <!-- =========================
+         Cards
+         ========================= -->
+
+    <!-- Base card -->
     <style name="Zibe.Card" parent="Widget.Material3.CardView.Elevated">
-        <item name="cardBackgroundColor">@color/zibe_dark_bg</item>
-        <item name="cardCornerRadius">@dimen/corner_large</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.Card</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
         <item name="cardElevation">@dimen/zibe_card_elevation</item>
-        <item name="android:foreground">?attr/selectableItemBackground</item>
     </style>
 
-    <!-- ShapeAppearance (para usar en app:shapeAppearanceOverlay) -->
+    <!-- Tip/Hints card -->
+    <style name="Zibe.Card.Hints" parent="Zibe.Card">
+        <item name="cardBackgroundColor">?attr/colorSurfaceVariant</item>
+    </style>
+
+    <!-- Glass card -->
+    <style name="Zibe.Card.Glass" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/glass_bg_dark</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.Card</item>
+        <item name="strokeWidth">@dimen/zibe_card_elevation1</item>
+        <item name="strokeColor">@color/zibe_dialog_bg</item>
+    </style>
+
     <style name="ShapeAppearance.Zibe.Card" parent="ShapeAppearance.Material3.Corner.Medium">
-        <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/corner_medium</item>
     </style>
 
@@ -19,28 +34,39 @@
         <item name="cornerSize">@dimen/corner_large</item>
     </style>
 
-    <!-- BottomNav active indicator pill -->
+    <!-- =========================
+         BottomNav active indicator (pill)
+         ========================= -->
+
     <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">@color/glass_indicator</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.Zibe</item>
+        <!-- En M3 es "color" (sin android:) -->
+        <item name="color">@color/glass_indicator_light</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.BottomNav.Indicator</item>
     </style>
 
-    <style name="ShapeAppearance.Zibe" parent="ShapeAppearance.Material3.Corner.Medium">>
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">16dp</item>
+    <style name="ShapeAppearance.Zibe.BottomNav.Indicator" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">50%</item>
     </style>
 
-    <!-- Chat bubble (shape tokens “simples”) -->
-    <style name="ShapeAppearance.Zibe.Bubble" parent="ShapeAppearance.Zibe">
+
+    <!-- =========================
+         Chat bubbles
+         ========================= -->
+
+    <style name="ShapeAppearance.Zibe.Bubble" parent="ShapeAppearance.Material3.Corner.Full">
         <item name="cornerSize">18dp</item>
     </style>
 
-    <style name="ShapeAppearance.Zibe.Bubble.Right">
+    <style name="ShapeAppearance.Zibe.Bubble.Right" parent="ShapeAppearance.Zibe.Bubble">
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
-    <style name="ShapeAppearance.Zibe.Bubble.Left">
+    <style name="ShapeAppearance.Zibe.Bubble.Left" parent="ShapeAppearance.Zibe.Bubble">
         <item name="cornerSizeBottomLeft">0dp</item>
     </style>
+
+
+    <!-- Legacy -->
+    <style name="ShapeAppearance.Zibe" parent="ShapeAppearance.Material3.Corner.Medium"/>
 
 </resources>

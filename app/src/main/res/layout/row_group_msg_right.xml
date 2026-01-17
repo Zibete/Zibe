@@ -102,7 +102,7 @@
                 android:layout_gravity="bottom"
                 android:layout_marginStart="3dp"
                 android:paddingBottom="3dp"
-                android:textColor="@color/zibe_hint_text"
+                android:textColor="@color/zibe_muted_text"
                 android:textSize="@dimen/text_size_small" />
 
 

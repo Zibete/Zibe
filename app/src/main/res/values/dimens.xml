@@ -56,7 +56,8 @@
 
     <!--Cards-->
 
-    <dimen name="zibe_card_elevation">4dp</dimen>
+    <dimen name="zibe_card_elevation">3dp</dimen>
+    <dimen name="zibe_card_elevation1">1dp</dimen>
     <dimen name="zibe_card_elevation_pressed">2dp</dimen>
 
     <dimen name="zibe_card_quotes_padding">24dp</dimen>
@@ -107,7 +108,7 @@
     <!--Inputs-->
 
     <dimen name="zibe_input_padding">8dp</dimen>
-    <dimen name="zibe_input_elevation">8dp</dimen>
+    <dimen name="zibe_input_elevation">4dp</dimen>
     <dimen name="zibe_input_corner_top">12dp</dimen>
     <dimen name="zibe_input_corner_bottom">@dimen/zero_dp</dimen>
 

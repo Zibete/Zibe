@@ -184,7 +184,7 @@
                         android:hint="@string/escribe_un_mensaje"
                         android:inputType="textCapSentences"
                         android:textColor="@color/blanco"
-                        android:textColorHint="@color/zibe_hint_text"
+                        android:textColorHint="@color/zibe_muted_text"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"/>
 

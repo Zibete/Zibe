@@ -48,10 +48,10 @@
 
     <!-- Text colors -->
     <color name="zibe_text_light">#CDFFFFFF</color>
+    <color name="zibe_hint_text">#C9C9C9</color>
     <color name="zibe_text_dark">@color/zibe_night_end</color>
     <color name="zibe_text_pink">#FF3B93</color>
-    <color name="zibe_hint_text">#8894A8</color>
-
+    <color name="zibe_muted_text">#848484</color>
 
     <!-- SNACK -->
     <color name="snackbar_surface">#1E2A38</color>
@@ -104,9 +104,14 @@
     <color name="zibe_night_start_20">#33FFFFFF</color> <!-- 20% blanco en modo oscuro, ajustá a tu paleta -->
 
     <!-- Fondo glass (modo claro) -->
-    <color name="glass_bg">#1AFFFFFF</color>        <!-- blanco 10% -->
-    <color name="glass_stroke">#33FFFFFF</color>    <!-- blanco 20% -->
-    <color name="glass_indicator">#26FFFFFF</color> <!-- blanco 15% para el pill -->
+    <color name="glass_bg_light">#1AFFFFFF</color>        <!-- blanco 10% -->
+    <color name="glass_stroke_light">#33FFFFFF</color>    <!-- blanco 20% -->
+    <color name="glass_indicator_light">#26FFFFFF</color> <!-- blanco 15% para el pill -->
+
+    <!-- Fondo glass (modo oscuro) -->
+    <color name="glass_bg_dark">#60000000</color>
+<!--    <color name="glass_stroke_dark">#33000000</color>    &lt;!&ndash; negro 20% &ndash;&gt;-->
+<!--    <color name="glass_indicator_dark">#26000000</color> &lt;!&ndash; negro 15% para el pill &ndash;&gt;-->
 
 
 </resources>

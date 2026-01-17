@@ -47,7 +47,7 @@ fun rememberZibeExtendedColors(): ZibeExtendedColors {
         zibeGradientEnd = colorResource(R.color.zibe_gradient_end),
         cardQuotesBackground = colorResource(R.color.zibe_light_bg),
         inputBackground = colorResource(R.color.zibe_dark_bg),
-        hintText = colorResource(R.color.zibe_hint_text),
+        hintText = colorResource(R.color.zibe_muted_text),
         lightText = colorResource(R.color.zibe_text_light),
         darkText = colorResource(R.color.zibe_text_dark),
         pinkBubble = colorResource(R.color.pink_bubble),

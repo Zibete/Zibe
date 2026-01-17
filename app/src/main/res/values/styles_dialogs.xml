@@ -9,7 +9,7 @@
         <item name="android:background">@color/snackbar_surface</item>
 
         <!-- Shape -->
-        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zibe</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Zibe.Card</item>
 
         <!-- Text -->
         <item name="titleTextStyle">@style/TextAppearance.Zibe.Dialog.Title</item>

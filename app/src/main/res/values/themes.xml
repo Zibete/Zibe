@@ -26,8 +26,8 @@
         <item name="colorSurface">@color/zibe_dark_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
 
-        <item name="colorSurfaceVariant">@color/zibe_dark_bg</item>
-        <item name="colorOnSurfaceVariant">@color/zibe_hint_text</item>
+        <item name="colorSurfaceVariant">@color/zibe_surface</item>
+        <item name="colorOnSurfaceVariant">@color/zibe_muted_text</item>
 
         <item name="colorOutline">@color/zibe_pink</item>
 
