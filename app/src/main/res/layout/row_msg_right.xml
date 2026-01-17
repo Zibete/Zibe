@@ -74,7 +74,7 @@
                         android:layout_gravity="center"
                         android:textAlignment="center"
                         android:text="@string/imagen_no_disponible"
-                        android:textColor="@color/zibe_hint_text"
+                        android:textColor="@color/zibe_muted_text"
                         android:layout_margin="20dp"
                         android:paddingVertical="15dp"/>
 

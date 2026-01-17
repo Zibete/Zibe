@@ -417,21 +417,21 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/version_string"
-                        android:textColor="@color/zibe_hint_text"
+                        android:textColor="@color/zibe_muted_text"
                         android:textSize="@dimen/text_size_small" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/version"
-                        android:textColor="@color/zibe_hint_text"
+                        android:textColor="@color/zibe_muted_text"
                         android:textSize="@dimen/text_size_small" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ZibeteProyects"
-                        android:textColor="@color/zibe_hint_text"
+                        android:textColor="@color/zibe_muted_text"
                         android:textSize="@dimen/text_size_small" />
                 </LinearLayout>
             </LinearLayout>

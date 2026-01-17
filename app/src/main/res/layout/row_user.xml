@@ -104,7 +104,7 @@
                             android:layout_height="18dp"
                             android:src="@drawable/ic_baseline_block_24"
                             android:visibility="gone"
-                            app:tint="@color/zibe_hint_text" />
+                            app:tint="@color/zibe_muted_text" />
 
                         <ImageView
                             android:id="@+id/favoriteIcon"
@@ -191,7 +191,7 @@
                             android:src="@drawable/ic_baseline_cancel_schedule_send_24"
                             android:padding="6dp"
                             android:visibility="gone"
-                            app:tint="@color/zibe_hint_text" />
+                            app:tint="@color/zibe_muted_text" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

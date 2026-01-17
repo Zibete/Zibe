@@ -219,7 +219,7 @@ fun SignUpScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar_24),
                                 contentDescription = stringResource(R.string.birth_date),
-                                tint = colorResource(id = R.color.zibe_hint_text)
+                                tint = colorResource(id = R.color.zibe_muted_text)
                             )
                         },
                         enabled = !isLoading,
@@ -234,7 +234,7 @@ fun SignUpScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_keyboard_arrow_down_24),
                             contentDescription = "Abrir selector de fecha",
-                            tint = colorResource(id = R.color.zibe_hint_text),
+                            tint = colorResource(id = R.color.zibe_muted_text),
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .padding(end = elementSpacing12)
