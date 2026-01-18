@@ -130,6 +130,18 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
         }
     }
 
+    fun dismissImeIfVisible(): Boolean {
+        val root = window.decorView.rootView
+        val imeVisible = ViewCompat.getRootWindowInsets(root)
+            ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+
+        if (!imeVisible) return false
+
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.hideSoftInputFromWindow(root.windowToken, 0)
+        return true
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         toolbarMenuRes?.let { menuInflater.inflate(it, menu) }
         return toolbarMenuRes != null
@@ -143,7 +155,8 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed(); true
+                if (dismissImeIfVisible()) true
+                else { onBackPressedDispatcher.onBackPressed(); true }
             }
             else -> super.onOptionsItemSelected(item)
         }

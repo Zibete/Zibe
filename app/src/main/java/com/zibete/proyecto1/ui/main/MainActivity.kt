@@ -161,6 +161,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
         drawerLayout = binding.drawerLayout
 
         materialToolbar.setNavigationOnClickListener {
+            if (dismissImeIfVisible()) return@setNavigationOnClickListener
             val currentScreen = mainViewModel.toolbarState.value.currentScreen
             if (currentScreen == CurrentScreen.EDIT_PROFILE) {
                 mainViewModel.onBackPressed()
@@ -562,19 +563,21 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     }
 
     private fun setupOnBackPressedDispatcher() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (dismissImeIfVisible()) return
+                    // 1. Si el drawer está abierto → cerrarlo
+                    if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
+                        drawerLayout?.closeDrawer(GravityCompat.START)
+                        return
+                    }
 
-                // 1. Si el drawer está abierto → cerrarlo
-                if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
-                    drawerLayout?.closeDrawer(GravityCompat.START)
-                    return
+                    // 2. Manejo global delegado al ViewModel
+                    mainViewModel.onBackPressed()
                 }
-
-                // 2. Manejo global delegado al ViewModel
-                mainViewModel.onBackPressed()
-            }
-        })
+            })
     }
 
     override fun onStart() {
