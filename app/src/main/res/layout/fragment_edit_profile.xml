@@ -160,7 +160,7 @@
                             android:minLines="2"
                             android:scrollbars="vertical"
                             android:overScrollMode="always"/>
-                        
+
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -197,7 +197,7 @@
         android:layout_gravity="bottom|end"
         android:gravity="end"
         android:orientation="vertical"
-        android:padding="@dimen/screen_padding">
+        android:paddingHorizontal="@dimen/screen_padding">
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/fab_edit_photo"
@@ -207,17 +207,31 @@
             android:layout_marginBottom="@dimen/element_spacing_medium"
             android:contentDescription="@string/content_description_edit_photo"
             android:text="@string/edit_picture"
-            app:icon="@drawable/ic_baseline_add_a_photo_24" />
+            app:icon="@drawable/ic_baseline_add_a_photo_24"/>
 
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/fab_save"
-            style="@style/Zibe.ExtendedFab"
+        <FrameLayout
+            android:id="@+id/fab_save_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/element_spacing_medium"
-            android:contentDescription="@string/content_description_save"
-            android:text="@string/action_save"
-            app:icon="@drawable/ic_check_24" />
+            android:paddingBottom="@dimen/screen_padding"
+            android:clipToPadding="false">
+
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/fab_save"
+                style="@style/Zibe.ExtendedFab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_save"
+                app:icon="@drawable/ic_check_24" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/fab_save_loading"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:indeterminate="true"/>
+
+        </FrameLayout>
 
     </LinearLayout>
 
