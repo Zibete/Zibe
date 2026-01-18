@@ -38,7 +38,7 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
     )
 
     override fun onCreateDialog(savedInstanceState: Bundle?): BottomSheetDialog {
-        val dialog = BottomSheetDialog(requireContext())
+        val dialog = BottomSheetDialog(requireContext(), getTheme())
         dialog.setCanceledOnTouchOutside(false)
         dialog.behavior.apply {
             state = BottomSheetBehavior.STATE_EXPANDED

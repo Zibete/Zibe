@@ -194,7 +194,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             )
         }
 
-        dialogBinding.imgCancelDialog.setOnClickListener { joinGroupDialog?.dismiss() }
+        dialogBinding.btnClose.setOnClickListener { joinGroupDialog?.dismiss() }
         joinGroupDialog?.show()
     }
 
@@ -230,7 +230,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             )
         }
 
-        dialogBinding.imgCancelDialog.setOnClickListener { joinGroupDialog?.dismiss() }
+        dialogBinding.btnClose.setOnClickListener { joinGroupDialog?.dismiss() }
         joinGroupDialog?.show()
     }
 

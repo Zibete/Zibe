@@ -125,4 +125,11 @@
     <dimen name="progressbar_elevation">8dp</dimen>
     <dimen name="progressbar_size">48dp</dimen>
 
+    <!--Icon-->
+
+    <dimen name="zibe_icon_btn_size">40dp</dimen>
+    <dimen name="zibe_icon_size">24dp</dimen>
+    <dimen name="zibe_icon_btn_corner">12dp</dimen>
+
+
 </resources>

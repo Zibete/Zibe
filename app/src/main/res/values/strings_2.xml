@@ -30,7 +30,12 @@
     <string name="content_description_edit_photo">Editar foto de perfil</string>
     <string name="content_description_loading">Cargando foto</string>
 
+    <string name="close">Cerrar</string>
+    <string name="delete">Eliminar</string>
+    <string name="camera">Cámara</string>
+    <string name="gallery">Galería</string>
 
+    <string name="send_photo">Enviar foto</string>
 
     <!-- ============================= -->
     <!-- SignUp – textos animados -->

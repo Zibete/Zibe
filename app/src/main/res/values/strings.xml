@@ -75,7 +75,7 @@
 
 
 
-    <string name="eliminar">Eliminar</string>
+
 
     <string name="archivar">Archivar</string>
 
@@ -99,10 +99,9 @@
     <string name="title_notifications">Notifications</string>
     <string name="delete_account">Eliminar cuenta</string>
     <string name="Buscar">Buscar…</string>
-    <string name="editar_foto_de_perfil">Editar foto de perfil</string>
-    <string name="enviar_desde">Enviar Desde…</string>
-    <string name="camera">Cámara</string>
-    <string name="gallery">Galería</string>
+
+
+
     <string name="photo_received">Foto recibida</string>
     <string name="photo_send">Foto enviada</string>
     <string name="audio_received">Audio recibido</string>
@@ -123,7 +122,7 @@
     <string name="version_string">Versión Beta</string>
     <string name="cuenta">Cuenta</string>
     <string name="notifications">Notificaciones</string>
-    <string name="cerrar">cerrar</string>
+
     <string name="chatlist_onboarding_title">Acá verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
     <string name="espere">Espere…</string>
