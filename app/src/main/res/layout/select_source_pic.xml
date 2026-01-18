@@ -77,15 +77,15 @@
                         android:layout_height="@dimen/zibe_btn_height"
                         android:contentDescription="@string/delete"
                         app:srcCompat="@drawable/ic_baseline_delete_24"
-                        app:tint="?attr/colorOnSurface" />
+                        app:tint="@color/zibe_button_text_selector" />
 
                     <TextView
-                        style="@style/Zibe.Text.Medium"
+                        android:textAppearance="@style/Zibe.Text.Regular"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/element_spacing_xs"
                         android:text="@string/delete"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:textColor="@color/zibe_button_text_selector" />
 
                 </LinearLayout>
 
@@ -115,15 +115,15 @@
                         android:layout_height="@dimen/zibe_btn_height"
                         android:contentDescription="@string/camera"
                         app:srcCompat="@drawable/ic_menu_camera"
-                        app:tint="?attr/colorOnSurface" />
+                        app:tint="@color/zibe_button_text_selector" />
 
                     <TextView
-                        style="@style/Zibe.Text.Medium"
+                        android:textAppearance="@style/Zibe.Text.Regular"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/element_spacing_xs"
                         android:text="@string/camera"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:textColor="@color/zibe_button_text_selector" />
 
                 </LinearLayout>
 
@@ -153,15 +153,15 @@
                         android:layout_height="@dimen/zibe_btn_height"
                         android:contentDescription="@string/gallery"
                         app:srcCompat="@drawable/ic_menu_gallery"
-                        app:tint="?attr/colorOnSurface" />
+                        app:tint="@color/zibe_button_text_selector" />
 
                     <TextView
-                        style="@style/Zibe.Text.Medium"
+                        android:textAppearance="@style/Zibe.Text.Regular"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/element_spacing_xs"
                         android:text="@string/gallery"
-                        android:textColor="?attr/colorOnSurface" />
+                        android:textColor="@color/zibe_button_text_selector" />
 
                 </LinearLayout>
 
