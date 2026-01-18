@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.editprofile
 
 import android.Manifest
-import android.app.Dialog
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -18,7 +16,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -48,11 +45,11 @@ import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
-import com.zibete.proyecto1.databinding.SelectSourcePicBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
 import com.zibete.proyecto1.ui.main.CurrentScreen
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.media.PhotoSourceSheet
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -64,8 +61,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
     private var _binding: FragmentEditProfileBinding? = null
     private val binding get() = _binding!!
-
-    private var editPhotoDialog: Dialog? = null
     private var pendingCameraUri: Uri? = null
 
     private var lastLoadedPhotoModel: Any? = null
@@ -147,8 +142,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     }
 
     override fun onDestroyView() {
-        editPhotoDialog?.dismiss()
-        editPhotoDialog = null
         pendingCameraUri = null
         _binding = null
         super.onDestroyView()
@@ -163,7 +156,24 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             val toLoad = editProfileViewModel.resolveProfilePhotoToLoad()
             PhotoViewerActivity.startSingle(requireContext(), toLoad.toString())
         }
-        binding.fabEditPhoto.setOnClickListener { showEditPhotoDialogInternal() }
+
+        parentFragmentManager.setFragmentResultListener(
+            PhotoSourceSheet.REQ_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            when (bundle.getString(PhotoSourceSheet.RES_ACTION)) {
+                PhotoSourceSheet.ACTION_CAMERA -> onCameraClicked()
+                PhotoSourceSheet.ACTION_GALLERY -> onGalleryClicked()
+                PhotoSourceSheet.ACTION_DELETE -> editProfileViewModel.onPhotoDeletedSetDefault()
+            }
+        }
+
+        binding.fabEditPhoto.setOnClickListener {
+            PhotoSourceSheet.newInstance(
+                showDelete = true,
+                titleRes = R.string.edit_picture
+            ).show(parentFragmentManager, PhotoSourceSheet.TAG)
+        }
         binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
         binding.fabSave.setOnClickListener { editProfileViewModel.onSaveClicked() }
 
@@ -330,43 +340,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     // --------------------------------------------
     // Dialog / Pickers
     // --------------------------------------------
-
-    private fun showEditPhotoDialogInternal() {
-        val themedContext =
-            ContextThemeWrapper(requireContext(), R.style.ThemeOverlay_Zibe_AlertDialog)
-        val dialogBinding = SelectSourcePicBinding.inflate(LayoutInflater.from(themedContext))
-
-        dialogBinding.cardEditDelete.isVisible = true
-        dialogBinding.tvTitle.text = getString(R.string.editar_foto_de_perfil)
-
-        editPhotoDialog = Dialog(themedContext).apply {
-            setContentView(dialogBinding.root)
-            setCancelable(true)
-            window?.setBackgroundDrawable(getDrawable(requireContext(), R.drawable.badge_round))
-            window?.setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            show()
-        }
-
-        dialogBinding.deleteSelected.setOnClickListener {
-            editProfileViewModel.onPhotoDeletedSetDefault()
-            editPhotoDialog?.dismiss()
-        }
-
-        dialogBinding.cameraSelection.setOnClickListener {
-            onCameraClicked()
-            editPhotoDialog?.dismiss()
-        }
-
-        dialogBinding.gallerySelection.setOnClickListener {
-            onGalleryClicked()
-            editPhotoDialog?.dismiss()
-        }
-
-        dialogBinding.imgCancelDialog.setOnClickListener { editPhotoDialog?.dismiss() }
-    }
 
     private fun onGalleryClicked() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

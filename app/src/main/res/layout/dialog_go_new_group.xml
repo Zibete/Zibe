@@ -31,7 +31,7 @@
             android:paddingHorizontal="12dp"/>
 
         <ImageView
-            android:id="@+id/img_cancel_dialog"
+            android:id="@+id/btn_close"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="8dp"

@@ -1,42 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/sheet_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="20dp"
-    style="@style/Zibe.Card"
-    android:paddingTop="10dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="@dimen/screen_padding"
+    android:paddingTop="10dp">
 
     <!-- Header: título + cerrar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tv_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginHorizontal="12dp"
-            android:layout_marginVertical="10dp"
-            android:textAlignment="center"
-            android:textSize="@dimen/text_size_normal"
-            android:textColor="@color/zibe_text_light"
+            android:ellipsize="end"
             android:maxLines="2"
-            android:ellipsize="end" />
+            android:text="Editar foto"
+            android:textAlignment="center"
+            android:textColor="@color/accent"
+            android:textAppearance="@style/Zibe.Text.Brand.Medium" />
 
-        <ImageView
-            android:id="@+id/img_cancel_dialog"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cerrar"
-            app:tint="@color/zibe_text_light"
-            android:src="@drawable/ic_baseline_close_24"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_close"
+            style="@style/Zibe.IconButton"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/transparent"
+            android:contentDescription="@string/close"
+            app:icon="@drawable/ic_baseline_close_24" />
+
     </LinearLayout>
 
     <!-- Cuerpo -->
@@ -47,139 +45,126 @@
 
         <!-- Fila de acciones -->
         <LinearLayout
+            android:id="@+id/actions_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:baselineAligned="false"
             android:gravity="center"
-            android:paddingVertical="16dp"
-            android:baselineAligned="false">
+            android:orientation="horizontal"
+            android:paddingVertical="@dimen/element_spacing_medium">
 
             <!-- Card: Eliminar -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_edit_delete"
+                android:id="@+id/card_delete_profile_photo_selected"
+                style="@style/Zibe.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="110dp"
-                android:layout_marginHorizontal="8dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/element_spacing_xs"
                 android:layout_weight="1"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                android:foreground="@drawable/fg_card_ripple">
+                android:clickable="true"
+                android:focusable="true">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_glass_morphism"
-                    android:padding="12dp">
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="@dimen/element_spacing_small">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                    <ImageView
+                        android:id="@+id/icon_trash"
+                        android:layout_width="@dimen/zibe_btn_height"
+                        android:layout_height="@dimen/zibe_btn_height"
+                        android:contentDescription="@string/delete"
+                        app:srcCompat="@drawable/ic_baseline_delete_24"
+                        app:tint="?attr/colorOnSurface" />
 
-                        <ImageView
-                            android:id="@+id/deleteSelected"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            app:tint="@color/zibe_text_light"
-                            android:contentDescription="@string/eliminar"
-                            android:backgroundTint="@android:color/white"
-                            android:src="@drawable/ic_baseline_delete_24" />
+                    <TextView
+                        style="@style/Zibe.Text.Medium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/element_spacing_xs"
+                        android:text="@string/delete"
+                        android:textColor="?attr/colorOnSurface" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/eliminar"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"/>
-                    </LinearLayout>
-                </FrameLayout>
+                </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Card: Cámara -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cameraSelection"
+                android:id="@+id/card_camera_selected"
+                style="@style/Zibe.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="110dp"
-                android:layout_marginHorizontal="8dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/element_spacing_xs"
                 android:layout_weight="1"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                android:foreground="@drawable/fg_card_ripple">
+                android:clickable="true"
+                android:focusable="true">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_glass_morphism"
-                    android:padding="12dp">
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="@dimen/element_spacing_small">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                    <ImageView
+                        android:id="@+id/icon_camera"
+                        android:layout_width="@dimen/zibe_btn_height"
+                        android:layout_height="@dimen/zibe_btn_height"
+                        android:contentDescription="@string/camera"
+                        app:srcCompat="@drawable/ic_menu_camera"
+                        app:tint="?attr/colorOnSurface" />
 
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:contentDescription="@string/camera"
-                            app:tint="@color/zibe_text_light"
-                            android:src="@drawable/ic_menu_camera" />
+                    <TextView
+                        style="@style/Zibe.Text.Medium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/element_spacing_xs"
+                        android:text="@string/camera"
+                        android:textColor="?attr/colorOnSurface" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/camera"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"/>
-                    </LinearLayout>
-                </FrameLayout>
+                </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Card: Galería -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/gallerySelection"
+                android:id="@+id/card_gallery_selected"
+                style="@style/Zibe.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="110dp"
-                android:layout_marginStart="8dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/element_spacing_xs"
                 android:layout_weight="1"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                android:foreground="@drawable/fg_card_ripple">
+                android:clickable="true"
+                android:focusable="true">
 
-                <FrameLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_glass_morphism"
-                    android:padding="12dp">
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="@dimen/element_spacing_small">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center">
+                    <ImageView
+                        android:id="@+id/icon_gallery"
+                        android:layout_width="@dimen/zibe_btn_height"
+                        android:layout_height="@dimen/zibe_btn_height"
+                        android:contentDescription="@string/gallery"
+                        app:srcCompat="@drawable/ic_menu_gallery"
+                        app:tint="?attr/colorOnSurface" />
 
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:contentDescription="@string/gallery"
-                            app:tint="@color/zibe_text_light"
-                            android:src="@drawable/ic_menu_gallery" />
+                    <TextView
+                        style="@style/Zibe.Text.Medium"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/element_spacing_xs"
+                        android:text="@string/gallery"
+                        android:textColor="?attr/colorOnSurface" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/gallery"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"/>
-                    </LinearLayout>
-                </FrameLayout>
+                </LinearLayout>
+
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>

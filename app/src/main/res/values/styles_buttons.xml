@@ -49,4 +49,40 @@
         <item name="cornerSize">@dimen/zibe_btn_corner</item>
     </style>
 
+    <style name="Zibe.IconButton" parent="Widget.Material3.Button.Icon">
+        <!-- Tamaño -->
+        <item name="android:layout_width">@dimen/zibe_icon_btn_size</item>
+        <item name="android:layout_height">@dimen/zibe_icon_btn_size</item>
+<!--        <item name="android:minWidth">@dimen/zibe_icon_btn_size</item>-->
+<!--        <item name="android:minHeight">@dimen/zibe_icon_btn_size</item>-->
+
+        <!-- Centro real -->
+        <item name="android:gravity">center</item>
+
+        <item name="android:padding">0dp</item>
+<!--        <item name="android:insetLeft">0dp</item>-->
+<!--        <item name="android:insetRight">0dp</item>-->
+<!--        <item name="android:insetTop">0dp</item>-->
+<!--        <item name="android:insetBottom">0dp</item>-->
+
+        <!-- MaterialButton paddings -->
+        <item name="iconPadding">0dp</item>
+<!--        <item name="android:drawablePadding">0dp</item>-->
+
+        <!-- Icon -->
+        <item name="iconSize">@dimen/zibe_icon_size</item>
+        <item name="iconTint">?attr/colorOnSurface</item>
+
+        <!-- IMPORTANTE: este es el que menos “sesgo” mete -->
+        <item name="iconGravity">textStart</item>
+
+        <!-- Fondo / ripple -->
+<!--        <item name="backgroundTint">@android:color/transparent</item>-->
+        <item name="rippleColor">?attr/colorOnSurfaceVariant</item>
+
+        <!-- Sin texto -->
+        <item name="android:text">@null</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
 </resources>

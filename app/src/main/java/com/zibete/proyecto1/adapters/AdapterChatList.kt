@@ -300,6 +300,6 @@ class AdapterChatList(
         menu.add(FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, titleNotif)
         menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_block)
         menu.add(FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
-        menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.eliminar)
+        menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.delete)
     }
 }

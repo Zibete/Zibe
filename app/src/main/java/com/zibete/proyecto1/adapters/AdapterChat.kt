@@ -133,7 +133,7 @@ class AdapterChat(
         v: View?,
         menuInfo: ContextMenu.ContextMenuInfo?
     ) {
-        menu.add(FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.eliminar)
+        menu.add(FRAGMENT_ID_CHATLIST, 1, positionForContext, R.string.delete)
     }
     // endregion
 

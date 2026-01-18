@@ -34,6 +34,16 @@
         <item name="cornerSize">@dimen/corner_large</item>
     </style>
 
+
+
+    <style name="Zibe.Card.Action" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">?attr/colorOnPrimary</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Zibe.Card</item>
+        <item name="cardElevation">0dp</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+
     <!-- =========================
          BottomNav active indicator (pill)
          ========================= -->

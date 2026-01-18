@@ -29,15 +29,11 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -50,17 +46,17 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.android.material.card.MaterialCardView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChat
-import com.zibete.proyecto1.databinding.ActivityChatBinding
-import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.databinding.ActivityChatBinding
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
+import com.zibete.proyecto1.ui.media.PhotoSourceSheet
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -226,7 +222,10 @@ class ChatActivity : BaseChatSessionActivity() {
                         if (state.photoReady || state.textReady) updateSendUiState() else resetUiState()
 
                         if (state.showPhotoPicker) {
-                            openMediaSourcePicker()
+                            PhotoSourceSheet.newInstance(
+                                showDelete = false,
+                                titleRes = R.string.send_photo
+                            ).show(supportFragmentManager, PhotoSourceSheet.TAG)
                             chatViewModel.onPhotoPickerHandled()
                         }
 
@@ -275,6 +274,25 @@ class ChatActivity : BaseChatSessionActivity() {
     // ==================================== Listeners ====================================
 
     private fun setupUiListeners() {
+
+        supportFragmentManager.setFragmentResultListener(
+            PhotoSourceSheet.REQ_KEY,
+            this
+        ) { _, bundle ->
+            when (bundle.getString(PhotoSourceSheet.RES_ACTION)) {
+                PhotoSourceSheet.ACTION_CAMERA -> {
+                    ensurePermissions(arrayOf(Manifest.permission.CAMERA)) {
+                        lifecycleScope.launch { startCameraModern() }
+                    }
+                }
+
+                PhotoSourceSheet.ACTION_GALLERY -> {
+                    pickImageLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+            }
+        }
 
         binding.btnCamera.setOnClickListener {
             chatViewModel.onSendPhotoClicked()
@@ -488,38 +506,6 @@ class ChatActivity : BaseChatSessionActivity() {
 
     // ==================================== Media Picker ====================================
 
-    private fun openMediaSourcePicker() {
-        val viewFilter = layoutInflater.inflate(R.layout.select_source_pic, null)
-        val imgCancel = viewFilter.findViewById<ImageView>(R.id.img_cancel_dialog)
-        val cameraSelection = viewFilter.findViewById<MaterialCardView>(R.id.cameraSelection)
-        val gallerySelection = viewFilter.findViewById<MaterialCardView>(R.id.gallerySelection)
-        val title = viewFilter.findViewById<TextView>(R.id.tv_title)
-
-        viewFilter.findViewById<MaterialCardView>(R.id.card_edit_delete).isVisible = false
-        title.text = getString(R.string.enviar_desde)
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(viewFilter)
-            .create()
-
-        dialog.show()
-
-        cameraSelection.setOnClickListener {
-            ensurePermissions(arrayOf(Manifest.permission.CAMERA)) {
-                lifecycleScope.launch { startCameraModern() }
-            }
-            dialog.dismiss()
-        }
-
-        gallerySelection.setOnClickListener {
-            pickImageLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-            dialog.dismiss()
-        }
-
-        imgCancel.setOnClickListener { dialog.dismiss() }
-    }
 
     private suspend fun startCameraModern() {
         pendingImageName = "IMG_${System.currentTimeMillis()}.jpg"
