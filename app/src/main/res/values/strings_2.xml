@@ -37,6 +37,10 @@
 
     <string name="send_photo">Enviar foto</string>
 
+    <string name="discard_changes_title">Parece que hiciste algunos cambios 😊</string>
+    <string name="discard_changes_message">Si salís ahora, se van a perder.</string>
+    <string name="action_dont_discard">Seguir editando</string>
+
     <!-- ============================= -->
     <!-- SignUp – textos animados -->
     <!-- ============================= -->
