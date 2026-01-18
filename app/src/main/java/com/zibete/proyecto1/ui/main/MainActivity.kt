@@ -43,6 +43,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
@@ -161,7 +162,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         materialToolbar.setNavigationOnClickListener {
             val currentScreen = mainViewModel.toolbarState.value.currentScreen
-            if (currentScreen == CurrentScreen.EDIT_PROFILE){
+            if (currentScreen == CurrentScreen.EDIT_PROFILE) {
                 mainViewModel.onBackPressed()
                 return@setNavigationOnClickListener
             }
@@ -407,6 +408,19 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                                     type = event.type
                                 )
                             }
+
+                            is MainUiEvent.ConfirmDiscardEditProfile -> {
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = getString(R.string.discard_changes_title),
+                                    message = getString(R.string.discard_changes_message),
+                                    positiveText = getString(R.string.action_exit),
+                                    negativeText = getString(R.string.action_dont_discard),
+                                    onConfirm = {
+                                        goToChatTab()
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -423,19 +437,15 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     }
 
     private fun handleBackFromEditProfile() {
-        val navHost = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navHost =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val current = navHost.childFragmentManager.primaryNavigationFragment
 
-        if (current is EditProfileFragment) {
-            if (current.hasPendingChanges()) {
-                UserMessageUtils.showSnack(
-                    root = binding.root,
-                    message = "Guarde los cambios antes de salir",
-                    type = ZibeSnackType.WARNING
-                )
-                return
-            }
+        if (current is EditProfileFragment && current.hasPendingChanges()) {
+            mainViewModel.emit(MainUiEvent.ConfirmDiscardEditProfile)
+            return
         }
+
         goToChatTab()
     }
 

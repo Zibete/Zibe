@@ -152,14 +152,14 @@
                             style="@style/Zibe.EditText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:gravity="top"
                             android:hint="@string/description"
                             android:imeOptions="actionDone"
-                            android:gravity="top"
                             android:inputType="textMultiLine|textCapSentences"
                             android:maxLines="10"
                             android:minLines="2"
-                            android:scrollbars="vertical"
-                            android:overScrollMode="always"/>
+                            android:overScrollMode="always"
+                            android:scrollbars="vertical" />
 
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -207,14 +207,14 @@
             android:layout_marginBottom="@dimen/element_spacing_medium"
             android:contentDescription="@string/content_description_edit_photo"
             android:text="@string/edit_picture"
-            app:icon="@drawable/ic_baseline_add_a_photo_24"/>
+            app:icon="@drawable/ic_baseline_add_a_photo_24" />
 
         <FrameLayout
             android:id="@+id/fab_save_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingBottom="@dimen/screen_padding"
-            android:clipToPadding="false">
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/screen_padding">
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/fab_save"
@@ -229,7 +229,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
-                android:indeterminate="true"/>
+                android:indeterminate="true" />
 
         </FrameLayout>
 
