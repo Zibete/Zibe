@@ -43,9 +43,6 @@ class EditProfileViewModel @Inject constructor(
     private val _events = MutableSharedFlow<EditProfileUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<EditProfileUiEvent> = _events.asSharedFlow()
 
-    val showSkipButton: Boolean = uiState.value.hasBirthDate
-    val photoPreviewUri: Uri? = uiState.value.photoPreviewUri
-
     fun load() {
 
         viewModelScope.launch {
@@ -122,7 +119,8 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun onBirthDateChanged(birthDate: String) {
-        val age = ageCalculator(birthDate)
+        val trimmed = birthDate.trim()
+        val age = trimmed.takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
         _uiState.update { s ->
             val ns = s.copy(birthDate = birthDate, age = age)
             ns.copy(saveEnabled = recomputeSaveEnabled(ns))
@@ -142,15 +140,6 @@ class EditProfileViewModel @Inject constructor(
             ns.copy(saveEnabled = recomputeSaveEnabled(ns))
         }
     }
-
-
-//    suspend fun isFirstLoginDone(): Boolean {
-//        return userPreferencesProvider.isFirstLoginDone()
-//    }
-//
-//    fun markFirstLoginAsDone() {
-//        viewModelScope.launch { userPreferencesActions.setFirstLoginDone(true) }
-//    }
 
     fun resolveProfilePhotoToLoad(): Any? =
         when {
