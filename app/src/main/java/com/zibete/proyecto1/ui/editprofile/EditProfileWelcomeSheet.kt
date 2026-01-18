@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.editprofile
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,7 +8,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.dialog.MaterialDialogs
 import com.google.android.material.tabs.TabLayoutMediator
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.BottomSheetEditProfileWelcomeBinding
@@ -40,10 +38,26 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
     )
 
     override fun onCreateDialog(savedInstanceState: Bundle?): BottomSheetDialog {
-        val dialog = BottomSheetDialog(requireContext(), getTheme())
-        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        dialog.behavior.skipCollapsed = true
+        val dialog = BottomSheetDialog(requireContext())
         dialog.setCanceledOnTouchOutside(false)
+        dialog.behavior.apply {
+            state = BottomSheetBehavior.STATE_EXPANDED
+            skipCollapsed = false
+            isHideable = false
+            peekHeight = 10
+
+            addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if (newState == BottomSheetBehavior.STATE_SETTLING ||
+                        newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                        state = BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    // No hacemos nada
+                }
+            })
+        }
         return dialog
     }
 
