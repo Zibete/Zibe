@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.editprofile
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,7 +19,10 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         fun onEditProfileWelcomeDismissed()
     }
 
-    private lateinit var binding: BottomSheetEditProfileWelcomeBinding
+    private var _binding: BottomSheetEditProfileWelcomeBinding? = null
+    private val binding get() = _binding!!
+
+    private var dismissNotified = false
 
     override fun getTheme(): Int = R.style.Zibe_BottomSheetTheme
 
@@ -40,6 +44,7 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): BottomSheetDialog {
         val dialog = BottomSheetDialog(requireContext(), getTheme())
         dialog.setCanceledOnTouchOutside(false)
+
         dialog.behavior.apply {
             state = BottomSheetBehavior.STATE_EXPANDED
             skipCollapsed = false
@@ -49,13 +54,13 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
             addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
                     if (newState == BottomSheetBehavior.STATE_SETTLING ||
-                        newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                        newState == BottomSheetBehavior.STATE_COLLAPSED
+                    ) {
                         state = BottomSheetBehavior.STATE_EXPANDED
                     }
                 }
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    // No hacemos nada
-                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) = Unit
             })
         }
         return dialog
@@ -66,13 +71,31 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = BottomSheetEditProfileWelcomeBinding.inflate(inflater, container, false)
+        _binding = BottomSheetEditProfileWelcomeBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         setupPager()
         setupButtons()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        notifyDismissedOnce()
+    }
+
+    override fun onDestroyView() {
+        _binding = null
+        super.onDestroyView()
+    }
+
+    private fun notifyDismissedOnce() {
+        if (dismissNotified) return
+        dismissNotified = true
+
+        val listener = (parentFragment as? Listener) ?: (activity as? Listener)
+        listener?.onEditProfileWelcomeDismissed()
     }
 
     private fun setupPager() {
@@ -104,7 +127,6 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
             if (next < pages.size) {
                 binding.viewPager.currentItem = next
             } else {
-                (parentFragment as? Listener)?.onEditProfileWelcomeDismissed()
                 dismissAllowingStateLoss()
             }
         }
@@ -112,11 +134,8 @@ class EditProfileWelcomeSheet : BottomSheetDialogFragment() {
 
     private fun updateButtons(position: Int) {
         binding.btnPrev.isEnabled = position > 0
-
-        if (position == pages.lastIndex) {
-            binding.btnNext.setText(R.string.action_continue)
-        } else {
-            binding.btnNext.setText(R.string.action_next)
-        }
+        binding.btnNext.setText(
+            if (position == pages.lastIndex) R.string.action_continue else R.string.action_next
+        )
     }
 }
