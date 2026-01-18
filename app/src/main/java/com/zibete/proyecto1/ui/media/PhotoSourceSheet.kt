@@ -39,25 +39,27 @@ class PhotoSourceSheet : BottomSheetDialogFragment() {
         val showDelete = requireArguments().getBoolean(ARG_SHOW_DELETE, true)
         val titleRes = requireArguments().getInt(ARG_TITLE_RES, R.string.edit_picture)
 
+        val requestKey = requireArguments().getString(ARG_REQUEST_KEY) ?: REQ_KEY
+
         binding.cardDeleteProfilePhotoSelected.isVisible = showDelete
         binding.tvTitle.text = getString(titleRes)
 
         binding.cardCameraSelected.setOnClickListener {
-            parentFragmentManager.setFragmentResult(REQ_KEY, Bundle().apply {
+            parentFragmentManager.setFragmentResult(requestKey, Bundle().apply {
                 putString(RES_ACTION, ACTION_CAMERA)
             })
             dismiss()
         }
 
         binding.cardGallerySelected.setOnClickListener {
-            parentFragmentManager.setFragmentResult(REQ_KEY, Bundle().apply {
+            parentFragmentManager.setFragmentResult(requestKey, Bundle().apply {
                 putString(RES_ACTION, ACTION_GALLERY)
             })
             dismiss()
         }
 
         binding.cardDeleteProfilePhotoSelected.setOnClickListener {
-            parentFragmentManager.setFragmentResult(REQ_KEY, Bundle().apply {
+            parentFragmentManager.setFragmentResult(requestKey, Bundle().apply {
                 putString(RES_ACTION, ACTION_DELETE)
             })
             dismiss()
@@ -76,6 +78,7 @@ class PhotoSourceSheet : BottomSheetDialogFragment() {
         private const val ARG_TITLE_RES = "title_res"
         const val TAG = "PhotoSourceSheet"
         const val REQ_KEY = "photo_source_sheet_result"
+        const val ARG_REQUEST_KEY  = "arg_request_key"
         const val RES_ACTION = "action"
         const val ACTION_CAMERA = "camera"
         const val ACTION_GALLERY = "gallery"
@@ -83,11 +86,13 @@ class PhotoSourceSheet : BottomSheetDialogFragment() {
 
         fun newInstance(
             showDelete: Boolean,
-            titleRes: Int
+            titleRes: Int,
+            requestKey: String
         ) = PhotoSourceSheet().apply {
             arguments = Bundle().apply {
                 putBoolean(ARG_SHOW_DELETE, showDelete)
                 putInt(ARG_TITLE_RES, titleRes)
+                putString(ARG_REQUEST_KEY, requestKey)
             }
         }
     }
