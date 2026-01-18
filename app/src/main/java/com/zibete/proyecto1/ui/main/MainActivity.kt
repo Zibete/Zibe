@@ -158,7 +158,13 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         // Drawer
         drawerLayout = binding.drawerLayout
+
         materialToolbar.setNavigationOnClickListener {
+            val currentScreen = mainViewModel.toolbarState.value.currentScreen
+            if (currentScreen == CurrentScreen.EDIT_PROFILE){
+                mainViewModel.onBackPressed()
+                return@setNavigationOnClickListener
+            }
             drawerLayout?.openDrawer(GravityCompat.START)
         }
 
@@ -266,7 +272,6 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                     usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
                     bottomNavigationView.isVisible = state.showBottomNav
                     showSkipButton = state.showSkipButton
-
                     // title
                     materialToolbar.title =
                         state.currentScreen.titleRes.asString(this@MainActivity)
@@ -418,10 +423,11 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     }
 
     private fun handleBackFromEditProfile() {
-        val frag = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        val navHost = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val current = navHost.childFragmentManager.primaryNavigationFragment
 
-        if (frag is EditProfileFragment) {
-            if (frag.hasPendingChanges()) {
+        if (current is EditProfileFragment) {
+            if (current.hasPendingChanges()) {
                 UserMessageUtils.showSnack(
                     root = binding.root,
                     message = "Guarde los cambios antes de salir",

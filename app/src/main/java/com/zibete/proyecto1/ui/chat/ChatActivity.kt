@@ -224,7 +224,8 @@ class ChatActivity : BaseChatSessionActivity() {
                         if (state.showPhotoPicker) {
                             PhotoSourceSheet.newInstance(
                                 showDelete = false,
-                                titleRes = R.string.send_photo
+                                titleRes = R.string.send_photo,
+                                requestKey = REQ_KEY_CHAT_SEND
                             ).show(supportFragmentManager, PhotoSourceSheet.TAG)
                             chatViewModel.onPhotoPickerHandled()
                         }
@@ -276,7 +277,7 @@ class ChatActivity : BaseChatSessionActivity() {
     private fun setupUiListeners() {
 
         supportFragmentManager.setFragmentResultListener(
-            PhotoSourceSheet.REQ_KEY,
+            REQ_KEY_CHAT_SEND,
             this
         ) { _, bundle ->
             when (bundle.getString(PhotoSourceSheet.RES_ACTION)) {
@@ -889,5 +890,9 @@ class ChatActivity : BaseChatSessionActivity() {
             setMargins(dp10, dp10, dp10, dp10)
         }
         binding.btnMic.setPadding(dp13, dp13, dp13, dp13)
+    }
+
+    private companion object {
+        const val REQ_KEY_CHAT_SEND = "photo_source_chat_send"
     }
 }
