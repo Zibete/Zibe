@@ -134,10 +134,16 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupListeners(savedInstanceState)
+        setupListeners()
+
+        if (savedInstanceState == null) editProfileViewModel.load()
+
         setupInsets(view)
+
         installScrollBehavior()
+
         collectUi()
+
         showWelcomeIfNeeded()
     }
 
@@ -151,14 +157,14 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     // UI setup
     // --------------------------------------------
 
-    private fun setupListeners(savedInstanceState: Bundle?) {
+    private fun setupListeners() {
         binding.profilePhoto.setOnClickListener {
             val toLoad = editProfileViewModel.resolveProfilePhotoToLoad()
             PhotoViewerActivity.startSingle(requireContext(), toLoad.toString())
         }
 
         parentFragmentManager.setFragmentResultListener(
-            PhotoSourceSheet.REQ_KEY,
+            REQ_KEY_EDIT_PROFILE,
             viewLifecycleOwner
         ) { _, bundle ->
             when (bundle.getString(PhotoSourceSheet.RES_ACTION)) {
@@ -171,7 +177,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         binding.fabEditPhoto.setOnClickListener {
             PhotoSourceSheet.newInstance(
                 showDelete = true,
-                titleRes = R.string.edit_picture
+                titleRes = R.string.edit_picture,
+                requestKey = REQ_KEY_EDIT_PROFILE
             ).show(parentFragmentManager, PhotoSourceSheet.TAG)
         }
         binding.pickerBirthDate.setOnClickListener { showMaterialDatePicker() }
@@ -189,10 +196,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         })
 
         binding.inputDescription.makeScrollableInsideScroll()
-
-        if (savedInstanceState == null) {
-            editProfileViewModel.load()
-        }
     }
 
     fun EditText.makeScrollableInsideScroll() {
@@ -258,7 +261,21 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                 launch {
                     editProfileViewModel.uiState.collect { state ->
-                        binding.fabSave.isEnabled = state.saveEnabled && !state.isSaving
+                        val showSkipButton = state.hasBirthDate && runCatching {
+                            !editProfileViewModel.isEditProfileWelcomeShown()
+                        }.getOrDefault(false)
+
+                        setToolbarForEditProfile(
+                            showSkipButton = showSkipButton
+                        )
+
+                        val saving = state.isSaving
+                        binding.fabSaveLoading.isVisible = saving
+                        binding.fabSave.isEnabled = state.saveEnabled && !saving
+                        binding.fabSave.text = if (saving) "" else getString(R.string.action_save)
+                        binding.fabSave.icon = if (saving) null else ContextCompat.getDrawable(requireContext(), R.drawable.ic_check_24)
+
+
                         binding.fabEditPhoto.isEnabled = !state.isSaving && !state.isLoading
                         binding.pickerBirthDate.isEnabled = !state.isSaving && !state.isLoading
                         binding.inputUserName.isEnabled = !state.isSaving && !state.isLoading
@@ -271,7 +288,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                         val toLoad = editProfileViewModel.resolveProfilePhotoToLoad()
                         maybeLoadProfilePhoto(toLoad)
-                        setToolbarForEditProfile(state.hasBirthDate)
                     }
                 }
 
@@ -417,15 +433,15 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             .setValidator(DateValidatorPointBackward.now())
             .build()
 
+        val iso = editProfileViewModel.uiState.value.birthDate.trim()
+        val selection = iso.takeIf { it.isNotBlank() }?.let { isoToMillis(it) }
+            ?: MaterialDatePicker.todayInUtcMilliseconds()
+
         val picker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(getString(R.string.birth_date))
             .setCalendarConstraints(constraints)
             .setTheme(R.style.ThemeOverlay_Zibe_MaterialCalendar)
-            .setSelection(
-                editProfileViewModel.uiState.value.birthDate
-                    .let { iso -> isoToMillis(iso) }
-                    ?: MaterialDatePicker.todayInUtcMilliseconds()
-            )
+            .setSelection(selection)
             .build()
 
         picker.addOnPositiveButtonClickListener { millis ->
@@ -445,13 +461,15 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             if (shown) return@launch
             if (parentFragmentManager.findFragmentByTag(EDIT_PROFILE_WELCOME_SHEET) != null) return@launch
 
-            EditProfileWelcomeSheet().show(parentFragmentManager, EDIT_PROFILE_WELCOME_SHEET)
+            EditProfileWelcomeSheet().show(childFragmentManager, EDIT_PROFILE_WELCOME_SHEET)
         }
     }
 
     fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
 
-    private fun setToolbarForEditProfile(showSkipButton: Boolean) {
+    private fun setToolbarForEditProfile(
+        showSkipButton: Boolean
+    ) {
         (activity as? MainActivity)?.mainViewModel?.setToolbarState(
             showToolbar = true,
             showBack = true,
@@ -488,5 +506,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
     private companion object {
         const val KEY_PENDING_CAMERA_URI = "pending_camera_uri"
+        const val REQ_KEY_EDIT_PROFILE = "photo_source_edit_profile"
     }
 }
