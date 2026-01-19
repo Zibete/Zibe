@@ -136,7 +136,7 @@ class SignUpFailureAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
 
     val navigateToSignUpButton = context.getString(R.string.action_register)
-    val errPrefix = context.getString(R.string.err_zibe_prefix)
+    val errPrefixOnly = context.getString(R.string.err_zibe_prefix).substringBefore("%1")
 
     @Before
     fun setup() {
@@ -177,9 +177,9 @@ class SignUpFailureAndroidTest :
         // When
         waitTag(TestTags.BTN_REGISTER, composeRule).performClick()
 
-        //Then
+        // Then
         composeRule.onNode(
-            hasText(errPrefix, substring = true),
+            hasText(errPrefixOnly, substring = true),
             useUnmergedTree = true
         ).assertExists()
 

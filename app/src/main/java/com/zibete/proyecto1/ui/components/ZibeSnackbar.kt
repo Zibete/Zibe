@@ -25,9 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 enum class ZibeSnackType { SUCCESS, ERROR, WARNING, INFO }
 
@@ -140,36 +140,30 @@ fun ZibeSnackHost(
     }
 }
 
-@Preview(device = "spec:width=1280dp,height=800dp,dpi=240")
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
-fun PreviewZibeSnack() {
-    val state = remember { SnackbarHostState() }
-
+fun ZibeSnackHostSuccessPreview() {
+    val hostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
-        state.showSnackbar("[info]Hola desde preview!")
+        hostState.showSnackbar("[success] Operación completada con éxito")
     }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        ZibeSnackHost(
-            hostState = state,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+    ZibeTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            ZibeSnackHost(hostState = hostState)
+        }
     }
 }
 
-@Preview(device = Devices.PIXEL_7)
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
-fun PreviewPixel7() {
-    val state = remember { SnackbarHostState() }
-
+fun ZibeSnackHostErrorPreview() {
+    val hostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
-        state.showSnackbar("[info]Hola desde preview!")
+        hostState.showSnackbar("[error] Ha ocurrido un error inesperado")
     }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        ZibeSnackHost(
-            hostState = state,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+    ZibeTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            ZibeSnackHost(hostState = hostState)
+        }
     }
 }
