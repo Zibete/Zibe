@@ -226,10 +226,13 @@
 
             <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/fab_save_loading"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:indeterminate="true" />
+                android:indeterminate="true"
+                app:indicatorColor="@color/glass_indicator_color"
+                app:indicatorSize="@dimen/icon_size"
+                app:trackThickness="2dp" />
 
         </FrameLayout>
 
