@@ -43,16 +43,15 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
-import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment
@@ -63,10 +62,12 @@ import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : BaseEdgeToEdgeActivity() {
 
+    @Inject lateinit var snackBarManager: SnackBarManager
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -253,6 +254,18 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     }
 
     private fun setupObservers() {
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                snackBarManager.events.collect { event ->
+                    UserMessageUtils.showSnack(
+                        root = binding.root,
+                        message = event.uiText.asString(this@MainActivity),
+                        type = event.type
+                    )
+                }
+            }
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
