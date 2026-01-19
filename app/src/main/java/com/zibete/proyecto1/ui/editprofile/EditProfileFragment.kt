@@ -43,7 +43,6 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
-import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
 import com.zibete.proyecto1.ui.main.CurrentScreen
@@ -71,6 +70,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     private var lastScrollY: Int = 0
     private var scrollListenerInstalled = false
 
+    private var lastShowSkipButton: Boolean? = null
+
     // --------------------------------------------
     // Activity Result Launchers
     // --------------------------------------------
@@ -95,7 +96,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) startCamera()
-            else editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_permission_required))
+            else editProfileViewModel.showSnack(UiText.StringRes(R.string.msg_camera_permission_required))
         }
 
     private val cropLauncher =
@@ -109,7 +110,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 editProfileViewModel.onPhotoSelected(outputUri)
             } else {
                 val error = UCrop.getError(data)
-                editProfileViewModel.onError(
+                editProfileViewModel.showSnack(
                     UiText.StringRes(
                         R.string.err_zibe_prefix,
                         args = listOf(error?.message.orEmpty())
@@ -141,6 +142,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         setupInsets(view)
 
         installScrollBehavior()
+
+        setToolbarForEditProfile(showSkipButton = false)
 
         collectUi()
 
@@ -265,15 +268,19 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                             !editProfileViewModel.isEditProfileWelcomeShown()
                         }.getOrDefault(false)
 
-                        setToolbarForEditProfile(
-                            showSkipButton = showSkipButton
-                        )
+                        if (lastShowSkipButton != showSkipButton) {
+                            lastShowSkipButton = showSkipButton
+                            setToolbarForEditProfile(showSkipButton = showSkipButton)
+                        }
 
                         val saving = state.isSaving
                         binding.fabSaveLoading.isVisible = saving
                         binding.fabSave.isEnabled = state.saveEnabled && !saving
                         binding.fabSave.text = if (saving) "" else getString(R.string.action_save)
-                        binding.fabSave.icon = if (saving) null else ContextCompat.getDrawable(requireContext(), R.drawable.ic_check_24)
+                        binding.fabSave.icon = if (saving) null else ContextCompat.getDrawable(
+                            requireContext(),
+                            R.drawable.ic_check_24
+                        )
 
 
                         binding.fabEditPhoto.isEnabled = !state.isSaving && !state.isLoading
@@ -294,15 +301,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                 launch {
                     editProfileViewModel.events.collect { event ->
                         when (event) {
-                            is EditProfileUiEvent.ShowSnack -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = event.uiText.asString(requireContext()),
-                                    type = event.type
-                                )
-                            }
-
-                            is EditProfileUiEvent.OnBackToMain -> {
+                            is EditProfileUiEvent.NavigateBack -> {
                                 (activity as? MainActivity)?.mainViewModel?.emit(MainUiEvent.BackFromEditProfile)
                             }
                         }
@@ -388,13 +387,13 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
             val uri = pendingCameraUri
             if (uri == null) {
-                editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+                editProfileViewModel.showSnack(UiText.StringRes(R.string.msg_camera_error))
                 return
             }
 
             takePictureLauncher.launch(uri)
         }.onFailure {
-            editProfileViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+            editProfileViewModel.showSnack(UiText.StringRes(R.string.msg_camera_error))
         }
     }
 
