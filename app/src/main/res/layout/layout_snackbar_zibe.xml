@@ -1,48 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/snack_card"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    android:backgroundTint="@android:color/transparent"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="0dp">
+    android:layout_height="@dimen/zibe_btn_height"
+    android:layout_gravity="center"
+    android:layout_marginHorizontal="@dimen/zibe_snack_padding_horizontal"
+    android:layout_marginVertical="@dimen/zibe_snack_padding_vertical"
+    app:cardBackgroundColor="@color/snackbar_surface"
+    app:cardCornerRadius="@dimen/zibe_snack_radius"
+    app:cardElevation="@dimen/zibe_snack_shadow_elevation"
+    app:strokeWidth="0dp">
 
     <LinearLayout
+        android:id="@+id/snack_root"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:gravity="center"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="14dp">
+        android:paddingHorizontal="@dimen/zibe_snack_padding_horizontal"
+        android:paddingVertical="@dimen/zibe_snack_padding_vertical">
 
         <ImageView
             android:id="@+id/snack_icon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_marginEnd="10dp"
-            android:visibility="gone"
-            app:tint="@color/white"
-            android:src="@drawable/ic_info_24" />
+            android:layout_width="@dimen/icon_size"
+            android:layout_height="@dimen/icon_size"
+            android:contentDescription="@null" />
 
         <TextView
             android:id="@+id/snack_text"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:maxLines="3" />
+            android:layout_marginStart="@dimen/zibe_snack_padding_text"
+            android:gravity="center"
+            android:maxLines="3"
+            android:textAlignment="center" />
 
         <TextView
             android:id="@+id/snack_action"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:textAllCaps="true"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
+            android:layout_marginStart="@dimen/zibe_snack_padding_action" />
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>
