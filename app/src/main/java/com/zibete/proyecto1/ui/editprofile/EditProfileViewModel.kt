@@ -55,7 +55,7 @@ class EditProfileViewModel @Inject constructor(
 
                 if (u == null) {
                     _uiState.update { it.copy(isLoading = false) }
-                    onError(UiText.StringRes(R.string.msg_profile_load_error))
+                    showSnack(UiText.StringRes(R.string.msg_profile_load_error))
                     return@runCatching
                 }
 
@@ -81,7 +81,7 @@ class EditProfileViewModel @Inject constructor(
                 }
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false) }
-                onError(
+                showSnack(
                     UiText.StringRes(
                         resId = R.string.err_zibe_prefix,
                         args = listOf(e.message.orEmpty())
@@ -200,10 +200,8 @@ class EditProfileViewModel @Inject constructor(
                     )
                 }
 
-                val uiTextProfileSaved = UiText.StringRes(resId = R.string.msg_profile_saved)
-
                 snackBarManager.show(
-                    uiText = uiTextProfileSaved,
+                    uiText = UiText.StringRes(resId = R.string.msg_profile_saved),
                     type = ZibeSnackType.SUCCESS
                 )
 
@@ -220,21 +218,22 @@ class EditProfileViewModel @Inject constructor(
 
     fun onBackToMain() {
         viewModelScope.launch {
-            _events.emit(EditProfileUiEvent.OnBackToMain)
+            _events.emit(EditProfileUiEvent.NavigateBack)
         }
     }
 
     private fun handleError(e: Throwable) {
         val uiText = getAuthErrorMessage(e)
-        onError(uiText)
+        showSnack(uiText)
     }
 
-    fun onError(uiText: UiText) {
-        _events.tryEmit(
-            EditProfileUiEvent.ShowSnack(
-                uiText = uiText,
-                type = ZibeSnackType.ERROR
-            )
+    fun showSnack(
+        uiText: UiText,
+        snackType: ZibeSnackType = ZibeSnackType.ERROR
+    ) {
+        snackBarManager.show(
+            uiText = uiText,
+            type = snackType
         )
         _uiState.update {
             it.copy(
@@ -250,7 +249,7 @@ class EditProfileViewModel @Inject constructor(
     ): Boolean {
 
         fun warn(uiText: UiText): Boolean {
-            onError(uiText)
+            showSnack(uiText, ZibeSnackType.WARNING)
             return false
         }
 
