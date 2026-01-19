@@ -23,10 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 
 enum class ZibeSnackType { SUCCESS, ERROR, WARNING, INFO }
@@ -100,15 +100,21 @@ fun ZibeSnackHost(
                     Snackbar(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .shadow(10.dp, RoundedCornerShape(16.dp)),
-                        shape = RoundedCornerShape(16.dp),
+                            .padding(
+                                horizontal = dimensionResource(R.dimen.zibe_snack_padding_horizontal),
+                                vertical = dimensionResource(R.dimen.zibe_snack_padding_vertical)
+                            )
+                            .shadow(
+                                elevation = dimensionResource(R.dimen.zibe_snack_shadow_elevation),
+                                shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_snack_radius))
+                            ),
+                        shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_snack_radius)),
                         containerColor = zibeColors.snackbarSurface,
                         contentColor = zibeColors.hintText
                     ) {
                         Box(
                             modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center   // ← ★ ESTA ES LA SOLUCIÓN
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -121,7 +127,9 @@ fun ZibeSnackHost(
                                 Text(
                                     text = cleanMsg.trim(),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(start = 10.dp)
+                                    modifier = Modifier.padding(
+                                        start = dimensionResource(R.dimen.zibe_snack_padding_text)
+                                    )
                                 )
                             }
                         }

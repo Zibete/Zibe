@@ -62,6 +62,16 @@
 
     <dimen name="zibe_card_quotes_padding">24dp</dimen>
 
+    <!--Snack-->
+
+    <dimen name="zibe_snack_padding_horizontal">16dp</dimen>
+    <dimen name="zibe_snack_padding_vertical">8dp</dimen>
+    <dimen name="zibe_snack_padding_text">10dp</dimen>
+    <dimen name="zibe_snack_padding_action">10dp</dimen>
+
+    <dimen name="zibe_snack_shadow_elevation">2dp</dimen>
+    <dimen name="zibe_snack_radius">16dp</dimen>
+
     <!--Text Size-->
 
     <dimen name="text_size_brand_large">38sp</dimen>
@@ -93,7 +103,7 @@
     <dimen name="zibe_btn_elevation_pressed">2dp</dimen>
     <dimen name="zibe_btn_corner">12dp</dimen>
     <dimen name="zibe_text_size_label">14sp</dimen>
-    <dimen name="icon_size">24sp</dimen>
+    <dimen name="icon_size">24dp</dimen>
 
     <!--Fabs-->
 
