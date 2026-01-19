@@ -107,6 +107,7 @@
     <color name="glass_bg_light">#1AFFFFFF</color>        <!-- blanco 10% -->
     <color name="glass_stroke_light">#33FFFFFF</color>    <!-- blanco 20% -->
     <color name="glass_indicator_light">#26FFFFFF</color> <!-- blanco 15% para el pill -->
+    <color name="glass_indicator_color">#90FFFFFF</color>  <!-- blanco 56% para el pill -->
 
     <!-- Fondo glass (modo oscuro) -->
     <color name="glass_bg_dark">#60000000</color>
