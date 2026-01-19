@@ -68,29 +68,26 @@ fun pickBirthDateSetText(
     composeRule: ComposeTestRule,
     context: Context
 ) {
-    val dialogOk = context.getString(R.string.action_accept)
+    val okText = context.getString(R.string.action_accept)
 
+    // Abrir diálogo
     waitTag(openDialogTag, composeRule).performClick()
-    waitText(dialogOk, composeRule)
+    waitText(okText, composeRule)
 
-    val pencilBtn = hasClickAction().and(
-        hasAnyDescendant(
-            hasContentDescription("Cambiar al modo de introducción de texto", substring = true)
-        )
-    )
-    composeRule.onNode(pencilBtn, useUnmergedTree = true).performClick()
-
-    val dialogInput = hasSetTextAction().and(
-        hasAnyAncestor(isDialog())
-    )
-
-    composeRule.onNode(dialogInput, useUnmergedTree = true)
+    // Click en el 1er nodo clickeable dentro del diálogo (pencil)
+    composeRule
+        .onAllNodes(
+            hasClickAction().and(hasAnyAncestor(isDialog())),
+            useUnmergedTree = true
+        )[0]
         .performClick()
+
+    // Campo editable dentro del diálogo
+    val dialogInput = hasSetTextAction().and(hasAnyAncestor(isDialog()))
 
     composeRule.onNode(dialogInput, useUnmergedTree = true)
         .performTextReplacement(dateText)
 
-    waitText(dialogOk, composeRule).performClick()
+    // Confirmar
+    waitText(okText, composeRule).performClick()
 }
-
-
