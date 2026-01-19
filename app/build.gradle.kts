@@ -9,11 +9,11 @@ if (localPropertiesFile.exists()) {
 
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -134,8 +134,8 @@ dependencies {
     // -------------------------------
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 
-    implementation("com.google.dagger:hilt-android:2.52")
-    ksp("com.google.dagger:hilt-android-compiler:2.52")
+    implementation("com.google.dagger:hilt-android:2.58")
+    ksp("com.google.dagger:hilt-android-compiler:2.58")
 
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.52")
     androidTestImplementation("io.mockk:mockk-android:1.14.7")
