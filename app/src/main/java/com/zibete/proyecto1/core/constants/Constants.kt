@@ -25,6 +25,8 @@ object Constants {
         const val ONBOARDING_SCREEN = "onboarding_screen"
         const val PERMISSION_SCREEN = "permission_screen"
         const val SIGNUP_SCREEN = "signup_screen"
+        const val SETTINGS_SCREEN = "settings_screen"
+        const val EDIT_PROFILE_SCREEN = "edit_profile_screen"
         const val EDIT_PROFILE_WELCOME_SHEET = "EditProfileWelcomeSheet"
     }
 
