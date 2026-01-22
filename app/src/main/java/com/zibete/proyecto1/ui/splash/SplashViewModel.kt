@@ -109,10 +109,4 @@ class SplashViewModel @Inject constructor(
             _events.emit(SplashUiEvent.NavigateAuth)
         }
     }
-
-    fun onExternalSessionConflict() {
-        viewModelScope.launch {
-            _events.emit(SplashUiEvent.ShowSessionConflictDialog)
-        }
-    }
 }

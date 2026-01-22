@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,16 +46,18 @@ import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
+import com.zibete.proyecto1.core.navigation.AppNavigator
+import com.zibete.proyecto1.core.navigation.NavAppEvent
+import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeSnackHost
-import com.zibete.proyecto1.ui.components.ZibeInputPassword
-import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
+import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(
@@ -68,7 +71,8 @@ fun AuthScreen(
     onDeleteAccount: () -> Unit,
     authEvents: SharedFlow<AuthUiEvent>,
     isLoading: Boolean,
-    onNavigateToSplash: () -> Unit
+    onNavigateToSplash: () -> Unit,
+    appNavigator: AppNavigator
 ) {
     // Inputs
     var email by rememberSaveable { mutableStateOf("") }
@@ -79,9 +83,8 @@ fun AuthScreen(
     var resetEmail by rememberSaveable { mutableStateOf("") }
 
     val zibeColors = LocalZibeExtendedColors.current
-    val context = LocalContext.current
 
-    val lightText = zibeColors.lightText
+    val lightText = zibeColors.lightText.copy(alpha = 0.8f)
 
     val elementSpacingXs = dimensionResource(R.dimen.element_spacing_xs)
     val elementSpacingSmall = dimensionResource(R.dimen.element_spacing_small)
@@ -90,38 +93,33 @@ fun AuthScreen(
     val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
 
     val snackHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        appNavigator.events.collect { event ->
+            when (event) {
+                NavAppEvent.FinishFlowNavigateToSplash -> onNavigateToSplash()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        authEvents.collect { event ->
+            when (event) {
+                is AuthUiEvent.NavigateToSignUp -> {
+                    onNavigateToSignUp()
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier.testTag(AUTH_SCREEN)
     ) {
-        LaunchedEffect(Unit) {
-            authEvents.collect { event ->
-                when (event) {
-                    is AuthUiEvent.ShowSnack -> {
-                        scope.launch {
-                            snackHostState.showZibeMessage(
-                                message = event.message.asString(context),
-                                type = event.type
-                            )
-                        }
-                    }
-
-                    is AuthUiEvent.NavigateToSplash -> {
-                        onNavigateToSplash()
-                    }
-
-                    is AuthUiEvent.NavigateToSignUp -> {
-                        onNavigateToSignUp()
-                    }
-                }
-            }
-        }
 
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = {
-                ZibeSnackHost(hostState = snackHostState)
+                ZibeSnackbar(hostState = snackHostState)
             },
         ) { innerPadding ->
             Box(
@@ -185,7 +183,7 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(elementSpacingMedium))
 
                         // EMAIL
-                        ZibeInputField(
+                        ZibeInputFieldDark(
                             value = email,
                             onValueChange = { email = it },
                             label = stringResource(id = R.string.email),
@@ -203,7 +201,7 @@ fun AuthScreen(
                         )
 
                         // PASSWORD
-                        ZibeInputPassword(
+                        ZibeInputPasswordFieldDark(
                             value = password,
                             onValueChange = { password = it },
                             label = stringResource(id = R.string.password),
@@ -280,12 +278,15 @@ fun AuthScreen(
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
-                        ZibeButtonPrimary(
+                        ZibeButtonOutlined(
                             text = stringResource(R.string.delete_account),
                             onClick = { onDeleteAccount() },
                             modifier = Modifier.padding(
                                 top = elementSpacingXs,
                                 bottom = elementSpacingSmall
+                            ),
+                            buttonColors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
                             ),
                             enabled = !isLoading,
                             isLoading = isLoading
@@ -341,7 +342,8 @@ fun AuthScreenPreview() {
             onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {}
+            onNavigateToSplash = {},
+            appNavigator = AppNavigator()
         )
     }
 }
@@ -361,7 +363,8 @@ fun AuthScreenDeleteUserPreview() {
             onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {}
+            onNavigateToSplash = {},
+            appNavigator = AppNavigator()
         )
     }
 }
