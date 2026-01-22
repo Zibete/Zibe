@@ -32,7 +32,7 @@
     <dimen name="corner_medium">12dp</dimen>
     <dimen name="corner_large">16dp</dimen>
     <dimen name="corner_xl">20dp</dimen>
-    <dimen name="corner_xxl">24dp</dimen>
+    <dimen name="corner_xxl">28dp</dimen>
 
     <!--Spacing-->
 
@@ -41,7 +41,7 @@
     <dimen name="element_spacing_small">12dp</dimen>
     <dimen name="element_spacing_medium">16dp</dimen>
     <dimen name="element_spacing_large">22dp</dimen>
-    <dimen name="element_spacing_xl">28dp</dimen>
+    <dimen name="element_spacing_xl">32dp</dimen>
 
     <!--Padding-->
 

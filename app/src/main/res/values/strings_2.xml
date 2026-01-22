@@ -2,6 +2,9 @@
 <resources>
 
     <string name="app_name">ZIBE</string>
+    <string name="company_name">ZibeteProyects</string>
+    <string name="version">2026.1.21</string>
+    <string name="version_string">Versión </string>
 
     <!-- ============================= -->
     <!-- EditProfile -->
@@ -88,6 +91,7 @@
     <!-- ============================= -->
     <string name="reset_password_email_instruction">Ingresá tu email para reestablecer la contraseña</string>
     <string name="reset_password_title">Reestablecimiento de contraseña</string>
+    <string name="reset_password_content">Ingresá tu correo electrónico para reestablecer tu contraseña</string>
     <string name="reset_password_accept">Enviar e-mail</string>
     <string name="reset_password_success">Instrucciones enviadas a %1$s</string>
     <string name="reset_password_error">No pudimos enviar el correo a %1$s. Verificá que esté correcto.</string>
@@ -110,14 +114,6 @@
 
     <string name="error_no_connection_title">Sin conexión</string>
     <string name="error_no_connection_message">Revisá tu conexión e intentá nuevamente.</string>
-
-
-    <!-- ============================= -->
-    <!-- Cuenta -->
-    <!-- ============================= -->
-    <string name="account_not_found">Cuenta no encontrada.</string>
-    <string name="account_delete_success">La cuenta ha sido eliminada.</string>
-    <string name="account_delete_cancelled">La cuenta se mantendrá activa.</string>
 
     <!-- ============================= -->
     <!-- Signup – Auth - Errors -->
@@ -182,8 +178,13 @@
         </string>
 
     <!-- ============================= -->
-    <!-- Sesión / Token -->
+    <!-- Session -->
     <!-- ============================= -->
+
+    <string name="account_not_found">Cuenta no encontrada.</string>
+    <string name="account_delete_success">La cuenta ha sido eliminada.</string>
+    <string name="account_delete_cancelled">La cuenta se mantendrá activa.</string>
+
     <string name="token_dialog_title">Un momento…</string>
     <string name="token_dialog_message">
             Este dispositivo ya tiene una cuenta vinculada.\n
@@ -196,10 +197,8 @@
             ¿Qué deseas hacer?
         </string>
 
-    <string name="session_conflict_keep_here">
-            Continuar en este dispositivo
-        </string>
-    <string name="session_conflict_logout">Cerrar sesión</string>
+    <string name="session_conflict_keep_here">Continuar en este dispositivo</string>
+    <string name="logout">Cerrar sesión</string>
 
     <!-- ============================= -->
     <!-- Auth UI -->
@@ -267,8 +266,17 @@
     <!-- Settings -->
     <!-- ============================= -->
 
-    <string name="settings_err_change_email_provider">No puedes cambiar el email porque iniciaste sesión con %1$s.</string>
-    <string name="settings_err_change_password_provider">No puedes cambiar la contraseña porque iniciaste sesión con %1$s.</string>
+    <string name="menu_settings">Ajustes</string>
+    <string name="account">Cuenta</string>
+    <string name="notifications">Notificaciones</string>
+    <string name="change_email">Cambiar email</string>
+    <string name="change_password">Cambiar contraseña</string>
+
+    <string name="settings_err_provider">No disponible para inicios de sesión con %1$s</string>
+    <string name="settings_err_provider_title">Cuenta vinculada con %1$s</string>
+    <string name="err_not_available_title">No disponible</string>
+    <string name="err_not_available_message">Opción no disponible en este momento, intentá nuevamente más tarde</string>
+    <string name="settings_err_provider_message">Esta opción no está disponible porque iniciaste sesión a través de %1$s. Por favor, gestiona tu configuración directamente en ese servicio.</string>
 
     <string name="settings_group_notifications_on">Notificaciones grupales encendidas</string>
     <string name="settings_group_notifications_off">Notificaciones grupales apagadas</string>
@@ -287,10 +295,15 @@
     <string name="dialog_delete_account_final_message">Si elimina la cuenta, no podrá recuperar sus datos</string>
     <string name="action_delete_account">Eliminar cuenta</string>
 
-    <string name="dialog_logout_title">Cerrar sesión</string>
-    <string name="dialog_logout_message">¿Seguro quieres cerrar sesión?</string>
+    <string name="dialog_logout_message">¿Seguro querés cerrar tu sesión?</string>
 
     <string name="enter_your_password">"Introduzca su contraseña"</string>
     <string name="content_description_back">Volver</string>
+
+    <string name="send_feedback">Enivar comentarios</string>
+    <string name="new_email">Nuevo correo</string>
+    <string name="new_password">Nueva contraseña</string>
+    <string name="current_password">Contraseña actual</string>
+
 
 </resources>

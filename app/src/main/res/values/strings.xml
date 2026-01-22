@@ -12,7 +12,7 @@
 
 
     <string name="Entrar">Entrar</string>
-    <string name="Logout">Cerrar sesión</string>
+
     <string name="datos">Complete sus datos</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
@@ -58,7 +58,7 @@
     <string name="menu_unblock_users">Desbloquear usuarios</string>
     <string name="menu_favorites">Favoritos</string>
 
-    <string name="menu_settings">Ajustes</string>
+
 
     <string name="menu_unhide_chats">Chats ocultos</string>
 
@@ -117,11 +117,7 @@
     <string name="ocultar">Ocultar</string>
     <string name="recording">grabando audio…</string>
 
-    <string name="send_feedback">Enivar comentarios</string>
-    <string name="version">2025</string>
-    <string name="version_string">Versión Beta</string>
-    <string name="cuenta">Cuenta</string>
-    <string name="notifications">Notificaciones</string>
+
 
     <string name="chatlist_onboarding_title">Acá verás tus conversaciones</string>
     <string name="escribe_un_mensaje">Escribe un mensaje</string>
