@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -41,16 +40,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
-import com.zibete.proyecto1.ui.components.ZibeButton
+import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
+import com.zibete.proyecto1.ui.components.ZibeInputPassword
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -87,6 +86,7 @@ fun AuthScreen(
     val elementSpacingXs = dimensionResource(R.dimen.element_spacing_xs)
     val elementSpacingSmall = dimensionResource(R.dimen.element_spacing_small)
     val elementSpacingMedium = dimensionResource(R.dimen.element_spacing_medium)
+    val screenPadding20 = dimensionResource(R.dimen.screen_padding)
     val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
 
     val snackHostState = remember { SnackbarHostState() }
@@ -135,8 +135,8 @@ fun AuthScreen(
                         .verticalScroll(rememberScrollState())
                         .fillMaxSize()
                         .padding(
-                            start = elementSpacingMedium,
-                            end = elementSpacingMedium,
+                            start = screenPadding20,
+                            end = screenPadding20,
                             bottom = innerPadding.calculateTopPadding(),
                             top = innerPadding.calculateTopPadding()
                         ),
@@ -157,18 +157,20 @@ fun AuthScreen(
 
                     if (!deleteUser) {
                         // GOOGLE
-                        ZibeButton(
+                        ZibeButtonPrimary(
                             text = stringResource(R.string.continue_with_google),
                             iconRes = R.drawable.ic_google,
+                            iconTint = Color.Unspecified,
                             onClick = onGoogleClick
                         )
 
                         Spacer(modifier = Modifier.height(elementSpacingXs))
 
                         // FACEBOOK
-                        ZibeButton(
+                        ZibeButtonPrimary(
                             text = stringResource(R.string.continue_with_facebook),
                             iconRes = R.drawable.ic_facebook,
+                            iconTint = Color.Unspecified,
                             onClick = onFacebookClick
                         )
 
@@ -201,39 +203,13 @@ fun AuthScreen(
                         )
 
                         // PASSWORD
-                        ZibeInputField(
+                        ZibeInputPassword(
                             value = password,
                             onValueChange = { password = it },
                             label = stringResource(id = R.string.password),
-
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_lock_24),
-                                    contentDescription = stringResource(id = R.string.password)
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (passwordVisible)
-                                                R.drawable.ic_baseline_visibility_24
-                                            else
-                                                R.drawable.ic_baseline_visibility_off_24
-                                        ),
-                                        contentDescription = stringResource(R.string.password_content_desc)
-                                    )
-                                }
-                            },
-                            visualTransformation = if (passwordVisible)
-                                VisualTransformation.None
-                            else
-                                PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            enabled = !isLoading
+                            enabled = !isLoading,
+                            visible = passwordVisible,
+                            onToggleVisible = { passwordVisible = !passwordVisible }
                         )
 
                         Text(
@@ -253,7 +229,7 @@ fun AuthScreen(
 
                         Spacer(modifier = Modifier.height(elementSpacingMedium))
 
-                        ZibeButton(
+                        ZibeButtonPrimary(
                             text = stringResource(id = R.string.Entrar),
                             onClick = { onLogin(email.trim(), password) },
                             modifier = Modifier.padding(
@@ -294,7 +270,7 @@ fun AuthScreen(
 
                         // Modo "reactivar cuenta"
 
-                        ZibeButton(
+                        ZibeButtonPrimary(
                             text = stringResource(R.string.auth_do_not_delete_account),
                             onClick = { onDoNotDelete() },
                             modifier = Modifier.padding(
@@ -304,7 +280,7 @@ fun AuthScreen(
                             enabled = !isLoading,
                             isLoading = isLoading
                         )
-                        ZibeButton(
+                        ZibeButtonPrimary(
                             text = stringResource(R.string.delete_account),
                             onClick = { onDeleteAccount() },
                             modifier = Modifier.padding(
@@ -320,25 +296,28 @@ fun AuthScreen(
                 if (showResetDialog) {
                     ZibeDialog(
                         title = stringResource(R.string.reset_password_title),
-                        textContent = {
-                            ZibeInputField(
-                                value = resetEmail,
-                                onValueChange = { resetEmail = it },
-                                label = stringResource(id = R.string.email),
-                                singleLine = true,
-                                enabled = !isLoading
-                            )
+                        content = {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Text(stringResource(R.string.reset_password_content))
+                                ZibeInputField(
+                                    value = resetEmail,
+                                    onValueChange = { resetEmail = it },
+                                    label = stringResource(id = R.string.email),
+                                    singleLine = true,
+                                    enabled = !isLoading
+                                )
+                            }
                         },
                         confirmText = stringResource(R.string.reset_password_accept),
-                        confirmEnabled = resetEmail.isNotBlank() && !isLoading,
                         onConfirm = {
                             if (resetEmail.isNotBlank()) {
                                 onResetPassword(resetEmail.trim())
                                 showResetDialog = false
                             }
                         },
-                        onDismiss = { if (!isLoading) showResetDialog = false },
-                        enabled = !isLoading
+                        onCancel = { if (!isLoading) showResetDialog = false },
+                        enabled = !isLoading,
+                        confirmEnabled = resetEmail.isNotBlank() && !isLoading
                     )
                 }
             }

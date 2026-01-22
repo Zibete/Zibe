@@ -33,7 +33,7 @@ import com.airbnb.lottie.compose.*
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.OnboardingPage
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
-import com.zibete.proyecto1.ui.components.ZibeButton
+import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 
@@ -193,7 +193,7 @@ fun OnboardingScreen(
                         }
                     }
                 } else {
-                    ZibeButton(
+                    ZibeButtonPrimary(
                         text = startText,
                         modifier = Modifier.weight(1f),
                         onClick = onFinished

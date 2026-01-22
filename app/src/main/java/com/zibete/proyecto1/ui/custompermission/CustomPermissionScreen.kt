@@ -39,9 +39,9 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.di.PermissionRequesterEntryPoint
 import com.zibete.proyecto1.di.RationaleEntryPoint
-import com.zibete.proyecto1.ui.components.ZibeButton
+import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.components.ZibeOkDialog
+import com.zibete.proyecto1.ui.components.ZibeMessageDialog
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.EntryPointAccessors
 
@@ -150,7 +150,7 @@ fun CustomPermissionScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                ZibeButton(
+                ZibeButtonPrimary(
                     text = stringResource(R.string.action_start),
                     onClick = { permissionViewModel.onStartClicked(rationaleProvider.shouldShowRationale()) },
                     modifier = Modifier.fillMaxWidth(),
@@ -163,7 +163,7 @@ fun CustomPermissionScreen(
     if (uiState.showRationaleDialog) {
         ZibeDialog(
             title = stringResource(R.string.permission_rationale_title),
-            textContent = {
+            content = {
                 Text(
                     text = stringResource(R.string.permission_rationale_message),
                     textAlign = TextAlign.Start,
@@ -172,12 +172,12 @@ fun CustomPermissionScreen(
                 )
             },
             onConfirm = { permissionViewModel.onRationaleAccept() },
-            onDismiss = { permissionViewModel.onRationaleDismiss() }
+            onCancel = { permissionViewModel.onRationaleDismiss() }
         )
     }
 
     if (uiState.showDeniedDialog) {
-        ZibeOkDialog(
+        ZibeMessageDialog(
             title = stringResource(R.string.permission_denied_title),
             textContent = {
                 Text(
@@ -187,7 +187,6 @@ fun CustomPermissionScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
-            confirmText = stringResource(R.string.action_accept),
             onConfirm = { permissionViewModel.onDeniedOkClicked() }
         )
     }

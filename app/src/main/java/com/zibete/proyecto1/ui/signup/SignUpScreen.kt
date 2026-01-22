@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,7 +17,6 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -41,8 +41,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
@@ -52,9 +50,10 @@ import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
-import com.zibete.proyecto1.ui.components.ZibeButton
+import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackHost
+import com.zibete.proyecto1.ui.components.ZibeInputPassword
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.ZibeTheme
@@ -90,6 +89,7 @@ fun SignUpScreen(
     val elementSpacing8 = dimensionResource(R.dimen.element_spacing_xs)
     val elementSpacing12 = dimensionResource(R.dimen.element_spacing_small)
     val elementSpacing16 = dimensionResource(R.dimen.element_spacing_medium)
+    val screenPadding20 = dimensionResource(R.dimen.screen_padding)
     val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
 
     LaunchedEffect(Unit) {
@@ -135,8 +135,8 @@ fun SignUpScreen(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
                     .padding(
-                        start = elementSpacing16,
-                        end = elementSpacing16,
+                        start = screenPadding20,
+                        end = screenPadding20,
                         bottom = innerPadding.calculateTopPadding(),
                         top = innerPadding.calculateTopPadding()
                     )
@@ -159,36 +159,13 @@ fun SignUpScreen(
                 )
 
                 // PASSWORD
-                ZibeInputField(
+                ZibeInputPassword(
                     value = password,
                     onValueChange = { password = it },
                     label = stringResource(id = R.string.password),
-                    modifier = Modifier.fillMaxWidth()
-                        .testTag(TestTags.PASSWORD),
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_lock_24),
-                            contentDescription = stringResource(id = R.string.password)
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (passwordVisible)
-                                        R.drawable.ic_baseline_visibility_24
-                                    else
-                                        R.drawable.ic_baseline_visibility_off_24
-                                ),
-                                contentDescription = stringResource(id = R.string.password)
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible)
-                        VisualTransformation.None
-                    else
-                        PasswordVisualTransformation(),
-                    enabled = !isLoading
+                    enabled = !isLoading,
+                    visible = passwordVisible,
+                    onToggleVisible = { passwordVisible = !passwordVisible }
                 )
 
                 // NOMBRE
@@ -274,7 +251,7 @@ fun SignUpScreen(
                     onValueChange = { description = it },
                     label = stringResource(R.string.description),
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth().fillMaxHeight()
                         .testTag(TestTags.DESCRIPTION)
                         .height(140.dp),
                     singleLine = false,
@@ -304,7 +281,7 @@ fun SignUpScreen(
                 )
 
                 // BOTÓN REGISTRAR
-                ZibeButton(
+                ZibeButtonPrimary(
                     modifier = Modifier
                         .padding(top = elementSpacing8)
                         .testTag(TestTags.BTN_REGISTER),
