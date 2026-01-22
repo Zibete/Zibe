@@ -41,34 +41,30 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
+import com.zibete.proyecto1.core.navigation.AppNavigator
+import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
-import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeSnackHost
-import com.zibete.proyecto1.ui.components.ZibeInputPassword
+import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
+import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.theme.ZibeTheme
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     onBack: () -> Unit,
     onRegister: (String, String, String, String, String) -> Unit,
-    signUpEvents: Flow<SignUpUiEvent>,
     isLoading: Boolean,
-    onNavigateToSplash: () -> Unit
+    onNavigateToSplash: () -> Unit,
+    appNavigator: AppNavigator
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -93,19 +89,9 @@ fun SignUpScreen(
     val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
 
     LaunchedEffect(Unit) {
-        signUpEvents.collect { event ->
+        appNavigator.events.collect { event ->
             when (event) {
-                is SignUpUiEvent.ShowSnack -> {
-                    scope.launch {
-                        snackHostState.showZibeMessage(
-                            type = event.type,
-                            message = event.uiText.asString(context)
-                        )
-                    }
-                }
-                is SignUpUiEvent.NavigateToSplash -> {
-                    onNavigateToSplash()
-                }
+                NavAppEvent.FinishFlowNavigateToSplash -> onNavigateToSplash()
             }
         }
     }
@@ -114,7 +100,7 @@ fun SignUpScreen(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         snackbarHost = {
-            ZibeSnackHost(hostState = snackHostState)
+            ZibeSnackbar(hostState = snackHostState)
         },
         topBar = {
             ZibeToolbar(
@@ -142,7 +128,7 @@ fun SignUpScreen(
                     )
             ) {
                 // EMAIL
-                ZibeInputField(
+                ZibeInputFieldDark(
                     value = email,
                     onValueChange = { email = it },
                     label = stringResource(id = R.string.email),
@@ -159,7 +145,7 @@ fun SignUpScreen(
                 )
 
                 // PASSWORD
-                ZibeInputPassword(
+                ZibeInputPasswordFieldDark(
                     value = password,
                     onValueChange = { password = it },
                     label = stringResource(id = R.string.password),
@@ -169,11 +155,12 @@ fun SignUpScreen(
                 )
 
                 // NOMBRE
-                ZibeInputField(
+                ZibeInputFieldDark(
                     value = name,
                     onValueChange = { name = it },
                     label = stringResource(R.string.name),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .testTag(TestTags.NAME),
                     leadingIcon = {
                         Icon(
@@ -186,8 +173,9 @@ fun SignUpScreen(
 
                 // FECHA DE NACIMIENTO
                 Box {
-                    ZibeInputField(
-                        value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
+                    ZibeInputFieldDark(
+                        value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }
+                            .orEmpty(),
                         onValueChange = { },
                         label = stringResource(R.string.birth_date),
                         modifier = Modifier
@@ -238,7 +226,8 @@ fun SignUpScreen(
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
-                                Text(stringResource(R.string.action_cancel)) }
+                                Text(stringResource(R.string.action_cancel))
+                            }
                         }
                     ) {
                         DatePicker(state = datePickerState)
@@ -246,12 +235,13 @@ fun SignUpScreen(
                 }
 
                 // DESCRIPCIÓN
-                ZibeInputField(
+                ZibeInputFieldDark(
                     value = description,
                     onValueChange = { description = it },
                     label = stringResource(R.string.description),
                     modifier = Modifier
-                        .fillMaxWidth().fillMaxHeight()
+                        .fillMaxWidth()
+                        .fillMaxHeight()
                         .testTag(TestTags.DESCRIPTION)
                         .height(140.dp),
                     singleLine = false,
@@ -292,21 +282,5 @@ fun SignUpScreen(
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewSignUpScreen() {
-    ZibeTheme {
-        val fakeFlow = MutableSharedFlow<SignUpUiEvent>()
-
-        SignUpScreen(
-            onBack = {},
-            onRegister = { _, _, _, _, _ -> },
-            signUpEvents = fakeFlow,
-            isLoading = false,
-            onNavigateToSplash = {}
-        )
     }
 }

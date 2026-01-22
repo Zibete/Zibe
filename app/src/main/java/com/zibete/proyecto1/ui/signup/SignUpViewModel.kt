@@ -5,19 +5,19 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
+import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,14 +27,12 @@ import javax.inject.Inject
 class SignUpViewModel @Inject constructor(
     private val authSessionActions: AuthSessionActions,
     private val sessionBootstrapper: SessionBootstrapper,
-    private val snackBarManager: SnackBarManager
+    private val snackBarManager: SnackBarManager,
+    private val appNavigator: AppNavigator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState = _uiState.asStateFlow()
-
-    private val _events = MutableSharedFlow<SignUpUiEvent>(extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
 
     // -------------------------- Registro
 
@@ -47,10 +45,12 @@ class SignUpViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
 
-            if (!validateInputs(email, password, name, birthDate)) return@launch
-            _uiState.update { it.copy(isLoading = true) }
+            setLoading(true)
 
-            // 1. Crear Usuario
+            // 1. Validar campos
+            if (!validateInputs(email, password, name, birthDate)) return@launch
+
+            // 2. Crear Usuario
             authSessionActions.createUser(
                 email = email.trim(),
                 password = password.trim()
@@ -64,7 +64,7 @@ class SignUpViewModel @Inject constructor(
                         IllegalStateException(SIGNUP_ERR_EXCEPTION)
                     )
 
-                // 2. Guardar perfil RTDB
+                // 3. Guardar perfil RTDB
                 sessionBootstrapper.bootstrap(
                     uid = firebaseUser.uid,
                     birthDate = birthDate,
@@ -75,53 +75,57 @@ class SignUpViewModel @Inject constructor(
                 }
             }
 
-            // 3. Guardar Perfil de Auth
+            // 4. Guardar Perfil de Auth
             authSessionActions.updateAuthProfile(
                 userName = name,
                 photoUrl = DEFAULT_PROFILE_PHOTO_URL
             ).onFailure { e ->
                 handleRegisterError(e)
                 return@launch
+            }.onSuccess {
+                // 5. Éxito
+                showSnack(
+                    uiText = UiText.StringRes(R.string.signup_msg_success),
+                    snackType = ZibeSnackType.SUCCESS
+                )
+                // 6. Splash -> Location Permission
+                appNavigator.finishFlowNavigateToSplash()
+            }.onFinally {
+                setLoading(false)
             }
-
-            // 4. Éxito
-            snackBarManager.show(UiText.StringRes(R.string.signup_msg_success), ZibeSnackType.SUCCESS)
-
-            _uiState.update { it.copy(isLoading = false) }
-
-            // 5. Splash -> Location Permission
-            _events.emit(SignUpUiEvent.NavigateToSplash)
         }
     }
 
-    private suspend fun handleRegisterError(e: Throwable) {
+    private fun handleRegisterError(e: Throwable) {
         val uiText = getAuthErrorMessage(e)
-
-        _events.emit(
-            SignUpUiEvent.ShowSnack(
-                uiText = uiText,
-                type = ZibeSnackType.ERROR
-            )
-        )
-
-        _uiState.update { it.copy(isLoading = false) }
+        showSnack(uiText = uiText)
     }
 
-    private suspend fun validateInputs(
+    private fun setLoading(value: Boolean) {
+        _uiState.update { it.copy(isLoading = value) }
+    }
+
+    fun showSnack(
+        uiText: UiText,
+        snackType: ZibeSnackType = ZibeSnackType.ERROR,
+        stopLoading: Boolean = true
+    ) {
+        snackBarManager.show(
+            uiText = uiText,
+            type = snackType
+        )
+        if (stopLoading) setLoading(false)
+    }
+
+    private fun validateInputs(
         email: String,
         password: String,
         name: String,
         birthDate: String
     ): Boolean {
 
-        suspend fun warn(uiText: UiText): Boolean {
-            _uiState.update { it.copy(isLoading = false) }
-            _events.emit(
-                SignUpUiEvent.ShowSnack(
-                    uiText = uiText,
-                    type = ZibeSnackType.WARNING
-                )
-            )
+        fun warn(uiText: UiText): Boolean {
+            showSnack(uiText, ZibeSnackType.WARNING)
             return false
         }
 
@@ -133,6 +137,4 @@ class SignUpViewModel @Inject constructor(
 
         return true
     }
-
-
 }

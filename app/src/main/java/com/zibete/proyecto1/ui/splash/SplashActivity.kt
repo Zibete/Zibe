@@ -36,14 +36,14 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
-import com.zibete.proyecto1.core.di.SnackBarEntryPoint
+import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.components.ZibeSnackHost
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
@@ -53,13 +53,15 @@ import com.zibete.proyecto1.ui.signup.SignUpScreen
 import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.EntryPointAccessors
+import jakarta.inject.Inject
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 @Suppress("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
 
+    @Inject lateinit var appNavigator: AppNavigator
+    @Inject lateinit var snackBarManager: SnackBarManager
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
     // ===============================
@@ -150,6 +152,7 @@ class SplashActivity : ComponentActivity() {
                                         popUpTo(AUTH_SCREEN) { inclusive = true }
                                     }
                                 },
+                                appNavigator = appNavigator
                             )
                         }
                         // ======================================
@@ -160,7 +163,6 @@ class SplashActivity : ComponentActivity() {
 
                             SignUpScreen(
                                 onBack = { navController.popBackStack() },
-
                                 onRegister = { email, pass, name, birthDate, description ->
                                     signUpViewModel.onRegister(
                                         email = email,
@@ -170,13 +172,11 @@ class SplashActivity : ComponentActivity() {
                                         description = description
                                     )
                                 },
-
-                                signUpEvents = signUpViewModel.events,
                                 isLoading = uiState.isLoading,
-
                                 onNavigateToSplash = {
                                     navController.navigate(SPLASH_SCREEN)
-                                }
+                                },
+                                appNavigator = appNavigator
                             )
                         }
                         // ======================================
@@ -195,14 +195,7 @@ class SplashActivity : ComponentActivity() {
                         }
                     }
 
-                    // SNACKBAR HOST
-                    ZibeSnackHost(
-                        hostState = snackHostState,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
-
                     // TOKEN DIALOG
-
                     val coroutineScope = rememberCoroutineScope()
 
                     if (showSessionConflictDialog) {
@@ -239,16 +232,16 @@ class SplashActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    // SNACKBAR HOST
+                    ZibeSnackbar(
+                        hostState = snackHostState,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
 
                 // ====== EVENTOS DEL SNACKBARMANAGER ======
                 val context = LocalContext.current
-                val snackBarManager: SnackBarManager = remember {
-                    EntryPointAccessors.fromApplication(
-                        context.applicationContext,
-                        SnackBarEntryPoint::class.java
-                    ).snackBarManager()
-                }
 
                 LaunchedEffect(Unit) {
                     snackBarManager.events.collect { event ->
@@ -263,12 +256,6 @@ class SplashActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     splashViewModel.events.collect { event ->
                         when (event) {
-
-                            is SplashUiEvent.ShowSnack ->
-                                snackHostState.showZibeMessage(
-                                    message = event.message.asString(context),
-                                    type = event.type
-                                )
 
                             is SplashUiEvent.ShowNoInternetDialog ->
                                 noInternetDialog = true
@@ -305,7 +292,7 @@ class SplashActivity : ComponentActivity() {
     // ======================================
     // FACEBOOK
     // ======================================
-    private fun setupFacebookSignIn(vm: AuthViewModel) {
+    private fun setupFacebookSignIn(authViewModel: AuthViewModel) {
         callbackManager = CallbackManager.Factory.create()
         loginManager = LoginManager.getInstance()
 
@@ -315,15 +302,15 @@ class SplashActivity : ComponentActivity() {
 
         loginManager.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(result: LoginResult) {
-                vm.onFacebookAccessToken(result.accessToken)
+                authViewModel.onFacebookAccessToken(result.accessToken)
             }
 
             override fun onCancel() {
-                vm.showMessage(UiText.StringRes(R.string.signup_facebook_cancelled), ZibeSnackType.INFO)
+                authViewModel.showSnack(UiText.StringRes(R.string.signup_facebook_cancelled), ZibeSnackType.INFO)
             }
 
             override fun onError(error: FacebookException) {
-                vm.showMessage(getAuthErrorMessage(error), ZibeSnackType.ERROR)
+                authViewModel.showSnack(getAuthErrorMessage(error), ZibeSnackType.ERROR)
             }
 
         })
