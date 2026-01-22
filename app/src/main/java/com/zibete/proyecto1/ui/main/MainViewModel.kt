@@ -7,6 +7,7 @@ import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.GroupContext
@@ -215,9 +216,11 @@ class MainViewModel @Inject constructor(
                     _uiEvents.emit(MainUiEvent.ToGroupsAfterExit)
                 }
                 .onFailure { e ->
-                    UiText.StringRes(
-                        R.string.err_zibe_prefix,
-                        args = listOf(e.message ?: "")
+                    onError(
+                        e.message.toUiText(
+                            R.string.err_zibe_prefix,
+                            R.string.err_zibe
+                        )
                     )
                 }
         }

@@ -48,7 +48,7 @@ suspend fun SnackbarHostState.showZibeMessage(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ZibeSnackHost(
+fun ZibeSnackbar(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
@@ -85,10 +85,10 @@ fun ZibeSnackHost(
             }
 
             val (iconColor, iconRes) = when (type) {
-                ZibeSnackType.SUCCESS -> zibeColors.zibeGreen to R.drawable.ic_check_24
-                ZibeSnackType.ERROR   -> zibeColors.zibeRed   to R.drawable.ic_baseline_cancel_24
-                ZibeSnackType.WARNING -> zibeColors.zibeYellow to R.drawable.ic_warning_24
-                ZibeSnackType.INFO    -> zibeColors.zibeBlue  to R.drawable.ic_info_24
+                ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
+                ZibeSnackType.ERROR   -> zibeColors.snackRed   to R.drawable.ic_baseline_cancel_24
+                ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
+                ZibeSnackType.INFO    -> zibeColors.snackBlue  to R.drawable.ic_info_24
             }
 
             SwipeToDismissBox(
@@ -142,28 +142,28 @@ fun ZibeSnackHost(
 
 @Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
-fun ZibeSnackHostSuccessPreview() {
+fun ZibeSnackbarSuccessPreview() {
     val hostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
         hostState.showSnackbar("[success] Operación completada con éxito")
     }
     ZibeTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            ZibeSnackHost(hostState = hostState)
+            ZibeSnackbar(hostState = hostState)
         }
     }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
-fun ZibeSnackHostErrorPreview() {
+fun ZibeSnackbarErrorPreview() {
     val hostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
         hostState.showSnackbar("[error] Ha ocurrido un error inesperado")
     }
     ZibeTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            ZibeSnackHost(hostState = hostState)
+            ZibeSnackbar(hostState = hostState)
         }
     }
 }
