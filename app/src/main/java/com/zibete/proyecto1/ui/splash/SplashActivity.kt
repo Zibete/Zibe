@@ -208,14 +208,14 @@ class SplashActivity : ComponentActivity() {
                     if (showSessionConflictDialog) {
                         ZibeDialog(
                             title = getString(R.string.attention_title),
-                            textContent = { Text(getString(R.string.session_conflict_message)) },
+                            content = { Text(getString(R.string.session_conflict_message)) },
                             confirmText = getString(R.string.session_conflict_keep_here),
+                            cancelText = getString(R.string.logout),
                             onConfirm = {
                                 coroutineScope.launch { splashViewModel.onSessionConflictConfirmed() }
                                 showSessionConflictDialog = false
                             },
-                            dismissText = getString(R.string.session_conflict_logout),
-                            onDismiss = {
+                            onCancel = {
                                 coroutineScope.launch { splashViewModel.onSessionConflictCancelled() }
                                 showSessionConflictDialog = false
                             }
@@ -226,14 +226,14 @@ class SplashActivity : ComponentActivity() {
                     if (noInternetDialog) {
                         ZibeDialog(
                             title = getString(R.string.error_no_connection_title),
-                            textContent = { Text(getString(R.string.error_no_connection_message)) },
+                            content = { Text(getString(R.string.error_no_connection_message)) },
                             confirmText = getString(R.string.action_retry),
+                            cancelText = getString(R.string.action_exit),
                             onConfirm = {
                                 noInternetDialog = false
                                 coroutineScope.launch { splashViewModel.start(this@SplashActivity, isRetry = true) }
                             },
-                            dismissText = getString(R.string.action_exit),
-                            onDismiss = {
+                            onCancel = {
                                 noInternetDialog = false
                                 finish()
                             }
