@@ -29,7 +29,7 @@ fun SplashScreen() {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = zibeColors.inputBackground
+        color = zibeColors.contentDarkBg
     ) {
         Column(
             modifier = Modifier
