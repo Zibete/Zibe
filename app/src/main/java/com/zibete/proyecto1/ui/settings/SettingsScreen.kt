@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.settings
 
 import LocalZibeExtendedColors
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,15 +17,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -41,7 +39,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -55,6 +52,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SETTINGS_SCREEN
+import com.zibete.proyecto1.core.navigation.AppNavigator
+import com.zibete.proyecto1.core.navigation.NavAppEvent
+import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.ui.toUiText
+import com.zibete.proyecto1.core.validation.CredentialValidators
+import com.zibete.proyecto1.core.validation.CredentialValidators.MIN_PASSWORD_LEN
 import com.zibete.proyecto1.ui.components.ActionRow
 import com.zibete.proyecto1.ui.components.SheetActions
 import com.zibete.proyecto1.ui.components.SheetHeader
@@ -63,10 +66,12 @@ import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
+import com.zibete.proyecto1.ui.components.ZibeInputPasswordField
 import com.zibete.proyecto1.ui.components.ZibeMessageDialog
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeSwitchRow
-import com.zibete.proyecto1.ui.components.ZibeInputPassword
 import com.zibete.proyecto1.ui.components.ZibeToolbar
+import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 
@@ -75,37 +80,65 @@ private enum class CredentialSheet { CHANGE_EMAIL, CHANGE_PASSWORD, DELETE_PASSW
 @Composable
 fun SettingsRoute(
     onBack: () -> Unit,
-    onOpenReport: () -> Unit,
+    onOpenSendFeedback: () -> Unit,
     onNavigateToSplash: () -> Unit,
-    settingsViewModel: SettingsViewModel = hiltViewModel()
-) {
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    appNavigator: AppNavigator,
+    snackBarManager: SnackBarManager
+    ) {
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val snackHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        settingsViewModel.events.collect { event ->
+        appNavigator.events.collect { event ->
             when (event) {
-                is SettingsUiEvent.NavigateToSplash -> onNavigateToSplash()
+                NavAppEvent.FinishFlowNavigateToSplash -> onNavigateToSplash()
             }
         }
     }
 
-    SettingsScreen(
-        state = state,
-        onBack = onBack,
-        onOpenSendFeedback = onOpenReport,
-        onToggleIndividualNotifications = settingsViewModel::onIndividualNotificationsToggled,
-        onToggleGroupNotifications = settingsViewModel::onGroupNotificationsToggled,
-        onChangeEmail = { newEmail, currentPassword ->
-            settingsViewModel.updateEmail(password = currentPassword, email = newEmail)
-        },
-        onChangePassword = { currentPassword, newPassword ->
-            settingsViewModel.updatePassword(password = currentPassword, newPassword = newPassword)
-        },
-        onLogout = settingsViewModel::onLogoutRequested,
-        onDeleteAccount = { passwordOrNull ->
-            settingsViewModel.deleteAccount(passwordIfNeeded = passwordOrNull)
+    // ====== EVENTOS DEL SNACKBARMANAGER ======
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        snackBarManager.events.collect { event ->
+            snackHostState.currentSnackbarData?.dismiss()
+            snackHostState.showZibeMessage(
+                message = event.uiText.asString(context),
+                type = event.type
+            )
         }
-    )
+    }
+
+    // SNACKBAR HOST
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        SettingsScreen(
+            state = state,
+            onBack = onBack,
+            onOpenSendFeedback = onOpenSendFeedback,
+            onToggleIndividualNotifications = settingsViewModel::onIndividualNotificationsToggled,
+            onToggleGroupNotifications = settingsViewModel::onGroupNotificationsToggled,
+            onChangeEmail = { newEmail, currentPassword ->
+                settingsViewModel.updateEmail(currentPassword = currentPassword, newEmail = newEmail)
+            },
+            onChangePassword = { currentPassword, newPassword ->
+                settingsViewModel.updatePassword(password = currentPassword, newPassword = newPassword)
+            },
+            onLogout = settingsViewModel::onLogoutRequested,
+            onDeleteAccount = { passwordOrNull ->
+                settingsViewModel.deleteAccount(passwordIfNeeded = passwordOrNull)
+            }
+        )
+
+        ZibeSnackbar(
+            hostState = snackHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+        )
+
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,23 +155,22 @@ fun SettingsScreen(
     onDeleteAccount: (passwordOrNull: String?) -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     // ---- Resources ----
     val titleSettings = stringResource(R.string.menu_settings)
     val titleAccount = stringResource(R.string.account)
     val titleNotifications = stringResource(R.string.notifications)
-    val actionChangeEmail = stringResource(R.string.change_email) // asumido
-    val actionChangePassword = stringResource(R.string.change_password) // asumido
+    val actionChangeEmail = stringResource(R.string.change_email_title)
+    val actionChangePassword = stringResource(R.string.change_password_title)
     val actionLogout = stringResource(R.string.logout)
     val actionSendFeedback = stringResource(R.string.send_feedback)
     val actionDeleteAccount = stringResource(R.string.delete_account)
     val actionSave = stringResource(R.string.action_save)
 
-    val labelCurrentPassword = stringResource(R.string.current_password) // asumido
-    val labelNewPassword = stringResource(R.string.new_password) // asumido
-    val labelNewEmail = stringResource(R.string.new_email) // asumido
+    val labelCurrentPassword = stringResource(R.string.current_password)
+    val labelNewPassword = stringResource(R.string.new_password)
+    val labelNewEmail = stringResource(R.string.new_email)
 
     val dialogLogoutTitle = stringResource(R.string.logout)
     val dialogLogoutMessage = stringResource(R.string.dialog_logout_message)
@@ -151,7 +183,6 @@ fun SettingsScreen(
     val elementSpacingXs8 = dimensionResource(R.dimen.element_spacing_xs)
     val elementSpacingXxs6 = dimensionResource(R.dimen.element_spacing_xxs)
     val elementSpacingSmall12 = dimensionResource(R.dimen.element_spacing_small)
-    val cornerMedium12 = dimensionResource(R.dimen.corner_medium)
     val elementSpacingMedium16 = dimensionResource(R.dimen.element_spacing_medium)
 
     // ---- Derived flags ----
@@ -166,7 +197,7 @@ fun SettingsScreen(
     var credentialSheet by remember { mutableStateOf<CredentialSheet?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Inputs (locales: el ViewModel solo recibe el submit)
+    // ---- Inputs ----
     var emailInput by rememberSaveable { mutableStateOf("") }
     var passForEmail by rememberSaveable { mutableStateOf("") }
 
@@ -175,25 +206,38 @@ fun SettingsScreen(
 
     var deletePassword by rememberSaveable { mutableStateOf("") }
 
-    val emailSaveEnabled by remember(emailInput, passForEmail, isBusy, canEditCredentials) {
+    val currentEmailOnly by remember(state.emailDisplay) {
+        derivedStateOf { state.emailDisplay }
+    }
+
+    val deleteEnabled by remember(deletePassword, isBusy) {
+        derivedStateOf { !isBusy && deletePassword.isNotBlank() }
+    }
+
+    val emailSaveEnabled by remember(
+        emailInput,
+        passForEmail,
+        isBusy,
+        canEditCredentials,
+        currentEmailOnly
+    ) {
         derivedStateOf {
-            !isBusy && canEditCredentials &&
-                    emailInput.isNotBlank() &&
+            val newEmail = emailInput.trim()
+            !isBusy &&
+                    canEditCredentials &&
                     passForEmail.isNotBlank() &&
-                    emailInput.contains("@")
+                    CredentialValidators.isValidEmail(newEmail) &&
+                    newEmail != currentEmailOnly
         }
     }
 
     val passSaveEnabled by remember(currentPass, newPass, isBusy, canEditCredentials) {
         derivedStateOf {
-            !isBusy && canEditCredentials &&
+            !isBusy &&
+                    canEditCredentials &&
                     currentPass.isNotBlank() &&
-                    newPass.length >= 6
+                    CredentialValidators.isValidPassword(newPass)
         }
-    }
-
-    val deleteEnabled by remember(deletePassword, isBusy) {
-        derivedStateOf { !isBusy && deletePassword.isNotBlank() }
     }
 
     Scaffold(
@@ -202,7 +246,7 @@ fun SettingsScreen(
         containerColor = Color.Transparent,
         topBar = {
             ZibeToolbar(
-                title = stringResource(id = R.string.menu_settings),
+                title = titleSettings,
                 onBack = onBack
             )
         }
@@ -226,16 +270,6 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(elementSpacingMedium16)
             )
             {
-
-                // --- Loading ---
-                AnimatedVisibility(visible = state.isLoading && !state.isSaving) {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(cornerMedium12)),
-                        color = zibeColors.accent
-                    )
-                }
 
                 // =========================
                 // CUENTA
@@ -266,10 +300,10 @@ fun SettingsScreen(
                         title = actionChangeEmail,
                         enabled = !isBusy,
                         subtitle = if (!canEditCredentials) {
-                            state.providerLabel?.providerRes(
+                            state.providerLabel.toUiText(
                                 R.string.settings_err_provider,
                                 R.string.err_not_available_title
-                            )
+                            ).asString()
                         } else null,
                         onClick = {
                             if (canEditCredentials) {
@@ -289,10 +323,10 @@ fun SettingsScreen(
                         title = actionChangePassword,
                         enabled = !isBusy,
                         subtitle = if (!canEditCredentials) {
-                            state.providerLabel?.providerRes(
+                            state.providerLabel.toUiText(
                                 R.string.settings_err_provider,
                                 R.string.err_not_available_title
-                            )
+                            ).asString()
                         } else null,
                         onClick = {
                             if (canEditCredentials) {
@@ -472,23 +506,23 @@ fun SettingsScreen(
     // Provider info dialog (cuando no puede cambiar credenciales)
     if (infoProviderDialog) {
         ZibeMessageDialog(
-            title = state.providerLabel.providerRes(
+            title = state.providerLabel.toUiText(
                 R.string.settings_err_provider_title,
                 R.string.err_not_available_title
-            ),
+            ).asString(),
             textContent = {
                 Text(
-                    state.providerLabel.providerRes(
+                    state.providerLabel.toUiText(
                         R.string.settings_err_provider_message,
-                        R.string.settings_err_provider_message
-                    )
+                        R.string.message_err_not_available_generic
+                    ).asString()
                 )
             },
             onConfirm = { infoProviderDialog = false }
         )
     }
 
-    // Bottom Sheets (Change Email / Change Password / Delete Password)
+    // Bottom Sheets (Change email / Change password / Delete account with password)
     ZibeBottomSheet(
         isOpen = credentialSheet != null,
         onCancel = { credentialSheet = null },
@@ -499,7 +533,7 @@ fun SettingsScreen(
                 CredentialSheet.CHANGE_EMAIL -> {
                     SheetHeader(
                         title = actionChangeEmail,
-                        subtitle = state.providerLabel
+                        subtitle = stringResource(R.string.change_email_message)
                     )
 
                     Spacer(Modifier.height(elementSpacingSmall12))
@@ -510,14 +544,19 @@ fun SettingsScreen(
                         label = labelNewEmail,
                         enabled = !isBusy,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        leadingIcon = { R.drawable.ic_mail_24 }
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_mail_24),
+                                contentDescription = stringResource(id = R.string.email)
+                            )
+                        },
                     )
 
                     Spacer(Modifier.height(10.dp))
 
                     var visiblePassword by rememberSaveable { mutableStateOf(false) }
 
-                    ZibeInputPassword(
+                    ZibeInputPasswordField(
                         value = passForEmail,
                         onValueChange = { passForEmail = it },
                         label = labelCurrentPassword,
@@ -544,7 +583,10 @@ fun SettingsScreen(
                 CredentialSheet.CHANGE_PASSWORD -> {
                     SheetHeader(
                         title = actionChangePassword,
-                        subtitle = state.providerLabel
+                        subtitle = stringResource(
+                            R.string.change_password_message,
+                            MIN_PASSWORD_LEN
+                        )
                     )
 
                     Spacer(Modifier.height(elementSpacingSmall12))
@@ -552,7 +594,7 @@ fun SettingsScreen(
                     var visibleCurrentPassword by rememberSaveable { mutableStateOf(false) }
                     var visibleNewPassword by rememberSaveable { mutableStateOf(false) }
 
-                    ZibeInputPassword(
+                    ZibeInputPasswordField(
                         value = currentPass,
                         onValueChange = { currentPass = it },
                         label = labelCurrentPassword,
@@ -563,7 +605,7 @@ fun SettingsScreen(
 
                     Spacer(Modifier.height(10.dp))
 
-                    ZibeInputPassword(
+                    ZibeInputPasswordField(
                         value = newPass,
                         onValueChange = { newPass = it },
                         label = labelNewPassword,
@@ -590,14 +632,14 @@ fun SettingsScreen(
                 CredentialSheet.DELETE_PASSWORD -> {
                     SheetHeader(
                         title = actionDeleteAccount,
-                        subtitle = null
+                        subtitle = stringResource(R.string.password_is_required)
                     )
 
                     Spacer(Modifier.height(elementSpacingSmall12))
 
                     var visiblePassword by rememberSaveable { mutableStateOf(false) }
 
-                    ZibeInputPassword(
+                    ZibeInputPasswordField(
                         value = deletePassword,
                         onValueChange = { deletePassword = it },
                         label = labelCurrentPassword,
@@ -625,15 +667,8 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(dimensionResource(R.dimen.bottom_sheet_bottom_padding)))
-
         }
     )
-}
-
-@Composable
-fun String?.providerRes(resWithProvider: Int, resFallback: Int): String {
-    return if (this != null) stringResource(resWithProvider, this)
-    else stringResource(resFallback)
 }
 
 @Preview(showBackground = true)
