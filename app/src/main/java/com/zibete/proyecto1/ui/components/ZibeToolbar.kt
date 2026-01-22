@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,4 +42,15 @@ fun ZibeToolbar(
             navigationIconContentColor = colorResource(R.color.zibe_text_light)
         )
     )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+fun ZibeToolbarPreview() {
+    ZibeTheme {
+        ZibeToolbar(
+            title = "Zibe Toolbar",
+            onBack = {}
+        )
+    }
 }
