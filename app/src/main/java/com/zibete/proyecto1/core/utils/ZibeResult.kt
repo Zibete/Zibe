@@ -26,3 +26,9 @@ inline fun <T> ZibeResult<T>.onSuccess(action: (T?) -> Unit): ZibeResult<T> {
     if (this is ZibeResult.Success) action(data)
     return this
 }
+
+inline fun <T> ZibeResult<T>.onFinally(action: () -> Unit): ZibeResult<T> {
+    action()
+    return this
+}
+
