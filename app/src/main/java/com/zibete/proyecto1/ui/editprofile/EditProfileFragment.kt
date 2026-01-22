@@ -40,6 +40,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.TestTags.BIRTHDATE_PICKER
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_WELCOME_SHEET
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
@@ -109,11 +110,11 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
             if (outputUri != null) {
                 editProfileViewModel.onPhotoSelected(outputUri)
             } else {
-                val error = UCrop.getError(data)
+                val e = UCrop.getError(data)
                 editProfileViewModel.showSnack(
-                    UiText.StringRes(
+                    e?.message.toUiText(
                         R.string.err_zibe_prefix,
-                        args = listOf(error?.message.orEmpty())
+                        R.string.err_zibe
                     )
                 )
             }

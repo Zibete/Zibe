@@ -36,41 +36,39 @@ fun ZibeInputField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    modifier: Modifier = Modifier.fillMaxWidth(),
+    modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     leadingIcon: (@Composable (() -> Unit))? = null,
     trailingIcon: (@Composable (() -> Unit))? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     readOnly: Boolean = false,
-
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    containerColor: Color = LocalZibeExtendedColors.current.contentLightBg
 ) {
     val zibeColors = LocalZibeExtendedColors.current
 
-    val containerColor = zibeColors.inputBackground
     val accentColor = zibeColors.accent
     val hintColor = zibeColors.hintText
     val iconTint = zibeColors.hintText
     val textColor = zibeColors.lightText
-    val errorColor = zibeColors.zibeRed
+    val errorColor = zibeColors.snackRed
 
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
     val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
-    val inputCornerTop = dimensionResource(R.dimen.zibe_input_corner_top)
-    val inputCornerBottom = dimensionResource(R.dimen.zibe_input_corner_bottom)
 
     val shape = RoundedCornerShape(
-        topStart = inputCornerTop,
-        topEnd = inputCornerTop,
-        bottomStart = inputCornerBottom,
-        bottomEnd = inputCornerBottom
+        topStart = dimensionResource(R.dimen.zibe_input_corner_top),
+        topEnd = dimensionResource(R.dimen.zibe_input_corner_top),
+        bottomStart = dimensionResource(R.dimen.zibe_input_corner_bottom),
+        bottomEnd = dimensionResource(R.dimen.zibe_input_corner_bottom)
     )
 
     TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier
+            .fillMaxWidth()
             .padding(bottom = inputPadding)
             .shadow(inputElevation, shape)
             .background(containerColor, shape),
@@ -108,19 +106,21 @@ fun ZibeInputField(
 }
 
 @Composable
-fun ZibeInputPassword(
+fun ZibeInputPasswordField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     enabled: Boolean,
     visible: Boolean,
-    onToggleVisible: () -> Unit
+    onToggleVisible: () -> Unit,
+    containerColor: Color = LocalZibeExtendedColors.current.contentLightBg
 ) {
 
     ZibeInputField(
         value = value,
         onValueChange = onValueChange,
         enabled = enabled,
+        containerColor = containerColor,
         label = label,
         modifier = Modifier
             .fillMaxWidth()
@@ -153,6 +153,56 @@ fun ZibeInputPassword(
     )
 }
 
+@Composable
+fun ZibeInputFieldDark(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    singleLine: Boolean = true,
+    leadingIcon: (@Composable (() -> Unit))? = null,
+    trailingIcon: (@Composable (() -> Unit))? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    readOnly: Boolean = false,
+    enabled: Boolean = true
+) {
+    ZibeInputField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        modifier = modifier,
+        singleLine = singleLine,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        readOnly = readOnly,
+        enabled = enabled,
+        containerColor = LocalZibeExtendedColors.current.contentDarkBg
+    )
+}
+
+@Composable
+fun ZibeInputPasswordFieldDark(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    enabled: Boolean,
+    visible: Boolean,
+    onToggleVisible: () -> Unit
+) {
+    ZibeInputPasswordField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        enabled = enabled,
+        visible = visible,
+        onToggleVisible = onToggleVisible,
+        containerColor = LocalZibeExtendedColors.current.contentDarkBg
+    )
+}
+
 @Preview(showBackground = true, name = "ZibeInputField Preview")
 @Composable
 fun ZibeInputFieldPreview() {
@@ -175,15 +225,15 @@ fun ZibeInputFieldPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "ZibeInputPassword Preview")
+@Preview(showBackground = true, name = "ZibeInputPasswordField Preview")
 @Composable
-fun ZibeInputPasswordPreview() {
+fun ZibeInputPasswordFieldPreview() {
     ZibeTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ZibeInputPassword(
+            ZibeInputPasswordField(
                 value = "password123",
                 onValueChange = {},
                 label = "Password Hidden",
@@ -191,10 +241,60 @@ fun ZibeInputPasswordPreview() {
                 visible = false,
                 onToggleVisible = {}
             )
-            ZibeInputPassword(
+            ZibeInputPasswordField(
                 value = "password123",
                 onValueChange = {},
                 label = "Password Visible",
+                enabled = true,
+                visible = true,
+                onToggleVisible = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "ZibeInputFieldDark Preview")
+@Composable
+fun ZibeInputFieldDarkPreview() {
+    ZibeTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ZibeInputFieldDark(
+                value = "",
+                onValueChange = {},
+                label = "Dark Empty Field"
+            )
+            ZibeInputFieldDark(
+                value = "Input text",
+                onValueChange = {},
+                label = "Dark Field with text"
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "ZibeInputPasswordFieldDark Preview")
+@Composable
+fun ZibeInputPasswordFieldDarkPreview() {
+    ZibeTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ZibeInputPasswordFieldDark(
+                value = "password123",
+                onValueChange = {},
+                label = "Dark Password Hidden",
+                enabled = true,
+                visible = false,
+                onToggleVisible = {}
+            )
+            ZibeInputPasswordFieldDark(
+                value = "password123",
+                onValueChange = {},
+                label = "Dark Password Visible",
                 enabled = true,
                 visible = true,
                 onToggleVisible = {}

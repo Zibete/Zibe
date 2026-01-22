@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,7 +35,7 @@ fun ZibeSwitchRow(
     onCheckedChange: (Boolean) -> Unit,
     supportingText: String? = null
 ) {
-    val zibe = LocalZibeExtendedColors.current
+    val zibeExtendedColors = LocalZibeExtendedColors.current
     val corner = dimensionResource(R.dimen.corner_medium)
     val horizontal = dimensionResource(R.dimen.element_spacing_medium)
     val vertical = dimensionResource(R.dimen.element_spacing_small)
@@ -47,7 +46,7 @@ fun ZibeSwitchRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(corner))
-            .background(colorResource(R.color.glass_bg_light))
+            .background(zibeExtendedColors.contentLightBg)
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,
@@ -69,7 +68,7 @@ fun ZibeSwitchRow(
                 Text(
                     text = supportingText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = zibe.hintText
+                    color = zibeExtendedColors.hintText
                 )
             }
         }
