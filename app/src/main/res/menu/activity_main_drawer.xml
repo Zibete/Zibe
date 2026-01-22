@@ -27,7 +27,7 @@
     <item
         android:id="@+id/action_logout"
         android:icon="@drawable/ic_baseline_exit_to_app_24"
-        android:title="@string/Logout"
-        android:titleCondensed="@string/Logout"
-        android:contentDescription="@string/Logout"/>
+        android:title="@string/logout"
+        android:titleCondensed="@string/logout"
+        android:contentDescription="@string/logout"/>
 </menu>
