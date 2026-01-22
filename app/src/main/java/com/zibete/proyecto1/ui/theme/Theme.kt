@@ -20,22 +20,22 @@ import rememberZibeExtendedColors
 
 @Composable
 fun ZibeTheme(content: @Composable () -> Unit) {
-    val extendedColors = rememberZibeExtendedColors()
+    val zibeExtendedColors = rememberZibeExtendedColors()
     val zibeShapes = rememberZibeShapes()
     val zibeTypography = rememberZibeTypography()
 
     val zibeColorScheme = darkColorScheme(
-        primary = colorResource(R.color.zibe_pink),
-        onPrimary = colorResource(R.color.white),
-        secondary = colorResource(R.color.zibe_purple),
-        surface = colorResource(R.color.zibe_night_start),
-        onSurface = colorResource(R.color.zibe_text_light),
-        error = colorResource(R.color.zibe_red),
-        surfaceContainerHigh = colorResource(R.color.zibe_dark_bg)
+        primary = zibeExtendedColors.accent,
+        onPrimary = zibeExtendedColors.lightText,
+        secondary = zibeExtendedColors.zibePurple,
+        surface = zibeExtendedColors.cardBackground,
+        onSurface = zibeExtendedColors.lightText,
+        error = zibeExtendedColors.zibeRed,
+        surfaceContainerHigh = zibeExtendedColors.cardBackground
     )
 
     CompositionLocalProvider(
-        LocalZibeExtendedColors provides extendedColors
+        LocalZibeExtendedColors provides zibeExtendedColors
     ) {
         MaterialTheme(
             colorScheme = zibeColorScheme,

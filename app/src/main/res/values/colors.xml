@@ -47,7 +47,7 @@
     <color name="zibe_overlay">#331B263B</color>
 
     <!-- Text colors -->
-    <color name="zibe_text_light">#CDFFFFFF</color>
+    <color name="zibe_text_light">#FFFFFF</color>
     <color name="zibe_hint_text">#C9C9C9</color>
     <color name="zibe_text_dark">@color/zibe_night_end</color>
     <color name="zibe_text_pink">#FF3B93</color>

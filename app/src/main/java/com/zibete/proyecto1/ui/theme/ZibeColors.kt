@@ -12,7 +12,7 @@ class ZibeExtendedColors(
     val zibeGreen: Color,
     val zibeBlue: Color,
     val zibeGradientStart: Color,
-    val zibeGradientMedium: Color,
+    val zibePurple: Color,
     val zibeGradientEnd: Color,
     val cardQuotesBackground: Color,
     val inputBackground: Color,
@@ -22,11 +22,11 @@ class ZibeExtendedColors(
     val pinkBubble: Color,
     val blueBubble: Color,
     val snackbarSurface: Color,
-    val border: Color,
+    val accent: Color,
     val cardBackground: Color,
 ) {
     val gradientZibe: Brush = Brush.verticalGradient(
-        colors = listOf(zibeGradientStart, zibeGradientMedium, zibeGradientEnd)
+        colors = listOf(zibeGradientStart, zibePurple, zibeGradientEnd)
     )
 }
 
@@ -43,7 +43,7 @@ fun rememberZibeExtendedColors(): ZibeExtendedColors {
         zibeGreen = colorResource(R.color.zibe_green),
         zibeBlue = colorResource(R.color.zibe_blue),
         zibeGradientStart = colorResource(R.color.zibe_gradient_start),
-        zibeGradientMedium = colorResource(R.color.zibe_gradient_medium),
+        zibePurple = colorResource(R.color.zibe_purple),
         zibeGradientEnd = colorResource(R.color.zibe_gradient_end),
         cardQuotesBackground = colorResource(R.color.zibe_light_bg),
         inputBackground = colorResource(R.color.zibe_dark_bg),
@@ -53,8 +53,8 @@ fun rememberZibeExtendedColors(): ZibeExtendedColors {
         pinkBubble = colorResource(R.color.pink_bubble),
         blueBubble = colorResource(R.color.blue_bubble),
         snackbarSurface = colorResource(R.color.snackbar_surface),
-        border = colorResource(R.color.zibe_pink),
-        cardBackground = colorResource(R.color.zibe_night_end)
+        accent = colorResource(R.color.zibe_pink),
+        cardBackground = colorResource(R.color.zibe_dark_bg)
     )
 }
 
