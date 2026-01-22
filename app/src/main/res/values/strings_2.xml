@@ -138,10 +138,12 @@
 
     <string name="auth_err_user_not_found">Usuario no encontrado.</string>
     <string name="auth_err_reauthentication_required">Por seguridad, volvé a iniciar sesión.</string>
+    <string name="password_is_required">Por seguridad, ingresá tu contraseña actual para finalizar.</string>
     <string name="auth_err_invalid_credentials">Email o contraseña incorrectos.</string>
 
     <string name="auth_err_incorrect_password">Contraseña incorrecta.</string>
     <string name="auth_err_incorrect_email">Email incorrecto.</string>
+    <string name="auth_err_email_no_changes">Ingresá un correo diferente al actual.</string>
 
     <!-- ============================= -->
     <!-- Mensaje onboarding perfil -->
@@ -269,13 +271,19 @@
     <string name="menu_settings">Ajustes</string>
     <string name="account">Cuenta</string>
     <string name="notifications">Notificaciones</string>
-    <string name="change_email">Cambiar email</string>
-    <string name="change_password">Cambiar contraseña</string>
+
+    <string name="change_email_title">Cambiar email</string>
+    <string name="change_email_message">
+        Podrás actualizar tu dirección de contacto. Tené en cuenta que te enviaremos un enlace de verificación para asegurar que la nueva cuenta te pertenece.</string>
+
+    <string name="change_password_title">Cambiar contraseña</string>
+    <string name="change_password_message">
+        Para mantener tu cuenta segura, elegí una combinación mayor a %1$s caracteres, que sea fácil de recordar para vos pero difícil de adivinar para otros.</string>
 
     <string name="settings_err_provider">No disponible para inicios de sesión con %1$s</string>
     <string name="settings_err_provider_title">Cuenta vinculada con %1$s</string>
     <string name="err_not_available_title">No disponible</string>
-    <string name="err_not_available_message">Opción no disponible en este momento, intentá nuevamente más tarde</string>
+    <string name="message_err_not_available_generic">Opción no disponible en este momento, intentá nuevamente más tarde</string>
     <string name="settings_err_provider_message">Esta opción no está disponible porque iniciaste sesión a través de %1$s. Por favor, gestiona tu configuración directamente en ese servicio.</string>
 
     <string name="settings_group_notifications_on">Notificaciones grupales encendidas</string>
