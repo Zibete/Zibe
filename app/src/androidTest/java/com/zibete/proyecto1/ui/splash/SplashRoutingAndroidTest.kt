@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 class SplashSessionConflictAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
 
-    val logout = context.getString(R.string.session_conflict_logout)
+    val logout = context.getString(R.string.logout)
     val keepHere = context.getString(R.string.session_conflict_keep_here)
     val attentionTitle = context.getString(R.string.attention_title)
 
