@@ -7,6 +7,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
@@ -82,9 +83,9 @@ class EditProfileViewModel @Inject constructor(
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false) }
                 showSnack(
-                    UiText.StringRes(
-                        resId = R.string.err_zibe_prefix,
-                        args = listOf(e.message.orEmpty())
+                    e.message.toUiText(
+                        R.string.err_zibe_prefix,
+                        R.string.err_zibe
                     )
                 )
             }

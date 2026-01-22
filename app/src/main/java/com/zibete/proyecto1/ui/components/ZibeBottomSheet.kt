@@ -78,6 +78,8 @@ fun SheetHeader(title: String, subtitle: String? = null) {
             color = zibeColors.lightText,
             fontWeight = FontWeight.Bold
         )
+        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
+
         subtitle?.let {
             Text(
                 text = it,
@@ -85,7 +87,8 @@ fun SheetHeader(title: String, subtitle: String? = null) {
                 color = zibeColors.hintText
             )
         }
-        Spacer(Modifier.height(20.dp))
+
+        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
     }
 }
 
@@ -129,7 +132,7 @@ fun SheetActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
-fun ZibeBottomSheetPreview() {
+fun ZibeBottomSheetPreviewField() {
     ZibeTheme {
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
@@ -150,7 +153,7 @@ fun ZibeBottomSheetPreview() {
                     label = "Email"
                 )
 
-                ZibeInputPassword(
+                ZibeInputPasswordField(
                     value = password,
                     onValueChange = { password = it },
                     label = "Password",

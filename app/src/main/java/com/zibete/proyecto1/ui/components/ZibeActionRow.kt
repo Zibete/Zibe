@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,9 +28,9 @@ fun ActionRow(
     onClick: () -> Unit
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val glassBgLight = colorResource(R.color.glass_bg_light)
     val arrowDown = painterResource(R.drawable.ic_baseline_keyboard_arrow_down_24)
     val zibeBtnCorner = dimensionResource(R.dimen.zibe_btn_corner)
+
     val zibeExtendedColors = LocalZibeExtendedColors.current
 
     ListItem(
@@ -51,7 +50,7 @@ fun ActionRow(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier
             .clip(shape = RoundedCornerShape(size = zibeBtnCorner))
-            .background(color = glassBgLight)
+            .background(color = zibeExtendedColors.contentLightBg)
             .clickable(
                 enabled = enabled,
                 interactionSource = interaction,

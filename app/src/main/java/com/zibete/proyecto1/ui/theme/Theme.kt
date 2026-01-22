@@ -9,7 +9,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -27,10 +26,10 @@ fun ZibeTheme(content: @Composable () -> Unit) {
     val zibeColorScheme = darkColorScheme(
         primary = zibeExtendedColors.accent,
         onPrimary = zibeExtendedColors.lightText,
-        secondary = zibeExtendedColors.zibePurple,
+        secondary = zibeExtendedColors.zibeGradientMedium,
         surface = zibeExtendedColors.cardBackground,
         onSurface = zibeExtendedColors.lightText,
-        error = zibeExtendedColors.zibeRed,
+        error = zibeExtendedColors.snackRed,
         surfaceContainerHigh = zibeExtendedColors.cardBackground
     )
 
