@@ -29,7 +29,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
-fun SwitchRow(
+fun ZibeSwitchRow(
     title: String,
     checked: Boolean,
     enabled: Boolean,
@@ -84,32 +84,32 @@ fun SwitchRow(
 
 @Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
-fun SwitchRowPreview() {
+fun ZibeSwitchRowPreview() {
     ZibeTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SwitchRow(
+            ZibeSwitchRow(
                 title = "Notifications",
                 checked = true,
                 enabled = true,
                 onCheckedChange = {}
             )
-            SwitchRow(
+            ZibeSwitchRow(
                 title = "Dark Mode",
                 checked = false,
                 enabled = true,
                 onCheckedChange = {}
             )
-            SwitchRow(
+            ZibeSwitchRow(
                 title = "Bio",
                 supportingText = "Show your bio on your profile",
                 checked = true,
                 enabled = true,
                 onCheckedChange = {}
             )
-            SwitchRow(
+            ZibeSwitchRow(
                 title = "Disabled Option",
                 checked = false,
                 enabled = false,

@@ -6,21 +6,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
-fun ZibeOkDialog(
+fun ZibeMessageDialog(
     title: String,
     textContent: @Composable () -> Unit,
-    confirmText: String,
-    onConfirm: () -> Unit,
-    enabled: Boolean = true
+    confirmText: String = stringResource(R.string.action_accept),
+    onConfirm: () -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
 
     AlertDialog(
-        onDismissRequest = {
-            // No hace nada: solo se cierra con OK
-        },
+        onDismissRequest = { /* Empty */ },
         containerColor = zibeColors.snackbarSurface,
         title = {
             Text(
@@ -31,11 +32,28 @@ fun ZibeOkDialog(
         text = textContent,
         confirmButton = {
             TextButton(
-                onClick = { if (enabled) onConfirm() },
-                enabled = enabled
+                onClick = { onConfirm() }
             ) {
                 Text(confirmText)
             }
         }
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ZibeMessageDialogPreview() {
+    ZibeTheme {
+        ZibeMessageDialog(
+            title = "Importante",
+            textContent = {
+                Text(
+                    text = "Este es un mensaje de prueba para el diálogo de confirmación.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmText = "Aceptar",
+            onConfirm = {}
+        )
+    }
 }
