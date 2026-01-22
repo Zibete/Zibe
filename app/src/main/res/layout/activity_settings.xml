@@ -60,7 +60,7 @@
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/cuenta"
+                        android:text="@string/account"
                         android:textSize="@dimen/text_size_normal"
                         android:gravity="center_vertical"
                         android:textColor="@color/zibe_text_light"
@@ -123,8 +123,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="bottom"
                         android:orientation="horizontal"
-                        android:paddingTop="8dp"
-                        android:visibility="gone">
+                        android:paddingTop="8dp">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -295,7 +294,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="@string/Logout"
+                        android:text="@string/logout"
                         android:backgroundTint="@color/zibe_btn_secondary"
                         android:textColor="@color/white" />
                 </LinearLayout>
