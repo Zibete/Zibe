@@ -27,20 +27,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.TestTags
@@ -56,6 +54,7 @@ import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,18 +74,11 @@ fun SignUpScreen(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val snackHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    val context = LocalContext.current
 
     val zibeColors = LocalZibeExtendedColors.current
     val lightText = zibeColors.lightText
 
-    val elementSpacing8 = dimensionResource(R.dimen.element_spacing_xs)
-    val elementSpacing12 = dimensionResource(R.dimen.element_spacing_small)
-    val elementSpacing16 = dimensionResource(R.dimen.element_spacing_medium)
-    val screenPadding20 = dimensionResource(R.dimen.screen_padding)
-    val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
+    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
 
     LaunchedEffect(Unit) {
         appNavigator.events.collect { event ->
@@ -99,9 +91,7 @@ fun SignUpScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
-        snackbarHost = {
-            ZibeSnackbar(hostState = snackHostState)
-        },
+        snackbarHost = { ZibeSnackbar(hostState = snackHostState) },
         topBar = {
             ZibeToolbar(
                 title = stringResource(id = R.string.your_data),
@@ -112,19 +102,18 @@ fun SignUpScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(LocalZibeExtendedColors.current.gradientZibe)
+                .background(zibeColors.gradientZibe)
                 .testTag(SIGNUP_SCREEN)
         ) {
             Column(
                 modifier = Modifier
+                    .padding(innerPadding)
                     .align(Alignment.Center)
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
                     .padding(
-                        start = screenPadding20,
-                        end = screenPadding20,
-                        bottom = innerPadding.calculateTopPadding(),
-                        top = innerPadding.calculateTopPadding()
+                        horizontal = dimensionResource(R.dimen.screen_padding),
+                        vertical = dimensionResource(R.dimen.screen_padding)
                     )
             ) {
                 // EMAIL
@@ -178,18 +167,18 @@ fun SignUpScreen(
                             .orEmpty(),
                         onValueChange = { },
                         label = stringResource(R.string.birth_date),
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_calendar_24),
                                 contentDescription = stringResource(R.string.birth_date),
-                                tint = colorResource(id = R.color.zibe_muted_text)
+                                tint = lightText.copy(alpha = 0.6f)
                             )
                         },
                         enabled = !isLoading,
                         readOnly = true
                     )
+
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -198,11 +187,11 @@ fun SignUpScreen(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_baseline_keyboard_arrow_down_24),
-                            contentDescription = "Abrir selector de fecha",
-                            tint = colorResource(id = R.color.zibe_muted_text),
+                            contentDescription = stringResource(R.string.birth_date),
+                            tint = lightText.copy(alpha = 0.6f),
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
-                                .padding(end = elementSpacing12)
+                                .padding(end = spacingSm)
                         )
                     }
                 }
@@ -217,12 +206,16 @@ fun SignUpScreen(
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
-                            TextButton(onClick = {
-                                datePickerState.selectedDateMillis?.let { ms ->
-                                    birthDate = millisToIso(ms)
+                            TextButton(
+                                onClick = {
+                                    datePickerState.selectedDateMillis?.let { ms ->
+                                        birthDate = millisToIso(ms)
+                                    }
+                                    showDatePicker = false
                                 }
-                                showDatePicker = false
-                            }) { Text(stringResource(R.string.action_accept)) }
+                            ) {
+                                Text(stringResource(R.string.action_accept))
+                            }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
@@ -267,13 +260,13 @@ fun SignUpScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = elementSpacing12)
+                        .padding(vertical = spacingSm)
                 )
 
                 // BOTÓN REGISTRAR
                 ZibeButtonPrimary(
                     modifier = Modifier
-                        .padding(top = elementSpacing8)
+                        .padding(top = dimensionResource(R.dimen.element_spacing_xs))
                         .testTag(TestTags.BTN_REGISTER),
                     text = stringResource(R.string.finish_registration),
                     onClick = { onRegister(email, password, name, birthDate, description) },
@@ -284,3 +277,19 @@ fun SignUpScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun SignUpScreenPreview() {
+    ZibeTheme {
+        SignUpScreen(
+            onBack = {},
+            onRegister = { _, _, _, _, _ -> },
+            isLoading = false,
+            onNavigateToSplash = {},
+            appNavigator = AppNavigator()
+        )
+    }
+}
+

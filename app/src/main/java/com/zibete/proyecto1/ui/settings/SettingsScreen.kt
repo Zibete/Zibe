@@ -85,7 +85,7 @@ fun SettingsRoute(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     appNavigator: AppNavigator,
     snackBarManager: SnackBarManager
-    ) {
+) {
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val snackHostState = remember { SnackbarHostState() }
 
@@ -97,7 +97,6 @@ fun SettingsRoute(
         }
     }
 
-    // ====== EVENTOS DEL SNACKBARMANAGER ======
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -110,9 +109,7 @@ fun SettingsRoute(
         }
     }
 
-    // SNACKBAR HOST
     Box(modifier = Modifier.fillMaxSize()) {
-
         SettingsScreen(
             state = state,
             onBack = onBack,
@@ -137,7 +134,6 @@ fun SettingsRoute(
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
         )
-
     }
 }
 
@@ -157,33 +153,9 @@ fun SettingsScreen(
     val zibeColors = LocalZibeExtendedColors.current
     val scope = rememberCoroutineScope()
 
-    // ---- Resources ----
-    val titleSettings = stringResource(R.string.menu_settings)
-    val titleAccount = stringResource(R.string.account)
-    val titleNotifications = stringResource(R.string.notifications)
-    val actionChangeEmail = stringResource(R.string.change_email_title)
-    val actionChangePassword = stringResource(R.string.change_password_title)
-    val actionLogout = stringResource(R.string.logout)
-    val actionSendFeedback = stringResource(R.string.send_feedback)
-    val actionDeleteAccount = stringResource(R.string.delete_account)
-    val actionSave = stringResource(R.string.action_save)
-
-    val labelCurrentPassword = stringResource(R.string.current_password)
-    val labelNewPassword = stringResource(R.string.new_password)
-    val labelNewEmail = stringResource(R.string.new_email)
-
-    val dialogLogoutTitle = stringResource(R.string.logout)
-    val dialogLogoutMessage = stringResource(R.string.dialog_logout_message)
-    val dialogDeleteTitle = stringResource(R.string.dialog_delete_account_title)
-    val dialogDeleteMessage = stringResource(R.string.dialog_delete_account_message)
-    val dialogDeleteFinalMessage = stringResource(R.string.dialog_delete_account_final_message)
-    val attentionTitle = stringResource(R.string.attention_title)
-
-    val screenPadding20 = dimensionResource(R.dimen.screen_padding)
-    val elementSpacingXs8 = dimensionResource(R.dimen.element_spacing_xs)
-    val elementSpacingXxs6 = dimensionResource(R.dimen.element_spacing_xxs)
-    val elementSpacingSmall12 = dimensionResource(R.dimen.element_spacing_small)
-    val elementSpacingMedium16 = dimensionResource(R.dimen.element_spacing_medium)
+    // ---- Dimens ----
+    val spacingXs = dimensionResource(R.dimen.element_spacing_xs)
+    val spacingMd = dimensionResource(R.dimen.element_spacing_medium)
 
     // ---- Derived flags ----
     val isBusy = state.isLoading || state.isSaving
@@ -246,16 +218,15 @@ fun SettingsScreen(
         containerColor = Color.Transparent,
         topBar = {
             ZibeToolbar(
-                title = titleSettings,
+                title = stringResource(R.string.menu_settings),
                 onBack = onBack
             )
         }
     ) { innerPadding ->
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(LocalZibeExtendedColors.current.gradientZibe)
+                .background(zibeColors.gradientZibe)
                 .testTag(SETTINGS_SCREEN)
         ) {
             Column(
@@ -263,13 +234,12 @@ fun SettingsScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
                     .padding(
-                        horizontal = screenPadding20,
-                        vertical = screenPadding20
+                        horizontal = dimensionResource(R.dimen.screen_padding),
+                        vertical = dimensionResource(R.dimen.screen_padding)
                     )
                     .navigationBarsPadding(),
-                verticalArrangement = Arrangement.spacedBy(elementSpacingMedium16)
-            )
-            {
+                verticalArrangement = Arrangement.spacedBy(spacingMd)
+            ) {
 
                 // =========================
                 // CUENTA
@@ -282,11 +252,11 @@ fun SettingsScreen(
                             painter = painterResource(R.drawable.ic_person_24),
                             contentDescription = null
                         )
-                        Spacer(Modifier.width(elementSpacingXs8))
-                        Text(text = titleAccount)
+                        Spacer(Modifier.width(spacingXs))
+                        Text(text = stringResource(R.string.account))
                     }
 
-                    Spacer(Modifier.height(elementSpacingXxs6))
+                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_xxs)))
 
                     Text(
                         text = state.emailDisplay,
@@ -294,10 +264,10 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
 
-                    Spacer(Modifier.height(elementSpacingXs8))
+                    Spacer(Modifier.height(spacingXs))
 
                     ActionRow(
-                        title = actionChangeEmail,
+                        title = stringResource(R.string.change_email_title),
                         enabled = !isBusy,
                         subtitle = if (!canEditCredentials) {
                             state.providerLabel.toUiText(
@@ -317,10 +287,10 @@ fun SettingsScreen(
                         }
                     )
 
-                    Spacer(Modifier.height(elementSpacingXs8))
+                    Spacer(Modifier.height(spacingXs))
 
                     ActionRow(
-                        title = actionChangePassword,
+                        title = stringResource(R.string.change_password_title),
                         enabled = !isBusy,
                         subtitle = if (!canEditCredentials) {
                             state.providerLabel.toUiText(
@@ -340,11 +310,10 @@ fun SettingsScreen(
                         }
                     )
 
-                    Spacer(Modifier.height(elementSpacingMedium16))
+                    Spacer(Modifier.height(spacingMd))
 
-                    // Logout
                     ZibeButtonOutlined(
-                        text = actionLogout,
+                        text = stringResource(R.string.logout),
                         onClick = { showLogoutDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isBusy,
@@ -361,25 +330,23 @@ fun SettingsScreen(
                             painter = painterResource(R.drawable.ic_notifications_black_24dp),
                             contentDescription = null
                         )
-                        Spacer(Modifier.width(elementSpacingXs8))
-                        Text(
-                            text = titleNotifications
-                        )
+                        Spacer(Modifier.width(spacingXs))
+                        Text(text = stringResource(R.string.notifications))
                     }
 
-                    Spacer(Modifier.height(elementSpacingSmall12))
+                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
 
                     ZibeSwitchRow(
-                        title = stringResource(R.string.settings_individual_notifications_on), // asumido
+                        title = stringResource(R.string.settings_individual_notifications_on),
                         checked = state.individualNotificationsEnabled,
                         enabled = !isBusy,
                         onCheckedChange = onToggleIndividualNotifications
                     )
 
-                    Spacer(Modifier.height(elementSpacingXs8))
+                    Spacer(Modifier.height(spacingXs))
 
                     ZibeSwitchRow(
-                        title = stringResource(R.string.settings_group_notifications_on), // asumido
+                        title = stringResource(R.string.settings_group_notifications_on),
                         checked = state.groupNotificationsEnabled,
                         enabled = !isBusy,
                         onCheckedChange = onToggleGroupNotifications
@@ -401,12 +368,9 @@ fun SettingsScreen(
 
                         Spacer(Modifier.width(14.dp))
 
-                        Column(
-                            horizontalAlignment = Alignment.Start
-                        )
-                        {
+                        Column(horizontalAlignment = Alignment.Start) {
                             Text(
-                                text = stringResource(R.string.app_name), // asumido (o "Zibe App")
+                                text = stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
@@ -421,29 +385,27 @@ fun SettingsScreen(
                                 color = zibeColors.hintText
                             )
                             Text(
-                                text = stringResource(R.string.company_name), // asumido (o "ZibeteProjects")
+                                text = stringResource(R.string.company_name),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = zibeColors.hintText
                             )
                         }
-
-
                     }
 
-                    Spacer(Modifier.height(elementSpacingMedium16))
+                    Spacer(Modifier.height(spacingMd))
 
                     ZibeButtonOutlined(
-                        text = actionSendFeedback,
+                        text = stringResource(R.string.send_feedback),
                         onClick = onOpenSendFeedback,
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isBusy,
                         isLoading = isBusy
                     )
 
-                    Spacer(Modifier.height(elementSpacingXs8))
+                    Spacer(Modifier.height(spacingXs))
 
                     ZibeButtonOutlined(
-                        text = actionDeleteAccount,
+                        text = stringResource(R.string.delete_account),
                         onClick = { deleteStep = 1 },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isBusy,
@@ -459,12 +421,11 @@ fun SettingsScreen(
         }
     }
 
-    // Logout confirm dialog
     if (showLogoutDialog) {
         ZibeDialog(
-            title = dialogLogoutTitle,
-            content = { Text(dialogLogoutMessage) },
-            confirmText = actionLogout,
+            title = stringResource(R.string.logout),
+            content = { Text(stringResource(R.string.dialog_logout_message)) },
+            confirmText = stringResource(R.string.logout),
             onConfirm = {
                 showLogoutDialog = false
                 onLogout()
@@ -473,11 +434,10 @@ fun SettingsScreen(
         )
     }
 
-    // Delete flow (2 pasos + password opcional)
     if (deleteStep == 1) {
         ZibeDialog(
-            title = dialogDeleteTitle,
-            content = { Text(dialogDeleteMessage) },
+            title = stringResource(R.string.dialog_delete_account_title),
+            content = { Text(stringResource(R.string.dialog_delete_account_message)) },
             confirmText = stringResource(R.string.action_yes),
             onConfirm = { deleteStep = 2 },
             onCancel = { deleteStep = 0 }
@@ -486,8 +446,8 @@ fun SettingsScreen(
 
     if (deleteStep == 2) {
         ZibeDialog(
-            title = attentionTitle,
-            content = { Text(dialogDeleteFinalMessage) },
+            title = stringResource(R.string.attention_title),
+            content = { Text(stringResource(R.string.dialog_delete_account_final_message)) },
             confirmText = stringResource(R.string.action_delete_account),
             onConfirm = {
                 deleteStep = 0
@@ -503,7 +463,6 @@ fun SettingsScreen(
         )
     }
 
-    // Provider info dialog (cuando no puede cambiar credenciales)
     if (infoProviderDialog) {
         ZibeMessageDialog(
             title = state.providerLabel.toUiText(
@@ -522,26 +481,24 @@ fun SettingsScreen(
         )
     }
 
-    // Bottom Sheets (Change email / Change password / Delete account with password)
     ZibeBottomSheet(
         isOpen = credentialSheet != null,
         onCancel = { credentialSheet = null },
         sheetState = sheetState,
         content = {
-
             when (credentialSheet) {
                 CredentialSheet.CHANGE_EMAIL -> {
                     SheetHeader(
-                        title = actionChangeEmail,
+                        title = stringResource(R.string.change_email_title),
                         subtitle = stringResource(R.string.change_email_message)
                     )
 
-                    Spacer(Modifier.height(elementSpacingSmall12))
+                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
 
                     ZibeInputField(
                         value = emailInput,
                         onValueChange = { emailInput = it },
-                        label = labelNewEmail,
+                        label = stringResource(R.string.new_email),
                         enabled = !isBusy,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         leadingIcon = {
@@ -559,7 +516,7 @@ fun SettingsScreen(
                     ZibeInputPasswordField(
                         value = passForEmail,
                         onValueChange = { passForEmail = it },
-                        label = labelCurrentPassword,
+                        label = stringResource(R.string.current_password),
                         enabled = !isBusy,
                         visible = visiblePassword,
                         onToggleVisible = { visiblePassword = !visiblePassword }
@@ -573,7 +530,7 @@ fun SettingsScreen(
                             scope.launch { sheetState.hide() }
                         },
                         confirmEnabled = emailSaveEnabled,
-                        confirmText = actionSave,
+                        confirmText = stringResource(R.string.action_save),
                         onConfirm = {
                             onChangeEmail(emailInput.trim(), passForEmail)
                         }
@@ -582,14 +539,14 @@ fun SettingsScreen(
 
                 CredentialSheet.CHANGE_PASSWORD -> {
                     SheetHeader(
-                        title = actionChangePassword,
+                        title = stringResource(R.string.change_password_title),
                         subtitle = stringResource(
                             R.string.change_password_message,
                             MIN_PASSWORD_LEN
                         )
                     )
 
-                    Spacer(Modifier.height(elementSpacingSmall12))
+                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
 
                     var visibleCurrentPassword by rememberSaveable { mutableStateOf(false) }
                     var visibleNewPassword by rememberSaveable { mutableStateOf(false) }
@@ -597,7 +554,7 @@ fun SettingsScreen(
                     ZibeInputPasswordField(
                         value = currentPass,
                         onValueChange = { currentPass = it },
-                        label = labelCurrentPassword,
+                        label = stringResource(R.string.current_password),
                         enabled = !isBusy,
                         visible = visibleCurrentPassword,
                         onToggleVisible = { visibleCurrentPassword = !visibleCurrentPassword }
@@ -608,7 +565,7 @@ fun SettingsScreen(
                     ZibeInputPasswordField(
                         value = newPass,
                         onValueChange = { newPass = it },
-                        label = labelNewPassword,
+                        label = stringResource(R.string.new_password),
                         enabled = !isBusy,
                         visible = visibleNewPassword,
                         onToggleVisible = { visibleNewPassword = !visibleNewPassword }
@@ -622,7 +579,7 @@ fun SettingsScreen(
                             scope.launch { sheetState.hide() }
                         },
                         confirmEnabled = passSaveEnabled,
-                        confirmText = actionSave,
+                        confirmText = stringResource(R.string.action_save),
                         onConfirm = {
                             onChangePassword(currentPass, newPass)
                         }
@@ -631,18 +588,18 @@ fun SettingsScreen(
 
                 CredentialSheet.DELETE_PASSWORD -> {
                     SheetHeader(
-                        title = actionDeleteAccount,
+                        title = stringResource(R.string.delete_account),
                         subtitle = stringResource(R.string.password_is_required)
                     )
 
-                    Spacer(Modifier.height(elementSpacingSmall12))
+                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
 
                     var visiblePassword by rememberSaveable { mutableStateOf(false) }
 
                     ZibeInputPasswordField(
                         value = deletePassword,
                         onValueChange = { deletePassword = it },
-                        label = labelCurrentPassword,
+                        label = stringResource(R.string.current_password),
                         enabled = !isBusy,
                         visible = visiblePassword,
                         onToggleVisible = { visiblePassword = !visiblePassword }
@@ -671,7 +628,7 @@ fun SettingsScreen(
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun SettingsScreenPreview() {
     ZibeTheme {

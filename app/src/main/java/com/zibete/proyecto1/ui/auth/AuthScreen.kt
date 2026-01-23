@@ -28,13 +28,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -83,14 +81,11 @@ fun AuthScreen(
     var resetEmail by rememberSaveable { mutableStateOf("") }
 
     val zibeColors = LocalZibeExtendedColors.current
-
     val lightText = zibeColors.lightText.copy(alpha = 0.8f)
 
-    val elementSpacingXs = dimensionResource(R.dimen.element_spacing_xs)
-    val elementSpacingSmall = dimensionResource(R.dimen.element_spacing_small)
-    val elementSpacingMedium = dimensionResource(R.dimen.element_spacing_medium)
-    val screenPadding20 = dimensionResource(R.dimen.screen_padding)
-    val elementSpacingXl = dimensionResource(R.dimen.element_spacing_xl)
+    // Dimens
+    val spacingXs = dimensionResource(R.dimen.element_spacing_xs)
+    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
 
     val snackHostState = remember { SnackbarHostState() }
 
@@ -105,227 +100,216 @@ fun AuthScreen(
     LaunchedEffect(Unit) {
         authEvents.collect { event ->
             when (event) {
-                is AuthUiEvent.NavigateToSignUp -> {
-                    onNavigateToSignUp()
-                }
+                is AuthUiEvent.NavigateToSignUp -> onNavigateToSignUp()
             }
         }
     }
 
-    Column(
-        modifier = Modifier.testTag(AUTH_SCREEN)
-    ) {
-
-        Scaffold(
-            containerColor = Color.Transparent,
-            snackbarHost = {
-                ZibeSnackbar(hostState = snackHostState)
-            },
-        ) { innerPadding ->
-            Box(
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
+        snackbarHost = { ZibeSnackbar(hostState = snackHostState) },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(zibeColors.gradientZibe)
+                .testTag(AUTH_SCREEN)
+        ) {
+            Column(
                 modifier = Modifier
+                    .padding(innerPadding)
+                    .align(Alignment.Center)
+                    .verticalScroll(rememberScrollState())
                     .fillMaxSize()
-                    .background(zibeColors.gradientZibe)
+                    .padding(
+                        horizontal = dimensionResource(R.dimen.screen_padding),
+                        vertical = dimensionResource(R.dimen.screen_padding)
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .verticalScroll(rememberScrollState())
-                        .fillMaxSize()
-                        .padding(
-                            start = screenPadding20,
-                            end = screenPadding20,
-                            bottom = innerPadding.calculateTopPadding(),
-                            top = innerPadding.calculateTopPadding()
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // LOGO
-                    Image(
-                        painter = painterResource(id = R.mipmap.logo_zibe),
-                        contentDescription = stringResource(R.string.logo_content_desc),
-                        modifier = Modifier
-                            .padding(
-                                start = elementSpacingXl,
-                                end = elementSpacingXl,
-                                bottom = elementSpacingXs,
-                                top = dimensionResource(R.dimen.zero_dp)
-                            )
+                // LOGO
+                Image(
+                    painter = painterResource(id = R.mipmap.logo_zibe),
+                    contentDescription = stringResource(R.string.logo_content_desc),
+                    modifier = Modifier.padding(
+                        start = dimensionResource(R.dimen.element_spacing_xl),
+                        end = dimensionResource(R.dimen.element_spacing_xl),
+                        bottom = spacingXs,
+                        top = 0.dp
+                    )
+                )
+
+                if (!deleteUser) {
+                    // GOOGLE
+                    ZibeButtonPrimary(
+                        text = stringResource(R.string.continue_with_google),
+                        iconRes = R.drawable.ic_google,
+                        iconTint = Color.Unspecified,
+                        onClick = onGoogleClick
                     )
 
-                    if (!deleteUser) {
-                        // GOOGLE
-                        ZibeButtonPrimary(
-                            text = stringResource(R.string.continue_with_google),
-                            iconRes = R.drawable.ic_google,
-                            iconTint = Color.Unspecified,
-                            onClick = onGoogleClick
-                        )
+                    Spacer(modifier = Modifier.height(spacingXs))
 
-                        Spacer(modifier = Modifier.height(elementSpacingXs))
+                    // FACEBOOK
+                    ZibeButtonPrimary(
+                        text = stringResource(R.string.continue_with_facebook),
+                        iconRes = R.drawable.ic_facebook,
+                        iconTint = Color.Unspecified,
+                        onClick = onFacebookClick
+                    )
 
-                        // FACEBOOK
-                        ZibeButtonPrimary(
-                            text = stringResource(R.string.continue_with_facebook),
-                            iconRes = R.drawable.ic_facebook,
-                            iconTint = Color.Unspecified,
-                            onClick = onFacebookClick
-                        )
+                    Spacer(modifier = Modifier.height(spacingXs))
 
-                        Spacer(modifier = Modifier.height(elementSpacingXs))
+                    Text(
+                        text = stringResource(R.string.auth_or_use_account),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = lightText,
+                    )
 
-                        Text(
-                            text = stringResource(R.string.auth_or_use_account),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = lightText,
-                        )
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
 
-                        Spacer(modifier = Modifier.height(elementSpacingMedium))
+                    // EMAIL
+                    ZibeInputFieldDark(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = stringResource(id = R.string.email),
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Next
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_mail_24),
+                                contentDescription = stringResource(id = R.string.email)
+                            )
+                        },
+                        enabled = !isLoading
+                    )
 
-                        // EMAIL
-                        ZibeInputFieldDark(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = stringResource(id = R.string.email),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Next
-                            ),
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_mail_24),
-                                    contentDescription = stringResource(id = R.string.email)
-                                )
+                    // PASSWORD
+                    ZibeInputPasswordFieldDark(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = stringResource(id = R.string.password),
+                        enabled = !isLoading,
+                        visible = passwordVisible,
+                        onToggleVisible = { passwordVisible = !passwordVisible }
+                    )
+
+                    Text(
+                        text = stringResource(R.string.auth_forgot_password),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(bottom = spacingSm)
+                            .clickable {
+                                resetEmail = email
+                                showResetDialog = true
                             },
-                            enabled = !isLoading
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = lightText
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
+
+                    ZibeButtonPrimary(
+                        text = stringResource(id = R.string.Entrar),
+                        onClick = { onLogin(email.trim(), password) },
+                        modifier = Modifier.padding(
+                            top = spacingXs,
+                            bottom = spacingSm
+                        ),
+                        enabled = !isLoading,
+                        isLoading = isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(spacingSm))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.auth_do_not_have_account),
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                color = lightText
+                            )
                         )
 
-                        // PASSWORD
-                        ZibeInputPasswordFieldDark(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = stringResource(id = R.string.password),
-                            enabled = !isLoading,
-                            visible = passwordVisible,
-                            onToggleVisible = { passwordVisible = !passwordVisible }
-                        )
+                        Spacer(modifier = Modifier.width(spacingXs))
 
                         Text(
-                            text = stringResource(R.string.auth_forgot_password),
+                            text = stringResource(R.string.action_register),
                             modifier = Modifier
-                                .align(Alignment.End)
-                                .padding(bottom = elementSpacingSmall)
-                                .clickable {
-                                    resetEmail = email
-                                    showResetDialog = true
-                                },
+                                .clickable { onNavigateToSignUp() }
+                                .testTag(Constants.TestTags.BTN_REGISTER),
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = lightText
                             )
                         )
-
-                        Spacer(modifier = Modifier.height(elementSpacingMedium))
-
-                        ZibeButtonPrimary(
-                            text = stringResource(id = R.string.Entrar),
-                            onClick = { onLogin(email.trim(), password) },
-                            modifier = Modifier.padding(
-                                top = elementSpacingXs,
-                                bottom = elementSpacingSmall
-                            ),
-                            enabled = !isLoading,
-                            isLoading = isLoading
-                        )
-
-                        Spacer(modifier = Modifier.height(elementSpacingSmall))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = stringResource(R.string.auth_do_not_have_account),
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    color = lightText
-                                )
-                            )
-
-                            Spacer(modifier = Modifier.width(elementSpacingXs))
-
-                            Text(
-                                text = stringResource(R.string.action_register),
-                                modifier = Modifier
-                                    .clickable { onNavigateToSignUp() }
-                                    .testTag(Constants.TestTags.BTN_REGISTER),
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = lightText
-                                )
-                            )
-                        }
-                    } else {
-
-                        // Modo "reactivar cuenta"
-
-                        ZibeButtonPrimary(
-                            text = stringResource(R.string.auth_do_not_delete_account),
-                            onClick = { onDoNotDelete() },
-                            modifier = Modifier.padding(
-                                top = elementSpacingXs,
-                                bottom = elementSpacingSmall
-                            ),
-                            enabled = !isLoading,
-                            isLoading = isLoading
-                        )
-                        ZibeButtonOutlined(
-                            text = stringResource(R.string.delete_account),
-                            onClick = { onDeleteAccount() },
-                            modifier = Modifier.padding(
-                                top = elementSpacingXs,
-                                bottom = elementSpacingSmall
-                            ),
-                            buttonColors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
-                            enabled = !isLoading,
-                            isLoading = isLoading
-                        )
                     }
-                }
-
-                if (showResetDialog) {
-                    ZibeDialog(
-                        title = stringResource(R.string.reset_password_title),
-                        content = {
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Text(stringResource(R.string.reset_password_content))
-                                ZibeInputField(
-                                    value = resetEmail,
-                                    onValueChange = { resetEmail = it },
-                                    label = stringResource(id = R.string.email),
-                                    singleLine = true,
-                                    enabled = !isLoading
-                                )
-                            }
-                        },
-                        confirmText = stringResource(R.string.reset_password_accept),
-                        onConfirm = {
-                            if (resetEmail.isNotBlank()) {
-                                onResetPassword(resetEmail.trim())
-                                showResetDialog = false
-                            }
-                        },
-                        onCancel = { if (!isLoading) showResetDialog = false },
+                } else {
+                    // Modo "reactivar cuenta"
+                    ZibeButtonPrimary(
+                        text = stringResource(R.string.auth_do_not_delete_account),
+                        onClick = { onDoNotDelete() },
+                        modifier = Modifier.padding(
+                            top = spacingXs,
+                            bottom = spacingSm
+                        ),
                         enabled = !isLoading,
-                        confirmEnabled = resetEmail.isNotBlank() && !isLoading
+                        isLoading = isLoading
+                    )
+
+                    ZibeButtonOutlined(
+                        text = stringResource(R.string.delete_account),
+                        onClick = { onDeleteAccount() },
+                        modifier = Modifier.padding(
+                            top = spacingXs,
+                            bottom = spacingSm
+                        ),
+                        buttonColors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        enabled = !isLoading,
+                        isLoading = isLoading
                     )
                 }
+            }
+
+            if (showResetDialog) {
+                ZibeDialog(
+                    title = stringResource(R.string.reset_password_title),
+                    content = {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Text(stringResource(R.string.reset_password_content))
+                            ZibeInputField(
+                                value = resetEmail,
+                                onValueChange = { resetEmail = it },
+                                label = stringResource(id = R.string.email),
+                                singleLine = true,
+                                enabled = !isLoading
+                            )
+                        }
+                    },
+                    confirmText = stringResource(R.string.reset_password_accept),
+                    onConfirm = {
+                        if (resetEmail.isNotBlank()) {
+                            onResetPassword(resetEmail.trim())
+                            showResetDialog = false
+                        }
+                    },
+                    onCancel = { if (!isLoading) showResetDialog = false },
+                    enabled = !isLoading,
+                    confirmEnabled = resetEmail.isNotBlank() && !isLoading
+                )
             }
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
