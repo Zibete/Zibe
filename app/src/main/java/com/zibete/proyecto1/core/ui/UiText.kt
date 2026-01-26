@@ -1,16 +1,22 @@
 package com.zibete.proyecto1.core.ui
 
 import android.content.Context
+import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 
-sealed class UiText {
+@Parcelize
+sealed class UiText : Parcelable {
 
+    @Parcelize
     data class StringRes(
         val resId: Int,
-        val args: List<Any> = emptyList()
+        val args: List<@RawValue Any> = emptyList()
     ) : UiText()
 
+    @Parcelize
     data class Dynamic(
         val value: String
     ) : UiText()
@@ -20,7 +26,21 @@ sealed class UiText {
 
     fun asString(context: Context): String =
         when (this) {
-            is StringRes -> context.getString(resId, *args.toTypedArray())
+            is StringRes -> {
+                val resolvedArgs = args.map { arg ->
+                    if (arg is Int) {
+                        try {
+                            context.getString(arg)
+                        } catch (e: Exception) {
+                            arg.toString()
+                        }
+                    } else {
+                        arg.toString()
+                    }
+                }.toTypedArray()
+
+                context.getString(resId, *resolvedArgs)
+            }
             is Dynamic -> value
         }
 }
