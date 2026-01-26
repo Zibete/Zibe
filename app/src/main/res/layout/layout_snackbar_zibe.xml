@@ -4,6 +4,7 @@
     android:id="@+id/snack_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:minHeight="@dimen/zibe_btn_height"
     android:layout_gravity="center"
     android:layout_marginHorizontal="@dimen/zibe_snack_padding_horizontal"
     android:layout_marginVertical="@dimen/zibe_snack_padding_vertical"
@@ -16,6 +17,7 @@
         android:id="@+id/snack_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/zibe_btn_height"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/zibe_snack_padding_horizontal"
@@ -25,6 +27,7 @@
             android:id="@+id/snack_icon"
             android:layout_width="@dimen/icon_size"
             android:layout_height="@dimen/icon_size"
+            android:layout_gravity="center_vertical"
             android:contentDescription="@null" />
 
         <TextView
@@ -32,6 +35,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:layout_marginStart="@dimen/zibe_snack_padding_text"
             android:gravity="start|center_vertical"
             android:maxLines="10"
@@ -41,6 +45,7 @@
             android:id="@+id/snack_action"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:layout_marginStart="@dimen/zibe_snack_padding_action"
             android:textStyle="bold" />
     </LinearLayout>
