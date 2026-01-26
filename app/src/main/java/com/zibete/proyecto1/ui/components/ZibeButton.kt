@@ -1,8 +1,12 @@
 package com.zibete.proyecto1.ui.components
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
@@ -20,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
@@ -49,8 +54,10 @@ fun ZibeButtonPrimary(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(buttonHeight),
+            .heightIn(min = buttonHeight),
         shape = MaterialTheme.shapes.medium,
+        // Eliminamos padding vertical para que el icono no empuje la altura
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = buttonElevation,
             pressedElevation = pressedElevation,
@@ -69,12 +76,15 @@ fun ZibeButtonPrimary(
                 Icon(
                     painter = painterResource(id = res),
                     contentDescription = null,
-                    tint = iconTint ?: LocalContentColor.current
+                    // Dejamos el tinte null para Facebook/Google (colores originales) o usamos el proporcionado
+                    tint = iconTint ?: Color.Unspecified,
+                    modifier = Modifier.size(40.dp) // Tamaño original de los assets de redes sociales
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             }
             Text(
                 text = text,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelLarge
             )
         }
@@ -127,8 +137,9 @@ fun ZibeButtonOutlined(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(buttonHeight),
+            .heightIn(min = buttonHeight),
         shape = MaterialTheme.shapes.medium,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         colors = buttonColors
     ) {
         if (isLoading) {
@@ -142,13 +153,50 @@ fun ZibeButtonOutlined(
                 Icon(
                     painter = painterResource(id = res),
                     contentDescription = null,
-                    tint = iconTint ?: LocalContentColor.current
+                    tint = iconTint ?: Color.Unspecified,
+                    modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             }
             Text(
                 text = text,
+                textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
+fun ZibeButtonsComparisonPreview() {
+    ZibeTheme {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .width(300.dp)
+        ) {
+            Text("Botón sin Icono (Referencia)", style = MaterialTheme.typography.labelSmall)
+            ZibeButtonPrimary(
+                text = "ENTRAR",
+                onClick = {}
+            )
+            
+            Spacer(Modifier.height(16.dp))
+            
+            Text("Botones con Iconos (40dp)", style = MaterialTheme.typography.labelSmall)
+            ZibeButtonOutlined(
+                text = "Continuar con Google",
+                onClick = {},
+                iconRes = R.drawable.ic_google
+            )
+            
+            Spacer(Modifier.height(8.dp))
+            
+            ZibeButtonOutlined(
+                text = "Continuar con Facebook",
+                onClick = {},
+                iconRes = R.drawable.ic_facebook
             )
         }
     }
@@ -183,20 +231,6 @@ fun ZibeButtonOutlinedPreview() {
         ZibeButtonOutlined(
             text = "Outlined Button",
             onClick = {}
-        )
-    }
-}
-
-@Composable
-@Preview
-fun ZibeButtonOutlinedDangerPreview() {
-    ZibeTheme {
-        ZibeButtonOutlined(
-            text = "Danger Button",
-            onClick = {},
-            buttonColors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error
-            )
         )
     }
 }
