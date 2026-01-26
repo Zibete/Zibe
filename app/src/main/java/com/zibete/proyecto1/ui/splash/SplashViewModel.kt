@@ -5,13 +5,19 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
+import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,7 +33,8 @@ class SplashViewModel @Inject constructor(
     private val userPreferencesProvider: UserPreferencesProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val sessionBootstrapper: SessionBootstrapper,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SplashUiEvent>(
@@ -36,17 +43,35 @@ class SplashViewModel @Inject constructor(
     )
     val events = _events.asSharedFlow()
 
-    fun handleIntentExtras(hasSessionConflict: Boolean) {
+    fun handleIntentExtras(
+        uiText: UiText?,
+        snackType: ZibeSnackType?,
+        hasSessionConflict: Boolean,
+        deleteAccount: Boolean
+    ) {
+        savedStateHandle[EXTRA_UI_TEXT] = uiText
+        savedStateHandle[EXTRA_SNACK_TYPE] = snackType
         savedStateHandle[EXTRA_SESSION_CONFLICT] = hasSessionConflict
+        savedStateHandle[EXTRA_DELETE_ACCOUNT] = deleteAccount
     }
 
     fun start(context: Context, isRetry: Boolean = false) {
         viewModelScope.launch {
-
             if (isRetry) delay(150L)
             delay(1000L) // delay visual
 
-            // 1) Conflicto de sesión externo
+            // 1) Capturamos datos del snack si existen
+            val uiText = savedStateHandle.get<UiText>(EXTRA_UI_TEXT)
+            val snackType = savedStateHandle.get<ZibeSnackType>(EXTRA_SNACK_TYPE)
+
+            // 2) Delete account
+            val shouldDelete = savedStateHandle.get<Boolean>(EXTRA_DELETE_ACCOUNT) ?: false
+            if (shouldDelete) {
+                _events.emit(SplashUiEvent.NavigateAuth)
+                return@launch
+            }
+
+            // 3) Conflicto de sesión externo
             val hasSessionConflict =
                 savedStateHandle.get<Boolean>(EXTRA_SESSION_CONFLICT) ?: false
             if (hasSessionConflict) {
@@ -54,34 +79,38 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
 
-            // 2) Onboarding (solo una vez)
+            // 4) Onboarding (solo una vez)
             if (!userPreferencesProvider.isOnboardingDone()) {
                 userPreferencesActions.setOnboardingDone(true)
                 _events.emit(SplashUiEvent.NavigateOnBoarding)
                 return@launch
             }
 
-            // 3) Internet
+            // 5) Internet
             if (!appChecksProvider.hasInternetConnection(context)) {
                 _events.emit(SplashUiEvent.ShowNoInternetDialog)
                 return@launch
             }
 
-            // 4) Sin usuario → Auth
+            // 6) Sin usuario → Auth
             val currentUser = authSessionProvider.currentUser
             if (currentUser == null) {
                 _events.emit(SplashUiEvent.NavigateAuth)
                 return@launch
             }
 
-            // 5) Permisos de ubicación
+            // 7) Permisos de ubicación
             if (!appChecksProvider.hasLocationPermission(context)) {
                 _events.emit(SplashUiEvent.NavigatePermission)
                 return@launch
             }
 
-            // 6) Sesión activa (installId + fcmToken)
-            continueToMain(currentUser)
+            // 8) Sesión activa (bootstrap + navegar con data del snack si aplica)
+            continueToMain(
+                uiText = uiText,
+                snackType = snackType,
+                currentUser = currentUser
+            )
         }
     }
 
@@ -91,12 +120,16 @@ class SplashViewModel @Inject constructor(
 
     fun onSessionConflictConfirmed() {
         val currentUser = authSessionProvider.currentUser ?: return
-        viewModelScope.launch { continueToMain(currentUser) }
+        viewModelScope.launch { continueToMain(null, null, currentUser) }
     }
 
-    suspend fun continueToMain(currentUser: FirebaseUser) {
+    suspend fun continueToMain(
+        uiText: UiText?,
+        snackType: ZibeSnackType?,
+        currentUser: FirebaseUser
+    ) {
         sessionBootstrapper.bootstrap(currentUser.uid)
-        _events.emit(SplashUiEvent.NavigateMain)
+        _events.emit(SplashUiEvent.NavigateMain(uiText, snackType))
     }
 
     fun onSessionConflictCancelled() {

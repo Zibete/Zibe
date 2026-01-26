@@ -1,11 +1,13 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
@@ -30,7 +32,10 @@ import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
@@ -54,16 +59,20 @@ import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 @Suppress("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
 
-    @Inject lateinit var appNavigator: AppNavigator
-    @Inject lateinit var snackBarManager: SnackBarManager
+    @Inject
+    lateinit var appNavigator: AppNavigator
+    @Inject
+    lateinit var snackBarManager: SnackBarManager
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
+
     // ===============================
     // Google & Facebook
     // ===============================
@@ -73,11 +82,16 @@ class SplashActivity : ComponentActivity() {
 
     // ===============================
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         splashViewModel.handleIntentExtras(
-            intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false))
+            uiText = intent.getParcelableExtra(EXTRA_UI_TEXT, UiText::class.java),
+            snackType = intent.getParcelableExtra(EXTRA_SNACK_TYPE, ZibeSnackType::class.java),
+            hasSessionConflict = intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false),
+            deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
+        )
 
         // Configurar Facebook
         setupFacebookSignIn(authViewModel)
@@ -123,7 +137,7 @@ class SplashActivity : ComponentActivity() {
                             }
 
                             AuthScreen(
-                                deleteUser = uiState.deleteUser,
+                                showDeleteAccountOptions = uiState.deleteUser,
                                 onLogin = { email, password ->
                                     authViewModel.onEmailLogin(email, password)
                                 },
@@ -224,7 +238,12 @@ class SplashActivity : ComponentActivity() {
                             cancelText = getString(R.string.action_exit),
                             onConfirm = {
                                 noInternetDialog = false
-                                coroutineScope.launch { splashViewModel.start(this@SplashActivity, isRetry = true) }
+                                coroutineScope.launch {
+                                    splashViewModel.start(
+                                        this@SplashActivity,
+                                        isRetry = true
+                                    )
+                                }
                             },
                             onCancel = {
                                 noInternetDialog = false
@@ -244,7 +263,7 @@ class SplashActivity : ComponentActivity() {
                 val context = LocalContext.current
 
                 LaunchedEffect(Unit) {
-                    snackBarManager.events.collect { event ->
+                    snackBarManager.events.collectLatest { event ->
                         snackHostState.showZibeMessage(
                             message = event.uiText.asString(context),
                             type = event.type
@@ -277,9 +296,11 @@ class SplashActivity : ComponentActivity() {
                                 navController.navigate(PERMISSION_SCREEN)
 
                             is SplashUiEvent.NavigateMain -> {
-                                startActivity(
-                                    Intent(this@SplashActivity, MainActivity::class.java)
-                                )
+                                val intent = Intent(this@SplashActivity, MainActivity::class.java).apply {
+                                    putExtra(EXTRA_UI_TEXT, event.uiText)
+                                    putExtra(EXTRA_SNACK_TYPE, event.snackType)
+                                }
+                                startActivity(intent)
                                 finish()
                             }
                         }
@@ -306,7 +327,10 @@ class SplashActivity : ComponentActivity() {
             }
 
             override fun onCancel() {
-                authViewModel.showSnack(UiText.StringRes(R.string.signup_facebook_cancelled), ZibeSnackType.INFO)
+                authViewModel.showSnack(
+                    UiText.StringRes(R.string.signup_facebook_cancelled),
+                    ZibeSnackType.INFO
+                )
             }
 
             override fun onError(error: FacebookException) {

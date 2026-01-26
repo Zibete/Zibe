@@ -18,6 +18,7 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
+import androidx.core.content.IntentCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
@@ -45,13 +46,18 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
+import kotlinx.coroutines.delay
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment
@@ -61,6 +67,7 @@ import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -115,6 +122,23 @@ class MainActivity : BaseEdgeToEdgeActivity() {
         mainViewModel.checkFirstLoginDone()
 
         setupOnBackPressedDispatcher()
+
+        // Capturar extras del Splash para mostrar el snack pendiente
+        handleIntentExtras()
+    }
+
+    private fun handleIntentExtras() {
+        val uiText = IntentCompat.getParcelableExtra(intent, EXTRA_UI_TEXT, UiText::class.java)
+        val snackType = IntentCompat.getParcelableExtra(intent, EXTRA_SNACK_TYPE, ZibeSnackType::class.java)
+
+        if (uiText != null) {
+            mainViewModel.showPendingSnack(
+                uiText = uiText,
+                snackType = snackType ?: ZibeSnackType.SUCCESS
+            )
+        }
+        intent.removeExtra(EXTRA_UI_TEXT)
+        intent.removeExtra(EXTRA_SNACK_TYPE)
     }
 
     // ==========================================
@@ -257,7 +281,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                snackBarManager.events.collect { event ->
+                snackBarManager.events.collectLatest { event ->
                     UserMessageUtils.showSnack(
                         root = binding.root,
                         message = event.uiText.asString(this@MainActivity),
