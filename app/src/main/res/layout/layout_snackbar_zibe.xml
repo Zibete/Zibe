@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/snack_card"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/zibe_btn_height"
+    android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:layout_marginHorizontal="@dimen/zibe_snack_padding_horizontal"
     android:layout_marginVertical="@dimen/zibe_snack_padding_vertical"
@@ -15,8 +15,8 @@
     <LinearLayout
         android:id="@+id/snack_root"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/zibe_snack_padding_horizontal"
         android:paddingVertical="@dimen/zibe_snack_padding_vertical">
@@ -29,18 +29,20 @@
 
         <TextView
             android:id="@+id/snack_text"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/zibe_snack_padding_text"
-            android:gravity="center"
-            android:maxLines="3"
-            android:textAlignment="center" />
+            android:gravity="start|center_vertical"
+            android:maxLines="10"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/snack_action"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/zibe_snack_padding_action" />
+            android:layout_marginStart="@dimen/zibe_snack_padding_action"
+            android:textStyle="bold" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

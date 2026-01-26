@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -46,10 +47,12 @@ object UserMessageUtils {
 
         val coordinator = root.findCoordinatorParent()
         val snackbar = Snackbar.make(coordinator ?: root, "", duration)
-        val parent = snackbar.view as ViewGroup
+        val snackView = snackbar.view as Snackbar.SnackbarLayout
 
+        snackView.setPadding(0, 0, 0, 0)
+        
         val customView = LayoutInflater.from(root.context)
-            .inflate(R.layout.layout_snackbar_zibe, parent, false)
+            .inflate(R.layout.layout_snackbar_zibe, snackView, false)
 
         // swipe (CoordinatorLayout o fallback universal)
         attachUniversalSwipeToDismiss(snackbar, customView)
@@ -84,9 +87,9 @@ object UserMessageUtils {
             tvAction.visibility = View.GONE
         }
 
-        parent.removeAllViews()
-        parent.addView(customView)
-        parent.setBackgroundColor(Color.TRANSPARENT)
+        snackView.removeAllViews()
+        snackView.addView(customView)
+        snackView.setBackgroundColor(Color.TRANSPARENT)
 
         snackbar.show()
     }
