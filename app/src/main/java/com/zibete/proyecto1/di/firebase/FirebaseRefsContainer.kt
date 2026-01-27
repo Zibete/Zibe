@@ -4,9 +4,9 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.zibete.proyecto1.core.constants.Constants.APP_NAME
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_APP_FEEDBACK
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_CHAT
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_META
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_ROOT
@@ -49,7 +49,7 @@ class FirebaseRefsContainer @Inject constructor(
 
     // ================= Zibe =================
 
-    val refZibe: DatabaseReference = firebaseDatabase.getReference(APP_NAME)
+    val refAppFeedback: DatabaseReference = firebaseDatabase.getReference(NODE_APP_FEEDBACK)
 
     // ================= Storage ==================
 

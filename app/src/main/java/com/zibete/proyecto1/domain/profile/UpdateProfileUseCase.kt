@@ -39,31 +39,39 @@ class DefaultUpdateProfileUseCase @Inject constructor(
         shouldDeletePhoto: Boolean
     ): ZibeResult<Unit> =
         zibeCatching {
-            var finalPhotoUrl: String? = originalPhotoUrl
 
-            when {
+            // 1. Determinar la URL de la foto final
+            val finalPhotoUrl = when {
                 shouldDeletePhoto -> {
                     userRepositoryActions.deleteProfilePhoto()
-                    finalPhotoUrl = DEFAULT_PROFILE_PHOTO_URL
+                    DEFAULT_PROFILE_PHOTO_URL
                 }
+
                 photoPreviewUri != null -> {
                     userRepositoryActions.putProfilePhotoInStorage(photoPreviewUri)
-                    finalPhotoUrl = userRepositoryProvider.getProfilePhotoUrl()
+                    userRepositoryProvider.getProfilePhotoUrl()
                 }
+
+                else -> originalPhotoUrl
             }
 
+            // 2. Preparar mapa de actualizaciones para RTDB
             val updates = mutableMapOf<String, Any?>(
                 AccountsKeys.NAME to newName,
                 AccountsKeys.BIRTHDATE to newBirthDate,
                 AccountsKeys.AGE to age,
                 AccountsKeys.DESCRIPTION to newDescription
-            )
-
-            if (finalPhotoUrl != null && finalPhotoUrl != originalPhotoUrl) {
-                updates[AccountsKeys.PHOTO_URL] = finalPhotoUrl
+            ).apply {
+                if (finalPhotoUrl != originalPhotoUrl) {
+                    this[AccountsKeys.PHOTO_URL] = finalPhotoUrl
+                }
             }
 
+            // 3. RTDB
             userRepositoryActions.updateUserFields(updates)
+            // 4. Local
+            userRepositoryActions.updateLocalProfile(newName, finalPhotoUrl, null)
+            // 5. Firebase Auth
             authSessionActions.updateAuthProfile(newName, finalPhotoUrl).getOrThrow()
         }
-    }
+}
