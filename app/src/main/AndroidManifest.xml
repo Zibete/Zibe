@@ -126,11 +126,6 @@
         </activity>
 
         <activity
-            android:name=".ui.report.ReportActivity"
-            android:theme="@style/Theme.Zibe"
-            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation" />
-
-        <activity
             android:name=".ui.main.MainActivity"
             android:theme="@style/Theme.Zibe" />
 
