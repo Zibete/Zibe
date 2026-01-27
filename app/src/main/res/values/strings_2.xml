@@ -3,8 +3,7 @@
 
     <string name="app_name">ZIBE</string>
     <string name="company_name">ZibeteProyects</string>
-    <string name="version">2026.1.21</string>
-    <string name="version_string">Versión </string>
+    <string name="version_string">Versión %1$s</string>
 
     <!-- ============================= -->
     <!-- EditProfile -->
@@ -120,8 +119,10 @@
     <!-- ============================= -->
     <string name="err_email_required">Ingresá tu email</string>
     <string name="err_password_required">Ingresá una contraseña</string>
-    <string name="signup_err_invalid_format_password">Contraseña demasiado débil. Usá 6 caracteres o más.</string>
-    <string name="signup_err_invalid_format_email">El formato de correo es inválido.</string>
+    <string name="err_invalid_format_password">Usá %1$s caracteres o más</string>
+    <string name="err_password_letter">Ingrese al menos una letra</string>
+    <string name="err_password_digit">Ingrese al menos un número</string>
+    <string name="err_invalid_format_email">El formato de correo es inválido</string>
 
     <string name="signup_err_name_required">Ingresá tu nombre</string>
     <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
@@ -141,9 +142,8 @@
     <string name="password_is_required">Por seguridad, ingresá tu contraseña actual para finalizar.</string>
     <string name="auth_err_invalid_credentials">Email o contraseña incorrectos.</string>
 
-    <string name="auth_err_incorrect_password">Contraseña incorrecta.</string>
-    <string name="auth_err_incorrect_email">Email incorrecto.</string>
-    <string name="auth_err_email_no_changes">Ingresá un correo diferente al actual.</string>
+    <string name="err_passwords_do_not_match">La contraseña debe ser diferente a la actual</string>
+    <string name="err_emails_do_not_match">El correo debe ser diferente al actual</string>
 
     <!-- ============================= -->
     <!-- Mensaje onboarding perfil -->
@@ -281,17 +281,26 @@
         Para mantener tu cuenta segura, elegí una combinación mayor a %1$s caracteres, que sea fácil de recordar para vos pero difícil de adivinar para otros.</string>
 
     <string name="settings_err_provider">No disponible para inicios de sesión con %1$s</string>
-    <string name="settings_err_provider_title">Cuenta vinculada con %1$s</string>
+    <string name="settings_err_provider_title">Tu cuenta está protegida con %1$s</string>
     <string name="err_not_available_title">No disponible</string>
     <string name="message_err_not_available_generic">Opción no disponible en este momento, intentá nuevamente más tarde</string>
     <string name="settings_err_provider_message">Esta opción no está disponible porque iniciaste sesión a través de %1$s. Por favor, gestiona tu configuración directamente en ese servicio.</string>
 
-    <string name="settings_group_notifications_on">Notificaciones grupales encendidas</string>
-    <string name="settings_group_notifications_off">Notificaciones grupales apagadas</string>
-    <string name="settings_individual_notifications_on">Notificaciones individuales encendidas</string>
-    <string name="settings_individual_notifications_off">Notificaciones individuales apagadas</string>
+    <string name="individual_notifications">Notificaciones individuales</string>
+    <string name="individual_notifications_status">Notificaciones individuales %1$s</string>
+    <string name="individual_notifications_supporting">De chats privados</string>
+    <string name="group_notifications_supporting">De chats grupales y chats privados dentro de grupos</string>
 
-    <string name="settings_err_incorrect_password">La contraseña es incorrecta</string>
+
+    <string name="group_notifications">Notificaciones grupales</string>
+    <string name="group_notifications_status">Notificaciones grupales %1$s</string>
+    <string name="state_enabled">encendidas</string>
+    <string name="state_disabled">apagadas</string>
+
+    <string name="settings_individual_notifications">Notificaciones grupales apagadas</string>
+    <string name="settings_group_notifications">Notificaciones grupales apagadas</string>
+
+    <string name="err_incorrect_password">La contraseña es incorrecta</string>
 
     <string name="settings_success_actualize_email">Email actualizado correctamente</string>
     <string name="settings_success_actualize_password">Contraseña actualizada correctamente</string>
@@ -299,6 +308,7 @@
     <string name="dialog_delete_account_title">¿Seguro quiere eliminar su cuenta?</string>
     <string name="dialog_delete_account_message">Esta acción eliminará toda la información y no se podrá recuperar</string>
     <string name="action_yes">Sí</string>
+    <string name="action_send">Enviar</string>
 
     <string name="dialog_delete_account_final_message">Si elimina la cuenta, no podrá recuperar sus datos</string>
     <string name="action_delete_account">Eliminar cuenta</string>
@@ -312,6 +322,16 @@
     <string name="new_email">Nuevo correo</string>
     <string name="new_password">Nueva contraseña</string>
     <string name="current_password">Contraseña actual</string>
+
+    <string name="send_feedback_title">¿Qué te parece %1$s?</string>
+    <string name="send_feedback_subtitle">Tu opinión es clave para que sigamos mejorando. ¡Contanos qué pensás!</string>
+    <string name="feedback_sent">¡Muchas gracias! El mensaje ha sido enviado a nuestro equipo de soporte.</string>
+
+    <string name="err_current_password_required">Ingresá tu contraseña</string>
+    <string name="err_new_password_required">Ingresá tu nueva contraseña</string>
+    <string name="err_feedback_required">Ingresá tu mensaje</string>
+
+    <string name="user_email_format">%1$s (%2$s)</string>
 
 
 </resources>

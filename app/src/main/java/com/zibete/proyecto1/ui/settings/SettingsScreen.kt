@@ -54,12 +54,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SETTINGS_SCREEN
-import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
-import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
-import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.core.validation.CredentialValidators.MIN_PASSWORD_LEN
 import com.zibete.proyecto1.ui.components.ActionRow
 import com.zibete.proyecto1.ui.components.SheetActions
@@ -84,16 +81,14 @@ import kotlinx.coroutines.launch
 fun SettingsRoute(
     onBack: () -> Unit,
     onNavigateToSplash: (UiText?, ZibeSnackType?, Boolean, Boolean) -> Unit,
-    settingsViewModel: SettingsViewModel = hiltViewModel(),
-    appNavigator: AppNavigator,
-    snackBarManager: SnackBarManager
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
     val snackHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        appNavigator.events.collect { event ->
+        settingsViewModel.appNavigatorEvents.collect { event ->
             when (event) {
                 is NavAppEvent.FinishFlowNavigateToSplash -> {
                     onNavigateToSplash(
@@ -108,7 +103,7 @@ fun SettingsRoute(
     }
 
     LaunchedEffect(Unit) {
-        snackBarManager.events.collectLatest { event ->
+        settingsViewModel.snackBarEvents.collectLatest { event ->
             snackHostState.showZibeMessage(
                 message = event.uiText.asString(context),
                 type = event.type
@@ -120,8 +115,9 @@ fun SettingsRoute(
         state = state,
         snackHostState = snackHostState,
         onBack = onBack,
-        onToggleIndividualNotifications = settingsViewModel::onIndividualNotificationsToggled,
-        onToggleGroupNotifications = settingsViewModel::onGroupNotificationsToggled,
+        onEmailInputChanged = settingsViewModel::onEmailInputChanged,
+        onPasswordInputChanged = settingsViewModel::onPasswordInputChanged,
+        cleanErrors = settingsViewModel::cleanErrors,
         onChangeEmail = { newEmail, currentPassword ->
             settingsViewModel.updateEmail(
                 currentPassword = currentPassword,
@@ -135,14 +131,14 @@ fun SettingsRoute(
             )
         },
         onLogout = settingsViewModel::onLogoutRequested,
-        onSetAction = settingsViewModel::onSetAction,
-        onDeleteAccount = { passwordOrNull ->
-            settingsViewModel.deleteAccount(passwordIfNeeded = passwordOrNull)
-        },
+        onToggleIndividualNotifications = settingsViewModel::onIndividualNotificationsToggled,
+        onToggleGroupNotifications = settingsViewModel::onGroupNotificationsToggled,
         onSendFeedback = { feedback ->
             settingsViewModel.sendFeedback(feedback)
         }
-    )
+    ) { passwordOrNull ->
+        settingsViewModel.deleteAccount(passwordIfNeeded = passwordOrNull)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -151,13 +147,15 @@ fun SettingsScreen(
     state: SettingsUiState,
     snackHostState: SnackbarHostState,
     onBack: () -> Unit,
-    onToggleIndividualNotifications: (Boolean) -> Unit,
-    onToggleGroupNotifications: (Boolean) -> Unit,
+    onEmailInputChanged: (email: String, compareTo: String?) -> Unit,
+    onPasswordInputChanged: (password: String, compareTo: String?) -> Unit,
+    cleanErrors: () -> Unit,
     onChangeEmail: (newEmail: String, currentPassword: String) -> Unit,
     onChangePassword: (currentPassword: String, newPassword: String) -> Unit,
-    onSendFeedback: (feedback: String) -> Unit,
     onLogout: () -> Unit,
-    onSetAction: () -> Unit,
+    onToggleIndividualNotifications: (Boolean) -> Unit,
+    onToggleGroupNotifications: (Boolean) -> Unit,
+    onSendFeedback: (feedback: String) -> Unit,
     onDeleteAccount: (passwordOrNull: String?) -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
@@ -198,37 +196,30 @@ fun SettingsScreen(
     }
 
     val sendFeedbackEnabled by remember(feedback, isBusy) {
-        derivedStateOf { !isBusy && feedback.isNotBlank() }
+        derivedStateOf { !isBusy && feedback.trim().isNotEmpty() }
     }
 
-    val emailSaveEnabled by remember(
-        newEmailInput,
-        currentPasswordForEmail,
-        isBusy,
-        canEditCredentials,
-        state.currentEmail
-    ) {
+    val emailSaveEnabled by remember(newEmailInput, currentPasswordForEmail, isBusy) {
         derivedStateOf {
-            val newEmail = newEmailInput.trim()
             !isBusy &&
-                    canEditCredentials &&
                     currentPasswordForEmail.isNotBlank() &&
-                    CredentialValidators.isValidEmail(newEmail) &&
-                    newEmail != state.currentEmail
+                    newEmailInput.trim().isNotEmpty()
         }
     }
 
-    val passSaveEnabled by remember(
-        currentPasswordForPassword,
-        newPassword,
-        isBusy,
-        canEditCredentials
-    ) {
+    val passSaveEnabled by remember(currentPasswordForPassword, newPassword, isBusy) {
         derivedStateOf {
             !isBusy &&
-                    canEditCredentials &&
                     currentPasswordForPassword.isNotBlank() &&
-                    CredentialValidators.isValidPassword(newPassword)
+                    newPassword.isNotBlank()
+        }
+    }
+
+    val handleSheetCancel: () -> Unit = {
+        scope.launch {
+            bottomSheetState.hide()
+            settingsAction = null
+            cleanErrors()
         }
     }
 
@@ -428,6 +419,7 @@ fun SettingsScreen(
                     ZibeButtonOutlined(
                         text = stringResource(R.string.send_feedback),
                         onClick = {
+                            feedback = ""
                             settingsAction = SettingsAction.SEND_FEEDBACK
                             scope.launch {
                                 bottomSheetState.show()
@@ -443,7 +435,10 @@ fun SettingsScreen(
 
                     ZibeButtonOutlined(
                         text = stringResource(R.string.delete_account),
-                        onClick = { deleteStep = 1 },
+                        onClick = {
+                            currentPasswordForDelete = ""
+                            deleteStep = 1
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         buttonColors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
@@ -491,8 +486,7 @@ fun SettingsScreen(
             confirmText = stringResource(R.string.action_delete_account),
             onConfirm = {
                 deleteStep = 0
-                if (state.requiresPasswordForSensitiveActions) {
-                    currentPasswordForDelete = ""
+                if (state.requiresReauthForSensitiveActions) {
                     settingsAction = SettingsAction.DELETE_ACCOUNT
                     scope.launch {
                         bottomSheetState.show()
@@ -529,7 +523,7 @@ fun SettingsScreen(
     // =========================
     ZibeBottomSheet(
         isOpen = settingsAction != null,
-        onCancel = { settingsAction = null },
+        onCancel = handleSheetCancel,
         sheetState = bottomSheetState,
         content = {
             when (settingsAction) {
@@ -552,7 +546,8 @@ fun SettingsScreen(
                         value = newEmailInput,
                         onValueChange = {
                             newEmailInput = it
-                            onSetAction()
+                            cleanErrors()
+                            onEmailInputChanged(it, state.currentEmail)
                         },
                         label = stringResource(R.string.new_email),
                         enabled = !isBusy,
@@ -572,7 +567,7 @@ fun SettingsScreen(
                         value = currentPasswordForEmail,
                         onValueChange = {
                             currentPasswordForEmail = it
-                            onSetAction()
+                            cleanErrors()
                         },
                         label = stringResource(R.string.current_password),
                         enabled = !isBusy,
@@ -586,11 +581,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
-                        onCancel = {
-                            onSetAction()
-                            settingsAction = null
-                            scope.launch { bottomSheetState.hide() }
-                        },
+                        onCancel = handleSheetCancel,
                         confirmEnabled = emailSaveEnabled,
                         confirmText = stringResource(R.string.action_save),
                         onConfirm = {
@@ -625,7 +616,7 @@ fun SettingsScreen(
                         value = currentPasswordForPassword,
                         onValueChange = {
                             currentPasswordForPassword = it
-                            onSetAction()
+                            cleanErrors()
                         },
                         label = stringResource(R.string.current_password),
                         enabled = !isBusy,
@@ -642,7 +633,8 @@ fun SettingsScreen(
                         value = newPassword,
                         onValueChange = {
                             newPassword = it
-                            onSetAction()
+                            cleanErrors()
+                            onPasswordInputChanged(it, currentPasswordForPassword)
                         },
                         label = stringResource(R.string.new_password),
                         enabled = !isBusy,
@@ -654,11 +646,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
-                        onCancel = {
-                            onSetAction()
-                            settingsAction = null
-                            scope.launch { bottomSheetState.hide() }
-                        },
+                        onCancel = handleSheetCancel,
                         confirmEnabled = passSaveEnabled,
                         confirmText = stringResource(R.string.action_save),
                         onConfirm = { onChangePassword(currentPasswordForPassword, newPassword) },
@@ -676,22 +664,19 @@ fun SettingsScreen(
                         value = currentPasswordForDelete,
                         onValueChange = {
                             currentPasswordForDelete = it
-                            onSetAction()
+                            cleanErrors()
                         },
                         label = stringResource(R.string.current_password),
                         enabled = !isBusy,
                         visible = visiblePasswordForDelete,
-                        onToggleVisible = { visiblePasswordForDelete = !visiblePasswordForDelete }
+                        onToggleVisible = { visiblePasswordForDelete = !visiblePasswordForDelete },
+                        error = state.currentPasswordError?.asString()
                     )
 
                     Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
-                        onCancel = {
-                            onSetAction()
-                            settingsAction = null
-                            scope.launch { bottomSheetState.hide() }
-                        },
+                        onCancel = handleSheetCancel,
                         confirmEnabled = deleteEnabled,
                         confirmText = stringResource(R.string.action_delete_account),
                         onConfirm = { onDeleteAccount(currentPasswordForDelete) },
@@ -710,11 +695,20 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.send_feedback_subtitle)
                     )
 
+                    state.generalSheetError?.let {
+                        Text(
+                            it.asString(),
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
                     ZibeInputField(
                         value = feedback,
                         onValueChange = {
                             feedback = it
-                            onSetAction()
+                            cleanErrors()
                         },
                         label = sendFeedbackTitle,
                         modifier = Modifier
@@ -731,17 +725,14 @@ fun SettingsScreen(
                             imeAction = ImeAction.Default,
                             capitalization = KeyboardCapitalization.Sentences
                         ),
-                        enabled = !isBusy
+                        enabled = !isBusy,
+                        error = state.feedbackError?.asString()
                     )
 
                     Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
-                        onCancel = {
-                            onSetAction()
-                            settingsAction = null
-                            scope.launch { bottomSheetState.hide() }
-                        },
+                        onCancel = handleSheetCancel,
                         confirmEnabled = sendFeedbackEnabled,
                         confirmText = stringResource(R.string.action_send),
                         onConfirm = { onSendFeedback(feedback) },
@@ -768,14 +759,15 @@ fun SettingsScreenPreview() {
             ),
             snackHostState = remember { SnackbarHostState() },
             onBack = {},
-            onToggleIndividualNotifications = {},
-            onToggleGroupNotifications = {},
+            onEmailInputChanged = { _, _ -> },
+            onPasswordInputChanged = { _, _ -> },
+            cleanErrors = {},
             onChangeEmail = { _, _ -> },
             onChangePassword = { _, _ -> },
-            onSendFeedback = {},
             onLogout = {},
-            onSetAction = {},
-            onDeleteAccount = {}
-        )
+            onToggleIndividualNotifications = {},
+            onToggleGroupNotifications = {},
+            onSendFeedback = {},
+        ) {}
     }
 }
