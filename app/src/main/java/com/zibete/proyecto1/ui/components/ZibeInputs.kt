@@ -2,13 +2,22 @@ package com.zibete.proyecto1.ui.components
 
 import LocalZibeExtendedColors
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -16,21 +25,40 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun ZibeInputField(
@@ -56,7 +84,6 @@ fun ZibeInputField(
     val textColor = zibeColors.lightText
     val errorColor = zibeColors.snackRed
 
-    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
     val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
 
     val shape = RoundedCornerShape(
@@ -65,13 +92,12 @@ fun ZibeInputField(
         bottomStart = dimensionResource(R.dimen.zibe_input_corner_bottom),
         bottomEnd = dimensionResource(R.dimen.zibe_input_corner_bottom)
     )
-    Column {
+    Column(modifier = modifier) {
         TextField(
             value = value,
             onValueChange = onValueChange,
             modifier = modifier
                 .fillMaxWidth()
-                .padding(bottom = inputPadding)
                 .shadow(inputElevation, shape)
                 .background(containerColor, shape),
             colors = TextFieldDefaults.colors(
@@ -105,12 +131,19 @@ fun ZibeInputField(
             keyboardActions = KeyboardActions.Default,
         )
         if (error != null) {
-            Text(
-                text = error,
-                color = errorColor,
-                style = MaterialTheme.typography.bodySmall,
+            Box(
                 modifier = Modifier
-            )
+                    .padding(top = 4.dp, bottom = 0.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(containerColor.copy(alpha = 0.92f))
+                    .padding(horizontal = 10.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = error,
+                    color = errorColor,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -219,107 +252,185 @@ fun ZibeInputPasswordFieldDark(
     )
 }
 
-@Preview(showBackground = true, name = "ZibeInputField Preview")
 @Composable
-fun ZibeInputFieldPreview() {
+fun ZibeAboutField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    maxChars: Int = 280,
+    error: String? = null,
+    showCounter: Boolean = true,
+    testTag: String? = null,
+    minHeight: Dp = 120.dp,
+    maxHeight: Dp = 200.dp,
+    initialHeight: Dp = 140.dp,
+    resizable: Boolean = false,
+    bringIntoViewOnFocus: Boolean = true,
+    bringIntoViewExtraBottom: Dp = 10.dp,
+    leadingIcon: (@Composable () -> Unit)? = {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_baseline_edit_24),
+            contentDescription = label
+        )
+    },
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default.copy(
+        capitalization = KeyboardCapitalization.Sentences,
+        autoCorrectEnabled = true,
+        keyboardType = KeyboardType.Text
+    ),
+) {
+    val zibeColors = LocalZibeExtendedColors.current
+
+    val containerColor = zibeColors.contentDarkBg
+    val hintColor = zibeColors.hintText
+    val errorColor = zibeColors.snackRed
+
+    val scope = rememberCoroutineScope()
+    val bringIntoViewRequester =
+        remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    var fieldSize by remember { mutableStateOf(IntSize.Zero) }
+    val extraBottomPx = with(LocalDensity.current) { bringIntoViewExtraBottom.toPx() }
+
+    var heightDpValue by rememberSaveable(resizable) { mutableFloatStateOf(initialHeight.value) }
+    val height: Dp = heightDpValue.dp.coerceIn(minHeight, maxHeight)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+
+            ZibeInputFieldDark(
+                value = value,
+                onValueChange = { newText ->
+                    val next = if (newText.length > maxChars) newText.take(maxChars) else newText
+                    if (next != value) onValueChange(next)
+                },
+                label = label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(height)
+                    .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+                    .onGloballyPositioned { coords -> fieldSize = coords.size }
+                    .then(
+                        if (bringIntoViewOnFocus) {
+                            Modifier
+                                .onFocusEvent { st ->
+                                    if (st.isFocused) {
+                                        scope.launch {
+                                            bringIntoViewRequester.bringIntoView(
+                                                Rect(
+                                                    left = 0f,
+                                                    top = 0f,
+                                                    right = fieldSize.width.toFloat(),
+                                                    bottom = fieldSize.height.toFloat() + extraBottomPx
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                                .bringIntoViewRequester(bringIntoViewRequester)
+                        } else Modifier
+                    ),
+                singleLine = false,
+                leadingIcon = leadingIcon,
+                keyboardOptions = keyboardOptions,
+                enabled = enabled,
+                error = null
+            )
+
+            if (resizable) {
+                val density = LocalDensity.current
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
+                        .size(22.dp)
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val dyDp = with(density) { dragAmount.y.toDp() }
+                                heightDpValue = (heightDpValue + dyDp.value)
+                                    .coerceIn(minHeight.value, maxHeight.value)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.DragHandle,
+                        contentDescription = null,
+                        tint = hintColor.copy(alpha = 0.85f)
+                    )
+                }
+            }
+        }
+
+        val showBottomRow = showCounter || error != null
+        if (showBottomRow) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                if (error != null) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(containerColor.copy(alpha = 0.92f))
+                            .padding(horizontal = 10.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = errorColor,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                // Counter
+                if (showCounter) {
+                    Text(
+                        text = "${value.length}/$maxChars",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = hintColor,
+                        modifier = Modifier.padding(start = 8.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(name = "Dark Inputs on Gradient", showBackground = true)
+@Composable
+fun ZibeInputsDarkOnGradientPreview() {
     ZibeTheme {
+        val zibeColors = LocalZibeExtendedColors.current
+        val inputSpacing = dimensionResource(R.dimen.zibe_input_padding)
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(zibeColors.gradientZibe)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(inputSpacing)
         ) {
-            ZibeInputField(
-                value = "",
-                onValueChange = {},
-                label = "Empty Field"
-            )
-            ZibeInputField(
-                value = "Input text",
-                onValueChange = {},
-                label = "Field with text"
-            )
-            ZibeInputField(
+            ZibeInputFieldDark(value = "", onValueChange = {}, label = "Dark Empty")
+            ZibeInputFieldDark(value = "Input text", onValueChange = {}, label = "Dark Filled")
+            ZibeInputFieldDark(
                 value = "Invalid input",
                 onValueChange = {},
-                label = "Field with error",
-                error = "This is an error message"
+                label = "Dark Error",
+                error = "Error message"
             )
-        }
-    }
-}
 
-@Preview(showBackground = true, name = "ZibeInputPasswordField Preview")
-@Composable
-fun ZibeInputPasswordFieldPreview() {
-    ZibeTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ZibeInputPasswordField(
-                value = "password123",
-                onValueChange = {},
-                label = "Password Hidden",
-                enabled = true,
-                visible = false,
-                onToggleVisible = {}
-            )
-            ZibeInputPasswordField(
-                value = "password123",
-                onValueChange = {},
-                label = "Password Visible",
-                enabled = true,
-                visible = true,
-                onToggleVisible = {}
-            )
-            ZibeInputPasswordField(
-                value = "wrong",
-                onValueChange = {},
-                label = "Password Error",
-                enabled = true,
-                visible = false,
-                onToggleVisible = {},
-                error = "Wrong password"
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "ZibeInputFieldDark Preview")
-@Composable
-fun ZibeInputFieldDarkPreview() {
-    ZibeTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ZibeInputFieldDark(
-                value = "",
-                onValueChange = {},
-                label = "Dark Empty Field"
-            )
-            ZibeInputFieldDark(
-                value = "Input text",
-                onValueChange = {},
-                label = "Dark Field with text"
-            )
-            ZibeInputFieldDark(
-                value = "Invalid input",
-                onValueChange = {},
-                label = "Dark Field with error",
-                error = "This is an error message"
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "ZibeInputPasswordFieldDark Preview")
-@Composable
-fun ZibeInputPasswordFieldDarkPreview() {
-    ZibeTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
             ZibeInputPasswordFieldDark(
                 value = "password123",
                 onValueChange = {},
@@ -336,14 +447,84 @@ fun ZibeInputPasswordFieldDarkPreview() {
                 visible = true,
                 onToggleVisible = {}
             )
-            ZibeInputPasswordFieldDark(
-                value = "wrong",
+        }
+    }
+}
+
+@Preview(name = "Light Inputs on Surface", showBackground = true)
+@Composable
+fun ZibeInputsLightOnSurfacePreview() {
+    ZibeTheme {
+        val inputSpacing = dimensionResource(R.dimen.zibe_input_padding)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(inputSpacing)
+        ) {
+            ZibeInputField(value = "", onValueChange = {}, label = "Light Empty")
+            ZibeInputField(value = "Input text", onValueChange = {}, label = "Light Filled")
+            ZibeInputField(
+                value = "Invalid input",
                 onValueChange = {},
-                label = "Dark Password Error",
+                label = "Light Error",
+                error = "Error message"
+            )
+
+            ZibeInputPasswordField(
+                value = "password123",
+                onValueChange = {},
+                label = "Light Password Hidden",
                 enabled = true,
                 visible = false,
-                onToggleVisible = {},
-                error = "Wrong password"
+                onToggleVisible = {}
+            )
+            ZibeInputPasswordField(
+                value = "password123",
+                onValueChange = {},
+                label = "Light Password Visible",
+                enabled = true,
+                visible = true,
+                onToggleVisible = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "About Field Preview", showBackground = true)
+@Composable
+fun ZibeAboutFieldPreview() {
+    ZibeTheme {
+        val zibeColors = LocalZibeExtendedColors.current
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(zibeColors.gradientZibe)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ZibeAboutField(
+                value = "",
+                onValueChange = {},
+                label = "About Me (Empty)"
+            )
+            ZibeAboutField(
+                value = "This is a sample bio text to show how it looks when it is filled with some information.",
+                onValueChange = {},
+                label = "About Me (Filled)"
+            )
+            ZibeAboutField(
+                value = "Some text",
+                onValueChange = {},
+                label = "About Me (Error)",
+                error = "Something went wrong went wrong went wrong went wrong"
+            )
+            ZibeAboutField(
+                value = "You can resize this field using the handle at the bottom right.",
+                onValueChange = {},
+                label = "About Me (Resizable)",
+                resizable = true
             )
         }
     }

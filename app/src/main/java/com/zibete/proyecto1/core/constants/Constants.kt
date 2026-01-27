@@ -17,6 +17,7 @@ object Constants {
     const val PHOTO_SELECTED = 33
     const val MIC_SELECTED = 44
     const val PERMISSIONS_EDIT_PROFILE = 11
+    const val MAX_ABOUT_CHARS = 280
 
     object UiTags {
         // Screens
