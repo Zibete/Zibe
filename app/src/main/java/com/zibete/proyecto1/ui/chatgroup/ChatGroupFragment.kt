@@ -641,7 +641,7 @@
 ////        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 ////
 ////        if (chat.typeUser == 0) {
-////            showSnack(view, getString(R.string.perfil_incognito))
+////            finishActionShowSnack(view, getString(R.string.perfil_incognito))
 ////        } else if (chat.id != currentUserId) {
 ////            startActivity(
 ////                Intent(requireContext(), ProfileActivity::class.java)
@@ -705,7 +705,7 @@
 ////                getString(R.string.user_not_available_fmt, chat.name)
 ////        }
 ////
-////        showSnack(view, text)
+////        finishActionShowSnack(view, text)
 ////
 ////        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 ////        currentUserId?.let { uid ->
@@ -717,7 +717,7 @@
 ////    }
 ////
 ////    // 5. Mostrar Snackbar (Helper visual)
-////    private fun showSnack(view: View, message: String) {
+////    private fun finishActionShowSnack(view: View, message: String) {
 ////        val snack = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
 ////        val bg = ContextCompat.getColor(requireContext(), R.color.colorC)
 ////        snack.setBackgroundTint(bg)
@@ -1186,7 +1186,7 @@
 //                    pendingRemotePhotoUrl = remoteUrl
 //                    sendMessageInternal(message = remoteUrl, type = MSG_PHOTO)
 //                }.onFailure {
-//                    showSnack(binding.root, "No se pudo enviar la foto.")
+//                    finishActionShowSnack(binding.root, "No se pudo enviar la foto.")
 //                }
 //
 //                binding.loadingPhoto.isVisible = false
@@ -1207,7 +1207,7 @@
 //                runCatching {
 //                    sendMessageInternal(message = text, type = MSG_TEXT)
 //                }.onFailure {
-//                    showSnack(binding.root, "No se pudo enviar el mensaje.")
+//                    finishActionShowSnack(binding.root, "No se pudo enviar el mensaje.")
 //                }
 //
 //                binding.loadingButton.isVisible = false
@@ -1366,7 +1366,7 @@
 //
 //        val uri = ctx.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
 //        if (uri == null) {
-//            showSnack(binding.root, "No se pudo abrir la cámara.")
+//            finishActionShowSnack(binding.root, "No se pudo abrir la cámara.")
 //            return
 //        }
 //
@@ -1400,7 +1400,7 @@
 //        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 //
 //        if (chat.userType == 0) {
-//            showSnack(view, getString(R.string.perfil_incognito))
+//            finishActionShowSnack(view, getString(R.string.perfil_incognito))
 //        } else if (chat.senderUid != currentUserId) {
 //            startActivity(
 //                android.content.Intent(requireContext(), ProfileActivity::class.java)
@@ -1446,7 +1446,7 @@
 //    }
 //
 //    private fun handleUserUnavailable(chat: ChatGroup, view: View) {
-//        showSnack(view, getString(R.string.user_not_available_fmt, chat.nameUser))
+//        finishActionShowSnack(view, getString(R.string.user_not_available_fmt, chat.nameUser))
 //
 //        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 //        FirebaseRefs.refDatos.child(currentUserId)
@@ -1457,7 +1457,7 @@
 //        // TODO mover a repo -> userRepo.removeGroupChatWithUnknown(uid, chat.id)
 //    }
 //
-//    private fun showSnack(view: View, message: String) {
+//    private fun finishActionShowSnack(view: View, message: String) {
 //        val snack = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
 //        snack.setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.colorC))
 //        snack.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).textAlignment =

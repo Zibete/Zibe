@@ -2,7 +2,6 @@ package com.zibete.proyecto1.ui.auth
 
 import LocalZibeExtendedColors
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
@@ -46,12 +46,14 @@ import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,7 +61,7 @@ import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun AuthScreen(
-    deleteUser: Boolean,
+    showDeleteAccountOptions: Boolean,
     onLogin: (email: String, password: String) -> Unit,
     onNavigateToSignUp: () -> Unit,
     onResetPassword: (String) -> Unit,
@@ -69,7 +71,7 @@ fun AuthScreen(
     onDeleteAccount: () -> Unit,
     authEvents: SharedFlow<AuthUiEvent>,
     isLoading: Boolean,
-    onNavigateToSplash: () -> Unit,
+    onNavigateToSplash: (uiText: UiText?, snackType: ZibeSnackType?) -> Unit,
     appNavigator: AppNavigator
 ) {
     // Inputs
@@ -92,7 +94,12 @@ fun AuthScreen(
     LaunchedEffect(Unit) {
         appNavigator.events.collect { event ->
             when (event) {
-                NavAppEvent.FinishFlowNavigateToSplash -> onNavigateToSplash()
+                is NavAppEvent.FinishFlowNavigateToSplash -> {
+                    onNavigateToSplash(
+                        event.snackMessage,
+                        event.snackType
+                    )
+                }
             }
         }
     }
@@ -113,7 +120,6 @@ fun AuthScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(zibeColors.gradientZibe)
                 .testTag(AUTH_SCREEN)
         ) {
             Column(
@@ -140,7 +146,7 @@ fun AuthScreen(
                     )
                 )
 
-                if (!deleteUser) {
+                if (!showDeleteAccountOptions) {
                     // GOOGLE
                     ZibeButtonPrimary(
                         text = stringResource(R.string.continue_with_google),
@@ -175,6 +181,7 @@ fun AuthScreen(
                         onValueChange = { email = it },
                         label = stringResource(id = R.string.email),
                         keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
                         ),
                         modifier = Modifier.fillMaxWidth(),
@@ -316,7 +323,7 @@ fun AuthScreen(
 fun AuthScreenPreview() {
     ZibeTheme {
         AuthScreen(
-            deleteUser = false,
+            showDeleteAccountOptions = false,
             onLogin = { _, _ -> },
             onNavigateToSignUp = {},
             onResetPassword = { _ -> },
@@ -326,7 +333,7 @@ fun AuthScreenPreview() {
             onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {},
+            onNavigateToSplash = { _, _ -> Unit },
             appNavigator = AppNavigator()
         )
     }
@@ -334,10 +341,10 @@ fun AuthScreenPreview() {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun AuthScreenDeleteUserPreview() {
+fun AuthScreenDeleteAccountPreview() {
     ZibeTheme {
         AuthScreen(
-            deleteUser = true,
+            showDeleteAccountOptions = true,
             onLogin = { _, _ -> },
             onNavigateToSignUp = {},
             onResetPassword = { _ -> },
@@ -347,7 +354,7 @@ fun AuthScreenDeleteUserPreview() {
             onDeleteAccount = {},
             authEvents = MutableSharedFlow(),
             isLoading = false,
-            onNavigateToSplash = {},
+            onNavigateToSplash = { _, _ -> Unit },
             appNavigator = AppNavigator()
         )
     }

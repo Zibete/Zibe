@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
@@ -20,8 +20,8 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,6 +48,7 @@ class MainViewModel @Inject constructor(
     private val presenceRepository: PresenceRepository,
     private val logoutUseCase: DefaultLogoutUseCase,
     private val userPreferencesProvider: UserPreferencesProvider,
+    private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
     private val myUid: String get() = userRepository.myUid
@@ -216,23 +217,36 @@ class MainViewModel @Inject constructor(
                     _uiEvents.emit(MainUiEvent.ToGroupsAfterExit)
                 }
                 .onFailure { e ->
-                    onError(
-                        e.message.toUiText(
-                            R.string.err_zibe_prefix,
-                            R.string.err_zibe
-                        )
+                    val uiText = e.message.toUiText(
+                        R.string.err_zibe_prefix,
+                        R.string.err_zibe
+                    )
+                    showSnack(
+                        uiText = uiText,
+                        snackType = ZibeSnackType.ERROR
                     )
                 }
         }
     }
 
-    suspend fun onError(message: UiText) {
-        _uiEvents.emit(
-            MainUiEvent.ShowSnack(
-                uiText = message,
-                type = ZibeSnackType.ERROR
-            )
+    fun showSnack(
+        uiText: UiText,
+        snackType: ZibeSnackType
+    ) {
+        snackBarManager.show(
+            uiText = uiText,
+            type = snackType
         )
+    }
+
+    fun showPendingSnack(
+        uiText: UiText,
+        snackType: ZibeSnackType
+    ) {
+        viewModelScope.launch {
+            delay(1000L)
+            showSnack(uiText, snackType)
+        }
     }
 
     fun onBottomItemSelected(itemId: Int) {

@@ -9,7 +9,10 @@ sealed class SplashUiEvent {
     object ShowSessionConflictDialog : SplashUiEvent()
     object NavigatePermission : SplashUiEvent()
     object NavigateOnBoarding : SplashUiEvent()
-    object NavigateAuth : SplashUiEvent()
+    data class NavigateAuth(
+        val deleteAccount: Boolean = false
+    ) : SplashUiEvent()
+
     data class NavigateMain(
         val uiText: UiText? = null,
         val snackType: ZibeSnackType? = null

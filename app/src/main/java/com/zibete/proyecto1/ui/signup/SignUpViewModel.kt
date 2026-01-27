@@ -14,6 +14,7 @@ import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class SignUpViewModel @Inject constructor(
     private val authSessionActions: AuthSessionActions,
     private val sessionBootstrapper: SessionBootstrapper,
+    private val updateProfileUseCase: UpdateProfileUseCase,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator
 ) : ViewModel() {
@@ -90,8 +92,6 @@ class SignUpViewModel @Inject constructor(
                 )
                 // 6. Splash -> Location Permission
                 appNavigator.finishFlowNavigateToSplash()
-            }.onFinally {
-                setLoading(false)
             }
         }
     }
