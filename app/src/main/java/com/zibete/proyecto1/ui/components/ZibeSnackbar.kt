@@ -1,6 +1,9 @@
 package com.zibete.proyecto1.ui.components
 
 import LocalZibeExtendedColors
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,9 +47,9 @@ suspend fun SnackbarHostState.showZibeMessage(
     currentSnackbarData?.dismiss()
     val prefix = when (type) {
         ZibeSnackType.SUCCESS -> "[success]"
-        ZibeSnackType.ERROR   -> "[error]"
+        ZibeSnackType.ERROR -> "[error]"
         ZibeSnackType.WARNING -> "[warning]"
-        ZibeSnackType.INFO    -> "[info]"
+        ZibeSnackType.INFO -> "[info]"
     }
     showSnackbar(prefix + message)
 }
@@ -60,7 +63,15 @@ fun ZibeSnackbar(
     val zibeColors = LocalZibeExtendedColors.current
 
     Box(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ),
+        contentAlignment = Alignment.BottomCenter // El crecimiento es hacia ARRIBA
     ) {
         SnackbarHost(hostState = hostState) { data ->
 
@@ -80,20 +91,24 @@ fun ZibeSnackbar(
             }
 
             // Decodificar tipo
-            val raw = data.visuals.message
-            val (type, cleanMsg) = when {
-                raw.startsWith("[success]") -> ZibeSnackType.SUCCESS to raw.removePrefix("[success]")
-                raw.startsWith("[error]")   -> ZibeSnackType.ERROR   to raw.removePrefix("[error]")
-                raw.startsWith("[warning]") -> ZibeSnackType.WARNING to raw.removePrefix("[warning]")
-                raw.startsWith("[info]")    -> ZibeSnackType.INFO    to raw.removePrefix("[info]")
-                else                        -> ZibeSnackType.INFO    to raw
+            val (type, cleanMsg) = remember(data) {
+                val raw = data.visuals.message
+                when {
+                    raw.startsWith("[success]") -> ZibeSnackType.SUCCESS to raw.removePrefix("[success]")
+                    raw.startsWith("[error]") -> ZibeSnackType.ERROR to raw.removePrefix("[error]")
+                    raw.startsWith("[warning]") -> ZibeSnackType.WARNING to raw.removePrefix("[warning]")
+                    raw.startsWith("[info]") -> ZibeSnackType.INFO to raw.removePrefix("[info]")
+                    else -> ZibeSnackType.INFO to raw
+                }
             }
 
-            val (iconColor, iconRes) = when (type) {
-                ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
-                ZibeSnackType.ERROR   -> zibeColors.snackRed   to R.drawable.ic_baseline_cancel_24
-                ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
-                ZibeSnackType.INFO    -> zibeColors.snackBlue  to R.drawable.ic_info_24
+            val (iconColor, iconRes) = remember(type) {
+                when (type) {
+                    ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
+                    ZibeSnackType.ERROR -> zibeColors.snackRed to R.drawable.ic_baseline_cancel_24
+                    ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
+                    ZibeSnackType.INFO -> zibeColors.snackBlue to R.drawable.ic_info_24
+                }
             }
 
             SwipeToDismissBox(
@@ -105,7 +120,7 @@ fun ZibeSnackbar(
                     Snackbar(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight() // Asegura que se estire según el contenido
+                            .wrapContentHeight()
                             .padding(
                                 horizontal = dimensionResource(R.dimen.zibe_snack_padding_horizontal),
                                 vertical = dimensionResource(R.dimen.zibe_snack_padding_vertical)
@@ -118,25 +133,26 @@ fun ZibeSnackbar(
                         containerColor = zibeColors.snackbarSurface,
                         contentColor = zibeColors.hintText
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight() // Se estira verticalmente
-                                .padding(vertical = 4.dp) // Espaciado interno extra para textos largos
+                                .wrapContentHeight()
+                                .padding(vertical = 4.dp)
                         ) {
                             Icon(
                                 painter = painterResource(id = iconRes),
                                 contentDescription = null,
                                 tint = iconColor,
-                                modifier = Modifier.align(Alignment.CenterVertically)
+                                modifier = Modifier.align(Alignment.CenterStart)
                             )
                             Text(
                                 text = cleanMsg.trim(),
                                 style = MaterialTheme.typography.bodyMedium,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier
-                                    .padding(start = dimensionResource(R.dimen.zibe_snack_padding_text))
-                                    .fillMaxWidth() // Permite que el texto use todo el ancho y haga wrap
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 40.dp)
+                                    .align(Alignment.Center)
                             )
                         }
                     }
@@ -151,9 +167,9 @@ fun SnackbarItemPreview(type: ZibeSnackType, message: String) {
     val zibeColors = LocalZibeExtendedColors.current
     val (iconColor, iconRes) = when (type) {
         ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
-        ZibeSnackType.ERROR   -> zibeColors.snackRed   to R.drawable.ic_baseline_cancel_24
+        ZibeSnackType.ERROR -> zibeColors.snackRed to R.drawable.ic_baseline_cancel_24
         ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
-        ZibeSnackType.INFO    -> zibeColors.snackBlue  to R.drawable.ic_info_24
+        ZibeSnackType.INFO -> zibeColors.snackBlue to R.drawable.ic_info_24
     }
 
     Snackbar(
@@ -168,13 +184,23 @@ fun SnackbarItemPreview(type: ZibeSnackType, message: String) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(vertical = 4.dp)
         ) {
-            Icon(painter = painterResource(id = iconRes), contentDescription = null, tint = iconColor)
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                tint = iconColor
+            )
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = 12.dp).fillMaxWidth()
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center, // <--- Centro Horizontal
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .fillMaxWidth()
             )
         }
     }
@@ -193,8 +219,14 @@ fun ZibeSnackbarShowcasePreview() {
             SnackbarItemPreview(ZibeSnackType.ERROR, "Error: No se pudo conectar al servidor")
             SnackbarItemPreview(ZibeSnackType.WARNING, "Advertencia: Tu sesión expirará pronto")
             SnackbarItemPreview(ZibeSnackType.INFO, "Información: Nueva actualización disponible")
-            SnackbarItemPreview(ZibeSnackType.ERROR, "Este es un mensaje de error extremadamente largo que debería forzar al componente a estirarse verticalmente para demostrar que el texto no se corta y que el icono permanece centrado correctamente.")
-            SnackbarItemPreview(ZibeSnackType.SUCCESS, "¡Bien hecho! Has configurado todo correctamente y ahora puedes disfrutar de todas las funcionalidades de Zibe sin interrupciones.")
+            SnackbarItemPreview(
+                ZibeSnackType.ERROR,
+                "Este es un mensaje de error extremadamente largo que debería forzar al componente a estirarse verticalmente para demostrar que el texto no se corta y que el icono permanece centrado correctamente."
+            )
+            SnackbarItemPreview(
+                ZibeSnackType.SUCCESS,
+                "¡Bien hecho! Has configurado todo correctamente y ahora puedes disfrutar de todas las funcionalidades de Zibe sin interrupciones."
+            )
         }
     }
 }

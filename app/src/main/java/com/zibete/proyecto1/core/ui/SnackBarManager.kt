@@ -1,8 +1,8 @@
 package com.zibete.proyecto1.core.ui
 
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,10 +14,18 @@ data class ZibeSnackEvent(
 @Singleton
 class SnackBarManager @Inject constructor() {
 
-    private val _events = MutableSharedFlow<ZibeSnackEvent>(extraBufferCapacity = 1)
-    val events = _events.asSharedFlow()
+    private val _events = Channel<ZibeSnackEvent>(capacity = Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
-    fun show(uiText: UiText, type: ZibeSnackType) {
-        _events.tryEmit(ZibeSnackEvent(uiText = uiText, type = type))
+    fun show(
+        uiText: UiText,
+        type: ZibeSnackType
+    ) {
+        _events.trySend(
+            ZibeSnackEvent(
+                uiText = uiText,
+                type = type
+            )
+        )
     }
 }

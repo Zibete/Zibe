@@ -4,13 +4,17 @@ import LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +42,7 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 fun ZibeBottomSheet(
     isOpen: Boolean,
     onCancel: () -> Unit,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
     content: @Composable ColumnScope.() -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
@@ -57,6 +61,7 @@ fun ZibeBottomSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .navigationBarsPadding()
                         .imePadding()
                         .padding(horizontal = dimensionResource(R.dimen.screen_padding))
@@ -70,7 +75,9 @@ fun ZibeBottomSheet(
 
 @Composable
 fun SheetHeader(title: String, subtitle: String? = null) {
+
     val zibeColors = LocalZibeExtendedColors.current
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title,
@@ -78,6 +85,7 @@ fun SheetHeader(title: String, subtitle: String? = null) {
             color = zibeColors.lightText,
             fontWeight = FontWeight.Bold
         )
+
         Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
 
         subtitle?.let {
@@ -88,7 +96,7 @@ fun SheetHeader(title: String, subtitle: String? = null) {
             )
         }
 
-        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
+        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
     }
 }
 
@@ -99,13 +107,12 @@ fun SheetActions(
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
     confirmEnabled: Boolean = true,
-    cancelEnabled: Boolean = true,
-    confirmIsLoading: Boolean = false,
-    cancelIsLoading: Boolean = false,
+    isConfirmLoading: Boolean = false
 ) {
-
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement
             .spacedBy(dimensionResource(R.dimen.element_spacing_small))
     ) {
@@ -113,18 +120,21 @@ fun SheetActions(
         ZibeButtonSecondary(
             text = cancelText,
             onClick = onCancel,
-            modifier = Modifier.weight(1f),
-            enabled = cancelEnabled,
-            isLoading = confirmIsLoading
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            enabled = !isConfirmLoading
         )
 
         // Botón Principal
         ZibeButtonPrimary(
             text = confirmText,
             onClick = onConfirm,
-            modifier = Modifier.weight(1f),
-            enabled = confirmEnabled,
-            isLoading = cancelIsLoading
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            enabled = confirmEnabled && !isConfirmLoading,
+            isLoading = isConfirmLoading
         )
     }
 }
@@ -169,9 +179,9 @@ fun ZibeBottomSheetPreviewField() {
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(22.dp))
                 SheetActions(
-                    confirmText = "Confirm",
+                    confirmText = "Eliminar cuenta",
                     onConfirm = {},
                     onCancel = {}
                 )
