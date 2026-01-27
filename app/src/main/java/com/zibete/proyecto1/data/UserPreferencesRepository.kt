@@ -17,11 +17,11 @@ data class GroupContext(
     val userName: String,
     val userType: Int
 )
+
 interface UserPreferencesProvider {
     suspend fun isOnboardingDone(): Boolean
     suspend fun isFirstLoginDone(): Boolean
     suspend fun isEditProfileWelcomeShown(): Boolean
-    suspend fun isDeleteUser(): Boolean
     val groupContextFlow: Flow<GroupContext?>
     val inGroupFlow: Flow<Boolean>
     val applyAgeFilterFlow: Flow<Boolean>
@@ -33,11 +33,11 @@ interface UserPreferencesProvider {
     val filterSwitchFlow: Flow<Boolean>
     val groupNameFlow: Flow<String>
 }
+
 interface UserPreferencesActions {
     suspend fun setOnboardingDone(done: Boolean)
     suspend fun setFirstLoginDone(done: Boolean)
     suspend fun setEditProfileWelcomeShown(done: Boolean)
-    suspend fun setDeleteUser(done: Boolean)
     suspend fun resetGroupState()
     suspend fun clearSessionData()
     suspend fun setApplyAgeFilter(value: Boolean)
@@ -189,13 +189,6 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { it[Keys.EDIT_PROFILE_WELCOME_SHOWN] = done }
     }
 
-    override suspend fun isDeleteUser(): Boolean =
-        dataStore.data.first()[Keys.DELETE_USER] ?: false
-
-    override suspend fun setDeleteUser(done: Boolean) {
-        dataStore.edit { it[Keys.DELETE_USER] = done }
-    }
-
     // ---------------------------------------------------------------------------------------------
     // CLEANUP
     // ---------------------------------------------------------------------------------------------
@@ -210,7 +203,6 @@ class UserPreferencesRepository @Inject constructor(
             prefs[Keys.MAX_AGE] = 0
 
             prefs[Keys.FIRST_LOGIN_DONE] = false
-            prefs[Keys.DELETE_USER] = false
         }
     }
 }
