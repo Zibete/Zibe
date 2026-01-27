@@ -58,6 +58,7 @@ fun ZibeBottomSheet(
             },
             modifier = Modifier,
             content = {
+                val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -66,6 +67,7 @@ fun ZibeBottomSheet(
                         .imePadding()
                         .padding(horizontal = dimensionResource(R.dimen.screen_padding))
                         .padding(bottom = dimensionResource(R.dimen.element_spacing_xl)),
+                    verticalArrangement = Arrangement.spacedBy(inputPadding),
                     content = content
                 )
             }
@@ -96,7 +98,7 @@ fun SheetHeader(title: String, subtitle: String? = null) {
             )
         }
 
-        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
+        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
     }
 }
 
@@ -112,7 +114,8 @@ fun SheetActions(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max),
+            .height(IntrinsicSize.Max)
+            .padding(top = dimensionResource(R.dimen.element_spacing_small)),
         horizontalArrangement = Arrangement
             .spacedBy(dimensionResource(R.dimen.element_spacing_small))
     ) {

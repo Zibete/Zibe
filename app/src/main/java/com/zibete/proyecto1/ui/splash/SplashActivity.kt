@@ -139,10 +139,13 @@ class SplashActivity : ComponentActivity() {
                             }
 
                             AuthScreen(
-                                showDeleteAccountOptions = uiState.deleteAccount,
+                                state = uiState,
                                 onLogin = { email, password ->
                                     authViewModel.onEmailLogin(email, password)
                                 },
+                                onEmailInputChanged = { authViewModel.onEmailInputChanged(it) },
+                                onResetEmailInputChanged = { authViewModel.onResetEmailInputChanged(it) },
+                                onPasswordInputChanged = { authViewModel.onPasswordInputChanged(it) },
                                 onNavigateToSignUp = {
                                     navController.navigate(SIGNUP_SCREEN)
                                 },
@@ -161,7 +164,6 @@ class SplashActivity : ComponentActivity() {
                                 onDeleteAccount = {
                                     authViewModel.onDeleteAccountClicked()
                                 },
-                                isLoading = uiState.isLoading,
                                 authEvents = authViewModel.events,
                                 onNavigateToSplash = { uiText, snackType ->
                                     splashViewModel.handleIntentExtras(
@@ -184,6 +186,7 @@ class SplashActivity : ComponentActivity() {
                             val uiState by signUpViewModel.uiState.collectAsState()
 
                             SignUpScreen(
+                                state = uiState,
                                 onBack = { navController.popBackStack() },
                                 onRegister = { email, pass, name, birthDate, description ->
                                     signUpViewModel.onRegister(
@@ -194,7 +197,8 @@ class SplashActivity : ComponentActivity() {
                                         description = description
                                     )
                                 },
-                                isLoading = uiState.isLoading,
+                                onEmailInputChanged = { signUpViewModel.onEmailInputChanged(it) },
+                                onPasswordInputChanged = { signUpViewModel.onPasswordInputChanged(it) },
                                 onNavigateToSplash = {
                                     navController.navigate(SPLASH_SCREEN)
                                 },

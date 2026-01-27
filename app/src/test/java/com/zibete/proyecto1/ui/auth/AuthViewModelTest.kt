@@ -3,7 +3,9 @@ package com.zibete.proyecto1.ui.auth
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.ZibeSnackEvent
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
@@ -63,12 +65,12 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+        val snack = assertIs<ZibeSnackEvent>(event)
 
-        assertEquals(UiText.StringRes(R.string.err_email_required), snack.message)
+        assertEquals(UiText.StringRes(R.string.err_email_required), snack.uiText)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertEquals(null, authSessionActions.lastEmail)
-        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
@@ -93,12 +95,12 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+        val snack = assertIs<ZibeSnackEvent>(event)
 
-        assertEquals(UiText.StringRes(R.string.err_password_required), snack.message)
+        assertEquals(UiText.StringRes(R.string.err_password_required), snack.uiText)
         assertEquals(ZibeSnackType.WARNING, snack.type)
         assertEquals(null, authSessionActions.lastEmail)
-        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
@@ -123,8 +125,8 @@ class AuthViewModelTest {
         // Then
         val event = deferred.await()
 
-        assertEquals(AuthUiEvent.NavigateToSplash, event)
-        assertFalse(vm.uiState.value.isLoading)
+        assertEquals(NavAppEvent.FinishFlowNavigateToSplash(), event)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
@@ -146,10 +148,10 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+        val snack = assertIs<ZibeSnackEvent>(event)
 
-        assertEquals(ZibeSnackType.ERROR, snack.type)
-        assertFalse(vm.uiState.value.isLoading)
+        assertEquals(ZibeSnackType.ERROR, snack.uiText)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
@@ -175,13 +177,13 @@ class AuthViewModelTest {
 
             // Then
             val event = deferred.await()
-            val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+            val snack = assertIs<ZibeSnackEvent>(event)
 
             assertTrue(deleteAccountUseCase.wasCalled)
-            assertEquals(UiText.StringRes(R.string.account_delete_success), snack.message)
+            assertEquals(UiText.StringRes(R.string.account_delete_success), snack.uiText)
             assertEquals(ZibeSnackType.INFO, snack.type)
             assertFalse(vm.uiState.value.deleteAccount)
-            assertFalse(vm.uiState.value.isLoading)
+            assertFalse(vm.uiState.value.isLoadingLogin)
         }
 
     @Test
@@ -199,11 +201,11 @@ class AuthViewModelTest {
 
             // Then
             val event = deferred.await()
-            val snack = assertIs<AuthUiEvent.ShowSnack>(event)
-            assertEquals(UiText.StringRes(R.string.account_delete_cancelled), snack.message)
+            val snack = assertIs<ZibeSnackEvent>(event)
+            assertEquals(UiText.StringRes(R.string.account_delete_cancelled), snack.uiText)
             assertEquals(ZibeSnackType.INFO, snack.type)
             assertFalse(vm.uiState.value.deleteAccount)
-            assertFalse(vm.uiState.value.isLoading)
+            assertFalse(vm.uiState.value.isLoadingLogin)
         }
 
     @Test
@@ -225,15 +227,15 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+        val snack = assertIs<ZibeSnackEvent>(event)
 
         assertEquals(TestData.EMAIL, authSessionActions.lastEmail)
         assertEquals(
             UiText.StringRes(R.string.reset_password_error, listOf(TestData.EMAIL)),
-            snack.message
+            snack.uiText
         )
         assertEquals(ZibeSnackType.ERROR, snack.type)
-        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
@@ -255,12 +257,12 @@ class AuthViewModelTest {
 
         // Then
         val event = deferred.await()
-        val snack = assertIs<AuthUiEvent.ShowSnack>(event)
+        val snack = assertIs<ZibeSnackEvent>(event)
 
         assertEquals(TestData.EMAIL, authSessionActions.lastEmail)
         assertEquals(
             UiText.StringRes(R.string.reset_password_success, listOf(TestData.EMAIL)),
-            snack.message
+            snack.uiText
         )
         assertEquals(ZibeSnackType.SUCCESS, snack.type)
     }
@@ -279,7 +281,7 @@ class AuthViewModelTest {
         // Then
         val event = deferred.await()
         assertEquals(AuthUiEvent.NavigateToSignUp, event)
-        assertFalse(vm.uiState.value.isLoading)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     private suspend fun awaitEvent(vm: AuthViewModel): AuthUiEvent {
@@ -305,6 +307,9 @@ class AuthViewModelTest {
             userPreferencesProvider = userPreferencesProvider,
             userPreferencesActions = userPreferencesActions,
             deleteAccountUseCase = deleteAccountUseCase,
-            googleSignInUseCase = googleSignInUseCase
+            googleSignInUseCase = googleSignInUseCase,
+            snackBarManager = {},
+            appNavigator = {},
+            config = {}
         )
 }

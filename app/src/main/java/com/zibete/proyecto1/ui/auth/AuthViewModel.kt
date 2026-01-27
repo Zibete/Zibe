@@ -3,11 +3,11 @@ package com.zibete.proyecto1.ui.auth
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import com.facebook.AccessToken
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
@@ -15,14 +15,15 @@ import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
-import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -35,12 +36,11 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val authSessionProvider: AuthSessionProvider,
     private val authSessionActions: AuthSessionActions,
-    private val userPreferencesProvider: UserPreferencesProvider,
-    private val userPreferencesActions: UserPreferencesActions,
     private val deleteAccountUseCase: DeleteAccountUseCase,
     private val googleSignInUseCase: GoogleSignInUseCase,
     private val snackBarManager: SnackBarManager,
-    private val appNavigator: AppNavigator
+    private val appNavigator: AppNavigator,
+    private val config: SettingsConfig
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -48,6 +48,8 @@ class AuthViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<AuthUiEvent>()
     val events = _events.asSharedFlow()
+
+    private var validationJob: Job? = null
 
     fun initAfterDelete(deleteUser: Boolean) {
         viewModelScope.launch {
@@ -57,11 +59,57 @@ class AuthViewModel @Inject constructor(
 
     // ================= EMAIL / PASSWORD =================
 
+    fun onEmailInputChanged(email: String) {
+        validationJob?.cancel()
+        _uiState.update { it.copy(emailError = null) }
+
+        if (email.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = CredentialValidators.validateEmail(email)
+            _uiState.update { it.copy(emailError = error) }
+        }
+    }
+
+    fun onResetEmailInputChanged(email: String) {
+        validationJob?.cancel()
+        _uiState.update { it.copy(resetPasswordEmailError = null) }
+
+        if (email.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = CredentialValidators.validateEmail(email)
+            _uiState.update { it.copy(resetPasswordEmailError = error) }
+        }
+    }
+
+    fun onPasswordInputChanged(password: String) {
+        validationJob?.cancel()
+        _uiState.update { it.copy(passwordError = null) }
+
+        if (password.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+
+            val error: UiText? = when {
+                password != password.trim() ->
+                    UiText.StringRes(R.string.err_password_trim_spaces)
+
+                else -> null
+            }
+
+            _uiState.update { it.copy(passwordError = error) }
+        }
+    }
+
     fun onEmailLogin(email: String, password: String) {
         viewModelScope.launch {
             if (!validateInputs(email, password)) return@launch
 
-            setLoading(true)
+            setLoadingLogin(true)
 
             authSessionActions.signInWithEmail(
                 email = email.trim(),
@@ -70,10 +118,11 @@ class AuthViewModel @Inject constructor(
                 handleAuthSuccess()
             }.onFailure { e ->
                 showSnack(
-                    uiText = getAuthErrorMessage(e)
+                    uiText = getAuthErrorMessage(e),
+                    snackType = ZibeSnackType.ERROR
                 )
             }.onFinally {
-                setLoading(false)
+                setLoadingLogin(false)
             }
         }
     }
@@ -81,30 +130,40 @@ class AuthViewModel @Inject constructor(
     // ================= RESET PASSWORD =================
 
     fun onResetPassword(email: String) {
-        if (email.isBlank()) return
+        val trimmedEmail = email.trim()
+        if (trimmedEmail.isBlank()) return
 
         viewModelScope.launch {
-            setLoading(true)
+
+            setLoadingResetPassword(true)
+
+            delay(config.navigationDelay)
 
             authSessionActions.sendPasswordResetEmail(
-                email = email.trim()
+                email = trimmedEmail
             ).onFailure {
+                _events.emit(AuthUiEvent.CloseResetPasswordSheet)
+
                 showSnack(
                     UiText.StringRes(
                         R.string.reset_password_error,
-                        args = listOf(email)
-                    )
+                        args = listOf(trimmedEmail)
+                    ),
+                    ZibeSnackType.ERROR
                 )
             }.onSuccess {
+                _events.emit(AuthUiEvent.CloseResetPasswordSheet)
+                
                 showSnack(
                     UiText.StringRes(
                         R.string.reset_password_success,
-                        args = listOf(email)
+                        args = listOf(trimmedEmail)
                     ),
                     ZibeSnackType.SUCCESS
                 )
             }.onFinally {
-                setLoading(false)
+                setLoadingResetPassword(false)
+                _uiState.update { it.copy(resetPasswordEmailError = null) }
             }
         }
     }
@@ -112,11 +171,11 @@ class AuthViewModel @Inject constructor(
     // ================= GOOGLE =================
     fun onGoogleClick(activity: Activity) {
         viewModelScope.launch {
-            setLoading(true)
+            setLoadingLogin(true)
 
             googleSignInUseCase(activity)
                 .onFailure { e ->
-                    showSnack(getAuthErrorMessage(e))
+                    showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                     return@launch
                 }
                 .onSuccess { idToken ->
@@ -124,13 +183,13 @@ class AuthViewModel @Inject constructor(
 
                     authSessionActions.signInWithCredential(credential)
                         .onFailure { e ->
-                            showSnack(getAuthErrorMessage(e))
+                            showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                         }
                         .onSuccess {
                             handleAuthSuccess()
                         }
                 }.onFinally {
-                    setLoading(false)
+                    setLoadingLogin(false)
                 }
         }
     }
@@ -139,17 +198,17 @@ class AuthViewModel @Inject constructor(
 
     fun onFacebookAccessToken(token: AccessToken) {
         viewModelScope.launch {
-            setLoading(true)
+            setLoadingLogin(true)
 
             val facebookCredential = FacebookAuthProvider.getCredential(token.token)
 
             authSessionActions.signInWithCredential(facebookCredential)
                 .onFailure { e ->
-                    showSnack(getAuthErrorMessage(e))
+                    showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                 }.onSuccess {
                     handleAuthSuccess()
                 }.onFinally {
-                    setLoading(false)
+                    setLoadingLogin(false)
                 }
         }
     }
@@ -158,11 +217,13 @@ class AuthViewModel @Inject constructor(
 
     fun onDeleteAccountClicked() {
         viewModelScope.launch {
-            setLoading(true)
+            setLoadingDeleteAccount(true)
+
+            delay(config.navigationDelay)
 
             deleteAccountUseCase.execute()
                 .onFailure { e ->
-                    showSnack(getAuthErrorMessage(e))
+                    showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                 }
                 .onSuccess {
                     showSnack(
@@ -172,9 +233,9 @@ class AuthViewModel @Inject constructor(
                     _uiState.update { it.copy(deleteAccount = false) }
                 }
                 .onFailure { e ->
-                    showSnack(getAuthErrorMessage(e))
+                    showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                 }.onFinally {
-                    setLoading(isLoading = false)
+                    setLoadingDeleteAccount(false)
                 }
         }
     }
@@ -183,6 +244,7 @@ class AuthViewModel @Inject constructor(
 
     fun onDoNotDeleteAccountClicked() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingDoNotDelete = true) }
             appNavigator.finishFlowNavigateToSplash(
                 uiText = UiText.StringRes(R.string.account_delete_cancelled),
                 snackType = ZibeSnackType.INFO
@@ -192,7 +254,7 @@ class AuthViewModel @Inject constructor(
 
     fun onNavigateToSignUp() {
         viewModelScope.launch {
-            setLoading(false)
+            setLoadingLogin(false)
             _events.emit(AuthUiEvent.NavigateToSignUp)
         }
     }
@@ -202,7 +264,7 @@ class AuthViewModel @Inject constructor(
     private fun handleAuthSuccess() {
         val user = authSessionProvider.currentUser
         if (user == null) {
-            showSnack(UiText.StringRes(R.string.err_zibe))
+            showSnack(UiText.StringRes(R.string.err_zibe), ZibeSnackType.ERROR)
             return
         }
 
@@ -215,31 +277,42 @@ class AuthViewModel @Inject constructor(
         appNavigator.finishFlowNavigateToSplash()
     }
 
-    private fun setLoading(isLoading: Boolean) {
-        _uiState.update { it.copy(isLoading = isLoading) }
+    private fun setLoadingLogin(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoadingLogin = isLoading) }
+    }
+
+    private fun setLoadingDeleteAccount(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoadingDeleteAccount = isLoading) }
+    }
+
+    private fun setLoadingResetPassword(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoadingResetPassword = isLoading) }
     }
 
     fun showSnack(
         uiText: UiText,
-        snackType: ZibeSnackType = ZibeSnackType.ERROR,
-        stopLoading: Boolean = true
+        snackType: ZibeSnackType
     ) {
         snackBarManager.show(
             uiText = uiText,
             type = snackType
         )
-        if (stopLoading) setLoading(false)
     }
 
     private fun validateInputs(email: String, password: String): Boolean {
 
-        fun warn(uiText: UiText): Boolean {
-            showSnack(uiText, ZibeSnackType.WARNING)
+        val emailError = CredentialValidators.validateEmail(email)
+        val passwordError =
+            CredentialValidators.validateNewPassword(password = password, compareTo = null)
+
+        if (emailError != null) {
+            showSnack(emailError, ZibeSnackType.WARNING)
             return false
         }
-
-        if (email.isBlank()) return warn(UiText.StringRes(R.string.err_email_required))
-        if (password.isBlank()) return warn(UiText.StringRes(R.string.err_password_required))
+        if (passwordError != null) {
+            showSnack(passwordError, ZibeSnackType.WARNING)
+            return false
+        }
 
         return true
     }

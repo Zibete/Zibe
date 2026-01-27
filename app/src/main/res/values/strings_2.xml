@@ -91,7 +91,7 @@
     <string name="reset_password_email_instruction">Ingresá tu email para reestablecer la contraseña</string>
     <string name="reset_password_title">Reestablecimiento de contraseña</string>
     <string name="reset_password_content">Ingresá tu correo electrónico para reestablecer tu contraseña</string>
-    <string name="reset_password_accept">Enviar e-mail</string>
+    <string name="action_send_email">Enviar e-mail</string>
     <string name="reset_password_success">Instrucciones enviadas a %1$s</string>
     <string name="reset_password_error">No pudimos enviar el correo a %1$s. Verificá que esté correcto.</string>
 
@@ -119,6 +119,7 @@
     <!-- ============================= -->
     <string name="err_email_required">Ingresá tu email</string>
     <string name="err_password_required">Ingresá una contraseña</string>
+    <string name="err_password_trim_spaces">Quitá los espacios al inicio o al final</string>
     <string name="err_invalid_format_password">Usá %1$s caracteres o más</string>
     <string name="err_password_letter">Ingrese al menos una letra</string>
     <string name="err_password_digit">Ingrese al menos un número</string>
@@ -144,6 +145,8 @@
 
     <string name="err_passwords_do_not_match">La contraseña debe ser diferente a la actual</string>
     <string name="err_emails_do_not_match">El correo debe ser diferente al actual</string>
+
+    <string name="action_login">Entrar</string>
 
     <!-- ============================= -->
     <!-- Mensaje onboarding perfil -->
