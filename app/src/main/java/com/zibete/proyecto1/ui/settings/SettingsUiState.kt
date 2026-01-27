@@ -1,30 +1,25 @@
 package com.zibete.proyecto1.ui.settings
 
+import com.zibete.proyecto1.core.ui.UiText
+
+enum class SettingsAction { LOGOUT, UPDATE_EMAIL, UPDATE_PASSWORD, DELETE_ACCOUNT, SEND_FEEDBACK }
+
 data class SettingsUiState(
-    val emailDisplay: String = "",
-    val isLoading: Boolean = false,
-    val isSaving: Boolean = false,
-    val providerLabel: String? = null, // "Google" / "Facebook" / null
-
-    val canChangeCredentials: Boolean = true,
-    val groupNotificationsEnabled: Boolean = true,
-
-    val individualNotificationsEnabled: Boolean = true,
-//    val isEmailSectionExpanded: Boolean = false,
-//
-//    val isPasswordSectionExpanded: Boolean = false,
-    val requiresPasswordForSensitiveActions: Boolean = true,
 
     val currentEmail: String? = null,
-    val emailInput: String? = null,
+    val providerLabel: String? = null,
+    val appVersion: String = "",
 
-    val passwordEmailInput: String? = null,
+    val canChangeCredentials: Boolean = true,
+    val requiresReauthForSensitiveActions: Boolean = true,
+    val groupNotificationsEnabled: Boolean = true,
+    val individualNotificationsEnabled: Boolean = true,
 
-    val passwordInput: String? = null,
-    val newPasswordInput: String? = null,
+    val loadingAction: SettingsAction? = null,
 
-    val isSaveEmailEnabled: Boolean = false,
-    val isSavePassEnabled: Boolean = false,
-){
-    val isBusy: Boolean get() = isLoading || isSaving
-}
+    val generalSheetError: UiText? = null,
+    val newEmailError: UiText? = null,
+    val currentPasswordError: UiText? = null,
+    val newPasswordError: UiText? = null,
+    val feedbackError: UiText? = null
+)
