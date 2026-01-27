@@ -34,12 +34,16 @@ class DefaultSessionBootstrapper @Inject constructor(
         description: String
     ): ZibeResult<Unit> =
         zibeCatching {
+            // 1. Registro de Sesión (FCM e InstallId)
             setActiveSession(uid)
+            // 2. Flujo de Usuario (Creación o Verificación)
             updateUserFlow(
                 uid = uid,
                 birthDate = birthDate,
                 description = description
             )
+            // 3. Actualización de Caché Local
+            setLocalProfile()
         }
 
     private suspend fun setActiveSession(uid: String) {
@@ -52,6 +56,7 @@ class DefaultSessionBootstrapper @Inject constructor(
             fcmToken = fcmToken
         )
     }
+
 
     private suspend fun updateUserFlow(
         uid: String,
@@ -72,5 +77,15 @@ class DefaultSessionBootstrapper @Inject constructor(
         // Perfil incompleto / completo
         val hasBirthDate = userRepositoryProvider.hasBirthDate(uid)
         userPreferencesActions.setFirstLoginDone(hasBirthDate)
+    }
+
+    private suspend fun setLocalProfile() {
+        authSessionProvider.currentUser?.let { user: FirebaseUser ->
+            userRepositoryActions.updateLocalProfile(
+                name = user.displayName,
+                photoUrl = user.photoUrl.toString(),
+                email = user.email
+            )
+        }
     }
 }
