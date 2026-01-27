@@ -1,7 +1,10 @@
 package com.zibete.proyecto1.di
 
+import com.zibete.proyecto1.core.device.DefaultDeviceInfoProvider
+import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -16,7 +19,13 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
 import com.zibete.proyecto1.data.auth.FirebaseSessionManager
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+import com.zibete.proyecto1.domain.profile.DefaultSendFeedbackUseCase
+import com.zibete.proyecto1.domain.profile.DefaultUpdateEmailUseCase
+import com.zibete.proyecto1.domain.profile.DefaultUpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdateProfileUseCase
+import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
+import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
+import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
@@ -79,10 +88,25 @@ abstract class AppBindingsModule {
     ): ExitGroupUseCase
 
     @Binds
+    abstract fun bindSendFeedbackUseCase(
+        impl: DefaultSendFeedbackUseCase
+    ): SendFeedbackUseCase
+
+    @Binds
     @Singleton
     abstract fun bindUpdateProfileUseCase(
         impl: DefaultUpdateProfileUseCase
     ): UpdateProfileUseCase
+
+    @Binds
+    abstract fun bindUpdateEmailUseCase(
+        impl: DefaultUpdateEmailUseCase
+    ): UpdateEmailUseCase
+
+    @Binds
+    abstract fun bindUpdatePasswordUseCase(
+        impl: DefaultUpdatePasswordUseCase
+    ): UpdatePasswordUseCase
 
     @Binds
     @Singleton
@@ -115,6 +139,11 @@ abstract class AppBindingsModule {
     ): UserRepositoryProvider
 
     @Binds
+    abstract fun bindLocalRepositoryProvider(
+        impl: UserRepository
+    ): LocalRepositoryProvider
+
+    @Binds
     abstract fun bindAuthSessionProvider(
         impl: FirebaseSessionManager
     ): AuthSessionProvider
@@ -123,4 +152,12 @@ abstract class AppBindingsModule {
     abstract fun bindAuthSessionActions(
         impl: FirebaseSessionManager
     ): AuthSessionActions
+
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceInfoProvider(
+        impl: DefaultDeviceInfoProvider
+    ): DeviceInfoProvider
+
 }
