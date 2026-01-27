@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
+import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
@@ -13,11 +14,14 @@ import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -30,11 +34,42 @@ class SignUpViewModel @Inject constructor(
     private val sessionBootstrapper: SessionBootstrapper,
     private val updateProfileUseCase: UpdateProfileUseCase,
     private val snackBarManager: SnackBarManager,
-    private val appNavigator: AppNavigator
+    private val appNavigator: AppNavigator,
+    private val config: SettingsConfig
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
     val uiState = _uiState.asStateFlow()
+
+    private var validationJob: Job? = null
+
+    // -------------------------- Inputs Validation
+
+    fun onEmailInputChanged(email: String) {
+        validationJob?.cancel()
+        _uiState.update { it.copy(emailError = null) }
+
+        if (email.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = CredentialValidators.validateEmail(email)
+            _uiState.update { it.copy(emailError = error) }
+        }
+    }
+
+    fun onPasswordInputChanged(password: String) {
+        validationJob?.cancel()
+        _uiState.update { it.copy(passwordError = null) }
+
+        if (password.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = CredentialValidators.validateNewPassword(password = password, compareTo = null)
+            _uiState.update { it.copy(passwordError = error) }
+        }
+    }
 
     // -------------------------- Registro
 
@@ -129,8 +164,12 @@ class SignUpViewModel @Inject constructor(
             return false
         }
 
-        if (email.isBlank()) return warn(UiText.StringRes(R.string.err_email_required))
-        if (password.isBlank()) return warn(UiText.StringRes(R.string.err_password_required))
+        val emailError = CredentialValidators.validateEmail(email)
+        val passwordError = CredentialValidators.validateNewPassword(password = password, compareTo = null)
+
+        if (emailError != null) return warn(emailError)
+        if (passwordError != null) return warn(passwordError)
+
         if (name.isBlank()) return warn(UiText.StringRes(R.string.signup_err_name_required))
         if (birthDate.isBlank()) return warn(UiText.StringRes(R.string.signup_err_birthdate_required))
         if (!isAdult(birthDate)) return warn(UiText.StringRes(R.string.err_under_age))

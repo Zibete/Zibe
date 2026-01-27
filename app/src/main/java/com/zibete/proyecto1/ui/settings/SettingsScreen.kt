@@ -537,7 +537,6 @@ fun SettingsScreen(
                         Text(
                             it.asString(),
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(bottom = 8.dp),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -561,8 +560,6 @@ fun SettingsScreen(
                         error = state.newEmailError?.asString()
                     )
 
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
-
                     ZibeInputPasswordField(
                         value = currentPasswordForEmail,
                         onValueChange = {
@@ -577,8 +574,6 @@ fun SettingsScreen(
                         },
                         error = state.currentPasswordError?.asString()
                     )
-
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
                         onCancel = handleSheetCancel,
@@ -607,7 +602,6 @@ fun SettingsScreen(
                         Text(
                             it.asString(),
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(bottom = 8.dp),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -627,8 +621,6 @@ fun SettingsScreen(
                         error = state.currentPasswordError?.asString()
                     )
 
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
-
                     ZibeInputPasswordField(
                         value = newPassword,
                         onValueChange = {
@@ -642,8 +634,6 @@ fun SettingsScreen(
                         onToggleVisible = { visibleNewPassword = !visibleNewPassword },
                         error = state.newPasswordError?.asString()
                     )
-
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
                         onCancel = handleSheetCancel,
@@ -673,8 +663,6 @@ fun SettingsScreen(
                         error = state.currentPasswordError?.asString()
                     )
 
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
-
                     SheetActions(
                         onCancel = handleSheetCancel,
                         confirmEnabled = deleteEnabled,
@@ -699,7 +687,6 @@ fun SettingsScreen(
                         Text(
                             it.asString(),
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(bottom = 8.dp),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -728,8 +715,6 @@ fun SettingsScreen(
                         enabled = !isBusy,
                         error = state.feedbackError?.asString()
                     )
-
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_large)))
 
                     SheetActions(
                         onCancel = handleSheetCancel,

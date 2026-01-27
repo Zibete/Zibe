@@ -3,13 +3,17 @@ package com.zibete.proyecto1.ui.signup
 import LocalZibeExtendedColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +21,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -24,14 +29,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -42,6 +51,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.MAX_ABOUT_CHARS
 import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
@@ -49,6 +59,7 @@ import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
+import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
@@ -56,13 +67,16 @@ import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
+    state: SignUpUiState,
     onBack: () -> Unit,
     onRegister: (String, String, String, String, String) -> Unit,
-    isLoading: Boolean,
+    onEmailInputChanged: (String) -> Unit,
+    onPasswordInputChanged: (String) -> Unit,
     onNavigateToSplash: () -> Unit,
     appNavigator: AppNavigator
 ) {
@@ -74,12 +88,24 @@ fun SignUpScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
+    val context = LocalContext.current
     val snackHostState = remember { SnackbarHostState() }
 
     val zibeColors = LocalZibeExtendedColors.current
     val lightText = zibeColors.lightText
 
     val spacingSm = dimensionResource(R.dimen.element_spacing_small)
+    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+
+    val registerEnabled by remember(email, password, name, birthDate, state.isLoading) {
+        derivedStateOf {
+            email.trim().isNotEmpty() &&
+                    password.isNotEmpty() &&
+                    name.trim().isNotEmpty() &&
+                    birthDate.isNotEmpty() &&
+                    !state.isLoading
+        }
+    }
 
     LaunchedEffect(Unit) {
         appNavigator.events.collect { event ->
@@ -116,12 +142,16 @@ fun SignUpScreen(
                     .padding(
                         horizontal = dimensionResource(R.dimen.screen_padding),
                         vertical = dimensionResource(R.dimen.screen_padding)
-                    )
+                    ),
+                verticalArrangement = Arrangement.spacedBy(inputPadding)
             ) {
                 // EMAIL
                 ZibeInputFieldDark(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = {
+                        email = it
+                        onEmailInputChanged(it)
+                    },
                     label = stringResource(id = R.string.email),
                     keyboardOptions = KeyboardOptions.Default.copy(
                         keyboardType = KeyboardType.Email,
@@ -136,17 +166,22 @@ fun SignUpScreen(
                             contentDescription = stringResource(id = R.string.email)
                         )
                     },
-                    enabled = !isLoading
+                    enabled = !state.isLoading,
+                    error = state.emailError?.asString(context)
                 )
 
                 // PASSWORD
                 ZibeInputPasswordFieldDark(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = {
+                        password = it
+                        onPasswordInputChanged(it)
+                    },
                     label = stringResource(id = R.string.password),
-                    enabled = !isLoading,
+                    enabled = !state.isLoading,
                     visible = passwordVisible,
-                    onToggleVisible = { passwordVisible = !passwordVisible }
+                    onToggleVisible = { passwordVisible = !passwordVisible },
+                    error = state.passwordError?.asString(context)
                 )
 
                 // NOMBRE
@@ -163,7 +198,7 @@ fun SignUpScreen(
                             contentDescription = stringResource(R.string.name)
                         )
                     },
-                    enabled = !isLoading
+                    enabled = !state.isLoading
                 )
 
                 // FECHA DE NACIMIENTO
@@ -181,7 +216,7 @@ fun SignUpScreen(
                                 tint = lightText.copy(alpha = 0.6f)
                             )
                         },
-                        enabled = !isLoading,
+                        enabled = !state.isLoading,
                         readOnly = true
                     )
 
@@ -233,28 +268,15 @@ fun SignUpScreen(
                     }
                 }
 
-                // DESCRIPCIÓN
-                ZibeInputFieldDark(
+                ZibeAboutField(
                     value = description,
                     onValueChange = { description = it },
                     label = stringResource(R.string.description),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight()
-                        .testTag(TestTags.DESCRIPTION)
-                        .height(140.dp),
-                    singleLine = false,
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_baseline_edit_24),
-                            contentDescription = stringResource(R.string.description)
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Default,
-                        capitalization = KeyboardCapitalization.Sentences
-                    ),
-                    enabled = !isLoading
+                    testTag = TestTags.DESCRIPTION,
+                    enabled = !state.isLoading,
+                    maxChars = MAX_ABOUT_CHARS,
+                    resizable = true,
+                    bringIntoViewExtraBottom = 10.dp
                 )
 
                 // 💡 Tip dinámico
@@ -266,18 +288,16 @@ fun SignUpScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = spacingSm)
                 )
 
                 // BOTÓN REGISTRAR
                 ZibeButtonPrimary(
                     modifier = Modifier
-                        .padding(top = dimensionResource(R.dimen.element_spacing_xs))
                         .testTag(TestTags.BTN_REGISTER),
                     text = stringResource(R.string.finish_registration),
                     onClick = { onRegister(email, password, name, birthDate, description) },
-                    enabled = !isLoading,
-                    isLoading = isLoading
+                    enabled = registerEnabled,
+                    isLoading = state.isLoading
                 )
             }
         }
@@ -290,12 +310,13 @@ fun SignUpScreen(
 fun SignUpScreenPreview() {
     ZibeTheme {
         SignUpScreen(
+            state = SignUpUiState(),
             onBack = {},
             onRegister = { _, _, _, _, _ -> },
-            isLoading = false,
+            onEmailInputChanged = {},
+            onPasswordInputChanged = {},
             onNavigateToSplash = {},
             appNavigator = AppNavigator()
         )
     }
 }
-
