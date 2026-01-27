@@ -38,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
@@ -83,7 +84,9 @@ fun SignUpScreen(
     LaunchedEffect(Unit) {
         appNavigator.events.collect { event ->
             when (event) {
-                NavAppEvent.FinishFlowNavigateToSplash -> onNavigateToSplash()
+                is NavAppEvent.FinishFlowNavigateToSplash -> {
+                    onNavigateToSplash()
+                }
             }
         }
     }
@@ -102,7 +105,6 @@ fun SignUpScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(zibeColors.gradientZibe)
                 .testTag(SIGNUP_SCREEN)
         ) {
             Column(
@@ -121,6 +123,10 @@ fun SignUpScreen(
                     value = email,
                     onValueChange = { email = it },
                     label = stringResource(id = R.string.email),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag(TestTags.EMAIL),
@@ -240,7 +246,7 @@ fun SignUpScreen(
                     singleLine = false,
                     leadingIcon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_info_24),
+                            painter = painterResource(id = R.drawable.ic_baseline_edit_24),
                             contentDescription = stringResource(R.string.description)
                         )
                     },

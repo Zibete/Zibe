@@ -66,7 +66,7 @@
 //        binding.viewPager.isVisible = false
 //        binding.tabLayout.isVisible = false
 //
-//        UserMessageUtils.showSnack(
+//        UserMessageUtils.finishActionShowSnack(
 //            root = binding.root,
 //            message = "Sección en migración. Próximamente disponible.",
 //            type = ZibeSnackType.INFO,
@@ -95,7 +95,7 @@
 //                binding.progressBar.isVisible = false
 //                binding.linearProgressBar.isVisible = true
 //
-//                UserMessageUtils.showSnack(
+//                UserMessageUtils.finishActionShowSnack(
 //                    root = binding.viewPager,
 //                    message = NO_INTERNET,
 //                    type = ZibeSnackType.ERROR,

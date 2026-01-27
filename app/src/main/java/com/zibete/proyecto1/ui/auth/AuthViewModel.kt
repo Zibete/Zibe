@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.auth
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import com.facebook.AccessToken
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.GoogleAuthProvider
@@ -48,10 +49,9 @@ class AuthViewModel @Inject constructor(
     private val _events = MutableSharedFlow<AuthUiEvent>()
     val events = _events.asSharedFlow()
 
-    fun initAfterDelete() {
+    fun initAfterDelete(deleteUser: Boolean) {
         viewModelScope.launch {
-            val deleteUser = userPreferencesProvider.isDeleteUser()
-            _uiState.update { it.copy(deleteUser = deleteUser) }
+            _uiState.update { it.copy(deleteAccount = deleteUser) }
         }
     }
 
@@ -169,30 +169,25 @@ class AuthViewModel @Inject constructor(
                         uiText = UiText.StringRes(R.string.account_delete_success),
                         snackType = ZibeSnackType.INFO,
                     )
-                    setDeleteUser(deleteUser = false)
+                    _uiState.update { it.copy(deleteAccount = false) }
                 }
                 .onFailure { e ->
                     showSnack(getAuthErrorMessage(e))
                 }.onFinally {
-                    setLoading(false)
+                    setLoading(isLoading = false)
                 }
-        }
-    }
-
-    fun setDeleteUser(deleteUser: Boolean) {
-        viewModelScope.launch {
-            userPreferencesActions.setDeleteUser(deleteUser)
-            _uiState.update { it.copy(deleteUser = deleteUser, isLoading = false) }
         }
     }
 
     // ================= DO NOT DELETE =================
 
     fun onDoNotDeleteAccountClicked() {
-        showSnack(
-            uiText = UiText.StringRes(R.string.account_delete_cancelled),
-            snackType = ZibeSnackType.INFO
-        )
+        viewModelScope.launch {
+            appNavigator.finishFlowNavigateToSplash(
+                uiText = UiText.StringRes(R.string.account_delete_cancelled),
+                snackType = ZibeSnackType.INFO
+            )
+        }
     }
 
     fun onNavigateToSignUp() {
@@ -211,13 +206,17 @@ class AuthViewModel @Inject constructor(
             return
         }
 
-        appNavigator.finishFlowNavigateToSplash()
+        navigateToSplash()
     }
 
     // ================= HELPERS =================
 
-    private fun setLoading(value: Boolean) {
-        _uiState.update { it.copy(isLoading = value) }
+    private fun navigateToSplash() {
+        appNavigator.finishFlowNavigateToSplash()
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoading = isLoading) }
     }
 
     fun showSnack(
@@ -243,5 +242,9 @@ class AuthViewModel @Inject constructor(
         if (password.isBlank()) return warn(UiText.StringRes(R.string.err_password_required))
 
         return true
+    }
+
+    companion object {
+        private const val NAVIGATION_DELAY = 450L
     }
 }

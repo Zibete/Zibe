@@ -86,11 +86,13 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
+
         splashViewModel.handleIntentExtras(
             uiText = intent.getParcelableExtra(EXTRA_UI_TEXT, UiText::class.java),
             snackType = intent.getParcelableExtra(EXTRA_SNACK_TYPE, ZibeSnackType::class.java),
             hasSessionConflict = intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false),
-            deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
+            deleteAccount = deleteAccount
         )
 
         // Configurar Facebook
@@ -133,11 +135,11 @@ class SplashActivity : ComponentActivity() {
                             val uiState by authViewModel.uiState.collectAsState()
 
                             LaunchedEffect(Unit) {
-                                authViewModel.initAfterDelete()
+                                authViewModel.initAfterDelete(deleteAccount)
                             }
 
                             AuthScreen(
-                                showDeleteAccountOptions = uiState.deleteUser,
+                                showDeleteAccountOptions = uiState.deleteAccount,
                                 onLogin = { email, password ->
                                     authViewModel.onEmailLogin(email, password)
                                 },
@@ -161,7 +163,13 @@ class SplashActivity : ComponentActivity() {
                                 },
                                 isLoading = uiState.isLoading,
                                 authEvents = authViewModel.events,
-                                onNavigateToSplash = {
+                                onNavigateToSplash = { uiText, snackType ->
+                                    splashViewModel.handleIntentExtras(
+                                        uiText = uiText,
+                                        snackType = snackType,
+                                        hasSessionConflict = false,
+                                        deleteAccount = false
+                                    )
                                     navController.navigate(SPLASH_SCREEN) {
                                         popUpTo(AUTH_SCREEN) { inclusive = true }
                                     }

@@ -75,7 +75,6 @@ fun CustomPermissionScreen(
         requester.bindLauncher(launcher)
     }
 
-    // La UI solo “escucha” eventos del VM y ejecuta acciones externas
     val event by permissionViewModel.event.collectAsState()
 
     LaunchedEffect(event) {
@@ -100,7 +99,6 @@ fun CustomPermissionScreen(
         modifier = Modifier
             .fillMaxSize()
             .testTag(PERMISSION_SCREEN)
-            .background(zibeColors.gradientZibe)
             .padding(horizontal = 20.dp, vertical = 40.dp),
         contentAlignment = Alignment.Center
     ) {

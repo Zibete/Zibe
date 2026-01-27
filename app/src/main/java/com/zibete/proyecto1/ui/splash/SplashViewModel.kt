@@ -65,9 +65,9 @@ class SplashViewModel @Inject constructor(
             val snackType = savedStateHandle.get<ZibeSnackType>(EXTRA_SNACK_TYPE)
 
             // 2) Delete account
-            val shouldDelete = savedStateHandle.get<Boolean>(EXTRA_DELETE_ACCOUNT) ?: false
-            if (shouldDelete) {
-                _events.emit(SplashUiEvent.NavigateAuth)
+            val deleteAccount = savedStateHandle.remove<Boolean>(EXTRA_DELETE_ACCOUNT) ?: false
+            if (deleteAccount) {
+                _events.emit(SplashUiEvent.NavigateAuth(deleteAccount = true))
                 return@launch
             }
 
@@ -95,7 +95,7 @@ class SplashViewModel @Inject constructor(
             // 6) Sin usuario → Auth
             val currentUser = authSessionProvider.currentUser
             if (currentUser == null) {
-                _events.emit(SplashUiEvent.NavigateAuth)
+                _events.emit(SplashUiEvent.NavigateAuth(false))
                 return@launch
             }
 
@@ -105,7 +105,7 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
 
-            // 8) Sesión activa (bootstrap + navegar con data del snack si aplica)
+            // 8) Sesión activa (bootstrap + navegar con snack si aplica)
             continueToMain(
                 uiText = uiText,
                 snackType = snackType,
@@ -139,7 +139,7 @@ class SplashViewModel @Inject constructor(
     fun onLogoutRequested() {
         viewModelScope.launch {
             logoutUseCase.execute()
-            _events.emit(SplashUiEvent.NavigateAuth)
+            _events.emit(SplashUiEvent.NavigateAuth(false))
         }
     }
 }
