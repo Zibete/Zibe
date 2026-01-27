@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="@dimen/zibe_btn_height"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/zibe_snack_padding_horizontal"
         android:paddingVertical="@dimen/zibe_snack_padding_vertical">
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginStart="@dimen/zibe_snack_padding_text"
-            android:gravity="start|center_vertical"
+            android:gravity="center"
             android:maxLines="10"
             android:ellipsize="end" />
 

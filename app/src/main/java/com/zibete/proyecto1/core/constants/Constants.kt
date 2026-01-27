@@ -45,6 +45,9 @@ object Constants {
     // Intents / Bundle Extras
     // ==============================
     const val EXTRA_SESSION_CONFLICT = "extra_session_conflict"
+    const val EXTRA_UI_TEXT = "extra_ui_text"
+    const val EXTRA_SNACK_TYPE = "extra_snack_type"
+    const val EXTRA_DELETE_ACCOUNT = "extra_delete_account"
     const val EXTRA_USER_ID = "EXTRA_USER_ID"
     const val EXTRA_USER_IDS = "EXTRA_USER_IDS"
     const val EXTRA_START_INDEX = "EXTRA_START_INDEX"
@@ -60,6 +63,7 @@ object Constants {
     const val NODE_GROUPS_ROOT = "Groups"
     const val NODE_USERS_ROOT = "Users"
     const val NODE_SESSIONS = "Sessions"
+    const val NODE_APP_FEEDBACK = "Feedback"
 
     // Sub-nodos comunes
     const val NODE_DM = "dm"
@@ -206,12 +210,6 @@ object Constants {
     const val CALLING = "Calling"
     const val RINGING = "Ringing"
 
-    // ==============================
-    // Firebase Cloud Messaging (FCM)
-    // ==============================
-    const val AUTH = "key=AAAAhT_yccE:APA91bEJ26YPwH4F1a_ZQojK2jSmbTiA_v_-8j5EIDCiyuWFRJZtktMp3jr-5JB4YTcKbkVNdQN3t1U0C3UKp1XpxAZDR3DsW4nAlaTjfGVPE_BpD_sh0N8SH_eWdrcAhRPa6SW9W2Me"
-    const val PAYLOAD_TYPE_DM = NODE_DM
-
     const val PAYLOAD_DISTANCE_METERS = "payload_distance_meters"
     const val PAYLOAD_AGE = "payload_age"
     const val PAYLOAD_NAME = "payload_name"
@@ -248,15 +246,4 @@ object Constants {
     const val NODE_GROUPS_CHAT = "Chat"
     const val NODE_GROUPS_META = "Meta"
 
-    // ==============================
-    // Legacy / Comentados
-    // ==============================
-    // const val NODE_UNREAD_COUNT = "msgNoLeidos"
-    // const val NODE_CHAT_STATE = "estado"
-    // const val KEY_ACTIVE_INSTALL_ID = "activeInstallId"
-    // const val KEY_FCM_TOKEN = "fcmToken"
-    // const val NODE_PUBLIC_GROUP_CHAT = ""
-    // const val KEY_DELIVERY_STATUS = "wVisto"
-    // const val KEY_RECEIVED_UNREAD = "noVisto"
-    // const val KEY_SEEN_STATUS = "visto"
 }

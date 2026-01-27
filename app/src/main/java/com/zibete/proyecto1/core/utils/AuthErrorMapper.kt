@@ -16,6 +16,7 @@ import com.zibete.proyecto1.core.constants.ERROR_INVALID_EMAIL
 import com.zibete.proyecto1.core.constants.ERROR_WEAK_PASSWORD
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EMAIL_IN_USE
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 
 class AccountNotFoundException : IllegalStateException()
 class FirebaseAuthUserNullException : Exception()
@@ -47,13 +48,15 @@ fun getAuthErrorMessage(e: Throwable?): UiText {
         is FirebaseAuthException -> {
             when (e.errorCode) {
                 SIGNUP_ERR_EMAIL_IN_USE -> UiText.StringRes(R.string.signup_err_mail_in_use)
-                ERROR_WEAK_PASSWORD -> UiText.StringRes(R.string.signup_err_invalid_format_password)
-                ERROR_INVALID_EMAIL -> UiText.StringRes(R.string.signup_err_invalid_format_email)
+                ERROR_WEAK_PASSWORD -> UiText.StringRes(R.string.err_invalid_format_password)
+                ERROR_INVALID_EMAIL -> UiText.StringRes(R.string.err_invalid_format_email)
 
                 else -> UiText.StringRes( R.string.signup_err_prefix, args = listOf(e.errorCode))
             }
         }
 
-        else -> UiText.StringRes( R.string.err_zibe_prefix, args = listOf(e.message ?: ""))
+        else -> e.message.toUiText(
+            R.string.err_zibe_prefix,
+            R.string.err_zibe)
     }
 }

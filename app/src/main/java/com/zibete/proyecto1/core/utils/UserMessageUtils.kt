@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.core.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
@@ -7,7 +8,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -25,8 +25,6 @@ import kotlin.math.abs
  * - Diálogos de confirmación con estilo AlertDialogApp
  */
 object UserMessageUtils {
-
-    // ========= SNACKBARS =========
 
     @JvmStatic
     fun showSnack(
@@ -47,10 +45,10 @@ object UserMessageUtils {
 
         val coordinator = root.findCoordinatorParent()
         val snackbar = Snackbar.make(coordinator ?: root, "", duration)
-        val snackView = snackbar.view as Snackbar.SnackbarLayout
+        val snackView = snackbar.view as ViewGroup
 
         snackView.setPadding(0, 0, 0, 0)
-        
+
         val customView = LayoutInflater.from(root.context)
             .inflate(R.layout.layout_snackbar_zibe, snackView, false)
 
@@ -103,7 +101,7 @@ object UserMessageUtils {
         return null
     }
 
-
+    @SuppressLint("ClickableViewAccessibility")
     private fun attachUniversalSwipeToDismiss(
         snackbar: Snackbar,
         swipeTarget: View // tu customView (layout_snackbar_zibe)
@@ -190,7 +188,6 @@ object UserMessageUtils {
     }
 
     // ========= DIÁLOGOS =========
-
     /**
      * Diálogo de confirmación genérico con estilo AlertDialogApp.
      * Úsalo para acciones sensibles: bloquear, eliminar, salir de grupo, etc.

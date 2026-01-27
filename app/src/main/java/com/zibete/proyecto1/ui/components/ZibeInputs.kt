@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -34,8 +35,8 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 @Composable
 fun ZibeInputField(
     value: String,
-    onValueChange: (String) -> Unit,
     label: String,
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     leadingIcon: (@Composable (() -> Unit))? = null,
@@ -43,6 +44,7 @@ fun ZibeInputField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     readOnly: Boolean = false,
+    error: String? = null,
     enabled: Boolean = true,
     containerColor: Color = LocalZibeExtendedColors.current.contentLightBg
 ) {
@@ -63,46 +65,54 @@ fun ZibeInputField(
         bottomStart = dimensionResource(R.dimen.zibe_input_corner_bottom),
         bottomEnd = dimensionResource(R.dimen.zibe_input_corner_bottom)
     )
-
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = inputPadding)
-            .shadow(inputElevation, shape)
-            .background(containerColor, shape),
-        singleLine = singleLine,
-        label = { Text(text = label, color = hintColor) },
-        leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
-        shape = shape,
-        enabled = enabled,
-
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            focusedIndicatorColor = accentColor,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            errorIndicatorColor = errorColor,
-            focusedTextColor = textColor,
-            unfocusedTextColor = textColor,
-            focusedLabelColor = hintColor,
-            unfocusedLabelColor = hintColor,
-            focusedLeadingIconColor = iconTint,
-            unfocusedLeadingIconColor = iconTint,
-            focusedTrailingIconColor = iconTint,
-            unfocusedTrailingIconColor = iconTint,
-            cursorColor = accentColor
-        ),
-
-        visualTransformation = visualTransformation,
-        readOnly = readOnly,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = KeyboardActions.Default,
-    )
+    Column {
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(bottom = inputPadding)
+                .shadow(inputElevation, shape)
+                .background(containerColor, shape),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = accentColor,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                errorIndicatorColor = errorColor,
+                focusedTextColor = textColor,
+                unfocusedTextColor = textColor,
+                focusedLabelColor = hintColor,
+                unfocusedLabelColor = hintColor,
+                focusedLeadingIconColor = iconTint,
+                unfocusedLeadingIconColor = iconTint,
+                focusedTrailingIconColor = iconTint,
+                unfocusedTrailingIconColor = iconTint,
+                cursorColor = accentColor
+            ),
+            singleLine = singleLine,
+            label = { Text(text = label, color = hintColor) },
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            shape = shape,
+            enabled = enabled,
+            isError = error != null,
+            visualTransformation = visualTransformation,
+            readOnly = readOnly,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = KeyboardActions.Default,
+        )
+        if (error != null) {
+            Text(
+                text = error,
+                color = errorColor,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+            )
+        }
+    }
 }
 
 @Composable
@@ -110,6 +120,7 @@ fun ZibeInputPasswordField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    error: String? = null,
     enabled: Boolean,
     visible: Boolean,
     onToggleVisible: () -> Unit,
@@ -122,6 +133,7 @@ fun ZibeInputPasswordField(
         enabled = enabled,
         containerColor = containerColor,
         label = label,
+        error = error,
         modifier = Modifier
             .fillMaxWidth()
             .testTag(TestTags.PASSWORD),
@@ -165,7 +177,8 @@ fun ZibeInputFieldDark(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     readOnly: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    error: String? = null
 ) {
     ZibeInputField(
         value = value,
@@ -179,6 +192,7 @@ fun ZibeInputFieldDark(
         keyboardOptions = keyboardOptions,
         readOnly = readOnly,
         enabled = enabled,
+        error = error,
         containerColor = LocalZibeExtendedColors.current.contentDarkBg
     )
 }
@@ -190,7 +204,8 @@ fun ZibeInputPasswordFieldDark(
     label: String,
     enabled: Boolean,
     visible: Boolean,
-    onToggleVisible: () -> Unit
+    onToggleVisible: () -> Unit,
+    error: String? = null
 ) {
     ZibeInputPasswordField(
         value = value,
@@ -199,6 +214,7 @@ fun ZibeInputPasswordFieldDark(
         enabled = enabled,
         visible = visible,
         onToggleVisible = onToggleVisible,
+        error = error,
         containerColor = LocalZibeExtendedColors.current.contentDarkBg
     )
 }
@@ -220,6 +236,12 @@ fun ZibeInputFieldPreview() {
                 value = "Input text",
                 onValueChange = {},
                 label = "Field with text"
+            )
+            ZibeInputField(
+                value = "Invalid input",
+                onValueChange = {},
+                label = "Field with error",
+                error = "This is an error message"
             )
         }
     }
@@ -249,6 +271,15 @@ fun ZibeInputPasswordFieldPreview() {
                 visible = true,
                 onToggleVisible = {}
             )
+            ZibeInputPasswordField(
+                value = "wrong",
+                onValueChange = {},
+                label = "Password Error",
+                enabled = true,
+                visible = false,
+                onToggleVisible = {},
+                error = "Wrong password"
+            )
         }
     }
 }
@@ -270,6 +301,12 @@ fun ZibeInputFieldDarkPreview() {
                 value = "Input text",
                 onValueChange = {},
                 label = "Dark Field with text"
+            )
+            ZibeInputFieldDark(
+                value = "Invalid input",
+                onValueChange = {},
+                label = "Dark Field with error",
+                error = "This is an error message"
             )
         }
     }
@@ -298,6 +335,15 @@ fun ZibeInputPasswordFieldDarkPreview() {
                 enabled = true,
                 visible = true,
                 onToggleVisible = {}
+            )
+            ZibeInputPasswordFieldDark(
+                value = "wrong",
+                onValueChange = {},
+                label = "Dark Password Error",
+                enabled = true,
+                visible = false,
+                onToggleVisible = {},
+                error = "Wrong password"
             )
         }
     }
