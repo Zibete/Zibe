@@ -29,6 +29,4 @@ object Keys {
     val ONBOARDING_DONE = booleanPreferencesKey("onboardingDone")
     val FIRST_LOGIN_DONE = booleanPreferencesKey("firstLoginDone")
     val EDIT_PROFILE_WELCOME_SHOWN = booleanPreferencesKey("editProfileWelcomeShown")
-    val DELETE_USER = booleanPreferencesKey("deleteUser")
-    val DELETE_FIREBASE_ACCOUNT = booleanPreferencesKey("deleteFirebaseAccount")
 }
