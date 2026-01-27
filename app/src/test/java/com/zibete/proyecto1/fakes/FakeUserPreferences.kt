@@ -15,7 +15,7 @@ class FakeUserPreferencesProvider(
     override suspend fun isFirstLoginDone(): Boolean = scenarioProvider().firstLoginDone
     override suspend fun isEditProfileWelcomeShown(): Boolean = false
 
-    override suspend fun isDeleteUser(): Boolean = scenarioProvider().deleteUser
+    override suspend fun isDeleteAccount(): Boolean = scenarioProvider().deleteUser
 
     override val groupContextFlow: Flow<GroupContext?> = flow {
         emit(null) // si querés modelarlo en scenario, agregás un field GroupContext?
@@ -40,7 +40,7 @@ class FakeUserPreferencesActions(
     override suspend fun setFirstLoginDone(done: Boolean) { scenarioProvider().firstLoginDone = done }
     override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/  }
 
-    override suspend fun setDeleteUser(done: Boolean) { scenarioProvider().deleteUser = done }
+    override suspend fun setDeleteAccount(done: Boolean) { scenarioProvider().deleteUser = done }
 
     override suspend fun resetGroupState() {
         scenarioProvider().inGroup = false

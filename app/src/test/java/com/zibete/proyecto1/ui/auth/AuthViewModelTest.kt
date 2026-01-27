@@ -180,7 +180,7 @@ class AuthViewModelTest {
             assertTrue(deleteAccountUseCase.wasCalled)
             assertEquals(UiText.StringRes(R.string.account_delete_success), snack.message)
             assertEquals(ZibeSnackType.INFO, snack.type)
-            assertFalse(vm.uiState.value.deleteUser)
+            assertFalse(vm.uiState.value.deleteAccount)
             assertFalse(vm.uiState.value.isLoading)
         }
 
@@ -202,7 +202,7 @@ class AuthViewModelTest {
             val snack = assertIs<AuthUiEvent.ShowSnack>(event)
             assertEquals(UiText.StringRes(R.string.account_delete_cancelled), snack.message)
             assertEquals(ZibeSnackType.INFO, snack.type)
-            assertFalse(vm.uiState.value.deleteUser)
+            assertFalse(vm.uiState.value.deleteAccount)
             assertFalse(vm.uiState.value.isLoading)
         }
 
@@ -273,7 +273,7 @@ class AuthViewModelTest {
         runCurrent()
 
         // When
-        vm.onNavigateToSignUpClicked()
+        vm.onNavigateToSignUp()
         advanceUntilIdle()
 
         // Then
