@@ -16,11 +16,13 @@ class FakeUserPreferencesProvider(
     private val mutex = Mutex()
 
     // --- Provider ---
-    override suspend fun isOnboardingDone(): Boolean = mutex.withLock { scenarioProvider().onboardingDone }
-    override suspend fun isFirstLoginDone(): Boolean = mutex.withLock { scenarioProvider().firstLoginDone }
-    override suspend fun isEditProfileWelcomeShown(): Boolean = false
+    override suspend fun isOnboardingDone(): Boolean =
+        mutex.withLock { scenarioProvider().onboardingDone }
 
-    override suspend fun isDeleteAccount(): Boolean = mutex.withLock { scenarioProvider().deleteUser }
+    override suspend fun isFirstLoginDone(): Boolean =
+        mutex.withLock { scenarioProvider().firstLoginDone }
+
+    override suspend fun isEditProfileWelcomeShown(): Boolean = false
 
     override val groupContextFlow: Flow<GroupContext?> = flowOf(null)
     override val inGroupFlow: Flow<Boolean> = flowOf(false)
@@ -36,25 +38,30 @@ class FakeUserPreferencesProvider(
 
 class FakeUserPreferencesActions(
     private val scenarioProvider: () -> TestScenario
-) : UserPreferencesActions{
+) : UserPreferencesActions {
 
     private val mutex = Mutex()
 
     // --- Actions ---
-    override suspend fun setOnboardingDone(done: Boolean) { mutex.withLock { scenarioProvider().onboardingDone = done } }
-    override suspend fun setFirstLoginDone(done: Boolean) { mutex.withLock { scenarioProvider().firstLoginDone = done } }
-    override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/ }
+    override suspend fun setOnboardingDone(done: Boolean) {
+        mutex.withLock { scenarioProvider().onboardingDone = done }
+    }
 
-    override suspend fun setDeleteAccount(done: Boolean) { mutex.withLock { scenarioProvider().deleteUser = done } }
+    override suspend fun setFirstLoginDone(done: Boolean) {
+        mutex.withLock { scenarioProvider().firstLoginDone = done }
+    }
 
-    override  suspend fun resetGroupState() {}
-    override  suspend fun clearSessionData() {}
-    override  suspend fun setApplyAgeFilter(value: Boolean) {}
+    override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/
+    }
+
+    override suspend fun resetGroupState() {}
+    override suspend fun clearSessionData() {}
+    override suspend fun setApplyAgeFilter(value: Boolean) {}
     override suspend fun setApplyOnlineFilter(value: Boolean) {}
     override suspend fun setMinAge(value: Int) {}
     override suspend fun setMaxAge(value: Int) {}
-    override  suspend fun setFilterSwitch(value: Boolean) {}
-    override  suspend fun setGroupNotifications(value: Boolean) {}
+    override suspend fun setFilterSwitch(value: Boolean) {}
+    override suspend fun setGroupNotifications(value: Boolean) {}
     override suspend fun setIndividualNotifications(value: Boolean) {}
 
     override suspend fun setGroupSession(groupName: String, userName: String, userType: Int) {}
