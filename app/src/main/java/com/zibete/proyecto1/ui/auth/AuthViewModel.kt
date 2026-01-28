@@ -155,7 +155,7 @@ class AuthViewModel @Inject constructor(
                 )
             }.onSuccess {
                 _events.emit(AuthUiEvent.CloseResetPasswordSheet)
-                
+
                 showSnack(
                     UiText.StringRes(
                         R.string.reset_password_success,
@@ -304,8 +304,9 @@ class AuthViewModel @Inject constructor(
     private fun validateInputs(email: String, password: String): Boolean {
 
         val emailError = CredentialValidators.validateEmail(email, emailValidator)
-        val passwordError =
-            CredentialValidators.validateNewPassword(password = password, compareTo = null)
+        val passwordError = if (password.isBlank()) {
+            UiText.StringRes(R.string.err_password_required)
+        } else null
 
         if (emailError != null) {
             showSnack(emailError, ZibeSnackType.WARNING)
@@ -317,9 +318,5 @@ class AuthViewModel @Inject constructor(
         }
 
         return true
-    }
-
-    companion object {
-        private const val NAVIGATION_DELAY = 450L
     }
 }

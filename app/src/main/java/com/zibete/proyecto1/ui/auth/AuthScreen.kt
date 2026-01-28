@@ -268,7 +268,6 @@ fun AuthScreen(
                             .align(Alignment.End)
                             .padding(top = 4.dp, bottom = spacingSm)
                             .clickable {
-                                resetEmail = email
                                 showResetDialog = true
                             },
                         style = MaterialTheme.typography.headlineSmall.copy(
