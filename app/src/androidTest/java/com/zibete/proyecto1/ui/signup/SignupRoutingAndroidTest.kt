@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.signup
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -39,10 +40,6 @@ class SignUpValidationAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
 
     val actionRegister = context.getString(R.string.action_register)
-    val emailRequired = context.getString(R.string.err_email_required)
-    val passwordRequired = context.getString(R.string.err_password_required)
-    val nameRequired = context.getString(R.string.signup_err_name_required)
-    val birthdateRequired = context.getString(R.string.signup_err_birthdate_required)
     val underAge = context.getString(R.string.err_under_age)
 
     @Before
@@ -60,59 +57,47 @@ class SignUpValidationAndroidTest :
     }
 
     @Test
-    fun flow_onRegister_blankEmail_showsSnack_andStaysOnSignUp() {
+    fun flow_onRegister_blankEmail_buttonDisabled_andStaysOnSignUp() {
         // Given
         fillValidForm(email = "", composeRule = composeRule, context = context)
         closeSoftKeyboard()
 
-        // When
-        waitTag(TestTags.BTN_REGISTER, composeRule).performClick()
-
         // Then
-        waitText(emailRequired, composeRule)
-        waitTag(SIGNUP_SCREEN, composeRule)
+        waitTag(TestTags.BTN_REGISTER, composeRule).assertIsNotEnabled()
+        waitTag(SIGNUP_SCREEN, composeRule).assertIsDisplayed()
     }
 
     @Test
-    fun flow_onRegister_blankPassword_showsSnack_andStaysOnSignUp() {
+    fun flow_onRegister_blankPassword_buttonDisabled_andStaysOnSignUp() {
         // Given
         fillValidForm(password = "", composeRule = composeRule, context = context)
         closeSoftKeyboard()
 
-        // When
-        waitTag(TestTags.BTN_REGISTER, composeRule).performClick()
-
         // Then
-        waitText(passwordRequired, composeRule)
-        waitTag(SIGNUP_SCREEN, composeRule)
+        waitTag(TestTags.BTN_REGISTER, composeRule).assertIsNotEnabled()
+        waitTag(SIGNUP_SCREEN, composeRule).assertIsDisplayed()
     }
 
     @Test
-    fun flow_onRegister_blankName_showsSnack_andStaysOnSignUp() {
+    fun flow_onRegister_blankName_buttonDisabled_andStaysOnSignUp() {
         // Given
         fillValidForm(name = "", composeRule = composeRule, context = context)
         closeSoftKeyboard()
 
-        // When
-        waitTag(TestTags.BTN_REGISTER, composeRule).performClick()
-
         // Then
-        waitText(nameRequired, composeRule)
-        waitTag(SIGNUP_SCREEN, composeRule)
+        waitTag(TestTags.BTN_REGISTER, composeRule).assertIsNotEnabled()
+        waitTag(SIGNUP_SCREEN, composeRule).assertIsDisplayed()
     }
 
     @Test
-    fun flow_onRegister_blankBirthdate_showsSnack_andStaysOnSignUp() {
+    fun flow_onRegister_blankBirthdate_buttonDisabled_andStaysOnSignUp() {
         // Given
         fillValidForm(birthdate = "", composeRule = composeRule, context = context)
         closeSoftKeyboard()
 
-        // When
-        waitTag(TestTags.BTN_REGISTER, composeRule).performClick()
-
         // Then
-        waitText(birthdateRequired, composeRule)
-        waitTag(SIGNUP_SCREEN, composeRule)
+        waitTag(TestTags.BTN_REGISTER, composeRule).assertIsNotEnabled()
+        waitTag(SIGNUP_SCREEN, composeRule).assertIsDisplayed()
     }
 
     @Test

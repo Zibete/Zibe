@@ -1,27 +1,35 @@
 package com.zibete.proyecto1.fakes
 
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.testing.TestData
-import com.zibete.proyecto1.testing.TestData.RUNTIME_EXCEPTION
+import com.zibete.proyecto1.testing.TestScenario
 
 class FakeUserRepositoryProvider(
-    var shouldFail: Boolean = false,
-    val runtimeException: Throwable = RuntimeException(RUNTIME_EXCEPTION)
-) : UserRepositoryProvider {
+    private val scenarioProvider: () -> TestScenario
+) : UserRepositoryProvider, LocalRepositoryProvider {
+
+    private val shouldFail: Boolean get() = scenarioProvider().shouldFail
+    private val runtimeException: Throwable get() = scenarioProvider().runtimeException
+
+    // LocalRepositoryProvider implementation
+    override val myUserName: String = "Test User"
+    override val myProfilePhotoUrl: String = ""
+    override val myEmail: String = "test@example.com"
 
     override suspend fun accountExists(uid: String): Boolean =
-        !shouldFail
+        if (shouldFail) throw runtimeException else scenarioProvider().accountExists
 
     override suspend fun hasBirthDate(uid: String): Boolean =
-        !shouldFail
+        if (shouldFail) throw runtimeException else scenarioProvider().hasBirthDate
 
     override suspend fun getProfilePhotoUrl(): String? =
-        if (!shouldFail) TestData.PHOTO_URL else null
+        if (shouldFail) throw runtimeException else TestData.PHOTO_URL
 
     override suspend fun getAccount(uid: String): Users? {
         if (shouldFail) throw runtimeException
-        return TestData.USER
+        return if (scenarioProvider().accountExists) TestData.USER.copy(id = uid) else null
     }
 
     override suspend fun getChatStateWith(
@@ -33,7 +41,7 @@ class FakeUserRepositoryProvider(
     }
 
     override suspend fun getMyAccount(): Users? {
-        TODO("Not yet implemented")
+        if (shouldFail) throw runtimeException
+        return if (scenarioProvider().accountExists) TestData.USER else null
     }
-
 }

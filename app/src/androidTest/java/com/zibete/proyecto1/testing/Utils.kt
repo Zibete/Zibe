@@ -2,10 +2,9 @@ package com.zibete.proyecto1.testing
 
 import android.content.Context
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -34,7 +33,17 @@ fun waitTag(
             .isNotEmpty()
     }
 
-    return composeRule.onNodeWithTag(tag, useUnmergedTree = useUnmergedTree).assertExists()
+    // Filtrar nodos que aceptan entrada de texto si el tag es ambiguo
+    val nodes = composeRule.onAllNodesWithTag(tag, useUnmergedTree = useUnmergedTree)
+    val count = nodes.fetchSemanticsNodes().size
+    
+    return if (count > 1) {
+        // Preferir el nodo que tiene acciones de texto si hay varios
+        composeRule.onAllNodesWithTag(tag, useUnmergedTree = useUnmergedTree)
+            .filterToOne(hasSetTextAction())
+    } else {
+        nodes[0]
+    }
 }
 
 fun waitText(
@@ -49,7 +58,7 @@ fun waitText(
             .isNotEmpty()
     }
 
-    return composeRule.onNodeWithText(text).assertExists()
+    return composeRule.onAllNodesWithText(text)[0]
 }
 
 fun setText(

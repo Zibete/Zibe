@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.di
 
+import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
@@ -8,6 +10,9 @@ import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
+import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
+import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
@@ -31,6 +36,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
+import io.mockk.mockk
 import javax.inject.Singleton
 
 @Module
@@ -57,33 +63,43 @@ object TestAppBindingsModule {
 
     @Provides
     @Singleton
-    fun provideSessionBootstrapper(): SessionBootstrapper =
-        FakeSessionBootstrapper()
+    fun provideSessionBootstrapper(store: TestScenarioStore): SessionBootstrapper =
+        FakeSessionBootstrapper { store.scenario }
 
     @Provides
     @Singleton
-    fun provideLogoutUseCase(): LogoutUseCase =
-        FakeLogoutUseCase()
+    fun provideLogoutUseCase(store: TestScenarioStore): LogoutUseCase =
+        FakeLogoutUseCase { store.scenario }
 
     @Provides
     @Singleton
-    fun provideExitGroupUseCase(): ExitGroupUseCase =
-        FakeExitGroupUseCase()
+    fun provideExitGroupUseCase(store: TestScenarioStore): ExitGroupUseCase =
+        FakeExitGroupUseCase { store.scenario }
 
     @Provides
     @Singleton
-    fun provideDeleteAccountUseCase(): DeleteAccountUseCase =
-        FakeDeleteAccountUseCase()
+    fun provideDeleteAccountUseCase(store: TestScenarioStore): DeleteAccountUseCase =
+        FakeDeleteAccountUseCase { store.scenario }
 
     @Provides
     @Singleton
-    fun provideUserRepositoryActions(): UserRepositoryActions =
-        FakeUserRepositoryActions()
+    fun provideUserRepositoryActions(store: TestScenarioStore): UserRepositoryActions =
+        FakeUserRepositoryActions { store.scenario }
 
     @Provides
     @Singleton
-    fun provideUserRepositoryProvider(): UserRepositoryProvider =
-        FakeUserRepositoryProvider()
+    fun provideUserRepositoryProvider(store: TestScenarioStore): UserRepositoryProvider =
+        FakeUserRepositoryProvider { store.scenario }
+
+    @Provides
+    @Singleton
+    fun provideLocalRepositoryProvider(store: TestScenarioStore): LocalRepositoryProvider {
+        return object : LocalRepositoryProvider {
+            override val myUserName: String = "Test User"
+            override val myProfilePhotoUrl: String = ""
+            override val myEmail: String = "test@example.com"
+        }
+    }
 
     @Provides
     @Singleton
@@ -105,5 +121,20 @@ object TestAppBindingsModule {
     fun provideAuthSessionProvider(store: TestScenarioStore): AuthSessionProvider =
         FakeAuthSessionProvider { store.scenario }
 
-}
+    @Provides
+    @Singleton
+    fun provideDeviceInfoProvider(): DeviceInfoProvider = mockk(relaxed = true)
 
+    @Provides
+    @Singleton
+    fun provideUpdateEmailUseCase(): UpdateEmailUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideUpdatePasswordUseCase(): UpdatePasswordUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideSendFeedbackUseCase(): SendFeedbackUseCase = mockk(relaxed = true)
+
+}

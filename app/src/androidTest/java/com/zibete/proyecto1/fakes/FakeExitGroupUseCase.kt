@@ -1,21 +1,18 @@
 package com.zibete.proyecto1.fakes
 
-import com.zibete.proyecto1.core.constants.EXIT_GROUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
-import javax.inject.Inject
+import com.zibete.proyecto1.testing.TestScenario
 
-class FakeExitGroupUseCase @Inject constructor(
+class FakeExitGroupUseCase(
+    private val scenarioProvider: () -> TestScenario
 ) : ExitGroupUseCase {
-
-    var shouldFail: Boolean = false
-    var failure: Throwable = IllegalStateException(EXIT_GROUP_ERR_EXCEPTION)
 
     override suspend fun performExitGroupDataCleanup(
         message: String
     ): ZibeResult<Unit> {
-        return if (shouldFail) {
-            ZibeResult.Failure(failure)
+        return if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
         } else {
             ZibeResult.Success(Unit)
         }
