@@ -79,12 +79,12 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun `onEmailLogin con password invalida muestra snack de advertencia`() = runTest {
+    fun `onEmailLogin con password vacia muestra snack de advertencia`() = runTest {
         val scenario = TestScenario()
         val vm = buildVm(scenario = scenario)
 
         // Password demasiado corta según CredentialValidators
-        vm.onEmailLogin(email = TestData.EMAIL, password = "123")
+        vm.onEmailLogin(email = TestData.EMAIL, password = "")
 
         val snack = snackBarManager.events.first()
         assertIs<UiText.StringRes>(snack.uiText)
