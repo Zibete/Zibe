@@ -14,11 +14,11 @@ class FakeAuthSessionProvider(
     override var currentUser: FirebaseUser? = null
 ) : AuthSessionProvider {
     override fun authProvider(): AuthProvider {
-        TODO("Not yet implemented")
+        return AuthProvider.PASSWORD
     }
 
     override fun authProviderLabel(): String {
-        TODO("Provide the return value")
+        return "Password"
     }
 }
 
@@ -59,9 +59,8 @@ class FakeAuthSessionActions(
     override suspend fun deleteFirebaseUser(): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
-    override suspend fun signOutFirebaseUser(): ZibeResult<Unit> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun signOutFirebaseUser(): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
     override suspend fun updateAuthProfile(
         userName: String,
@@ -81,4 +80,13 @@ class FakeAuthSessionActions(
             ZibeResult.Success(mockk(relaxed = true))
         }
     }
+
+    override suspend fun updateEmail(newEmail: String): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
+
+    override suspend fun updatePassword(newPassword: String): ZibeResult<Unit> =
+        if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
+
+    override suspend fun reauthenticate(credentials: String?): Boolean =
+        !shouldFail
 }

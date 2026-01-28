@@ -63,7 +63,12 @@ class FakeUserRepositoryProvider(
     }
 
     override suspend fun getMyAccount(): Users? {
-        TODO("Not yet implemented")
+        failIfNeeded()
+        return if (scenarioProvider().accountExists) {
+            TestData.USER
+        } else {
+            null
+        }
     }
 
     suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
@@ -106,15 +111,37 @@ class FakeUserRepositoryActions(
             ZibeResult.Success(Unit)
         }
 
-    override suspend fun deleteProfilePhoto() {
-        failIfNeeded()
-    }
+    override suspend fun deleteProfilePhoto(): ZibeResult<Unit> =
+        if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
+        } else {
+            ZibeResult.Success(Unit)
+        }
 
-    override suspend fun putProfilePhotoInStorage(localUri: Uri) {
-        failIfNeeded()
-    }
+    override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
+        if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
+        } else {
+            ZibeResult.Success(Unit)
+        }
 
     override suspend fun updateUserFields(fields: Map<String, Any?>) {
         failIfNeeded()
     }
+
+    override suspend fun updateLocalProfile(name: String?, photoUrl: String?, email: String?) {
+        failIfNeeded()
+    }
+
+    override suspend fun sendFeedback(
+        feedback: String,
+        screen: String,
+        model: String,
+        appVersion: String
+    ): ZibeResult<Unit> =
+        if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
+        } else {
+            ZibeResult.Success(Unit)
+        }
 }
