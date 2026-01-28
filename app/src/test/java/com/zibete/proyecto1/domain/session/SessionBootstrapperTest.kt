@@ -8,7 +8,6 @@ import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.fakes.ActiveSessionCall
-import com.zibete.proyecto1.fakes.CreateUserNodeCall
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryProvider
@@ -17,6 +16,7 @@ import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -38,6 +38,8 @@ class SessionBootstrapperTest {
             firstLoginDone = true
         )
         val firebaseUser = mockk<FirebaseUser>(relaxed = true)
+        every { firebaseUser.uid } returns TestData.UID
+        
         val authSessionProvider = FakeAuthSessionProvider(
             currentUser = firebaseUser
         )
@@ -53,14 +55,12 @@ class SessionBootstrapperTest {
         advanceUntilIdle()
 
         // Then
-        assertEquals(
-            CreateUserNodeCall(
-                user = firebaseUser,
-                birthDate = "",
-                description = ""
-            ),
-            userRepositoryActions.lastCreateUserNodeCall
-        )
+        val lastCall = userRepositoryActions.lastCreateUserNodeCall
+        assertTrue("Expected createUserNode to be called", lastCall != null)
+        assertEquals(firebaseUser, lastCall?.user)
+        assertEquals("", lastCall?.birthDate)
+        assertEquals("", lastCall?.description)
+        
         assertFalse(scenario.firstLoginDone)
     }
 
