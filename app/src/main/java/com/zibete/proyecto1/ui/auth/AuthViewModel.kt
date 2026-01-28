@@ -16,6 +16,7 @@ import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.validation.CredentialValidators
+import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
@@ -40,7 +41,8 @@ class AuthViewModel @Inject constructor(
     private val googleSignInUseCase: GoogleSignInUseCase,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
-    private val config: SettingsConfig
+    private val config: SettingsConfig,
+    private val emailValidator: EmailValidator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -67,7 +69,7 @@ class AuthViewModel @Inject constructor(
 
         validationJob = viewModelScope.launch {
             delay(config.validationDebounce)
-            val error = CredentialValidators.validateEmail(email)
+            val error = CredentialValidators.validateEmail(email, emailValidator)
             _uiState.update { it.copy(emailError = error) }
         }
     }
@@ -80,7 +82,7 @@ class AuthViewModel @Inject constructor(
 
         validationJob = viewModelScope.launch {
             delay(config.validationDebounce)
-            val error = CredentialValidators.validateEmail(email)
+            val error = CredentialValidators.validateEmail(email, emailValidator)
             _uiState.update { it.copy(resetPasswordEmailError = error) }
         }
     }
@@ -301,7 +303,7 @@ class AuthViewModel @Inject constructor(
 
     private fun validateInputs(email: String, password: String): Boolean {
 
-        val emailError = CredentialValidators.validateEmail(email)
+        val emailError = CredentialValidators.validateEmail(email, emailValidator)
         val passwordError =
             CredentialValidators.validateNewPassword(password = password, compareTo = null)
 

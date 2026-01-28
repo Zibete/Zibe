@@ -15,6 +15,7 @@ import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.validation.CredentialValidators
+import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
@@ -35,7 +36,8 @@ class SignUpViewModel @Inject constructor(
     private val updateProfileUseCase: UpdateProfileUseCase,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
-    private val config: SettingsConfig
+    private val config: SettingsConfig,
+    private val emailValidator: EmailValidator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -53,7 +55,7 @@ class SignUpViewModel @Inject constructor(
 
         validationJob = viewModelScope.launch {
             delay(config.validationDebounce)
-            val error = CredentialValidators.validateEmail(email)
+            val error = CredentialValidators.validateEmail(email, emailValidator)
             _uiState.update { it.copy(emailError = error) }
         }
     }
@@ -164,7 +166,7 @@ class SignUpViewModel @Inject constructor(
             return false
         }
 
-        val emailError = CredentialValidators.validateEmail(email)
+        val emailError = CredentialValidators.validateEmail(email, emailValidator)
         val passwordError = CredentialValidators.validateNewPassword(password = password, compareTo = null)
 
         if (emailError != null) return warn(emailError)
