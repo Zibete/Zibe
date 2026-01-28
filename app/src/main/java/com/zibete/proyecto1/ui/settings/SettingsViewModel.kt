@@ -14,6 +14,7 @@ import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.validation.CredentialValidators
+import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
@@ -48,7 +49,8 @@ class SettingsViewModel @Inject constructor(
     private val authSessionActions: AuthSessionActions,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
-    private val config: SettingsConfig
+    private val config: SettingsConfig,
+    private val emailValidator: EmailValidator
 ) : ViewModel() {
 
     private var validationJob: Job? = null
@@ -135,7 +137,7 @@ class SettingsViewModel @Inject constructor(
 
             // 4) Verificamos que el nuevo correo sea distinto al actual
             // 5) Verificamos que el correo cumpla con el stándard
-            CredentialValidators.validateEmail(trimmedNewEmail, state.currentEmail)?.let { error ->
+            CredentialValidators.validateEmail(trimmedNewEmail, emailValidator, state.currentEmail)?.let { error ->
                 setErrors(newEmailError = error)
                 return@launch
             }
@@ -396,7 +398,7 @@ class SettingsViewModel @Inject constructor(
         validationJob = viewModelScope.launch {
             delay(config.validationDebounce)
             val uiTextOrNull =
-                CredentialValidators.validateEmail(email = email, compareTo = compareTo)
+                CredentialValidators.validateEmail(email = email, emailValidator = emailValidator, compareTo = compareTo)
             _uiState.update { it.copy(newEmailError = uiTextOrNull) }
         }
     }
