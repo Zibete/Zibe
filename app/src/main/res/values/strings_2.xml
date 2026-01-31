@@ -30,6 +30,7 @@
     <string name="content_description_save">Guardar cambios</string>
     <string name="content_description_photo">Foto de perfil. Tocar para agrandar</string>
     <string name="content_description_edit_photo">Editar foto de perfil</string>
+    <string name="content_description_edit_birthdate">Editar fecha de nacimiento</string>
     <string name="content_description_loading">Cargando foto</string>
 
     <string name="close">Cerrar</string>
@@ -127,7 +128,8 @@
 
     <string name="signup_err_name_required">Ingresá tu nombre</string>
     <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
-    <string name="err_under_age">Lo sentimos, debés ser mayor de 18 años para utilizar la App</string>
+    <string name="err_birthdate_required">Debes ingresar tu fecha de nacimiento para utilizar la app</string>
+    <string name="err_under_age">Lo sentimos, debes ser mayor de 18 años para utilizar la App</string>
     <string name="signup_err_mail_in_use">El correo electrónico ya está registrado.</string>
 
     <string name="login_err_cancelled">Inicio de sesión cancelado</string>
@@ -335,6 +337,8 @@
     <string name="err_feedback_required">Ingresá tu mensaje</string>
 
     <string name="user_email_format">%1$s (%2$s)</string>
+    <string name="err_future_date">Fecha futura no permitida\n</string>
+    <string name="err_camera_permission_denied">No concediste permiso para acceder a la cámara</string>
 
 
 </resources>

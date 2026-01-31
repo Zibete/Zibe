@@ -54,6 +54,7 @@ import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+@Deprecated("Migrado a Compose. Usar EditProfileComposeFragment en su lugar.")
 @AndroidEntryPoint
 class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
@@ -290,7 +291,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                         binding.inputDescription.isEnabled = !state.isSaving && !state.isLoading
 
                         binding.inputUserName.setTextIfChanged(state.name)
-                        binding.pickerBirthDate.setTextIfChanged(editProfileViewModel.birthDateUi)
+                        binding.pickerBirthDate.setTextIfChanged(editProfileViewModel.uiState.value.birthDate)
                         binding.inputDescription.setTextIfChanged(state.description)
                         binding.inputAge.setTextIfChanged(state.age?.toString().orEmpty())
 

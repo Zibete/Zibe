@@ -158,6 +158,7 @@ dependencies {
     // Coil
     implementation("io.coil-kt:coil:2.6.0")
     implementation("io.coil-kt:coil-gif:2.6.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("id.zelory:compressor:3.0.1")
     implementation("com.github.rahimlis:badgedtablayout:v1.2")
