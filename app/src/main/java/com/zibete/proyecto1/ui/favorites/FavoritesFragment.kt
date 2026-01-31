@@ -21,9 +21,9 @@ import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
+import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
-import com.zibete.proyecto1.core.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -123,9 +123,10 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                 favoritesViewModel.events.collect { event ->
                     when (event) {
                         is FavoritesUiEvent.ShowSnack -> {
-                            UserMessageUtils.showSnack(
-                                root = binding.root,
-                                message = event.uiText.asString(requireContext())
+                            ZibeSnackDispatcher.show(
+                                context = requireContext(),
+                                uiText = event.uiText,
+                                type = event.type
                             )
                         }
                     }

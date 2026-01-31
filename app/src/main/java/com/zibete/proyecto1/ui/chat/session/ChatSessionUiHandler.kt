@@ -1,8 +1,8 @@
 package com.zibete.proyecto1.ui.chat.session
 
 import android.content.Context
-import android.view.View
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -11,7 +11,6 @@ object ChatSessionUiHandler {
 
     fun handle(
         context: Context,
-        root: View,
         event: ChatSessionUiEvent,
         scope: CoroutineScope
 
@@ -30,8 +29,8 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.ShowBlockSuccess -> {
-                UserMessageUtils.showSnack(
-                    root = root,
+                ZibeSnackDispatcher.show(
+                    context = context,
                     message = "Se ha bloqueado a ${event.name}",
                     type = ZibeSnackType.SUCCESS
                 )
@@ -49,8 +48,8 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.ShowChatHiddenSuccess -> {
-                UserMessageUtils.showSnack(
-                    root = root,
+                ZibeSnackDispatcher.show(
+                    context = context,
                     message = "Se ha ocultado el chat",
                     type = ZibeSnackType.SUCCESS
                 )
@@ -68,8 +67,8 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.ShowUnblockSuccess -> {
-                UserMessageUtils.showSnack(
-                    root = root,
+                ZibeSnackDispatcher.show(
+                    context = context,
                     message = "Se ha desbloqueado a ${event.name}",
                     type = ZibeSnackType.SUCCESS
                 )
@@ -101,9 +100,9 @@ object ChatSessionUiHandler {
 
             is ChatSessionUiEvent.ShowDeleteMessagesSuccess -> {
 
-                UserMessageUtils.showSnack(
-                    root = root,
-                    message =   if (event.count > 1) {
+                ZibeSnackDispatcher.show(
+                    context = context,
+                    message = if (event.count > 1) {
                         "${event.count} mensajes eliminados"
                     } else {
                         "Mensaje eliminado"
@@ -113,9 +112,9 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.ShowToggleNotificationSuccess -> {
-                UserMessageUtils.showSnack(
-                    root = root,
-                    message =   if (event.enabled) "Notificaciones de ${event.name} activadas"
+                ZibeSnackDispatcher.show(
+                    context = context,
+                    message = if (event.enabled) "Notificaciones de ${event.name} activadas"
                     else "Notificaciones de ${event.name} desactivadas",
                     type = ZibeSnackType.INFO
                 )

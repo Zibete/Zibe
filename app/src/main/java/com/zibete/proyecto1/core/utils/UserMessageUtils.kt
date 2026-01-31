@@ -26,6 +26,7 @@ import kotlin.math.abs
  */
 object UserMessageUtils {
 
+    @Deprecated("Migrado a Compose. Usar ZibeSnackbar en su lugar.")
     @JvmStatic
     fun showSnack(
         root: View,

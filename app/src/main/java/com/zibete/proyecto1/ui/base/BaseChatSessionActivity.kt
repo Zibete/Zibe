@@ -25,7 +25,6 @@ open class BaseChatSessionActivity : BaseEdgeToEdgeActivity() {
                         else -> {
                             ChatSessionUiHandler.handle(
                                 context = this@BaseChatSessionActivity,
-                                root = findViewById(android.R.id.content),
                                 event = event,
                                 scope = this
                             )
