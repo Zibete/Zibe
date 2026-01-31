@@ -8,11 +8,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.zibete.proyecto1.R
 import rememberZibeExtendedColors
@@ -21,7 +18,16 @@ import rememberZibeExtendedColors
 fun ZibeTheme(content: @Composable () -> Unit) {
     val zibeExtendedColors = rememberZibeExtendedColors()
     val zibeShapes = rememberZibeShapes()
-    val zibeTypography = rememberZibeTypography()
+    val zibeTypographyData = rememberZibeTypographyData()
+    
+    // Create Material3 Typography from ZibeTypographyData
+    val materialTypography = Typography(
+        headlineLarge = zibeTypographyData.h1,
+        headlineMedium = zibeTypographyData.h2,
+        headlineSmall = zibeTypographyData.subtitle,
+        bodyLarge = zibeTypographyData.body,
+        labelLarge = zibeTypographyData.label
+    )
 
     val zibeColorScheme = darkColorScheme(
         primary = zibeExtendedColors.accent,
@@ -34,11 +40,12 @@ fun ZibeTheme(content: @Composable () -> Unit) {
     )
 
     CompositionLocalProvider(
-        LocalZibeExtendedColors provides zibeExtendedColors
+        LocalZibeExtendedColors provides zibeExtendedColors,
+        LocalZibeTypography provides zibeTypographyData
     ) {
         MaterialTheme(
             colorScheme = zibeColorScheme,
-            typography = zibeTypography,
+            typography = materialTypography,
             shapes = zibeShapes,
             content = content
         )
@@ -51,61 +58,5 @@ fun rememberZibeShapes(): Shapes {
         small = RoundedCornerShape(dimensionResource(R.dimen.corner_small)),
         medium = RoundedCornerShape(dimensionResource(R.dimen.corner_medium)),
         large = RoundedCornerShape(dimensionResource(R.dimen.corner_xl))
-    )
-}
-
-@Composable
-fun rememberZibeTypography(): Typography {
-    val poppins = FontFamily(
-        Font(R.font.poppins_regular, FontWeight.Normal),
-        Font(R.font.poppins_medium, FontWeight.Medium),
-        Font(R.font.poppins_semibold, FontWeight.SemiBold),
-        Font(R.font.poppins_bold, FontWeight.Bold)
-    )
-
-    val headlineLargeSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.head_line_large_size).toSp() }
-    val headlineMediumSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.head_line_medium_size).toSp() }
-    val headlineSmallSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.head_line_small_size).toSp() }
-    val bodyLargeSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.body_large_size).toSp() }
-    val bodyMediumSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.body_medium_size).toSp() }
-    val labelLargeSize =
-        with(LocalDensity.current) { dimensionResource(R.dimen.label_large_size).toSp() }
-
-    return Typography(
-        headlineLarge = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.Bold,
-            fontSize = headlineLargeSize
-        ),
-        headlineMedium = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = headlineMediumSize
-        ),
-        headlineSmall = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.Medium,
-            fontSize = headlineSmallSize
-        ),
-        bodyLarge = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.Normal,
-            fontSize = bodyLargeSize
-        ),
-        bodyMedium = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.Normal,
-            fontSize = bodyMediumSize
-        ),
-        labelLarge = TextStyle(
-            fontFamily = poppins,
-            fontWeight = FontWeight.Medium,
-            fontSize = labelLargeSize
-        ),
     )
 }
