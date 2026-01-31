@@ -29,10 +29,10 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
-import com.zibete.proyecto1.core.utils.UserMessageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -99,25 +99,25 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupsViewModel.events.collect { event ->
                     when (event) {
                         is GroupsUiEvent.NickInUse -> {
-                            UserMessageUtils.showSnack(
-                                root = binding.root,
+                            ZibeSnackDispatcher.show(
+                                context = requireContext(),
                                 message = "${event.nick} está en uso",
                                 type = ZibeSnackType.INFO
                             )
                         }
 
                         is GroupsUiEvent.GroupNameInUse -> {
-                            UserMessageUtils.showSnack(
-                                root = binding.root,
+                            ZibeSnackDispatcher.show(
+                                context = requireContext(),
                                 message = "El nombre ${event.name} ya está en uso",
                                 type = ZibeSnackType.WARNING
                             )
                         }
 
                         is GroupsUiEvent.ShowSnack -> {
-                            UserMessageUtils.showSnack(
-                                root = binding.root,
-                                message = event.message.asString(requireContext()),
+                            ZibeSnackDispatcher.show(
+                                context = requireContext(),
+                                uiText = event.message,
                                 type = ZibeSnackType.INFO
                             )
                         }

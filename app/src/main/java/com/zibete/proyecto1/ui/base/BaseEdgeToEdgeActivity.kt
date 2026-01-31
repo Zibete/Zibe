@@ -6,18 +6,39 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.dimensionResource
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import com.google.android.material.appbar.MaterialToolbar
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.ui.SnackBarManagerEntryPoint
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
+import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.theme.ZibeTheme
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.collectLatest
 
 abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
 
     protected lateinit var toolbar: MaterialToolbar
     protected open val toolbarMenuRes: Int? = null
     protected open val toolbarMenuVisiblePredicate: (Menu) -> Unit = { }
+    protected open val enableComposeSnackHost: Boolean = true
 
     // Hooks (override where applies)
     protected open fun activityRootView(): View? = null
@@ -38,6 +59,21 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    override fun setContentView(layoutResID: Int) {
+        super.setContentView(layoutResID)
+        installComposeSnackHost()
+    }
+
+    override fun setContentView(view: View?) {
+        super.setContentView(view)
+        installComposeSnackHost()
+    }
+
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        super.setContentView(view, params)
+        installComposeSnackHost()
+    }
+
     protected fun setupToolbar(
         toolbar: MaterialToolbar,
         showBack: Boolean = true,
@@ -54,6 +90,36 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
         }
 
         installGlobalInsetsOnce()
+    }
+
+    private fun installComposeSnackHost() {
+        if (!enableComposeSnackHost) return
+
+        val root = findViewById<ViewGroup>(android.R.id.content) ?: return
+        if (root.findViewById<ComposeView>(R.id.snack_compose_host) != null) return
+
+        val snackBarManager = EntryPointAccessors.fromApplication(
+            applicationContext,
+            SnackBarManagerEntryPoint::class.java
+        ).snackBarManager()
+
+        val composeView = ComposeView(this).apply {
+            id = R.id.snack_compose_host
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            isClickable = false
+            isFocusable = false
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                ZibeTheme {
+                    ZibeGlobalSnackHost(snackBarManager = snackBarManager)
+                }
+            }
+        }
+
+        root.addView(composeView)
     }
 
     private fun installGlobalInsetsOnce() {
@@ -161,4 +227,27 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+}
+
+@Composable
+private fun ZibeGlobalSnackHost(snackBarManager: SnackBarManager) {
+    val snackHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(snackBarManager) {
+        snackBarManager.events.collectLatest { event ->
+            snackHostState.showZibeMessage(
+                type = event.type,
+                message = event.uiText.asString(context)
+            )
+        }
+    }
+
+    ZibeSnackbar(
+        hostState = snackHostState,
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .padding(bottom = dimensionResource(R.dimen.element_spacing_medium))
+    )
 }

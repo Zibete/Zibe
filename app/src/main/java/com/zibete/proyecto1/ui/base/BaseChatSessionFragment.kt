@@ -19,7 +19,6 @@ abstract class BaseChatSessionFragment : Fragment() {
                 events.collect { event ->
                     ChatSessionUiHandler.handle(
                         requireContext(),
-                        requireView(),
                         event,
                         this // coroutineScope dentro de repeatOnLifecycle
                     )

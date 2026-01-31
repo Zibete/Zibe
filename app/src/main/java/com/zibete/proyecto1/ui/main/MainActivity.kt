@@ -53,11 +53,13 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment
 import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.groups.GroupsFragment
@@ -74,7 +76,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : BaseEdgeToEdgeActivity() {
 
-    @Inject lateinit var snackBarManager: SnackBarManager
+    @Inject
+    lateinit var snackBarManager: SnackBarManager
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -129,7 +132,8 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
     private fun handleIntentExtras() {
         val uiText = IntentCompat.getParcelableExtra(intent, EXTRA_UI_TEXT, UiText::class.java)
-        val snackType = IntentCompat.getParcelableExtra(intent, EXTRA_SNACK_TYPE, ZibeSnackType::class.java)
+        val snackType =
+            IntentCompat.getParcelableExtra(intent, EXTRA_SNACK_TYPE, ZibeSnackType::class.java)
 
         if (uiText != null) {
             mainViewModel.showPendingSnack(
@@ -281,18 +285,6 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                snackBarManager.events.collectLatest { event ->
-                    UserMessageUtils.showSnack(
-                        root = binding.root,
-                        message = event.uiText.asString(this@MainActivity),
-                        type = event.type
-                    )
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mainViewModel.uiState.collect { state ->
                     // Badges
                     badgeDrawableChat?.isVisible = state.chatListBadgeCount > 0
@@ -440,9 +432,8 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             is MainUiEvent.ShowSnack -> {
-                                UserMessageUtils.showSnack(
-                                    root = binding.root,
-                                    message = event.uiText.asString(this@MainActivity),
+                                snackBarManager.show(
+                                    uiText = event.uiText,
                                     type = event.type
                                 )
                             }
@@ -479,7 +470,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val current = navHost.childFragmentManager.primaryNavigationFragment
 
-        if (current is EditProfileFragment && current.hasPendingChanges()) {
+        if (current is EditProfileComposeFragment && current.editProfileViewModel.hasPendingChanges()) {
             mainViewModel.emit(MainUiEvent.ConfirmDiscardEditProfile)
             return
         }
