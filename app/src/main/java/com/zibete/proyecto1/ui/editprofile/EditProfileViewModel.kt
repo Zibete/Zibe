@@ -10,7 +10,6 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
@@ -38,6 +37,11 @@ class EditProfileViewModel @Inject constructor(
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
+    val snackBarEvents = snackBarManager.events
+
+    fun hasPendingChanges(): Boolean = _uiState.value.saveEnabled
+    fun doNotHasBirthDate(): Boolean = !_uiState.value.hasBirthDate
+
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
 
@@ -45,13 +49,10 @@ class EditProfileViewModel @Inject constructor(
     val events: SharedFlow<EditProfileUiEvent> = _events.asSharedFlow()
 
     fun load() {
-
         viewModelScope.launch {
-
             _uiState.update { it.copy(isLoading = true) }
 
             runCatching {
-
                 val u = userRepositoryProvider.getMyAccount()
 
                 if (u == null) {
@@ -162,7 +163,6 @@ class EditProfileViewModel @Inject constructor(
 
     fun onSaveClicked() {
         viewModelScope.launch {
-
             val state = _uiState.value
             val birthDate = state.birthDate.trim()
 
@@ -181,23 +181,19 @@ class EditProfileViewModel @Inject constructor(
                 shouldDeletePhoto = state.deletePhoto
             ).onFailure { e ->
                 handleError(e)
-            }.onSuccess {
+            }.onSuccess { finalPhotoUrl ->
                 _uiState.update { s ->
-                    val newPhotoUrl = when {
-                        s.deletePhoto -> null
-                        else -> s.photoUrl
-                    }
-
                     s.copy(
                         isLoading = false,
                         isSaving = false,
+                        photoUrl = finalPhotoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
                         saveEnabled = false,
                         originalName = s.name.trim(),
                         originalDescription = s.description.trim(),
                         originalBirthDate = s.birthDate.trim(),
-                        originalPhotoUrl = newPhotoUrl
+                        originalPhotoUrl = finalPhotoUrl
                     )
                 }
 
@@ -210,12 +206,6 @@ class EditProfileViewModel @Inject constructor(
             }
         }
     }
-
-    val birthDateUi: String
-        get() = _uiState.value.birthDate
-            .takeIf { it.isNotBlank() }
-            ?.let { iso -> isoToUiDate(iso) }
-            .orEmpty()
 
     fun onBackToMain() {
         viewModelScope.launch {
@@ -248,7 +238,6 @@ class EditProfileViewModel @Inject constructor(
         name: String,
         birthDate: String
     ): Boolean {
-
         fun warn(uiText: UiText): Boolean {
             showSnack(uiText, ZibeSnackType.WARNING)
             return false
@@ -260,6 +249,4 @@ class EditProfileViewModel @Inject constructor(
 
         return true
     }
-
-
 }

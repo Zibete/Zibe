@@ -20,7 +20,7 @@ interface UpdateProfileUseCase {
         originalPhotoUrl: String?,
         photoPreviewUri: Uri?,
         shouldDeletePhoto: Boolean
-    ): ZibeResult<Unit>
+    ): ZibeResult<String?>
 }
 
 class DefaultUpdateProfileUseCase @Inject constructor(
@@ -37,7 +37,7 @@ class DefaultUpdateProfileUseCase @Inject constructor(
         originalPhotoUrl: String?,
         photoPreviewUri: Uri?,
         shouldDeletePhoto: Boolean
-    ): ZibeResult<Unit> =
+    ): ZibeResult<String?> =
         zibeCatching {
 
             // 1. Determinar la URL de la foto final
@@ -73,5 +73,7 @@ class DefaultUpdateProfileUseCase @Inject constructor(
             userRepositoryActions.updateLocalProfile(newName, finalPhotoUrl, null)
             // 5. Firebase Auth
             authSessionActions.updateAuthProfile(newName, finalPhotoUrl).getOrThrow()
+
+            finalPhotoUrl
         }
 }
