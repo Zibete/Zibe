@@ -172,3 +172,20 @@ private fun ZibeCardPreview() {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+private fun ZibeAnimatedQuotesCardPreview() {
+    ZibeTheme {
+        ZibeAnimatedQuotesCard(
+            strings = listOf(
+                "La primera frase de ejemplo para ver cómo queda el diseño.",
+                "Segunda frase, un poco más corta.",
+                "Y una tercera frase para completar el ciclo de animación."
+            ),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        )
+    }
+}

@@ -9,10 +9,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -76,9 +80,8 @@ fun ZibeButtonPrimary(
                 Icon(
                     painter = painterResource(id = res),
                     contentDescription = null,
-                    // Dejamos el tinte null para Facebook/Google (colores originales) o usamos el proporcionado
                     tint = iconTint ?: Color.Unspecified,
-                    modifier = Modifier.size(40.dp) // Tamaño original de los assets de redes sociales
+                    modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             }
@@ -111,7 +114,7 @@ fun ZibeButtonSecondary(
         isLoading = isLoading,
         buttonColors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }

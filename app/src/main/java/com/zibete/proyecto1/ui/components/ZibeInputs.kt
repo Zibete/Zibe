@@ -266,7 +266,7 @@ fun ZibeAboutField(
     minHeight: Dp = 120.dp,
     maxHeight: Dp = 200.dp,
     initialHeight: Dp = 140.dp,
-    resizable: Boolean = false,
+    resizable: Boolean = true,
     bringIntoViewOnFocus: Boolean = true,
     bringIntoViewExtraBottom: Dp = 10.dp,
     leadingIcon: (@Composable () -> Unit)? = {
@@ -280,10 +280,10 @@ fun ZibeAboutField(
         autoCorrectEnabled = true,
         keyboardType = KeyboardType.Text
     ),
+    containerColor: Color = LocalZibeExtendedColors.current.contentDarkBg
 ) {
     val zibeColors = LocalZibeExtendedColors.current
 
-    val containerColor = zibeColors.contentDarkBg
     val hintColor = zibeColors.hintText
     val errorColor = zibeColors.snackRed
 
@@ -300,7 +300,7 @@ fun ZibeAboutField(
 
         Box(modifier = Modifier.fillMaxWidth()) {
 
-            ZibeInputFieldDark(
+            ZibeInputField(
                 value = value,
                 onValueChange = { newText ->
                     val next = if (newText.length > maxChars) newText.take(maxChars) else newText
@@ -336,7 +336,8 @@ fun ZibeAboutField(
                 leadingIcon = leadingIcon,
                 keyboardOptions = keyboardOptions,
                 enabled = enabled,
-                error = null
+                error = null,
+                containerColor = containerColor
             )
 
             if (resizable) {
