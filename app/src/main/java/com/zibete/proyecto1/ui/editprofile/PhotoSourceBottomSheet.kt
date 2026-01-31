@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.editprofile
 
 import LocalZibeExtendedColors
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,10 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,12 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.SheetHeader
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeCard
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,39 +46,27 @@ fun PhotoSourceBottomSheet(
     onGalleryClick: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
 ) {
-    val zibeExtendedColors = LocalZibeExtendedColors.current
-
     ZibeBottomSheet(
         isOpen = isOpen,
         onCancel = onDismiss,
         sheetState = sheetState,
+        showCancelButton = false,
         content = {
-
+            val zibeTypography = LocalZibeTypography.current
+            
             SheetHeader(
                 title = stringResource(id = R.string.edit_picture),
-                subtitle = "Elegí una fuente para subir tu foto de perfil"
+                subtitle = stringResource(R.string.content_description_edit_photo),
+                titleStyle = zibeTypography.h1,
+                subtitleStyle = zibeTypography.subtitle
             )
 
+            // Grid de 2 columnas solo para las fuentes de imagen
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = dimensionResource(R.dimen.element_spacing_small)),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
             ) {
-                if (onDeleteClick != null) {
-                    PhotoSourceItem(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Delete,
-                        label = stringResource(id = R.string.delete),
-                        onClick = {
-                            onDeleteClick()
-                            onDismiss()
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(dimensionResource(R.dimen.element_spacing_small)))
-                }
-
-                PhotoSourceItem(
+                PhotoSourceMainItem(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.CameraAlt,
                     label = stringResource(id = R.string.camera),
@@ -87,9 +75,7 @@ fun PhotoSourceBottomSheet(
                         onDismiss()
                     }
                 )
-                Spacer(modifier = Modifier.width(dimensionResource(R.dimen.element_spacing_small)))
-
-                PhotoSourceItem(
+                PhotoSourceMainItem(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.PhotoLibrary,
                     label = stringResource(id = R.string.gallery),
@@ -99,57 +85,93 @@ fun PhotoSourceBottomSheet(
                     }
                 )
             }
+
+            // Opción de eliminar: separada, más pequeña y sutil
+            onDeleteClick?.let {
+                Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_xs)))
+                DeletePhotoAction(
+                    onClick = {
+                        it()
+                        onDismiss()
+                    }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
         }
     )
 }
 
 @Composable
-private fun PhotoSourceItem(
+private fun PhotoSourceMainItem(
     modifier: Modifier = Modifier,
     icon: ImageVector,
     label: String,
     onClick: () -> Unit
 ) {
     val zibeExtendedColors = LocalZibeExtendedColors.current
+    val zibeTypography = LocalZibeTypography.current
 
     ZibeCard(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier,
+        onClick = onClick,
         containerColor = zibeExtendedColors.contentLightBg,
-        elevation = 0.dp
+        elevation = 0.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, 
+            zibeExtendedColors.accent.copy(alpha = 0.15f)
+        )
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = zibeExtendedColors.lightText
+                modifier = Modifier.size(32.dp),
+                tint = zibeExtendedColors.accent
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = zibeExtendedColors.lightText
+                style = zibeTypography.actionLabel,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun PhotoSourceItemPreview() {
-    ZibeTheme {
-        PhotoSourceItem(
-            modifier = Modifier
-                .padding(16.dp)
-                .width(120.dp),
-            icon = Icons.Default.CameraAlt,
-            label = "Cámara",
-            onClick = {}
+private fun DeletePhotoAction(
+    onClick: () -> Unit
+) {
+    val zibeColors = LocalZibeExtendedColors.current
+    val zibeTypography = LocalZibeTypography.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.DeleteOutline,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = zibeColors.snackRed.copy(alpha = 0.8f)
+        )
+        Spacer(modifier = Modifier.size(8.dp))
+        Text(
+            text = stringResource(R.string.delete),
+            style = zibeTypography.label,
+            color = zibeColors.snackRed.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center
         )
     }
 }

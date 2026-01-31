@@ -31,10 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeTextStyles
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +45,7 @@ fun ZibeBottomSheet(
     isOpen: Boolean,
     onCancel: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+    showCancelButton: Boolean = true, // Added for flexibility in redesign
     content: @Composable ColumnScope.() -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
@@ -76,14 +79,19 @@ fun ZibeBottomSheet(
 }
 
 @Composable
-fun SheetHeader(title: String, subtitle: String? = null) {
-
+fun SheetHeader(
+    title: String,
+    subtitle: String? = null,
+    titleStyle: TextStyle? = null,
+    subtitleStyle: TextStyle? = null
+) {
     val zibeColors = LocalZibeExtendedColors.current
+    val zibeTextStyles = LocalZibeTextStyles.current
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = titleStyle ?: zibeTextStyles.h2, // Default to h2 if not provided (new design)
             color = zibeColors.lightText,
             fontWeight = FontWeight.Bold
         )
@@ -93,7 +101,7 @@ fun SheetHeader(title: String, subtitle: String? = null) {
         subtitle?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.bodyMedium,
+                style = subtitleStyle ?: zibeTextStyles.subtitle,
                 color = zibeColors.hintText
             )
         }

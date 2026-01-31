@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,6 +43,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -50,15 +52,19 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -193,6 +199,10 @@ fun EditProfileScreen(
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     var showPhotoSourceSheet by rememberSaveable { mutableStateOf(false) }
 
+    var fabHeightPx by remember { mutableIntStateOf(0) }
+    val fabHeightDp = with(LocalDensity.current) { fabHeightPx.toDp() }
+    val extraBottomMargin = dimensionResource(R.dimen.element_spacing_xl)
+
     val photoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var pendingCameraUriString by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -269,7 +279,10 @@ fun EditProfileScreen(
         containerColor = Color.Transparent,
         snackbarHost = { ZibeSnackbar(hostState = snackBarHostState) },
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                modifier = Modifier.onSizeChanged { fabHeightPx = it.height }
+            ) {
                 ZibeSecondaryFAB(
                     text = { Text(stringResource(id = R.string.edit_picture)) },
                     icon = { Icon(Icons.Rounded.AddAPhoto, null) },
@@ -297,17 +310,23 @@ fun EditProfileScreen(
                 modifier = Modifier
                     .verticalScroll(scrollState)
                     .padding(innerPadding)
-                    .padding(horizontal = dimensionResource(R.dimen.screen_padding)),
+                    .padding(
+                        start = dimensionResource(R.dimen.screen_padding),
+                        end = dimensionResource(R.dimen.screen_padding),
+                        bottom = fabHeightDp + extraBottomMargin
+                    ),
                 verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_medium))
             ) {
                 ZibeCard(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .aspectRatio(3f / 4f),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(3f / 4f),
+                            .fillMaxSize()
+                            .clip(MaterialTheme.shapes.medium),
                         contentAlignment = Alignment.Center
                     ) {
                         val painter = rememberAsyncImagePainter(model = photoModel)
