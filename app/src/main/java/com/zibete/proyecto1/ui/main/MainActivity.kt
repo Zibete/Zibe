@@ -50,7 +50,10 @@ import kotlinx.coroutines.delay
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
+import com.zibete.proyecto1.core.navigation.AppNavigator
+import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
@@ -78,6 +81,8 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
     @Inject
     lateinit var snackBarManager: SnackBarManager
+    @Inject
+    lateinit var appNavigator: AppNavigator
     val mainViewModel: MainViewModel by viewModels()
     private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
@@ -344,7 +349,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             is MainUiEvent.ToGroupHost -> {
-                                mainViewModel.showToolbar(true)
+//                                mainViewModel.showToolbar(true)
                                 supportFragmentManager.beginTransaction()
                                     .replace(R.id.nav_host_fragment, GroupHostFragment())
 //                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
@@ -449,6 +454,22 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                                         goToChatTab()
                                     }
                                 )
+                            }
+                        }
+                    }
+                }
+                launch {
+                    appNavigator.events.collect { event ->
+                        when (event) {
+                            is NavAppEvent.FinishFlowNavigateToSplash -> {
+                                val intent = Intent(this@MainActivity, SplashActivity::class.java)
+                                if (event.sessionConflict) intent.putExtra(EXTRA_SESSION_CONFLICT, true)
+                                if (event.deleteAccount) intent.putExtra(EXTRA_DELETE_ACCOUNT, true)
+                                intent.putExtra(EXTRA_UI_TEXT, event.snackMessage)
+                                intent.putExtra(EXTRA_SNACK_TYPE, event.snackType)
+                                stopLocationUpdates()
+                                finish()
+                                startActivity(intent)
                             }
                         }
                     }

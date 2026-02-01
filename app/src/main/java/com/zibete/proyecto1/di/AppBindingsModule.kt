@@ -31,9 +31,11 @@ import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
+import com.zibete.proyecto1.domain.session.DefaultSessionConflictMonitor
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import dagger.Binds
 import dagger.Module
@@ -69,6 +71,12 @@ abstract class AppBindingsModule {
     abstract fun bindSessionBootstrapper(
         impl: DefaultSessionBootstrapper
     ): SessionBootstrapper
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionConflictMonitor(
+        impl: DefaultSessionConflictMonitor
+    ): SessionConflictMonitor
 
     @Binds
     @Singleton

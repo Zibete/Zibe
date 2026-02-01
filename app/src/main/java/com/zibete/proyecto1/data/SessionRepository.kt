@@ -21,6 +21,12 @@ interface SessionRepositoryProvider {
     suspend fun getInstallId(uid: String): String?
     suspend fun getFcmToken(uid: String): String?
     suspend fun getSessionsByFcmToken(token: String): DataSnapshot
+    fun observeSessionConflict(
+        uid: String,
+        myInstallId: String,
+        onConflict: () -> Unit
+    ): ValueEventListener
+    fun removeSessionListener(uid: String, listener: ValueEventListener)
 }
 
 @Singleton
@@ -88,7 +94,7 @@ class SessionRepository @Inject constructor(
     // LISTENER (conflicto de sesión)
     // ============================================================
 
-    fun observeSessionConflict(
+    override fun observeSessionConflict(
         uid: String,
         myInstallId: String,
         onConflict: () -> Unit
@@ -111,7 +117,7 @@ class SessionRepository @Inject constructor(
         return listener
     }
 
-    fun removeSessionListener(uid: String, listener: ValueEventListener) {
+    override fun removeSessionListener(uid: String, listener: ValueEventListener) {
         refInstallId(uid).removeEventListener(listener)
     }
 
