@@ -23,6 +23,7 @@ class DefaultSessionBootstrapper @Inject constructor(
     private val authSessionProvider: AuthSessionProvider,
     private val sessionRepositoryActions: SessionRepositoryActions,
     private val sessionRepositoryProvider: SessionRepositoryProvider,
+    private val sessionConflictMonitor: SessionConflictMonitor,
     private val userRepositoryActions: UserRepositoryActions,
     private val userRepositoryProvider: UserRepositoryProvider,
     private val userPreferencesActions: UserPreferencesActions
@@ -35,18 +36,20 @@ class DefaultSessionBootstrapper @Inject constructor(
     ): ZibeResult<Unit> =
         zibeCatching {
             // 1. Registro de Sesión (FCM e InstallId)
-            setActiveSession(uid)
-            // 2. Flujo de Usuario (Creación o Verificación)
+            val installId = setActiveSession(uid)
+            // 2. Monitoreo de Conflictos
+            sessionConflictMonitor.start(uid = uid, installId = installId)
+            // 3. Flujo de Usuario (Creación o Verificación)
             updateUserFlow(
                 uid = uid,
                 birthDate = birthDate,
                 description = description
             )
-            // 3. Actualización de Caché Local
+            // 4. Actualización de Caché Local
             setLocalProfile()
         }
 
-    private suspend fun setActiveSession(uid: String) {
+    private suspend fun setActiveSession(uid: String): String {
         val installId = sessionRepositoryProvider.getLocalInstallId()
         val fcmToken = sessionRepositoryProvider.getLocalFcmToken()
 
@@ -55,6 +58,7 @@ class DefaultSessionBootstrapper @Inject constructor(
             installId = installId,
             fcmToken = fcmToken
         )
+        return installId
     }
 
 

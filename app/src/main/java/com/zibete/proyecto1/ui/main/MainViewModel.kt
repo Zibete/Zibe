@@ -3,7 +3,6 @@ package com.zibete.proyecto1.ui.main
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
@@ -14,13 +13,13 @@ import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.PresenceRepository
-import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +42,6 @@ class MainViewModel @Inject constructor(
     private val exitGroupUseCase: ExitGroupUseCase,
     private val userRepository: UserRepository,
     private val groupRepository: GroupRepository,
-    private val sessionRepository: SessionRepository,
     private val locationRepository: LocationRepository,
     private val presenceRepository: PresenceRepository,
     private val logoutUseCase: DefaultLogoutUseCase,
@@ -51,11 +49,18 @@ class MainViewModel @Inject constructor(
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
-    private val myUid: String get() = userRepository.myUid
-
     val groupContext: StateFlow<GroupContext?> =
         userPreferencesProvider.groupContextFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val groupName: StateFlow<String> =
+        userPreferencesProvider.groupContextFlow
+            .map { it?.groupName.orEmpty() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    val hasActiveFilter: StateFlow<Boolean> =
+        userPreferencesProvider.filterSwitchFlow
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -66,8 +71,6 @@ class MainViewModel @Inject constructor(
     private val _uiEvents = MutableSharedFlow<MainUiEvent>()
     val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
 
-    private var installIdListener: ValueEventListener? = null
-
     fun startPresence() {
         viewModelScope.launch {
             presenceRepository.startPresence()
@@ -76,21 +79,7 @@ class MainViewModel @Inject constructor(
 
     init {
 
-        // 1) Setup sesión (una vez)
-        viewModelScope.launch {
-            val installId = sessionRepository.getLocalInstallId()
-            val fcmToken = sessionRepository.getLocalFcmToken()
-
-            sessionRepository.setActiveSession(
-                uid = myUid,
-                installId = installId,
-                fcmToken = fcmToken
-            )
-
-            checkSessionConflict(myUid, installId)
-        }
-
-        // 2) Badge chats (siempre)
+        // 1) Badge chats
         viewModelScope.launch {
             userRepository.observeUnreadChatList()
                 .collect { count ->
@@ -98,11 +87,11 @@ class MainViewModel @Inject constructor(
                 }
         }
 
-        // 3)  Badge grupos (siempre)
+        // 2) Badge grupos
         observeGroupBadges()
     }
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeGroupBadges() {
 
         // Badge bottom nav = (unread chat grupo) + (unread privados dentro de grupo)
@@ -146,20 +135,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // --- LOGICA DE SESIÓN (Install ID) ---
-    private fun checkSessionConflict(uid: String, installId: String) {
-        installIdListener?.let { sessionRepository.removeSessionListener(uid, it) }
-
-        installIdListener = sessionRepository.observeSessionConflict(
-            uid = uid,
-            myInstallId = installId
-        ) {
-            viewModelScope.launch {
-                _uiEvents.emit(MainUiEvent.NavigateToSplash(sessionConflict = true))
-            }
-        }
-    }
-
     // --- FUNCIONES DE UI ---
 
     fun emit(event: MainUiEvent) {
@@ -174,17 +149,17 @@ class MainViewModel @Inject constructor(
         _toolbarState.update { it.copy(showToolbar = show) }
     }
 
-    fun showLayoutSettings(show: Boolean) {
-        _toolbarState.update { it.copy(showUsersFragmentSettings = show) }
-    }
-
-    fun showBottomNav(show: Boolean) {
-        _toolbarState.update { it.copy(showBottomNav = show) }
-    }
-
-    fun showSkipButton(show: Boolean) {
-        _toolbarState.update { it.copy(showSkipButton = show) }
-    }
+//    fun showLayoutSettings(show: Boolean) {
+//        _toolbarState.update { it.copy(showUsersFragmentSettings = show) }
+//    }
+//
+//    fun showBottomNav(show: Boolean) {
+//        _toolbarState.update { it.copy(showBottomNav = show) }
+//    }
+//
+//    fun showSkipButton(show: Boolean) {
+//        _toolbarState.update { it.copy(showSkipButton = show) }
+//    }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
     fun onLocationChanged(location: Location) {
@@ -251,97 +226,104 @@ class MainViewModel @Inject constructor(
 
     fun onBottomItemSelected(itemId: Int) {
         when (itemId) {
-
-            R.id.navBottomUsers -> {
-
-                if (_toolbarState.value.currentScreen == CurrentScreen.USERS) return
-
-                setScreen(CurrentScreen.USERS)
-                showToolbar(true)
-                showLayoutSettings(true)
-                showBottomNav(true)
-
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.ToUsers)
-                }
-            }
-
-            R.id.navBottomChat -> {
-                onChatTabSelected()
-            }
-
-            R.id.navBottomFavorites -> {
-                if (_toolbarState.value.currentScreen == CurrentScreen.FAVORITES) return
-
-                setScreen(CurrentScreen.FAVORITES)
-                showToolbar(true)
-                showLayoutSettings(false)
-                showBottomNav(true)
-
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.ToFavorites)
-                }
-            }
-
-            R.id.navBottomGrupos -> {
-                onGroupsTabSelected()
-            }
+            R.id.navBottomUsers -> onUsersTabSelected()
+            R.id.navBottomChat -> onChatTabSelected()
+            R.id.navBottomFavorites -> onFavoritesTabSelected()
+            R.id.navBottomGrupos -> onGroupsTabSelected()
         }
+    }
+
+    fun onUsersTabSelected() {
+        if (_toolbarState.value.currentScreen == CurrentScreen.USERS) return
+        setToolbarState(
+            showToolbar = true,
+            showBack = false,
+            showUsersFragmentSettings = true,
+            showBottomNav = true,
+            currentScreen = CurrentScreen.USERS,
+            showSkipButton = false
+        )
+        viewModelScope.launch { toUsers() }
     }
 
     fun onChatTabSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.CHAT) return
+        setToolbarState(
+            showToolbar = true,
+            showBack = false,
+            showUsersFragmentSettings = false,
+            showBottomNav = true,
+            currentScreen = CurrentScreen.CHAT,
+            showSkipButton = false
+        )
+        viewModelScope.launch { toChat() }
+    }
 
-        setScreen(CurrentScreen.CHAT)
-        showToolbar(true)
-        showLayoutSettings(false)
-        showBottomNav(true)
-
-        viewModelScope.launch {
-            _uiEvents.emit(MainUiEvent.ToChat)
-        }
+    fun onFavoritesTabSelected() {
+        if (_toolbarState.value.currentScreen == CurrentScreen.FAVORITES) return
+        setToolbarState(
+            showToolbar = true,
+            showBack = false,
+            showUsersFragmentSettings = false,
+            showBottomNav = true,
+            currentScreen = CurrentScreen.FAVORITES,
+            showSkipButton = false
+        )
+        viewModelScope.launch { toFavorites() }
     }
 
     fun onGroupsTabSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.GROUPS) return
-
-        setScreen(CurrentScreen.GROUPS)
-        showBottomNav(true)
-        showLayoutSettings(false)
-
+        setToolbarState(
+            showToolbar = true,
+            showBack = false,
+            showUsersFragmentSettings = false,
+            showBottomNav = true,
+            currentScreen = CurrentScreen.GROUPS,
+            showSkipButton = false
+        )
         viewModelScope.launch {
             val ctx = groupContext.value
             val inGroup = ctx?.inGroup ?: false
-            if (!inGroup) toGroupsSelect() else {
-                showToolbar(true); toGroupHost()
-            }
-        }
-
-    }
-
-    fun toGroupHost() {
-        viewModelScope.launch {
-            _uiEvents.emit(MainUiEvent.ToGroupHost)
-        }
-    }
-
-    fun toGroupsSelect() {
-        viewModelScope.launch {
-            _uiEvents.emit(MainUiEvent.ToGroupsSelect)
+            if (!inGroup) toGroupsSelect() else toGroupHost()
         }
     }
 
     fun onEditProfileSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
+        setToolbarState(
+            showToolbar = true,
+            showBack = false,
+            showUsersFragmentSettings = false,
+            showBottomNav = false,
+            currentScreen = CurrentScreen.EDIT_PROFILE,
+            showSkipButton = false
+        )
+        viewModelScope.launch { toEditProfile() }
+    }
 
-        setScreen(CurrentScreen.EDIT_PROFILE)
-        showToolbar(true)
-        showBottomNav(false)
-        showLayoutSettings(false)
+    suspend fun toEditProfile() {
+        _uiEvents.emit(MainUiEvent.ToEditProfile)
+    }
 
-        viewModelScope.launch {
-            _uiEvents.emit(MainUiEvent.ToEditProfile)
-        }
+    suspend fun toGroupHost() {
+        _uiEvents.emit(MainUiEvent.ToGroupHost)
+    }
+
+    suspend fun toGroupsSelect() {
+        _uiEvents.emit(MainUiEvent.ToGroupsSelect)
+    }
+
+    suspend fun toFavorites() {
+        _uiEvents.emit(MainUiEvent.ToFavorites)
+    }
+
+    suspend fun toChat() {
+        _uiEvents.emit(MainUiEvent.ToChat)
+    }
+
+    suspend fun toUsers() {
+        _uiEvents.emit(MainUiEvent.ToUsers)
     }
 
     fun onBackPressed() {
@@ -370,13 +352,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        installIdListener?.let {
-            sessionRepository.removeSessionListener(myUid, it)
-        }
-    }
-
     fun onToolbarItemSelected(itemId: Int) {
         when (itemId) {
 
@@ -386,9 +361,7 @@ class MainViewModel @Inject constructor(
                 }
             }
 
-            R.id.action_favorites -> {
-                onBottomItemSelected(R.id.navBottomFavorites)
-            }
+            R.id.action_favorites -> onBottomItemSelected(R.id.navBottomFavorites)
 
             R.id.action_exit_group -> {
                 viewModelScope.launch {
@@ -410,7 +383,7 @@ class MainViewModel @Inject constructor(
         showUsersFragmentSettings: Boolean,
         showBottomNav: Boolean,
         currentScreen: CurrentScreen,
-        showSkipButton: Boolean = false
+        showSkipButton: Boolean
     ) {
         _toolbarState.update {
             it.copy(
@@ -423,16 +396,6 @@ class MainViewModel @Inject constructor(
             )
         }
     }
-
-    val groupName: StateFlow<String> =
-        userPreferencesProvider.groupContextFlow
-            .map { it?.groupName.orEmpty() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
-
-    val hasActiveFilter: StateFlow<Boolean> =
-        userPreferencesProvider.filterSwitchFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
 
     fun myDisplayName(): String = userRepository.myUserName
     fun myEmail(): String = userRepository.myEmail

@@ -22,26 +22,25 @@ class DefaultLogoutUseCase @Inject constructor(
     private val userRepositoryActions: UserRepositoryActions,
     private val userPreferencesActions: UserPreferencesActions,
     private val authSessionActions: AuthSessionActions,
+    private val sessionConflictMonitor: SessionConflictMonitor,
     private val loginManager: LoginManager
 ) : LogoutUseCase {
 
     override suspend fun execute(): ZibeResult<Unit> = zibeCatching {
-
-        // 1. Actualizar última conexión
+        // 1. Detener monitoreo de conflicto
+        sessionConflictMonitor.stop()
+        // 2. Actualizar última conexión
         userRepositoryActions.setUserLastSeen()
-
-        // 2. Limpiar sesión
+        // 3. Limpiar sesión
         authSessionActions.signOutFirebaseUser().getOrThrow()
         loginManager.logOut()
-
-        // 3. Limpiar Credential Manager
+        // 4. Limpiar Credential Manager
         try {
             CredentialManager.create(context)
                 .clearCredentialState(ClearCredentialStateRequest())
         } catch (_: Throwable) {
         }
-
-        // 4. Limpiar DataStore local
+        // 5. Limpiar DataStore local
         userPreferencesActions.clearSessionData()
     }
 }
