@@ -314,6 +314,7 @@
     <string name="dialog_delete_account_message">Esta acción eliminará toda la información y no se podrá recuperar</string>
     <string name="action_yes">Sí</string>
     <string name="action_send">Enviar</string>
+    <string name="action_delete_photo">Eliminar foto</string>
 
     <string name="dialog_delete_account_final_message">Si elimina la cuenta, no podrá recuperar sus datos</string>
     <string name="action_delete_account">Eliminar cuenta</string>

@@ -2,6 +2,7 @@ package com.zibete.proyecto1.ui.components
 
 import LocalZibeExtendedColors
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.EditCalendar
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +78,8 @@ fun ZibeInputField(
     readOnly: Boolean = false,
     error: String? = null,
     enabled: Boolean = true,
-    containerColor: Color = LocalZibeExtendedColors.current.contentLightBg
+    containerColor: Color = LocalZibeExtendedColors.current.contentLightBg,
+    showErrorUnderneath: Boolean = true
 ) {
     val zibeColors = LocalZibeExtendedColors.current
 
@@ -130,7 +135,7 @@ fun ZibeInputField(
             keyboardOptions = keyboardOptions,
             keyboardActions = KeyboardActions.Default,
         )
-        if (error != null) {
+        if (showErrorUnderneath && error != null) {
             Box(
                 modifier = Modifier
                     .padding(top = 4.dp, bottom = 0.dp)
@@ -211,7 +216,8 @@ fun ZibeInputFieldDark(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     readOnly: Boolean = false,
     enabled: Boolean = true,
-    error: String? = null
+    error: String? = null,
+    showErrorUnderneath: Boolean = true
 ) {
     ZibeInputField(
         value = value,
@@ -226,7 +232,8 @@ fun ZibeInputFieldDark(
         readOnly = readOnly,
         enabled = enabled,
         error = error,
-        containerColor = LocalZibeExtendedColors.current.contentDarkBg
+        containerColor = LocalZibeExtendedColors.current.contentDarkBg,
+        showErrorUnderneath = showErrorUnderneath
     )
 }
 
@@ -249,6 +256,115 @@ fun ZibeInputPasswordFieldDark(
         onToggleVisible = onToggleVisible,
         error = error,
         containerColor = LocalZibeExtendedColors.current.contentDarkBg
+    )
+}
+
+@Composable
+fun ZibeInputBirthdate(
+    value: String,
+    age: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(R.string.birth_date),
+    error: String? = null,
+    enabled: Boolean = true,
+    containerColor: Color = LocalZibeExtendedColors.current.contentLightBg
+) {
+    val zibeColors = LocalZibeExtendedColors.current
+    val errorColor = zibeColors.snackRed
+    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(inputPadding)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                ZibeInputField(
+                    value = value,
+                    onValueChange = { },
+                    label = label,
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.EditCalendar,
+                            contentDescription = stringResource(R.string.content_description_edit_birthdate)
+                        )
+                    },
+                    enabled = enabled,
+                    readOnly = true,
+                    error = error,
+                    showErrorUnderneath = false,
+                    containerColor = containerColor
+                )
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .testTag(TestTags.BIRTHDATE_PICKER)
+                        .clickable(enabled = enabled) { onClick() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = stringResource(R.string.birth_date),
+                        tint = zibeColors.hintText,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = dimensionResource(R.dimen.element_spacing_small))
+                    )
+                }
+            }
+
+            if (value.isNotBlank() && age.isNotBlank()) {
+                ZibeInputField(
+                    value = age,
+                    onValueChange = {},
+                    label = stringResource(id = R.string.age),
+                    enabled = false,
+                    modifier = Modifier.width(80.dp),
+                    containerColor = containerColor
+                )
+            }
+        }
+
+        if (error != null) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(containerColor.copy(alpha = 0.92f))
+                    .padding(horizontal = 10.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = error,
+                    color = errorColor,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ZibeInputBirthdateDark(
+    value: String,
+    age: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = stringResource(R.string.birth_date),
+    error: String? = null,
+    enabled: Boolean = true,
+    containerColor: Color = LocalZibeExtendedColors.current.contentDarkBg
+) {
+    ZibeInputBirthdate(
+        value = value,
+        age = age,
+        onClick = onClick,
+        modifier = modifier,
+        label = label,
+        error = error,
+        enabled = enabled,
+        containerColor = containerColor
     )
 }
 
@@ -448,6 +564,13 @@ fun ZibeInputsDarkOnGradientPreview() {
                 visible = true,
                 onToggleVisible = {}
             )
+
+            ZibeInputBirthdateDark(
+                value = "10/05/1990",
+                age = "34",
+                onClick = {},
+                error = "Must be over 18"
+            )
         }
     }
 }
@@ -488,6 +611,13 @@ fun ZibeInputsLightOnSurfacePreview() {
                 enabled = true,
                 visible = true,
                 onToggleVisible = {}
+            )
+
+            ZibeInputBirthdate(
+                value = "10/05/1990",
+                age = "34",
+                onClick = {},
+                error = "Must be over 18"
             )
         }
     }
