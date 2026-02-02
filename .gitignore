@@ -19,3 +19,7 @@ local.properties
 # === OS ===
 .DS_Store
 Thumbs.db
+
+# Local agent instructions (do not commit)
+AGENTS.md
+**/AGENTS.md
