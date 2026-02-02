@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
@@ -19,6 +20,8 @@ import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -34,7 +37,8 @@ class EditProfileViewModel @Inject constructor(
     private val userPreferencesActions: UserPreferencesActions,
     private val userRepositoryProvider: UserRepositoryProvider,
     private val updateProfileUseCase: UpdateProfileUseCase,
-    private val snackBarManager: SnackBarManager
+    private val snackBarManager: SnackBarManager,
+    private val config: SettingsConfig,
 ) : ViewModel() {
 
     val snackBarEvents = snackBarManager.events
@@ -47,6 +51,8 @@ class EditProfileViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<EditProfileUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<EditProfileUiEvent> = _events.asSharedFlow()
+
+    private var validationJob: Job? = null
 
     fun load() {
         viewModelScope.launch {
@@ -74,7 +80,6 @@ class EditProfileViewModel @Inject constructor(
                         photoPreviewUri = null,
                         deletePhoto = false,
                         hasPendingChanges = false,
-                        hasBirthDate = birthDate.isNotBlank(),
                         birthDateError = null,
                         nameError = null,
                         originalName = u.name,
@@ -95,23 +100,47 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    private fun recomputeSaveEnabled(state: EditProfileUiState): Boolean {
-        val changedName = state.name.trim() != state.originalName.trim()
-        val changedDesc = state.description.trim() != state.originalDescription.trim()
-        val changedBirth = state.birthDate.trim() != state.originalBirthDate.trim()
+    fun onNameChanged(input: String) {
+        validationJob?.cancel()
+        val trimmed = input.trim()
+        _uiState.update { it.copy(name = trimmed, nameError = null) }
 
-        val pickedNewPhoto = state.photoPreviewUri != null
-        val requestedDelete = state.deletePhoto
-
-        val changedPhoto = pickedNewPhoto || requestedDelete
-
-        return changedName || changedDesc || changedBirth || changedPhoto
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = when {
+                trimmed.isBlank() -> UiText.StringRes(R.string.signup_err_name_required)
+                else -> null
+            }
+            _uiState.update { s ->
+                val ns = s.copy(
+                    nameError = error
+                )
+                ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
+            }
+        }
     }
 
-    fun onNameChanged(value: String) {
-        _uiState.update { s ->
-            val ns = s.copy(name = value)
-            ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
+    fun onBirthDateChanged(input: String) {
+        validationJob?.cancel()
+        val trimmed = input.trim()
+        _uiState.update { it.copy(birthDate = trimmed, birthDateError = null) }
+
+        if (trimmed.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            val age = trimmed.takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
+            val error = when {
+                !isAdult(trimmed) -> UiText.StringRes(R.string.err_under_age)
+                else -> null
+            }
+            _uiState.update { s ->
+                val ns = s.copy(
+                    birthDate = input,
+                    age = age,
+                    birthDateError = error
+                )
+                ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
+            }
         }
     }
 
@@ -119,29 +148,6 @@ class EditProfileViewModel @Inject constructor(
         _uiState.update { s ->
             val ns = s.copy(description = value)
             ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
-        }
-    }
-
-    fun onBirthDateChanged(birthDate: String) {
-        _uiState.update { it.copy(birthDateError = null, age = null) }
-
-        if (birthDate.isBlank()) {
-            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
-            return
-        }
-
-        val age = birthDate.trim().takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
-        _uiState.update {
-            val newState = it.copy(
-                birthDate = birthDate,
-                age = age
-            )
-            newState.copy(hasPendingChanges = recomputeSaveEnabled(newState))
-
-        }
-
-        if (!isAdult(birthDate)) {
-            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.err_under_age)) }
         }
     }
 
@@ -157,6 +163,19 @@ class EditProfileViewModel @Inject constructor(
             val ns = s.copy(photoPreviewUri = null, deletePhoto = true)
             ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
         }
+    }
+
+    private fun recomputeSaveEnabled(state: EditProfileUiState): Boolean {
+        val changedName = state.name.trim() != state.originalName.trim()
+        val changedDesc = state.description.trim() != state.originalDescription.trim()
+        val changedBirth = state.birthDate.trim() != state.originalBirthDate.trim()
+
+        val pickedNewPhoto = state.photoPreviewUri != null
+        val requestedDelete = state.deletePhoto
+
+        val changedPhoto = pickedNewPhoto || requestedDelete
+
+        return changedName || changedDesc || changedBirth || changedPhoto
     }
 
     fun resolveProfilePhotoToLoad(): Any? =
@@ -230,9 +249,20 @@ class EditProfileViewModel @Inject constructor(
         when {
             state.isSaving -> Unit
             state.hasPendingChanges -> _uiState.update { it.copy(showDiscardDialog = true) }
-            !state.hasBirthDate -> _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
+            state.birthDate.isBlank() -> _uiState.update {
+                it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required))
+            }
             else -> onBackToMain()
         }
+    }
+
+    fun onDiscardDialogDismiss() {
+        _uiState.update { it.copy(showDiscardDialog = false) }
+    }
+
+    fun onDiscardDialogConfirmExit() {
+        _uiState.update { it.copy(showDiscardDialog = false) }
+        onBackToMain()
     }
 
     fun onBackToMain() {

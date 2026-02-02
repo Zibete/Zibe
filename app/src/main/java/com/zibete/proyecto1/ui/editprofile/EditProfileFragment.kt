@@ -60,7 +60,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     private var _binding: FragmentEditProfileBinding? = null
     private val binding get() = _binding!!
     private var pendingCameraUri: Uri? = null
-
     private var lastLoadedPhotoModel: Any? = null
 
     // Insets/FABs

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,7 +51,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -154,8 +154,9 @@ fun EditProfileRoute(
         onPhotoSelected = editProfileViewModel::onPhotoSelected,
         onPhotoDeleted = editProfileViewModel::onPhotoDeletedSetDefault,
         onSave = editProfileViewModel::onSaveClicked,
-        onNavigateBack = onNavigateBack,
         onBackRequest = editProfileViewModel::onBackRequest,
+        onDiscardDismiss = editProfileViewModel::onDiscardDialogDismiss,
+        onDiscardConfirmExit = editProfileViewModel::onDiscardDialogConfirmExit,
         onOpenSettings = onOpenSettings,
         snackBarHostState = snackHostState,
         photoModel = photoModel,
@@ -175,8 +176,9 @@ fun EditProfileScreen(
     onPhotoSelected: (Uri) -> Unit,
     onPhotoDeleted: () -> Unit,
     onSave: () -> Unit,
-    onNavigateBack: () -> Unit,
     onBackRequest: () -> Unit,
+    onDiscardDismiss: () -> Unit,
+    onDiscardConfirmExit: () -> Unit,
     onOpenSettings: () -> Unit,
     snackBarHostState: SnackbarHostState,
     photoModel: Any?,
@@ -187,7 +189,6 @@ fun EditProfileScreen(
     val context = LocalContext.current
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
     var showPhotoSourceSheet by rememberSaveable { mutableStateOf(false) }
 
     var fabHeightPx by remember { mutableIntStateOf(0) }
@@ -298,21 +299,12 @@ fun EditProfileScreen(
         items
     }
 
-    val saveEnabled by remember(
-        state.isLoading,
-        state.isSaving,
-        state.hasPendingChanges,
-        state.birthDateError,
-        state.nameError
-    ) {
-        derivedStateOf {
-            state.hasPendingChanges &&
-                    !state.isLoading &&
-                    !state.isSaving &&
-                    state.nameError == null &&
-                    state.birthDateError == null
-        }
-    }
+    val saveEnabled =
+        state.hasPendingChanges &&
+                !state.isLoading &&
+                !state.isSaving &&
+                state.nameError == null &&
+                state.birthDateError == null
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -320,7 +312,7 @@ fun EditProfileScreen(
         topBar = {
             ZibeToolbar(
                 title = stringResource(R.string.menu_edit_profile),
-                onBack = onNavigateBack,
+                onBack = onBackRequest,
                 menuItems = menuItems
             )
         },
@@ -424,6 +416,7 @@ fun EditProfileScreen(
                             label = stringResource(id = R.string.name),
                             leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null) },
                             enabled = !state.isSaving && !state.isLoading,
+                            error = state.nameError?.asString(context),
                             singleLine = true
                         )
 
@@ -457,6 +450,9 @@ fun EditProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(fabHeightDp + extraBottomMargin))
+
             }
         }
     }
@@ -513,9 +509,9 @@ fun EditProfileScreen(
         }
     }
 
-    if (showDiscardDialog) {
+    if (state.showDiscardDialog) {
         AlertDialog(
-            onDismissRequest = { showDiscardDialog = false },
+            onDismissRequest = onDiscardDismiss,
             title = {
                 Text(stringResource(id = R.string.discard_changes_title), style = zibeTypography.h2)
             },
@@ -526,10 +522,7 @@ fun EditProfileScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showDiscardDialog = false
-                    onNavigateBack()
-                }) {
+                TextButton(onClick = onDiscardConfirmExit) {
                     Text(
                         stringResource(id = R.string.action_exit),
                         color = zibeColors.snackRed,
@@ -539,7 +532,7 @@ fun EditProfileScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) {
+                TextButton(onClick = onDiscardDismiss) {
                     Text(
                         stringResource(id = R.string.action_dont_discard),
                         style = zibeTypography.label
@@ -579,11 +572,12 @@ fun EditProfileScreenPreview() {
             onPhotoSelected = {},
             onPhotoDeleted = {},
             onSave = {},
-            onNavigateBack = {},
             snackBarHostState = SnackbarHostState(),
             photoModel = null,
             onShowSnack = { _, _ -> },
             onBackRequest = {},
+            onDiscardDismiss = {},
+            onDiscardConfirmExit = {},
             onOpenSettings = {},
         )
     }
