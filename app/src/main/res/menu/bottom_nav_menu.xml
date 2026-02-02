@@ -16,7 +16,7 @@
         android:contentDescription="@string/menu_chat" />
 
     <item
-        android:id="@+id/navBottomGrupos"
+        android:id="@+id/navBottomGroups"
         android:icon="@drawable/ic_baseline_groups_24"
         android:title="@string/menu_groups"
         android:titleCondensed="@string/menu_groups"

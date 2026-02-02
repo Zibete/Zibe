@@ -30,6 +30,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import androidx.navigation.navOptions
 import com.bumptech.glide.Glide
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -46,7 +47,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
-import kotlinx.coroutines.delay
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
@@ -56,28 +56,22 @@ import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment
-import com.zibete.proyecto1.ui.editprofile.EditProfileFragment
+import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
-import com.zibete.proyecto1.ui.groups.GroupsFragment
-import com.zibete.proyecto1.ui.groups.host.GroupHostFragment
 import com.zibete.proyecto1.ui.search.SearchHandler
-import com.zibete.proyecto1.ui.settings.SettingsActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : BaseEdgeToEdgeActivity() {
+class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     @Inject
     lateinit var snackBarManager: SnackBarManager
@@ -104,6 +98,66 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     private var settingsClient: SettingsClient? = null
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
+    private val destinationUiConfig: Map<Int, DestinationUiConfig> by lazy {
+        mapOf(
+            R.id.nav_users to DestinationUiConfig(
+                currentScreen = CurrentScreen.USERS,
+                showToolbar = true,
+                showBottomNav = true,
+                showDrawer = true,
+                showBack = false,
+                showUsersFragmentSettings = true
+            ),
+            R.id.nav_chat_list to DestinationUiConfig(
+                currentScreen = CurrentScreen.CHAT,
+                showToolbar = true,
+                showBottomNav = true,
+                showDrawer = true,
+                showBack = false,
+                showUsersFragmentSettings = false
+            ),
+            R.id.nav_group_select to DestinationUiConfig(
+                currentScreen = CurrentScreen.GROUPS,
+                showToolbar = true,
+                showBottomNav = true,
+                showDrawer = true,
+                showBack = false,
+                showUsersFragmentSettings = false
+            ),
+            R.id.nav_favorites to DestinationUiConfig(
+                currentScreen = CurrentScreen.FAVORITES,
+                showToolbar = true,
+                showBottomNav = true,
+                showDrawer = true,
+                showBack = false,
+                showUsersFragmentSettings = false
+            ),
+            R.id.editProfileFragment to DestinationUiConfig(
+                currentScreen = CurrentScreen.EDIT_PROFILE,
+                showToolbar = false,
+                showBottomNav = false,
+                showDrawer = false,
+                showBack = false,
+                showUsersFragmentSettings = false
+            ),
+            R.id.settingsFragment to DestinationUiConfig(
+                currentScreen = CurrentScreen.OTHER,
+                showToolbar = false,
+                showBottomNav = false,
+                showDrawer = false,
+                showBack = false,
+                showUsersFragmentSettings = false
+            ),
+            R.id.nav_group_host to DestinationUiConfig(
+                currentScreen = CurrentScreen.GROUPS,
+                showToolbar = true,
+                showBottomNav = true,
+                showDrawer = false,
+                showBack = true,
+                showUsersFragmentSettings = false
+            )
+        )
+    }
 
     override val toolbarMenuRes: Int = R.menu.menu_main
 
@@ -196,12 +250,12 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         materialToolbar.setNavigationOnClickListener {
             if (dismissImeIfVisible()) return@setNavigationOnClickListener
-            val currentScreen = mainViewModel.toolbarState.value.currentScreen
-            if (currentScreen == CurrentScreen.EDIT_PROFILE) {
-                mainViewModel.onBackPressed()
-                return@setNavigationOnClickListener
+            val showBack = mainViewModel.toolbarState.value.showBack
+            if (showBack) {
+                onBackPressedDispatcher.onBackPressed()
+            } else {
+                drawerLayout?.openDrawer(GravityCompat.START)
             }
-            drawerLayout?.openDrawer(GravityCompat.START)
         }
 
         navigationView = binding.navView
@@ -248,7 +302,7 @@ class MainActivity : BaseEdgeToEdgeActivity() {
             isVisible = false
         }
         // Group Badge
-        badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGrupos).apply {
+        badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGroups).apply {
             backgroundColor = getColorCompat(R.color.accent)
             badgeTextColor = getColorCompat(R.color.white)
             isVisible = false
@@ -264,9 +318,9 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.nav_chat,
                 R.id.nav_users,
-                R.id.nav_groups,
+                R.id.nav_chat_list,
+                R.id.nav_group_select,
                 R.id.nav_favorites
             ),
             drawerLayout
@@ -274,12 +328,30 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
         navController.let { nav ->
             NavigationUI.setupActionBarWithNavController(this, nav, appBarConfiguration)
-            navigationView?.let { nv -> NavigationUI.setupWithNavController(nv, nav) }
+        }
+
+        navigationView?.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.action_index -> {
+                    navController.navigate(R.id.nav_chat_list)
+                    bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
+                }
+                R.id.action_edit_profile -> mainViewModel.onEditProfileSelected()
+                R.id.action_settings -> mainViewModel.emit(MainUiEvent.NavigateToSettings)
+                R.id.action_logout -> mainViewModel.emit(MainUiEvent.ConfirmLogout)
+                else -> return@setNavigationItemSelectedListener false
+            }
+            drawerLayout?.closeDrawer(GravityCompat.START)
+            true
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
             mainViewModel.onBottomItemSelected(item.itemId)
             true
+        }
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            applyDestinationUi(destination.id)
         }
 
 //        // Estado inicial
@@ -309,8 +381,12 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                     bottomNavigationView.isVisible = state.showBottomNav
                     showSkipButton = state.showSkipButton
                     // title
-                    materialToolbar.title =
-                        state.currentScreen.titleRes.asString(this@MainActivity)
+                    if (navController.currentDestination?.id == R.id.nav_group_host) {
+                        materialToolbar.title = mainViewModel.groupName.value
+                    } else {
+                        materialToolbar.title =
+                            state.currentScreen.titleRes.asString(this@MainActivity)
+                    }
 
                     currentScreen = state.currentScreen
 
@@ -319,11 +395,15 @@ class MainActivity : BaseEdgeToEdgeActivity() {
             }
         }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.groupName.collect { materialToolbar.title = it }
-            }
-        }
+//        lifecycleScope.launch {
+//            repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                mainViewModel.groupName.collect { name ->
+//                    if (navController.currentDestination?.id == R.id.nav_group_host) {
+//                        materialToolbar.title = name
+//                    }
+//                }
+//            }
+//        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -334,13 +414,13 @@ class MainActivity : BaseEdgeToEdgeActivity() {
 
                             is MainUiEvent.ToUsers -> {
                                 navController.navigate(R.id.nav_users)
-                                bottomNavigationView.selectedItemId = R.id.navBottomUsers
+                                bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked = true
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainUiEvent.ToChat -> {
-                                navController.navigate(R.id.nav_chat)
-                                bottomNavigationView.selectedItemId = R.id.navBottomChat
+                                navController.navigate(R.id.nav_chat_list)
+                                bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
@@ -349,27 +429,30 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             is MainUiEvent.ToGroupHost -> {
-//                                mainViewModel.showToolbar(true)
-                                supportFragmentManager.beginTransaction()
-                                    .replace(R.id.nav_host_fragment, GroupHostFragment())
-//                                    .replace(R.id.nav_host_fragment, GroupPagerFragment())
-                                    .commit()
-
-                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
+                                navController.navigate(
+                                    R.id.nav_group_host,
+                                    navOptions { launchSingleTop = true }
+                                )
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
                             }
 
                             is MainUiEvent.ToGroupsSelect -> {
-                                navController.navigate(R.id.nav_groups)
-                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
+                                navController.navigate(
+                                    R.id.nav_group_select,
+                                    null,
+                                    navOptions { launchSingleTop = true }
+                                )
+
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
                             }
 
                             is MainUiEvent.ToFavorites -> {
                                 navController.navigate(R.id.nav_favorites)
-                                bottomNavigationView.selectedItemId = R.id.navBottomFavorites
+                                bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked = true
                             }
 
                             is MainUiEvent.ToEditProfile -> {
-                                navController.navigate(R.id.nav_editPerfil)
+                                navController.navigate(R.id.editProfileFragment)
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
@@ -385,31 +468,38 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             is MainUiEvent.ToGroupsAfterExit -> {
-                                supportFragmentManager.beginTransaction()
-                                    .replace(R.id.nav_host_fragment, GroupsFragment())
-                                    .commit()
-                                bottomNavigationView.selectedItemId = R.id.navBottomGrupos
-                            }
-
-                            is MainUiEvent.BackFromEditProfile -> {
-                                handleBackFromEditProfile()
+                                navController.navigate(
+                                    R.id.nav_group_select,
+                                    navOptions {
+                                        popUpTo(R.id.nav_group_select) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                )
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
                             }
 
                             is MainUiEvent.BackExitAppOrCloseSearch -> {
                                 if (searchView?.isIconified == false) {
                                     searchView?.onActionViewCollapsed()
+                                } else if (
+                                    currentScreen == CurrentScreen.GROUPS &&
+                                    navController.currentDestination?.id == R.id.nav_group_host
+                                ) {
+                                    val popped = navController.popBackStack(R.id.nav_group_select, false)
+                                    if (!popped) {
+                                        navController.navigate(
+                                            R.id.nav_group_select,
+                                            navOptions { launchSingleTop = true }
+                                        )
+                                    }
+                                    bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
                                 } else {
                                     finish()
                                 }
                             }
 
-                            is MainUiEvent.ToSettings -> {
-                                startActivity(
-                                    Intent(
-                                        this@MainActivity,
-                                        SettingsActivity::class.java
-                                    )
-                                )
+                            is MainUiEvent.NavigateToSettings -> {
+                                ensureNavHostController().navigate(R.id.settingsFragment)
                             }
 
                             is MainUiEvent.ConfirmExitGroup -> {
@@ -443,18 +533,6 @@ class MainActivity : BaseEdgeToEdgeActivity() {
                                 )
                             }
 
-                            is MainUiEvent.ConfirmDiscardEditProfile -> {
-                                UserMessageUtils.confirm(
-                                    context = this@MainActivity,
-                                    title = getString(R.string.discard_changes_title),
-                                    message = getString(R.string.discard_changes_message),
-                                    positiveText = getString(R.string.action_exit),
-                                    negativeText = getString(R.string.action_dont_discard),
-                                    onConfirm = {
-                                        goToChatTab()
-                                    }
-                                )
-                            }
                         }
                     }
                 }
@@ -486,18 +564,70 @@ class MainActivity : BaseEdgeToEdgeActivity() {
         mainViewModel.onEditProfileSelected()
     }
 
-    private fun handleBackFromEditProfile() {
-        val navHost =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val current = navHost.childFragmentManager.primaryNavigationFragment
-
-        if (current is EditProfileComposeFragment && current.editProfileViewModel.hasPendingChanges()) {
-            mainViewModel.emit(MainUiEvent.ConfirmDiscardEditProfile)
-            return
-        }
-
+    override fun onExitEditProfile() {
         goToChatTab()
     }
+
+    private fun ensureNavHostController(): NavController {
+        val current = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        if (current is NavHostFragment) {
+            navController = current.navController
+            return navController
+        }
+
+        val navHost = NavHostFragment.create(R.navigation.mobile_navigation)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.nav_host_fragment, navHost)
+            .setPrimaryNavigationFragment(navHost)
+            .commitNow()
+
+        navController = navHost.navController
+        return navController
+    }
+
+    private fun applyDestinationUi(destinationId: Int) {
+        val config = destinationUiConfig[destinationId] ?: DestinationUiConfig()
+
+        mainViewModel.setToolbarState(
+            showToolbar = config.showToolbar,
+            showBack = config.showBack,
+            showUsersFragmentSettings = config.showUsersFragmentSettings,
+            showBottomNav = config.showBottomNav,
+            currentScreen = config.currentScreen,
+            showSkipButton = false
+        )
+
+        drawerLayout?.setDrawerLockMode(
+            if (config.showDrawer) {
+                DrawerLayout.LOCK_MODE_UNLOCKED
+            } else {
+                DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+            }
+        )
+
+        when (destinationId) {
+            R.id.nav_users -> bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked = true
+            R.id.nav_chat_list -> bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
+            R.id.nav_group_select -> bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+            R.id.nav_group_host -> bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+            R.id.nav_favorites -> bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked = true
+        }
+
+        when (destinationId) {
+            R.id.nav_chat_list -> navigationView?.setCheckedItem(R.id.action_index)
+            R.id.settingsFragment -> navigationView?.setCheckedItem(R.id.action_settings)
+            R.id.editProfileFragment -> navigationView?.setCheckedItem(R.id.action_edit_profile)
+        }
+    }
+
+    private data class DestinationUiConfig(
+        val currentScreen: CurrentScreen = CurrentScreen.OTHER,
+        val showToolbar: Boolean = true,
+        val showBottomNav: Boolean = true,
+        val showDrawer: Boolean = true,
+        val showBack: Boolean = false,
+        val showUsersFragmentSettings: Boolean = false
+    )
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -637,8 +767,6 @@ class MainActivity : BaseEdgeToEdgeActivity() {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
-        val screen = mainViewModel.toolbarState.value.currentScreen
-        materialToolbar.title = screen.titleRes.asString(this)
         invalidateOptionsMenu()
         startLocationUpdates()
     }

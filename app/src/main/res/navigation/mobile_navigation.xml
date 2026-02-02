@@ -3,45 +3,57 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@id/nav_chat">
-
-    <fragment
-        android:id="@+id/nav_groups"
-        android:name="com.zibete.proyecto1.ui.groups.GroupsFragment"
-        android:label="@string/menu_groups"
-        tools:layout="@layout/fragment_groups" />
+    app:startDestination="@id/nav_chat_list">
 
     <fragment
         android:id="@+id/nav_users"
         android:name="com.zibete.proyecto1.ui.users.UsersFragment"
         android:label="@string/menu_users"
-        tools:layout="@layout/fragment_users"/>
+        tools:layout="@layout/fragment_users" />
 
     <fragment
-        android:id="@+id/nav_chat"
+        android:id="@+id/nav_chat_list"
         android:name="com.zibete.proyecto1.ui.chatlist.ChatListFragment"
         android:label="@string/menu_chat"
-        tools:layout="@layout/fragment_chat_list"/>
+        tools:layout="@layout/fragment_chat_list" />
+
 
     <fragment
-        android:id="@+id/nav_editPerfil"
-        android:name="com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment"
-        android:label="@string/menu_edit_profile"
-        tools:layout="@layout/fragment_edit_profile"
-        app:popUpToInclusive="true"
-        app:popUpTo="@id/nav_editPerfil"/>
+        android:id="@+id/nav_group_select"
+        android:name="com.zibete.proyecto1.ui.groups.GroupsFragment"
+        android:label="@string/menu_groups"
+        tools:layout="@layout/fragment_groups" />
 
     <fragment
         android:id="@+id/nav_favorites"
         android:name="com.zibete.proyecto1.ui.favorites.FavoritesFragment"
-        android:label="@string/menu_chat"
-        tools:layout="@layout/fragment_chat_list"/>
-
+        android:label="@string/menu_favorites"
+        tools:layout="@layout/fragment_favorites" />
 
     <fragment
-        android:id="@+id/nav_group_chat"
-        android:name="com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment"
-        android:label="@string/menu_chat"
-        tools:layout="@layout/fragment_group"/>
+        android:id="@+id/editProfileFragment"
+        android:name="com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment"
+        android:label="@string/menu_edit_profile"
+        app:popUpTo="@id/editProfileFragment"
+        app:popUpToInclusive="true"
+        tools:layout="@layout/fragment_edit_profile" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.zibete.proyecto1.ui.settings.SettingsComposeFragment"
+        android:label="@string/menu_settings" />
+
+    <fragment
+        android:id="@+id/nav_group_host"
+        android:name="com.zibete.proyecto1.ui.groups.host.GroupHostFragment"
+        android:label="@string/menu_groups" />
+
+
+    <!--    <fragment-->
+    <!--        android:id="@+id/nav_group_chat"-->
+    <!--        android:name="com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment"-->
+    <!--        android:label="@string/menu_chat"-->
+    <!--        tools:layout="@layout/fragment_group" />-->
+    <!--    -->
 
 </navigation>

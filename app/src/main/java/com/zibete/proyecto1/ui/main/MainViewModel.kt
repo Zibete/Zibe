@@ -188,7 +188,6 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             exitGroupUseCase.performExitGroupDataCleanup(message)
                 .onSuccess {
-                    setScreen(CurrentScreen.GROUPS)
                     _uiEvents.emit(MainUiEvent.ToGroupsAfterExit)
                 }
                 .onFailure { e ->
@@ -229,59 +228,26 @@ class MainViewModel @Inject constructor(
             R.id.navBottomUsers -> onUsersTabSelected()
             R.id.navBottomChat -> onChatTabSelected()
             R.id.navBottomFavorites -> onFavoritesTabSelected()
-            R.id.navBottomGrupos -> onGroupsTabSelected()
+            R.id.navBottomGroups -> onGroupsTabSelected()
         }
     }
 
     fun onUsersTabSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.USERS) return
-        setToolbarState(
-            showToolbar = true,
-            showBack = false,
-            showUsersFragmentSettings = true,
-            showBottomNav = true,
-            currentScreen = CurrentScreen.USERS,
-            showSkipButton = false
-        )
         viewModelScope.launch { toUsers() }
     }
 
     fun onChatTabSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.CHAT) return
-        setToolbarState(
-            showToolbar = true,
-            showBack = false,
-            showUsersFragmentSettings = false,
-            showBottomNav = true,
-            currentScreen = CurrentScreen.CHAT,
-            showSkipButton = false
-        )
         viewModelScope.launch { toChat() }
     }
 
     fun onFavoritesTabSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.FAVORITES) return
-        setToolbarState(
-            showToolbar = true,
-            showBack = false,
-            showUsersFragmentSettings = false,
-            showBottomNav = true,
-            currentScreen = CurrentScreen.FAVORITES,
-            showSkipButton = false
-        )
         viewModelScope.launch { toFavorites() }
     }
 
     fun onGroupsTabSelected() {
-        if (_toolbarState.value.currentScreen == CurrentScreen.GROUPS) return
-        setToolbarState(
-            showToolbar = true,
-            showBack = false,
-            showUsersFragmentSettings = false,
-            showBottomNav = true,
-            currentScreen = CurrentScreen.GROUPS,
-            showSkipButton = false
-        )
         viewModelScope.launch {
             val ctx = groupContext.value
             val inGroup = ctx?.inGroup ?: false
@@ -291,14 +257,6 @@ class MainViewModel @Inject constructor(
 
     fun onEditProfileSelected() {
         if (_toolbarState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
-        setToolbarState(
-            showToolbar = true,
-            showBack = false,
-            showUsersFragmentSettings = false,
-            showBottomNav = false,
-            currentScreen = CurrentScreen.EDIT_PROFILE,
-            showSkipButton = false
-        )
         viewModelScope.launch { toEditProfile() }
     }
 
@@ -329,12 +287,6 @@ class MainViewModel @Inject constructor(
     fun onBackPressed() {
         when (_toolbarState.value.currentScreen) {
 
-            CurrentScreen.EDIT_PROFILE -> {
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.BackFromEditProfile)
-                }
-            }
-
             CurrentScreen.CHAT,
             CurrentScreen.USERS,
             CurrentScreen.FAVORITES,
@@ -357,7 +309,7 @@ class MainViewModel @Inject constructor(
 
             R.id.action_settings -> {
                 viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.ToSettings)
+                    _uiEvents.emit(MainUiEvent.NavigateToSettings)
                 }
             }
 
@@ -369,11 +321,6 @@ class MainViewModel @Inject constructor(
                 }
             }
 
-            R.id.action_skip -> {
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.BackFromEditProfile)
-                }
-            }
         }
     }
 

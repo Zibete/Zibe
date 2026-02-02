@@ -10,8 +10,6 @@ sealed class MainUiEvent {
         val type: ZibeSnackType
     ) : MainUiEvent()
 
-    data object BackFromEditProfile : MainUiEvent()
-
     // ------------------- Navegación BottomNav ------------------
     data object ToUsers : MainUiEvent()
     data object ToChat : MainUiEvent()
@@ -20,8 +18,8 @@ sealed class MainUiEvent {
     data object ToGroupHost : MainUiEvent()
 
     // ------------------- Menu ---------------------
-    data object ToSettings : MainUiEvent()
     data object ToEditProfile : MainUiEvent()
+    data object NavigateToSettings : MainUiEvent()
 
     // ------------------- Desde chat o grupos para volver al listado ---------------------
     data object BackToChat : MainUiEvent()
@@ -36,7 +34,5 @@ sealed class MainUiEvent {
     data object BackExitAppOrCloseSearch : MainUiEvent()
     data object ConfirmExitGroup : MainUiEvent()
     data object ConfirmLogout : MainUiEvent()
-
-    data object ConfirmDiscardEditProfile : MainUiEvent()
 
 }
