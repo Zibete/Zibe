@@ -46,9 +46,6 @@ import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.databinding.FragmentEditProfileBinding
 import com.zibete.proyecto1.ui.extensions.setTextIfChanged
-import com.zibete.proyecto1.ui.main.CurrentScreen
-import com.zibete.proyecto1.ui.main.MainActivity
-import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.media.PhotoSourceSheet
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -71,8 +68,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
     private var fabsBaseBottomPadding: Int = 0
     private var lastScrollY: Int = 0
     private var scrollListenerInstalled = false
-
-    private var lastShowSkipButton: Boolean? = null
 
     // --------------------------------------------
     // Activity Result Launchers
@@ -144,8 +139,6 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         setupInsets(view)
 
         installScrollBehavior()
-
-        setToolbarForEditProfile(showSkipButton = false)
 
         collectUi()
 
@@ -266,18 +259,9 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
 
                 launch {
                     editProfileViewModel.uiState.collect { state ->
-                        val showSkipButton = state.hasBirthDate && runCatching {
-                            !editProfileViewModel.isEditProfileWelcomeShown()
-                        }.getOrDefault(false)
-
-                        if (lastShowSkipButton != showSkipButton) {
-                            lastShowSkipButton = showSkipButton
-                            setToolbarForEditProfile(showSkipButton = showSkipButton)
-                        }
-
                         val saving = state.isSaving
                         binding.fabSaveLoading.isVisible = saving
-                        binding.fabSave.isEnabled = state.saveEnabled && !saving
+                        binding.fabSave.isEnabled = state.hasPendingChanges && !saving
                         binding.fabSave.text = if (saving) "" else getString(R.string.action_save)
                         binding.fabSave.icon = if (saving) null else ContextCompat.getDrawable(
                             requireContext(),
@@ -304,7 +288,8 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
                     editProfileViewModel.events.collect { event ->
                         when (event) {
                             is EditProfileUiEvent.NavigateBack -> {
-                                (activity as? MainActivity)?.mainViewModel?.emit(MainUiEvent.BackFromEditProfile)
+                                (activity as? EditProfileExitHandler)?.onExitEditProfile()
+                                    ?: requireActivity().onBackPressedDispatcher.onBackPressed()
                             }
                         }
                     }
@@ -466,20 +451,7 @@ class EditProfileFragment : Fragment(), EditProfileWelcomeSheet.Listener {
         }
     }
 
-    fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.saveEnabled
-
-    private fun setToolbarForEditProfile(
-        showSkipButton: Boolean
-    ) {
-        (activity as? MainActivity)?.mainViewModel?.setToolbarState(
-            showToolbar = true,
-            showBack = true,
-            showUsersFragmentSettings = false,
-            showBottomNav = false,
-            currentScreen = CurrentScreen.EDIT_PROFILE,
-            showSkipButton = showSkipButton
-        )
-    }
+    fun hasPendingChanges(): Boolean = editProfileViewModel.uiState.value.hasPendingChanges
 
     // --------------------------------------------
     // State restore (camera URI)

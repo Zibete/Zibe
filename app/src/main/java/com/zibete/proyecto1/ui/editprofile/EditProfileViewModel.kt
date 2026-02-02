@@ -39,8 +39,8 @@ class EditProfileViewModel @Inject constructor(
 
     val snackBarEvents = snackBarManager.events
 
-    fun hasPendingChanges(): Boolean = _uiState.value.saveEnabled
-    fun doNotHasBirthDate(): Boolean = !_uiState.value.hasBirthDate
+//    fun hasPendingChanges(): Boolean = _uiState.value.hasPendingChanges
+//    fun hasBirthDate(): Boolean = _uiState.value.hasBirthDate
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
@@ -73,8 +73,10 @@ class EditProfileViewModel @Inject constructor(
                         photoUrl = u.photoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
-                        saveEnabled = false,
+                        hasPendingChanges = false,
                         hasBirthDate = birthDate.isNotBlank(),
+                        birthDateError = null,
+                        nameError = null,
                         originalName = u.name,
                         originalDescription = u.description,
                         originalBirthDate = birthDate,
@@ -109,37 +111,51 @@ class EditProfileViewModel @Inject constructor(
     fun onNameChanged(value: String) {
         _uiState.update { s ->
             val ns = s.copy(name = value)
-            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+            ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
         }
     }
 
     fun onDescriptionChanged(value: String) {
         _uiState.update { s ->
             val ns = s.copy(description = value)
-            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+            ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
         }
     }
 
     fun onBirthDateChanged(birthDate: String) {
-        val trimmed = birthDate.trim()
-        val age = trimmed.takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
-        _uiState.update { s ->
-            val ns = s.copy(birthDate = birthDate, age = age)
-            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+        _uiState.update { it.copy(birthDateError = null, age = null) }
+
+        if (birthDate.isBlank()) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
+            return
+        }
+
+        val age = birthDate.trim().takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
+        _uiState.update {
+            val newState = it.copy(
+                birthDate = birthDate,
+                age = age
+            )
+            newState.copy(hasPendingChanges = recomputeSaveEnabled(newState))
+
+        }
+
+        if (!isAdult(birthDate)) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.err_under_age)) }
         }
     }
 
     fun onPhotoSelected(uri: Uri) {
         _uiState.update { s ->
             val ns = s.copy(photoPreviewUri = uri, deletePhoto = false)
-            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+            ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
         }
     }
 
     fun onPhotoDeletedSetDefault() {
         _uiState.update { s ->
             val ns = s.copy(photoPreviewUri = null, deletePhoto = true)
-            ns.copy(saveEnabled = recomputeSaveEnabled(ns))
+            ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
         }
     }
 
@@ -189,7 +205,9 @@ class EditProfileViewModel @Inject constructor(
                         photoUrl = finalPhotoUrl,
                         photoPreviewUri = null,
                         deletePhoto = false,
-                        saveEnabled = false,
+                        hasPendingChanges = false,
+                        birthDateError = null,
+                        nameError = null,
                         originalName = s.name.trim(),
                         originalDescription = s.description.trim(),
                         originalBirthDate = s.birthDate.trim(),
@@ -204,6 +222,16 @@ class EditProfileViewModel @Inject constructor(
 
                 onBackToMain()
             }
+        }
+    }
+
+    fun onBackRequest() {
+        val state = _uiState.value
+        when {
+            state.isSaving -> Unit
+            state.hasPendingChanges -> _uiState.update { it.copy(showDiscardDialog = true) }
+            !state.hasBirthDate -> _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
+            else -> onBackToMain()
         }
     }
 
@@ -238,15 +266,27 @@ class EditProfileViewModel @Inject constructor(
         name: String,
         birthDate: String
     ): Boolean {
-        fun warn(uiText: UiText): Boolean {
-            showSnack(uiText, ZibeSnackType.WARNING)
-            return false
+
+        when {
+            name.isBlank() -> {
+                val nameError = UiText.StringRes(R.string.signup_err_name_required)
+                _uiState.update { it.copy(nameError = nameError) }
+                return false
+            }
+
+            birthDate.isBlank() -> {
+                val birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)
+                _uiState.update { it.copy(birthDateError = birthDateError) }
+                return false
+            }
+
+            !isAdult(birthDate) -> {
+                val birthDateError = UiText.StringRes(R.string.err_under_age)
+                showSnack(birthDateError, ZibeSnackType.WARNING)
+                return false
+            }
+
+            else -> return true
         }
-
-        if (name.isBlank()) return warn(UiText.StringRes(R.string.signup_err_name_required))
-        if (birthDate.isBlank()) return warn(UiText.StringRes(R.string.signup_err_birthdate_required))
-        if (!isAdult(birthDate)) return warn(UiText.StringRes(R.string.err_under_age))
-
-        return true
     }
 }

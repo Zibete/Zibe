@@ -52,16 +52,12 @@ fun PhotoSourceBottomSheet(
         sheetState = sheetState,
         showCancelButton = false,
         content = {
-            val zibeTypography = LocalZibeTypography.current
-            
+
             SheetHeader(
                 title = stringResource(id = R.string.edit_picture),
-                subtitle = stringResource(R.string.content_description_edit_photo),
-                titleStyle = zibeTypography.h1,
-                subtitleStyle = zibeTypography.subtitle
+                subtitle = stringResource(R.string.content_description_edit_photo)
             )
 
-            // Grid de 2 columnas solo para las fuentes de imagen
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
@@ -86,7 +82,6 @@ fun PhotoSourceBottomSheet(
                 )
             }
 
-            // Opción de eliminar: separada, más pequeña y sutil
             onDeleteClick?.let {
                 Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_xs)))
                 DeletePhotoAction(
@@ -96,8 +91,6 @@ fun PhotoSourceBottomSheet(
                     }
                 )
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
         }
     )
 }
@@ -132,8 +125,8 @@ private fun PhotoSourceMainItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = zibeExtendedColors.accent
+                modifier = Modifier.size(40.dp),
+                tint = zibeExtendedColors.lightText
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -155,14 +148,13 @@ private fun DeletePhotoAction(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp),
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.Default.DeleteOutline,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.action_delete_photo),
             modifier = Modifier.size(20.dp),
             tint = zibeColors.snackRed.copy(alpha = 0.8f)
         )
