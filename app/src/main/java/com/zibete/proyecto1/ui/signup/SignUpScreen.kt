@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.signup
 
-import LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -77,6 +75,8 @@ fun SignUpRoute(
         onEmailInputChanged = viewModel::onEmailInputChanged,
         onPasswordInputChanged = viewModel::onPasswordInputChanged,
         onBirthDateChanged = viewModel::onBirthDateChanged,
+        onNameChanged = viewModel::onNameChanged,
+        onDescriptionChanged = viewModel::onDescriptionChanged,
         onNavigateToSplash = onNavigateToSplash,
         appNavigator = appNavigator
     )
@@ -91,15 +91,12 @@ fun SignUpScreen(
     onEmailInputChanged: (String) -> Unit,
     onPasswordInputChanged: (String) -> Unit,
     onBirthDateChanged: (String) -> Unit,
+    onNameChanged: (String) -> Unit,
+    onDescriptionChanged: (String) -> Unit,
     onNavigateToSplash: () -> Unit,
     appNavigator: AppNavigator
 ) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var name by rememberSaveable { mutableStateOf("") }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    var birthDate by rememberSaveable { mutableStateOf("") }
-    var description by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -107,13 +104,16 @@ fun SignUpScreen(
 
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
 
-    val registerEnabled by remember(email, password, name, birthDate, state.isLoading, state.birthDateError) {
+    val registerEnabled by remember(state) {
         derivedStateOf {
-            email.trim().isNotEmpty() &&
-                    password.isNotEmpty() &&
-                    name.trim().isNotEmpty() &&
-                    birthDate.isNotEmpty() &&
+            state.email.trim().isNotEmpty() &&
+                    state.password.isNotEmpty() &&
+                    state.name.trim().isNotEmpty() &&
+                    state.birthDate.isNotEmpty() &&
                     !state.isLoading &&
+                    state.emailError == null &&
+                    state.passwordError == null &&
+                    state.nameError == null &&
                     state.birthDateError == null
         }
     }
@@ -158,11 +158,8 @@ fun SignUpScreen(
             ) {
                 // EMAIL
                 ZibeInputFieldDark(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        onEmailInputChanged(it)
-                    },
+                    value = state.email,
+                    onValueChange = onEmailInputChanged,
                     label = stringResource(id = R.string.email),
                     keyboardOptions = KeyboardOptions.Default.copy(
                         keyboardType = KeyboardType.Email,
@@ -183,11 +180,8 @@ fun SignUpScreen(
 
                 // PASSWORD
                 ZibeInputPasswordFieldDark(
-                    value = password,
-                    onValueChange = {
-                        password = it
-                        onPasswordInputChanged(it)
-                    },
+                    value = state.password,
+                    onValueChange = onPasswordInputChanged,
                     label = stringResource(id = R.string.password),
                     enabled = !state.isLoading,
                     visible = passwordVisible,
@@ -197,8 +191,8 @@ fun SignUpScreen(
 
                 // NOMBRE
                 ZibeInputFieldDark(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = state.name,
+                    onValueChange = onNameChanged,
                     label = stringResource(R.string.name),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -214,7 +208,7 @@ fun SignUpScreen(
 
                 // FECHA DE NACIMIENTO + EDAD
                 ZibeInputBirthdateDark(
-                    value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
+                    value = state.birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
                     age = state.age?.toString().orEmpty(),
                     onClick = { if (!state.isLoading) showDatePicker = true },
                     error = state.birthDateError?.asString(context),
@@ -223,7 +217,7 @@ fun SignUpScreen(
 
                 if (showDatePicker) {
                     val datePickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = birthDate
+                        initialSelectedDateMillis = state.birthDate
                             .takeIf { it.isNotBlank() }
                             ?.let { isoToMillis(it) }
                     )
@@ -235,7 +229,6 @@ fun SignUpScreen(
                                 onClick = {
                                     datePickerState.selectedDateMillis?.let { ms ->
                                         val iso = millisToIso(ms)
-                                        birthDate = iso
                                         onBirthDateChanged(iso)
                                     }
                                     showDatePicker = false
@@ -255,8 +248,8 @@ fun SignUpScreen(
                 }
 
                 ZibeAboutField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = state.description,
+                    onValueChange = onDescriptionChanged,
                     label = stringResource(R.string.description),
                     testTag = TestTags.DESCRIPTION,
                     enabled = !state.isLoading,
@@ -281,7 +274,15 @@ fun SignUpScreen(
                     modifier = Modifier
                         .testTag(TestTags.BTN_REGISTER),
                     text = stringResource(R.string.finish_registration),
-                    onClick = { onRegister(email, password, name, birthDate, description) },
+                    onClick = {
+                        onRegister(
+                            state.email,
+                            state.password,
+                            state.name,
+                            state.birthDate,
+                            state.description
+                        )
+                    },
                     enabled = registerEnabled,
                     isLoading = state.isLoading
                 )
@@ -302,6 +303,8 @@ fun SignUpScreenPreview() {
             onEmailInputChanged = {},
             onPasswordInputChanged = {},
             onBirthDateChanged = {},
+            onNameChanged = {},
+            onDescriptionChanged = {},
             onNavigateToSplash = {},
             appNavigator = AppNavigator()
         )

@@ -49,7 +49,7 @@ class SignUpViewModel @Inject constructor(
 
     fun onEmailInputChanged(email: String) {
         validationJob?.cancel()
-        _uiState.update { it.copy(emailError = null) }
+        _uiState.update { it.copy(email = email, emailError = null) }
 
         if (email.isBlank()) return
 
@@ -62,31 +62,61 @@ class SignUpViewModel @Inject constructor(
 
     fun onPasswordInputChanged(password: String) {
         validationJob?.cancel()
-        _uiState.update { it.copy(passwordError = null) }
+        _uiState.update { it.copy(password = password, passwordError = null) }
 
         if (password.isBlank()) return
 
         validationJob = viewModelScope.launch {
             delay(config.validationDebounce)
-            val error = CredentialValidators.validateNewPassword(password = password, compareTo = null)
+            val error =
+                CredentialValidators.validateNewPassword(password = password, compareTo = null)
             _uiState.update { it.copy(passwordError = error) }
         }
     }
 
-    fun onBirthDateChanged(birthDate: String) {
-        _uiState.update { it.copy(birthDateError = null, age = null) }
+    fun onBirthDateChanged(input: String) {
+        validationJob?.cancel()
+        val trimmed = input.trim()
+        _uiState.update { it.copy(birthDate = trimmed, birthDateError = null) }
 
-        if (birthDate.isBlank()) {
-            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
-            return
+        if (trimmed.isBlank()) return
+
+        validationJob = viewModelScope.launch {
+            val age = trimmed.takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
+            val error = when {
+                !isAdult(trimmed) -> UiText.StringRes(R.string.err_under_age)
+                else -> null
+            }
+            _uiState.update { s ->
+                s.copy(
+                    age = age,
+                    birthDateError = error
+                )
+            }
         }
+    }
 
-        val age = birthDate.trim().takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
-        _uiState.update { it.copy(age = age) }
+    fun onNameChanged(input: String) {
+        validationJob?.cancel()
+        val trimmed = input.trim()
+        _uiState.update { it.copy(name = trimmed, nameError = null) }
 
-        if (!isAdult(birthDate)) {
-            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.err_under_age)) }
+        validationJob = viewModelScope.launch {
+            delay(config.validationDebounce)
+            val error = when {
+                trimmed.isBlank() -> UiText.StringRes(R.string.signup_err_name_required)
+                else -> null
+            }
+            _uiState.update {
+                it.copy(
+                    nameError = error
+                )
+            }
         }
+    }
+
+    fun onDescriptionChanged(input: String) {
+        _uiState.update { it.copy(description = input) }
     }
 
     // -------------------------- Registro
@@ -183,7 +213,8 @@ class SignUpViewModel @Inject constructor(
         }
 
         val emailError = CredentialValidators.validateEmail(email, emailValidator)
-        val passwordError = CredentialValidators.validateNewPassword(password = password, compareTo = null)
+        val passwordError =
+            CredentialValidators.validateNewPassword(password = password, compareTo = null)
 
         if (emailError != null) return warn(emailError)
         if (passwordError != null) return warn(passwordError)

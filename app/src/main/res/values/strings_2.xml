@@ -20,7 +20,7 @@
 
     <string name="edit_profile_hints_text">Una foto clara y una buena descripción aumentan tus coincidencias.</string>
 
-    <string name="name">Nombre/Apodo</string>
+    <string name="name">Nombre visible</string>
     <string name="age">Edad</string>
     <string name="birth_date">Fecha de nacimiento</string>
     <string name="description">¿Algo sobre vos?</string>
@@ -126,7 +126,7 @@
     <string name="err_password_digit">Ingrese al menos un número</string>
     <string name="err_invalid_format_email">El formato de correo es inválido</string>
 
-    <string name="signup_err_name_required">Ingresá tu nombre</string>
+    <string name="signup_err_name_required">Ingresá tu nombre visible</string>
     <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
     <string name="err_birthdate_required">Debes ingresar tu fecha de nacimiento para utilizar la app</string>
     <string name="err_under_age">Lo sentimos, debes ser mayor de 18 años para utilizar la App</string>

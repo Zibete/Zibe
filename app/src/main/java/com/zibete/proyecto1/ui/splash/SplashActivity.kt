@@ -203,7 +203,9 @@ class SplashActivity : ComponentActivity() {
                                     navController.navigate(SPLASH_SCREEN)
                                 },
                                 appNavigator = appNavigator,
-                                onBirthDateChanged = { signUpViewModel.onBirthDateChanged(it) }
+                                onBirthDateChanged = { signUpViewModel.onBirthDateChanged(it) },
+                                onNameChanged = { signUpViewModel.onNameChanged(it) },
+                                onDescriptionChanged = { signUpViewModel.onDescriptionChanged(it) }
                             )
                         }
                         // ======================================
