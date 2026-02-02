@@ -9,6 +9,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 object TimeUtils {
 
@@ -16,8 +17,28 @@ object TimeUtils {
 
     private val UI_HOUR_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
+    private val ISO_DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
+
+    /**
+     * Parses an ISO-8601 string. 
+     * Since the input can be a full timestamp (yyyy-MM-ddTHH:mm:ssZ), 
+     * we use ISO_DATE_TIME to handle it and extract the LocalDate.
+     * If it's just a date (yyyy-MM-dd), we attempt to parse it as LocalDate directly.
+     */
+    private fun parseIsoDate(iso: String): LocalDate {
+        return try {
+            LocalDate.parse(iso)
+        } catch (e: DateTimeParseException) {
+            LocalDate.parse(iso, ISO_DATE_TIME_FORMATTER)
+        }
+    }
+
     fun ageCalculator(birthDateIso: String): Int {
-        val birth = LocalDate.parse(birthDateIso) // ISO-8601 (yyyy-MM-dd)
+        val birth = try {
+            parseIsoDate(birthDateIso)
+        } catch (e: Exception) {
+            return 0
+        }
         val today = LocalDate.now()
         return Period.between(birth, today).years
     }
@@ -66,8 +87,11 @@ object TimeUtils {
     fun formatUiDate(ms: Long): String =
         UI_DATE_FORMATTER.format(zonedDateTime(ms))
 
-    fun isoToUiDate(iso: String): String =
-        LocalDate.parse(iso).format(UI_DATE_FORMATTER)
+    fun isoToUiDate(iso: String): String = try {
+        parseIsoDate(iso).format(UI_DATE_FORMATTER)
+    } catch (e: Exception) {
+        ""
+    }
 
     fun formatLastSeen(ms: Long, context: Context): String {
         if (ms <= 0L) return ""
@@ -80,7 +104,7 @@ object TimeUtils {
 
     fun isoToMillis(isoDate: String): Long? =
         runCatching {
-            LocalDate.parse(isoDate) // ISO yyyy-MM-dd
+            parseIsoDate(isoDate)
                 .atStartOfDay(zoneId())
                 .toInstant()
                 .toEpochMilli()

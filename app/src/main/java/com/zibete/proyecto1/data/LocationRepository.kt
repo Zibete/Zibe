@@ -6,7 +6,6 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LONGITUDE
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
@@ -26,13 +25,11 @@ class LocationRepository @Inject constructor(
     private val authSessionProvider: AuthSessionProvider
 ) {
 
-    val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
-        }
+    private val firebaseUser: FirebaseUser?
+        get() = authSessionProvider.currentUser
 
-    val myUid: String
-        get() = firebaseUser.uid
+    private val myUid: String?
+        get() = firebaseUser?.uid
 
 
     // ============================================================
@@ -42,34 +39,38 @@ class LocationRepository @Inject constructor(
     var latitude: Double = 0.0
     var longitude: Double = 0.0
 
-//    val latitude: Double get() = latitude
-//    val longitude: Double get() = longitude
-
     suspend fun updateLocation(location: Location) {
+        val uid = myUid ?: return
         updateUserFields(
-            mapOf(
+            uid = uid,
+            fields = mapOf(
                 LATITUDE to location.latitude,
                 LONGITUDE to location.longitude
             )
         )
     }
-    private fun accountRef(uid: String = myUid) =
+
+    private fun accountRef(uid: String) =
         firebaseRefsContainer.refAccounts.child(uid)
 
-    suspend fun updateUserFields(fields: Map<String, Any?>) {
+    suspend fun updateUserFields(uid: String? = myUid, fields: Map<String, Any?>) {
+        val targetUid = uid ?: return
         val clean = fields.filterValues { it != null }
         if (clean.isEmpty()) return
-        accountRef().updateChildren(clean).await()
+        accountRef(targetUid).updateChildren(clean).await()
     }
-    private suspend fun getLocation(uid : String = myUid): Pair<Double, Double> {
-        val snapshot = firebaseRefsContainer.refAccounts.child(uid).get().await()
+
+    private suspend fun getLocation(uid: String? = myUid): Pair<Double, Double> {
+        val targetUid = uid ?: throw Exception("User UID not found or not provided")
+        val snapshot = firebaseRefsContainer.refAccounts.child(targetUid).get().await()
         val user = snapshot.getValue(Users::class.java)
             ?: throw Exception("User not found")
         return user.latitude to user.longitude
     }
 
     suspend fun getDistanceToUser(userId: String): String {
-        val (myLat, myLng) = getLocation()
+        val currentUid = myUid ?: return ""
+        val (myLat, myLng) = getLocation(currentUid)
         val (otherLat, otherLng) = getLocation(userId)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
         return formatDistance(distance)
