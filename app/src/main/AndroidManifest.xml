@@ -92,9 +92,6 @@
             android:name=".ui.media.PhotoViewerActivity"
             android:theme="@style/Theme.Zibe"/>
         <activity
-            android:name=".ui.settings.SettingsActivity"
-            android:theme="@style/Theme.Zibe" />
-        <activity
             android:name=".ui.profile.ProfileActivity"
             android:parentActivityName=".ui.main.MainActivity"
             android:theme="@style/Theme.Zibe"
