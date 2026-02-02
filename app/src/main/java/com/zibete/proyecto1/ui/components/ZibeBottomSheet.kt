@@ -91,17 +91,17 @@ fun SheetHeader(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = title,
-            style = titleStyle ?: zibeTextStyles.h2, // Default to h2 if not provided (new design)
+            style = titleStyle ?: zibeTextStyles.brandSubtitle,
             color = zibeColors.lightText,
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
+        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_xs)))
 
         subtitle?.let {
             Text(
                 text = it,
-                style = subtitleStyle ?: zibeTextStyles.subtitle,
+                style = subtitleStyle ?: zibeTextStyles.body,
                 color = zibeColors.hintText
             )
         }
@@ -165,7 +165,7 @@ fun ZibeBottomSheetPreviewField() {
             content = {
                 SheetHeader(
                     title = "Preview Title",
-                    subtitle = "This is a preview subtitle for the bottom sheet content."
+                    subtitle = "Podrás actualizar tu dirección de contacto. Tené en cuenta que te enviaremos un enlace de verificación para asegurar que la nueva cuenta te pertenece."
                 )
 
                 ZibeInputField(
