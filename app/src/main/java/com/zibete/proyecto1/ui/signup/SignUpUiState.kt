@@ -5,5 +5,7 @@ import com.zibete.proyecto1.core.ui.UiText
 data class SignUpUiState(
     val isLoading: Boolean = false,
     val emailError: UiText? = null,
-    val passwordError: UiText? = null
+    val passwordError: UiText? = null,
+    val birthDateError: UiText? = null,
+    val age: Int? = null
 )

@@ -65,6 +65,7 @@ import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -217,8 +218,8 @@ fun AuthScreen(
 
                     Text(
                         text = stringResource(R.string.auth_or_use_account),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = lightText,
+                        style = LocalZibeTypography.current.label,
+                        color = lightText
                     )
 
                     Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
@@ -270,10 +271,8 @@ fun AuthScreen(
                             .clickable {
                                 showResetDialog = true
                             },
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = lightText
-                        )
+                        style = LocalZibeTypography.current.actionLabel,
+                        color = lightText
                     )
 
                     Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
@@ -297,9 +296,8 @@ fun AuthScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.auth_do_not_have_account),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                color = lightText
-                            )
+                            style = LocalZibeTypography.current.label,
+                            color = lightText
                         )
 
                         Spacer(modifier = Modifier.width(spacingXs))
@@ -309,10 +307,8 @@ fun AuthScreen(
                             modifier = Modifier
                                 .clickable { onNavigateToSignUp() }
                                 .testTag(Constants.TestTags.BTN_REGISTER),
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = lightText
-                            )
+                            style = LocalZibeTypography.current.actionLabel,
+                            color = lightText
                         )
                     }
                 } else {
