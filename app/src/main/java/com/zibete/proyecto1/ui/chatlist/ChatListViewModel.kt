@@ -113,12 +113,12 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        chatListListener?.let { chatRef.removeEventListener(it) }
-        chatListListener = null
-        observing = false
-    }
+//    override fun onCleared() {
+//        super.onCleared()
+//        chatListListener?.let { chatRef.removeEventListener(it) }
+//        chatListListener = null
+//        observing = false
+//    }
 
     // ---------- Acciones de menú ----------
 

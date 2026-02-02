@@ -22,7 +22,6 @@ data class EditProfileUiState(
     val deletePhoto: Boolean = false,  // marcar para volver a default
 
     val hasPendingChanges: Boolean = false,
-    val hasBirthDate: Boolean = false,
 
     val birthDateError: UiText? = null,
     val nameError: UiText? = null,
