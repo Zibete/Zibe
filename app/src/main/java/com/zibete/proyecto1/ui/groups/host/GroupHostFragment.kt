@@ -12,15 +12,19 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class GroupHostFragment : Fragment() {
 
     private val groupHostViewModel: GroupHostViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,8 +36,7 @@ class GroupHostFragment : Fragment() {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (groupHostViewModel.tryHandleBack()) return
-                    isEnabled = false
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    mainViewModel.emit(MainUiEvent.ConfirmExitGroup)
                 }
             }
         )
@@ -70,7 +73,7 @@ class GroupHostFragment : Fragment() {
                 override fun onPrepareMenu(menu: Menu) {
                     menu.findItem(R.id.action_settings)?.isVisible = true
                     menu.findItem(R.id.action_search)?.isVisible = true
-                    menu.findItem(R.id.action_exit_group)?.isVisible = true
+                    menu.findItem(R.id.action_exit_group)?.isVisible = false
                 }
 
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
