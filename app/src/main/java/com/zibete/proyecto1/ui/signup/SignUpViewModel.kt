@@ -9,10 +9,10 @@ import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.core.utils.onFailure
-import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.core.validation.EmailValidator
@@ -70,6 +70,22 @@ class SignUpViewModel @Inject constructor(
             delay(config.validationDebounce)
             val error = CredentialValidators.validateNewPassword(password = password, compareTo = null)
             _uiState.update { it.copy(passwordError = error) }
+        }
+    }
+
+    fun onBirthDateChanged(birthDate: String) {
+        _uiState.update { it.copy(birthDateError = null, age = null) }
+
+        if (birthDate.isBlank()) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
+            return
+        }
+
+        val age = birthDate.trim().takeIf { it.isNotBlank() }?.let { ageCalculator(it) }
+        _uiState.update { it.copy(age = age) }
+
+        if (!isAdult(birthDate)) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.err_under_age)) }
         }
     }
 
@@ -173,8 +189,14 @@ class SignUpViewModel @Inject constructor(
         if (passwordError != null) return warn(passwordError)
 
         if (name.isBlank()) return warn(UiText.StringRes(R.string.signup_err_name_required))
-        if (birthDate.isBlank()) return warn(UiText.StringRes(R.string.signup_err_birthdate_required))
-        if (!isAdult(birthDate)) return warn(UiText.StringRes(R.string.err_under_age))
+        if (birthDate.isBlank()) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.signup_err_birthdate_required)) }
+            return false
+        }
+        if (!isAdult(birthDate)) {
+            _uiState.update { it.copy(birthDateError = UiText.StringRes(R.string.err_under_age)) }
+            return false
+        }
 
         return true
     }

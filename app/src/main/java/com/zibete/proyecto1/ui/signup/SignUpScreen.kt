@@ -1,19 +1,12 @@
 package com.zibete.proyecto1.ui.signup
 
 import LocalZibeExtendedColors
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -33,12 +26,10 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -46,10 +37,11 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.MAX_ABOUT_CHARS
 import com.zibete.proyecto1.core.constants.Constants.TestTags
@@ -62,12 +54,33 @@ import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
+import com.zibete.proyecto1.ui.components.ZibeInputBirthdateDark
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import kotlinx.coroutines.launch
+
+@Composable
+fun SignUpRoute(
+    onBack: () -> Unit,
+    onNavigateToSplash: () -> Unit,
+    appNavigator: AppNavigator,
+    viewModel: SignUpViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    SignUpScreen(
+        state = uiState,
+        onBack = onBack,
+        onRegister = viewModel::onRegister,
+        onEmailInputChanged = viewModel::onEmailInputChanged,
+        onPasswordInputChanged = viewModel::onPasswordInputChanged,
+        onBirthDateChanged = viewModel::onBirthDateChanged,
+        onNavigateToSplash = onNavigateToSplash,
+        appNavigator = appNavigator
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +90,7 @@ fun SignUpScreen(
     onRegister: (String, String, String, String, String) -> Unit,
     onEmailInputChanged: (String) -> Unit,
     onPasswordInputChanged: (String) -> Unit,
+    onBirthDateChanged: (String) -> Unit,
     onNavigateToSplash: () -> Unit,
     appNavigator: AppNavigator
 ) {
@@ -91,19 +105,16 @@ fun SignUpScreen(
     val context = LocalContext.current
     val snackHostState = remember { SnackbarHostState() }
 
-    val zibeColors = LocalZibeExtendedColors.current
-    val lightText = zibeColors.lightText
-
-    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
 
-    val registerEnabled by remember(email, password, name, birthDate, state.isLoading) {
+    val registerEnabled by remember(email, password, name, birthDate, state.isLoading, state.birthDateError) {
         derivedStateOf {
             email.trim().isNotEmpty() &&
                     password.isNotEmpty() &&
                     name.trim().isNotEmpty() &&
                     birthDate.isNotEmpty() &&
-                    !state.isLoading
+                    !state.isLoading &&
+                    state.birthDateError == null
         }
     }
 
@@ -201,41 +212,14 @@ fun SignUpScreen(
                     enabled = !state.isLoading
                 )
 
-                // FECHA DE NACIMIENTO
-                Box {
-                    ZibeInputFieldDark(
-                        value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }
-                            .orEmpty(),
-                        onValueChange = { },
-                        label = stringResource(R.string.birth_date),
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_calendar_24),
-                                contentDescription = stringResource(R.string.birth_date),
-                                tint = lightText.copy(alpha = 0.6f)
-                            )
-                        },
-                        enabled = !state.isLoading,
-                        readOnly = true
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .testTag(TestTags.BIRTHDATE_PICKER)
-                            .clickable { showDatePicker = true }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_baseline_keyboard_arrow_down_24),
-                            contentDescription = stringResource(R.string.birth_date),
-                            tint = lightText.copy(alpha = 0.6f),
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(end = spacingSm)
-                        )
-                    }
-                }
+                // FECHA DE NACIMIENTO + EDAD
+                ZibeInputBirthdateDark(
+                    value = birthDate.takeIf { it.isNotBlank() }?.let { isoToUiDate(it) }.orEmpty(),
+                    age = state.age?.toString().orEmpty(),
+                    onClick = { if (!state.isLoading) showDatePicker = true },
+                    error = state.birthDateError?.asString(context),
+                    enabled = !state.isLoading
+                )
 
                 if (showDatePicker) {
                     val datePickerState = rememberDatePickerState(
@@ -250,7 +234,9 @@ fun SignUpScreen(
                             TextButton(
                                 onClick = {
                                     datePickerState.selectedDateMillis?.let { ms ->
-                                        birthDate = millisToIso(ms)
+                                        val iso = millisToIso(ms)
+                                        birthDate = iso
+                                        onBirthDateChanged(iso)
                                     }
                                     showDatePicker = false
                                 }
@@ -315,6 +301,7 @@ fun SignUpScreenPreview() {
             onRegister = { _, _, _, _, _ -> },
             onEmailInputChanged = {},
             onPasswordInputChanged = {},
+            onBirthDateChanged = {},
             onNavigateToSplash = {},
             appNavigator = AppNavigator()
         )
