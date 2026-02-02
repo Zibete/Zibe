@@ -8,8 +8,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.zibete.proyecto1.ui.main.MainActivity
-import com.zibete.proyecto1.ui.main.MainUiEvent
+import androidx.navigation.fragment.findNavController
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -30,9 +29,13 @@ class EditProfileComposeFragment : Fragment() {
                     EditProfileRoute(
                         editProfileViewModel = editProfileViewModel,
                         onNavigateBack = {
-                            (activity as? MainActivity)?.mainViewModel?.emit(
-                                MainUiEvent.BackFromEditProfile
-                            ) ?: requireActivity().onBackPressedDispatcher.onBackPressed()
+                            (activity as? EditProfileExitHandler)?.onExitEditProfile()
+                                ?: findNavController().popBackStack()
+                        },
+                        onOpenSettings = {
+                            findNavController().navigate(
+                                com.zibete.proyecto1.R.id.settingsFragment
+                            )
                         }
                     )
                 }

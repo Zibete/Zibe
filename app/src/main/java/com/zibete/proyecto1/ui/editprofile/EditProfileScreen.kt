@@ -3,6 +3,7 @@ package com.zibete.proyecto1.ui.editprofile
 import LocalZibeExtendedColors
 import android.Manifest
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.MediaStore
@@ -16,41 +17,40 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.EditCalendar
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -68,45 +68,47 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_SCREEN
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
 import com.zibete.proyecto1.ui.components.ZibeCard
+import com.zibete.proyecto1.ui.components.ZibeInputBirthdate
 import com.zibete.proyecto1.ui.components.ZibeInputField
+import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibePrimaryFAB
 import com.zibete.proyecto1.ui.components.ZibeSecondaryFAB
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
+import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
-import com.zibete.proyecto1.ui.main.CurrentScreen
-import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.collectLatest
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import androidx.core.net.toUri
 
 @Composable
 fun EditProfileRoute(
     editProfileViewModel: EditProfileViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     val uiState by editProfileViewModel.uiState.collectAsStateWithLifecycle()
     val snackHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val mainActivity = context as? MainActivity
 
     var showWelcomeSheet by rememberSaveable { mutableStateOf(false) }
 
@@ -115,21 +117,6 @@ fun EditProfileRoute(
         if (!editProfileViewModel.isEditProfileWelcomeShown()) {
             showWelcomeSheet = true
         }
-    }
-
-    LaunchedEffect(uiState.hasBirthDate) {
-        val showSkipButton = uiState.hasBirthDate && runCatching {
-            !editProfileViewModel.isEditProfileWelcomeShown()
-        }.getOrDefault(false)
-
-//        mainActivity?.mainViewModel?.setToolbarState(
-//            showToolbar = true,
-//            showBack = true,
-//            showUsersFragmentSettings = false,
-//            showBottomNav = false,
-//            currentScreen = CurrentScreen.EDIT_PROFILE,
-//            showSkipButton = showSkipButton
-//        )
     }
 
     LaunchedEffect(Unit) {
@@ -168,10 +155,12 @@ fun EditProfileRoute(
         onPhotoDeleted = editProfileViewModel::onPhotoDeletedSetDefault,
         onSave = editProfileViewModel::onSaveClicked,
         onNavigateBack = onNavigateBack,
+        onBackRequest = editProfileViewModel::onBackRequest,
+        onOpenSettings = onOpenSettings,
         snackBarHostState = snackHostState,
         photoModel = photoModel,
-        onShowSnack = { text, type ->
-            editProfileViewModel.showSnack(text, type)
+        onShowSnack = { uiText, snackType ->
+            editProfileViewModel.showSnack(uiText, snackType)
         }
     )
 }
@@ -187,13 +176,15 @@ fun EditProfileScreen(
     onPhotoDeleted: () -> Unit,
     onSave: () -> Unit,
     onNavigateBack: () -> Unit,
+    onBackRequest: () -> Unit,
+    onOpenSettings: () -> Unit,
     snackBarHostState: SnackbarHostState,
     photoModel: Any?,
     onShowSnack: (UiText, ZibeSnackType) -> Unit = { _, _ -> }
 ) {
     val zibeColors = LocalZibeExtendedColors.current
+    val zibeTypography = LocalZibeTypography.current
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
@@ -233,7 +224,10 @@ fun EditProfileScreen(
             pendingCameraUriString = uri?.toString()
             uri?.let { cameraLauncher.launch(it) }
         } else {
-            onShowSnack(UiText.StringRes(R.string.err_camera_permission_denied), ZibeSnackType.ERROR)
+            onShowSnack(
+                UiText.StringRes(R.string.err_camera_permission_denied),
+                ZibeSnackType.ERROR
+            )
         }
     }
 
@@ -244,6 +238,7 @@ fun EditProfileScreen(
                 pendingCameraUriString = uri?.toString()
                 uri?.let { cameraLauncher.launch(it) }
             }
+
             else -> {
                 requestPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
@@ -270,13 +265,65 @@ fun EditProfileScreen(
             .atStartOfDay(ZoneOffset.UTC)
             .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
-    BackHandler(enabled = state.saveEnabled && !state.isSaving) {
-        showDiscardDialog = true
+
+    BackHandler { onBackRequest() }
+
+    val menuSettings = stringResource(R.string.menu_settings)
+    val menuDeletePhoto = stringResource(R.string.action_delete_photo)
+
+    val menuItems = remember(state.photoUrl, state.photoPreviewUri, state.deletePhoto) {
+        val items = mutableListOf<ZibeMenuItem>()
+
+        items.add(
+            ZibeMenuItem(
+                label = menuSettings,
+                onClick = {
+                    onOpenSettings()
+                },
+                icon = Icons.Rounded.Settings
+            )
+        )
+
+        val hasPhoto =
+            state.photoPreviewUri != null || (state.photoUrl != null && !state.deletePhoto)
+        if (hasPhoto) {
+            items.add(
+                ZibeMenuItem(
+                    label = menuDeletePhoto,
+                    onClick = onPhotoDeleted,
+                    icon = Icons.Rounded.Delete
+                )
+            )
+        }
+        items
+    }
+
+    val saveEnabled by remember(
+        state.isLoading,
+        state.isSaving,
+        state.hasPendingChanges,
+        state.birthDateError,
+        state.nameError
+    ) {
+        derivedStateOf {
+            state.hasPendingChanges &&
+                    !state.isLoading &&
+                    !state.isSaving &&
+                    state.nameError == null &&
+                    state.birthDateError == null
+        }
     }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        topBar = {
+            ZibeToolbar(
+                title = stringResource(R.string.menu_edit_profile),
+                onBack = onNavigateBack,
+                menuItems = menuItems
+            )
+        },
         snackbarHost = { ZibeSnackbar(hostState = snackBarHostState) },
         floatingActionButton = {
             Column(
@@ -284,17 +331,28 @@ fun EditProfileScreen(
                 modifier = Modifier.onSizeChanged { fabHeightPx = it.height }
             ) {
                 ZibeSecondaryFAB(
-                    text = { Text(stringResource(id = R.string.edit_picture)) },
+                    text = {
+                        Text(
+                            stringResource(id = R.string.edit_picture),
+                            style = zibeTypography.label
+                        )
+                    },
                     icon = { Icon(Icons.Rounded.AddAPhoto, null) },
                     onClick = { showPhotoSourceSheet = true },
                     enabled = !state.isLoading && !state.isSaving
                 )
                 Spacer(modifier = Modifier.size(16.dp))
                 ZibePrimaryFAB(
-                    text = { Text(text = stringResource(id = R.string.action_save)) },
+                    text = {
+                        Text(
+                            text = stringResource(id = R.string.action_save),
+                            style = zibeTypography.label,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
                     icon = { Icon(Icons.Rounded.Check, null) },
                     onClick = onSave,
-                    enabled = state.saveEnabled,
+                    enabled = saveEnabled,
                     isLoading = state.isSaving
                 )
             }
@@ -308,13 +366,13 @@ fun EditProfileScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .verticalScroll(scrollState)
                     .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
                     .padding(
-                        start = dimensionResource(R.dimen.screen_padding),
-                        end = dimensionResource(R.dimen.screen_padding),
-                        bottom = fabHeightDp + extraBottomMargin
-                    ),
+                        horizontal = dimensionResource(R.dimen.screen_padding),
+                        vertical = dimensionResource(R.dimen.screen_padding)
+                    )
+                    .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_medium))
             ) {
                 ZibeCard(
@@ -369,60 +427,14 @@ fun EditProfileScreen(
                             singleLine = true
                         )
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
-                        ) {
-                            Box(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                ZibeInputField(
-                                    value = state.birthDate.takeIf { it.isNotBlank() }
-                                        ?.let { isoToUiDate(it) }
-                                        .orEmpty(),
-                                    onValueChange = { },
-                                    label = stringResource(R.string.birth_date),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp),
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.EditCalendar,
-                                            contentDescription = stringResource(R.string.content_description_edit_birthdate)
-                                        )
-                                    },
-                                    enabled = !state.isLoading,
-                                    readOnly = true
-                                )
-
-                                Box(
-                                    modifier = Modifier
-                                        .matchParentSize()
-                                        .testTag(TestTags.BIRTHDATE_PICKER)
-                                        .clickable { showDatePicker = true }
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.KeyboardArrowDown,
-                                        contentDescription = stringResource(R.string.content_description_edit_birthdate),
-                                        tint = zibeColors.lightText.copy(alpha = 0.6f),
-                                        modifier = Modifier
-                                            .align(Alignment.CenterEnd)
-                                            .padding(end = dimensionResource(R.dimen.element_spacing_small))
-                                    )
-                                }
-                            }
-
-                            ZibeInputField(
-                                value = state.age?.toString().orEmpty(),
-                                onValueChange = {},
-                                label = stringResource(id = R.string.age),
-                                enabled = false,
-                                singleLine = true,
-                                modifier = Modifier
-                                    .width(80.dp)
-                            )
-                        }
+                        ZibeInputBirthdate(
+                            value = state.birthDate.takeIf { it.isNotBlank() }
+                                ?.let { isoToUiDate(it) }.orEmpty(),
+                            age = state.age?.toString().orEmpty(),
+                            onClick = { if (!state.isLoading) showDatePicker = true },
+                            error = state.birthDateError?.asString(context),
+                            enabled = !state.isLoading
+                        )
 
                         ZibeAboutField(
                             value = state.description,
@@ -458,7 +470,7 @@ fun EditProfileScreen(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         },
-        onDeleteClick = onPhotoDeleted,
+        onDeleteClick = if (state.photoUrl != null || state.photoPreviewUri != null) onPhotoDeleted else null,
         sheetState = photoSheetState
     )
 
@@ -466,11 +478,14 @@ fun EditProfileScreen(
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                Button(onClick = {
+                TextButton(onClick = {
                     val selectedDate = datePickerState.selectedDateMillis
                     val today = Instant.now().toEpochMilli()
                     if (selectedDate != null && selectedDate > today) {
-                        onShowSnack(UiText.StringRes(R.string.err_future_date), ZibeSnackType.WARNING)
+                        onShowSnack(
+                            UiText.StringRes(R.string.err_future_date),
+                            ZibeSnackType.WARNING
+                        )
                     } else {
                         selectedDate?.let { millis ->
                             onBirthDateChange(millisToIsoString(millis))
@@ -478,12 +493,16 @@ fun EditProfileScreen(
                         showDatePicker = false
                     }
                 }) {
-                    Text(stringResource(id = R.string.action_accept))
+                    Text(
+                        stringResource(id = R.string.action_accept),
+                        style = zibeTypography.label,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             dismissButton = {
-                Button(onClick = { showDatePicker = false }) {
-                    Text(stringResource(id = R.string.action_cancel))
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(id = R.string.action_cancel), style = zibeTypography.label)
                 }
             }
         ) {
@@ -498,29 +517,40 @@ fun EditProfileScreen(
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
             title = {
-                Text(stringResource(id = R.string.discard_changes_title))
+                Text(stringResource(id = R.string.discard_changes_title), style = zibeTypography.h2)
             },
             text = {
-                Text(stringResource(id = R.string.discard_changes_message))
+                Text(
+                    stringResource(id = R.string.discard_changes_message),
+                    style = zibeTypography.body
+                )
             },
             confirmButton = {
-                Button(onClick = {
+                TextButton(onClick = {
                     showDiscardDialog = false
                     onNavigateBack()
                 }) {
-                    Text(stringResource(id = R.string.action_exit))
+                    Text(
+                        stringResource(id = R.string.action_exit),
+                        color = zibeColors.snackRed,
+                        style = zibeTypography.label,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             },
             dismissButton = {
-                Button(onClick = { showDiscardDialog = false }) {
-                    Text(stringResource(id = R.string.action_dont_discard))
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text(
+                        stringResource(id = R.string.action_dont_discard),
+                        style = zibeTypography.label
+                    )
                 }
             }
         )
     }
 }
 
-private fun createCameraImageUri(context: android.content.Context): Uri? {
+private fun createCameraImageUri(context: Context): Uri? {
     val values = ContentValues().apply {
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         put(MediaStore.Images.Media.DESCRIPTION, System.currentTimeMillis().toString())
@@ -541,7 +571,7 @@ fun EditProfileScreenPreview() {
                 name = "John Doe",
                 description = "This is a sample description",
                 age = 25,
-                saveEnabled = true
+                hasPendingChanges = true
             ),
             onNameChange = {},
             onDescriptionChange = {},
@@ -551,7 +581,10 @@ fun EditProfileScreenPreview() {
             onSave = {},
             onNavigateBack = {},
             snackBarHostState = SnackbarHostState(),
-            photoModel = null
+            photoModel = null,
+            onShowSnack = { _, _ -> },
+            onBackRequest = {},
+            onOpenSettings = {},
         )
     }
 }

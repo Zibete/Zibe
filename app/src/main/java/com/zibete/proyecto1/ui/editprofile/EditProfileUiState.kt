@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.editprofile
 
 import android.net.Uri
+import com.zibete.proyecto1.core.ui.UiText
 
 data class EditProfileUiState(
     val isLoading: Boolean = true,
@@ -20,6 +21,10 @@ data class EditProfileUiState(
     val photoPreviewUri: Uri? = null,  // foto seleccionada local (sin subir todavía)
     val deletePhoto: Boolean = false,  // marcar para volver a default
 
-    val saveEnabled: Boolean = false,
-    val hasBirthDate: Boolean = false
+    val hasPendingChanges: Boolean = false,
+    val hasBirthDate: Boolean = false,
+
+    val birthDateError: UiText? = null,
+    val nameError: UiText? = null,
+    val showDiscardDialog: Boolean = false,
 )
