@@ -46,7 +46,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -92,9 +91,7 @@ import com.zibete.proyecto1.ui.components.ZibeInputBirthdate
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.media.rememberZibePhotoCropper
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
@@ -109,20 +106,10 @@ fun EditProfileRoute(
     onOpenSettings: () -> Unit = {},
 ) {
     val state by editProfileViewModel.uiState.collectAsStateWithLifecycle()
-    val snackHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         editProfileViewModel.load()
-    }
-
-    LaunchedEffect(Unit) {
-        editProfileViewModel.snackBarEvents.collectLatest { event ->
-            snackHostState.showZibeMessage(
-                message = event.uiText.asString(context),
-                type = event.type
-            )
-        }
     }
 
     LaunchedEffect(editProfileViewModel) {
@@ -163,7 +150,6 @@ fun EditProfileRoute(
         onDiscardDismiss = editProfileViewModel::onDiscardDialogDismiss,
         onDiscardConfirmExit = editProfileViewModel::onDiscardDialogConfirmExit,
         onSettingsRequest = editProfileViewModel::onSettingsRequest,
-        snackBarHostState = snackHostState,
         photoModel = editProfileViewModel.resolveProfilePhotoToLoad(),
         onShowSnack = { uiText, snackType ->
             editProfileViewModel.showSnack(uiText, snackType)
@@ -185,7 +171,6 @@ fun EditProfileScreen(
     onDiscardDismiss: () -> Unit,
     onDiscardConfirmExit: () -> Unit,
     onSettingsRequest: () -> Unit,
-    snackBarHostState: SnackbarHostState,
     photoModel: Any?,
     onShowSnack: (UiText, ZibeSnackType) -> Unit = { _, _ -> }
 ) {
@@ -342,7 +327,6 @@ fun EditProfileScreen(
                     menuItems = menuItems
                 )
             },
-            snackbarHost = { ZibeSnackbar(hostState = snackBarHostState) },
             floatingActionButton = {
                 ZibeCollapsingFabStack(
                     collapsed = isFabCollapsed,
@@ -542,11 +526,10 @@ fun EditProfileScreenPreview() {
             onBirthDateChange = {},
             onPhotoSelected = {},
             onPhotoDeleted = {},
-            onSave = {},
-            snackBarHostState = SnackbarHostState(),
-            photoModel = null,
-            onShowSnack = { _, _ -> },
-            onBackRequest = {},
+        onSave = {},
+        photoModel = null,
+        onShowSnack = { _, _ -> },
+        onBackRequest = {},
             onDiscardDismiss = {},
             onDiscardConfirmExit = {},
             onSettingsRequest = {},

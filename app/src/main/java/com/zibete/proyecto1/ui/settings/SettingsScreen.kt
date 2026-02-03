@@ -24,7 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -40,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -69,12 +67,9 @@ import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordField
 import com.zibete.proyecto1.ui.components.ZibeMessageDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeSwitchRow
 import com.zibete.proyecto1.ui.components.ZibeToolbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
@@ -84,8 +79,6 @@ fun SettingsRoute(
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
-    val snackHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         settingsViewModel.appNavigatorEvents.collect { event ->
@@ -102,18 +95,8 @@ fun SettingsRoute(
         }
     }
 
-    LaunchedEffect(Unit) {
-        settingsViewModel.snackBarEvents.collectLatest { event ->
-            snackHostState.showZibeMessage(
-                message = event.uiText.asString(context),
-                type = event.type
-            )
-        }
-    }
-
     SettingsScreen(
         state = state,
-        snackHostState = snackHostState,
         onBack = onBack,
         onEmailInputChanged = settingsViewModel::onEmailInputChanged,
         onPasswordInputChanged = settingsViewModel::onPasswordInputChanged,
@@ -145,7 +128,6 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
-    snackHostState: SnackbarHostState,
     onBack: () -> Unit,
     onEmailInputChanged: (email: String, compareTo: String?) -> Unit,
     onPasswordInputChanged: (password: String, compareTo: String?) -> Unit,
@@ -231,14 +213,6 @@ fun SettingsScreen(
             ZibeToolbar(
                 title = stringResource(R.string.menu_settings),
                 onBack = onBack
-            )
-        },
-        snackbarHost = {
-            ZibeSnackbar(
-                hostState = snackHostState,
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(bottom = dimensionResource(R.dimen.element_spacing_medium))
             )
         }
     ) { innerPadding ->
@@ -742,7 +716,6 @@ fun SettingsScreenPreview() {
                 individualNotificationsEnabled = true,
                 groupNotificationsEnabled = false
             ),
-            snackHostState = remember { SnackbarHostState() },
             onBack = {},
             onEmailInputChanged = { _, _ -> },
             onPasswordInputChanged = { _, _ -> },

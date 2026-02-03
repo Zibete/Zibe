@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -22,10 +21,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.SnackBarManagerEntryPoint
 import com.zibete.proyecto1.ui.chat.ChatActivity
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -34,6 +34,13 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
     val state by groupHostViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val appContext = LocalContext.current.applicationContext
+    val snackBarManager = remember(appContext) {
+        EntryPointAccessors.fromApplication(
+            appContext,
+            SnackBarManagerEntryPoint::class.java
+        ).snackBarManager()
+    }
 
     val pagerState = rememberPagerState(
         initialPage = 1, // GROUP_CHAT
@@ -50,8 +57,6 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
         groupHostViewModel.onTabSelected(tab)
     }
 
-    val snackHostState = remember { SnackbarHostState() }
-
     // Events
     LaunchedEffect(Unit) {
         groupHostViewModel.events.collect { event ->
@@ -64,12 +69,7 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
                     context.startActivity(i)
                 }
                 is GroupHostEvent.ShowSnack -> {
-                    scope.launch {
-                        snackHostState.showZibeMessage(
-                            type = event.type,
-                            message = event.message.asString(context)
-                        )
-                    }
+                    snackBarManager.show(event.message, event.type)
                 }
             }
         }
