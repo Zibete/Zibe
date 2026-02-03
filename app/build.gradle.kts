@@ -103,7 +103,7 @@ dependencies {
     // -------------------------------
     // COMPOSE
     // -------------------------------
-    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.01.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -111,7 +111,6 @@ dependencies {
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.test.espresso:espresso-intents:3.7.0")
-    implementation("androidx.compose.runtime:runtime:1.10.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -170,7 +169,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
-    implementation("androidx.compose.material:material-icons-extended:1.7.5")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
@@ -210,7 +209,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.test:runner:1.7.0")
 
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.01.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.48")
