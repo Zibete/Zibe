@@ -34,6 +34,7 @@ class SplashSessionConflictAndroidTest :
 
     @Before
     fun setup() {
+        Intents.init()
         val intent = Intent(context, SplashActivity::class.java).apply {
             putExtra(EXTRA_SESSION_CONFLICT, true)
         }
@@ -45,6 +46,11 @@ class SplashSessionConflictAndroidTest :
             ),
             intent = intent
         )
+    }
+
+    @After
+    fun tearDown() {
+        Intents.release()
     }
 
     @Test
@@ -62,12 +68,19 @@ class SplashSessionConflictAndroidTest :
     }
 
     @Test
-    fun flow_whenSessionConflict_dialogShows_andKeepHere_NavigatesToSplash() {
+    fun flow_whenSessionConflict_dialogShows_andKeepHere_NavigatesToMain() {
         waitText(attentionTitle, composeRule)
 
         composeRule.onNodeWithText(keepHere).performClick()
 
-        waitTag(SPLASH_SCREEN, composeRule)
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            try {
+                Intents.intended(hasComponent(MainActivity::class.java.name))
+                true
+            } catch (_: AssertionError) {
+                false
+            }
+        }
     }
 }
 

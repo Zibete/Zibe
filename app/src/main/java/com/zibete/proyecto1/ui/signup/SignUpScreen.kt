@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -49,7 +48,6 @@ import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeInputBirthdateDark
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
@@ -94,7 +92,6 @@ fun SignUpScreen(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val snackHostState = remember { SnackbarHostState() }
 
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
 
@@ -125,7 +122,6 @@ fun SignUpScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
-        snackbarHost = { ZibeSnackbar(hostState = snackHostState) },
         topBar = {
             ZibeToolbar(
                 title = stringResource(id = R.string.your_data),

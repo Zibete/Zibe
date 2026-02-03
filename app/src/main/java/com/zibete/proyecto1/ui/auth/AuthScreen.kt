@@ -24,7 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -64,7 +63,6 @@ import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
 import com.zibete.proyecto1.ui.components.ZibeInputPasswordFieldDark
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -108,8 +106,6 @@ fun AuthScreen(
     val spacingXs = dimensionResource(R.dimen.element_spacing_xs)
     val spacingSm = dimensionResource(R.dimen.element_spacing_small)
     val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
-
-    val snackHostState = remember { SnackbarHostState() }
 
     val loginEnabled by remember(email, password, state.isLoadingLogin) {
         derivedStateOf {
@@ -161,7 +157,6 @@ fun AuthScreen(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = Color.Transparent,
-        snackbarHost = { ZibeSnackbar(hostState = snackHostState) },
     ) { innerPadding ->
         Box(
             modifier = Modifier

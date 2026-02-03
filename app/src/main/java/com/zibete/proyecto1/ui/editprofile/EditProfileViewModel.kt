@@ -41,9 +41,7 @@ class EditProfileViewModel @Inject constructor(
     private val snackBarManager: SnackBarManager,
     private val config: SettingsConfig,
 ) : ViewModel() {
-
-    val snackBarEvents = snackBarManager.events
-
+    
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
 

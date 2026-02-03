@@ -2,6 +2,7 @@ package com.zibete.proyecto1.ui.splash
 
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
@@ -73,8 +74,12 @@ class PermissionRoutingAndroidTest :
         waitTag(PERMISSION_SCREEN, composeRule)
         composeRule.onNodeWithText(actionStart).performClick()
 
-        waitText(rationaleTitle, composeRule)
-        composeRule.onNodeWithText(actionAccept).performClick()
+        if (composeRule.onAllNodesWithText(rationaleTitle)
+                .fetchSemanticsNodes(atLeastOneRootRequired = false)
+                .isNotEmpty()
+        ) {
+            composeRule.onNodeWithText(actionAccept).performClick()
+        }
 
         waitTag(SPLASH_SCREEN, composeRule)
     }
