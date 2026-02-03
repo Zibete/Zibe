@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.fakes
 
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.model.Users
@@ -40,8 +41,13 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
-    override suspend fun getMyAccount(): Users? {
-        if (shouldFail) throw runtimeException
-        return if (scenarioProvider().accountExists) TestData.USER else null
+    override suspend fun getMyAccount(): ZibeResult<Users> {
+        return if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else if (scenarioProvider().accountExists) {
+            ZibeResult.Success(TestData.USER)
+        } else {
+            ZibeResult.Failure(RuntimeException("USER_NOT_FOUND"))
+        }
     }
 }

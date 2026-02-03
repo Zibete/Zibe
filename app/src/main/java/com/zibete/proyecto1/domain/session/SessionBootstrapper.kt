@@ -14,6 +14,7 @@ import javax.inject.Inject
 interface SessionBootstrapper {
     suspend fun bootstrap(
         uid: String,
+        name: String = "",
         birthDate: String = "",
         description: String = "",
     ): ZibeResult<Unit>
@@ -31,6 +32,7 @@ class DefaultSessionBootstrapper @Inject constructor(
 
     override suspend fun bootstrap(
         uid: String,
+        name: String,
         birthDate: String,
         description: String
     ): ZibeResult<Unit> =
@@ -42,6 +44,7 @@ class DefaultSessionBootstrapper @Inject constructor(
             // 3. Flujo de Usuario (Creación o Verificación)
             updateUserFlow(
                 uid = uid,
+                name = name,
                 birthDate = birthDate,
                 description = description
             )
@@ -64,6 +67,7 @@ class DefaultSessionBootstrapper @Inject constructor(
 
     private suspend fun updateUserFlow(
         uid: String,
+        name: String,
         birthDate: String,
         description: String,
     ) {
@@ -72,7 +76,8 @@ class DefaultSessionBootstrapper @Inject constructor(
         // Usuario nuevo
         if (!accountExists) {
             authSessionProvider.currentUser?.let { user: FirebaseUser ->
-                userRepositoryActions.createUserNode(user, birthDate, description)
+                val resolvedName = name.ifBlank { user.displayName.orEmpty() }
+                userRepositoryActions.createUserNode(user, resolvedName, birthDate, description)
             }
             userPreferencesActions.setFirstLoginDone(false)
             return

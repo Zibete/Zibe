@@ -16,5 +16,5 @@ class FakeUpdateProfileUseCase @Inject constructor(
         originalPhotoUrl: String?,
         photoPreviewUri: Uri?,
         shouldDeletePhoto: Boolean
-    ): ZibeResult<Unit> = ZibeResult.Success(Unit)
+    ): ZibeResult<String?> = ZibeResult.Success(originalPhotoUrl)
 }

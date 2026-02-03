@@ -15,6 +15,7 @@ class FakeUserRepositoryActions(
 
     override suspend fun createUserNode(
         firebaseUser: FirebaseUser,
+        name: String,
         birthDate: String,
         description: String
     ) {

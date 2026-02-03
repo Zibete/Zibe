@@ -28,6 +28,7 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.StatusKeys
+import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
@@ -62,11 +63,17 @@ interface UserRepositoryProvider {
     suspend fun getProfilePhotoUrl(): String?
     suspend fun getAccount(uid: String): Users?
     suspend fun getChatStateWith(otherUid: String, nodeType: String): String
-    suspend fun getMyAccount(): Users?
+    suspend fun getMyAccount(): ZibeResult<Users>
 }
 
 interface UserRepositoryActions {
-    suspend fun createUserNode(firebaseUser: FirebaseUser, birthDate: String, description: String)
+    suspend fun createUserNode(
+        firebaseUser: FirebaseUser,
+        name: String,
+        birthDate: String,
+        description: String
+    )
+
     suspend fun setUserLastSeen()
     suspend fun setUserActivityStatus(status: String)
     suspend fun deleteMyAccountData(): ZibeResult<Unit>
@@ -178,11 +185,11 @@ class UserRepository @Inject constructor(
         .child(PATH_PROFILE_PHOTOS)
         .child(fileName)
 
-    override suspend fun putProfilePhotoInStorage(localUri: Uri) : ZibeResult<Unit> =
+    override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
         zibeCatching { getProfilePhotoStoragePath().putFile(localUri).await() }
 
     override suspend fun deleteProfilePhoto(): ZibeResult<Unit> =
-        zibeCatching {getProfilePhotoStoragePath().delete().await() }
+        zibeCatching { getProfilePhotoStoragePath().delete().await() }
 
     override suspend fun getProfilePhotoUrl(): String? {
         return try {
@@ -207,8 +214,9 @@ class UserRepository @Inject constructor(
             .takeIf { it.exists() }
             ?.getValue(Users::class.java)
 
-    override suspend fun getMyAccount(): Users? =
-        getAccount(myUid)
+    override suspend fun getMyAccount(): ZibeResult<Users> = zibeCatching {
+        getAccount(myUid) ?: throw Exception(USER_NOT_FOUND_EXCEPTION)
+    }
 
     // ============================================================
     // EDIT PROFILE (updates)
@@ -247,11 +255,12 @@ class UserRepository @Inject constructor(
 
     override suspend fun createUserNode(
         firebaseUser: FirebaseUser,
+        name: String,
         birthDate: String,
         description: String
     ) {
         val id = firebaseUser.uid
-        val userName = firebaseUser.displayName.orEmpty()
+        val userName = name
         val createdAt = now()
         val age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate)
         val email: String = firebaseUser.email ?: ""

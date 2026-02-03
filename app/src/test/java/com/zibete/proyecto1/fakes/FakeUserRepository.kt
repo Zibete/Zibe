@@ -11,6 +11,7 @@ import com.zibete.proyecto1.testing.TestScenario
 
 data class CreateUserNodeCall(
     val user: FirebaseUser,
+    val name: String,
     val birthDate: String,
     val description: String
 )
@@ -62,12 +63,13 @@ class FakeUserRepositoryProvider(
         return TestData.CHAT_STATE
     }
 
-    override suspend fun getMyAccount(): Users? {
-        failIfNeeded()
-        return if (scenarioProvider().accountExists) {
-            TestData.USER
+    override suspend fun getMyAccount(): ZibeResult<Users> {
+        return if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
+        } else if (scenarioProvider().accountExists) {
+            ZibeResult.Success(TestData.USER)
         } else {
-            null
+            ZibeResult.Failure(RuntimeException("USER_NOT_FOUND"))
         }
     }
 
@@ -88,12 +90,13 @@ class FakeUserRepositoryActions(
 
     override suspend fun createUserNode(
         firebaseUser: FirebaseUser,
+        name: String,
         birthDate: String,
         description: String
     ) {
         val s = scenarioProvider()
         if (s.shouldFail) throw s.runtimeException
-        else lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, birthDate, description)
+        else lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, name, birthDate, description)
     }
 
     override suspend fun setUserLastSeen() {

@@ -13,6 +13,7 @@ class FakeSessionBootstrapper(
 
     override suspend fun bootstrap(
         uid: String,
+        name: String,
         birthDate: String,
         description: String
     ): ZibeResult<Unit> {

@@ -133,7 +133,10 @@ class SignUpViewModel @Inject constructor(
             setLoading(true)
 
             // 1. Validar campos
-            if (!validateInputs(email, password, name, birthDate)) return@launch
+            if (!validateInputs(email, password, name, birthDate)) {
+                setLoading(false)
+                return@launch
+            }
 
             // 2. Crear Usuario
             authSessionActions.createUser(
@@ -152,6 +155,7 @@ class SignUpViewModel @Inject constructor(
                 // 3. Guardar perfil RTDB
                 sessionBootstrapper.bootstrap(
                     uid = firebaseUser.uid,
+                    name = name,
                     birthDate = birthDate,
                     description = description
                 ).onFailure { e ->
