@@ -18,7 +18,7 @@
     <string name="editprofile_welcome_pager_3_title">Listo para empezar</string>
     <string name="editprofile_welcome_pager_3_body">Completá tu fecha de nacimiento y guardá los cambios para continuar. ¡Disfrutá la experiencia ZIBE!</string>
 
-    <string name="edit_profile_hints_text">Una foto clara y una buena descripción aumentan tus coincidencias.</string>
+    <string name="edit_profile_hints_text">Una foto clara 📸 y una buena descripción aumentan tus coincidencias.</string>
 
     <string name="name">Nombre visible</string>
     <string name="age">Edad</string>
@@ -128,6 +128,7 @@
 
     <string name="signup_err_name_required">Ingresá tu nombre visible</string>
     <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
+    <string name="err_save_required">Guardá los cambios para continuar</string>
     <string name="err_birthdate_required">Debes ingresar tu fecha de nacimiento para utilizar la app</string>
     <string name="err_under_age">Lo sentimos, debes ser mayor de 18 años para utilizar la App</string>
     <string name="signup_err_mail_in_use">El correo electrónico ya está registrado.</string>

@@ -35,8 +35,7 @@
         android:name="com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment"
         android:label="@string/menu_edit_profile"
         app:popUpTo="@id/editProfileFragment"
-        app:popUpToInclusive="true"
-        tools:layout="@layout/fragment_edit_profile" />
+        app:popUpToInclusive="true"/>
 
     <fragment
         android:id="@+id/settingsFragment"

@@ -9,15 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -46,11 +41,10 @@ import com.zibete.proyecto1.core.constants.Constants.TestTags
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToMillis
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
-import com.zibete.proyecto1.core.utils.TimeUtils.millisToIso
 import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
+import com.zibete.proyecto1.ui.components.ZibeBirthDatePickerDialog
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.ZibeInputBirthdateDark
 import com.zibete.proyecto1.ui.components.ZibeInputFieldDark
@@ -215,37 +209,14 @@ fun SignUpScreen(
                     enabled = !state.isLoading
                 )
 
-                if (showDatePicker) {
-                    val datePickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = state.birthDate
-                            .takeIf { it.isNotBlank() }
-                            ?.let { isoToMillis(it) }
-                    )
-
-                    DatePickerDialog(
-                        onDismissRequest = { showDatePicker = false },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    datePickerState.selectedDateMillis?.let { ms ->
-                                        val iso = millisToIso(ms)
-                                        onBirthDateChanged(iso)
-                                    }
-                                    showDatePicker = false
-                                }
-                            ) {
-                                Text(stringResource(R.string.action_accept))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDatePicker = false }) {
-                                Text(stringResource(R.string.action_cancel))
-                            }
-                        }
-                    ) {
-                        DatePicker(state = datePickerState)
+                ZibeBirthDatePickerDialog(
+                    isOpen = showDatePicker,
+                    initialIso = state.birthDate.takeIf { it.isNotBlank() },
+                    onDismiss = { showDatePicker = false },
+                    onConfirmIso = { iso ->
+                        onBirthDateChanged(iso)
                     }
-                }
+                )
 
                 ZibeAboutField(
                     value = state.description,

@@ -3,9 +3,12 @@ package com.zibete.proyecto1.ui.editprofile
 import android.net.Uri
 import com.zibete.proyecto1.core.ui.UiText
 
+enum class PendingNav { BACK, SETTINGS }
+
 data class EditProfileUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isValidating: Boolean = false,
 
     val name: String = "",
     val description: String = "",
@@ -26,4 +29,6 @@ data class EditProfileUiState(
     val birthDateError: UiText? = null,
     val nameError: UiText? = null,
     val showDiscardDialog: Boolean = false,
+    val showWelcomeSheet: Boolean = false,
+    val pendingNav: PendingNav? = null,
 )

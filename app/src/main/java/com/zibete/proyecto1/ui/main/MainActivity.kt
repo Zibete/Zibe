@@ -753,6 +753,17 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                         return
                     }
 
+                    if (navController.currentDestination?.id == R.id.settingsFragment) {
+                        if (navController.popBackStack()) return
+                    }
+
+                    if (navController.currentDestination?.id == R.id.editProfileFragment) {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                        return
+                    }
+
                     // 2. Manejo global delegado al ViewModel
                     mainViewModel.onBackPressed()
                 }
@@ -783,3 +794,5 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
+
+
