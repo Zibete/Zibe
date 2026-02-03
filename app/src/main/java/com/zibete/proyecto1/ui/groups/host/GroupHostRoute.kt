@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.ChatActivity
@@ -81,17 +82,17 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
             Tab(
                 selected = pagerState.currentPage == 0,
                 onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-                text = { Text(context.getString(R.string.tab_group_users)) }
+                text = { Text(stringResource(R.string.tab_group_users)) }
             )
             Tab(
                 selected = pagerState.currentPage == 1,
                 onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                text = { Text(state.groupContext?.groupName ?: context.getString(R.string.tab_group_chat) ) }
+                text = { Text(state.groupContext?.groupName ?: stringResource(R.string.tab_group_chat)) }
             )
             Tab(
                 selected = pagerState.currentPage == 2,
                 onClick = { scope.launch { pagerState.animateScrollToPage(2) } },
-                text = { Text(context.getString(R.string.tab_group_chats)) }
+                text = { Text(stringResource(R.string.tab_group_chats)) }
             )
         }
 
