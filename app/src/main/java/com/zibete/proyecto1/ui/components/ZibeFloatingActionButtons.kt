@@ -37,7 +37,8 @@ fun ZibePrimaryFAB(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    expanded: Boolean = true
 ) {
     val extendedColors = LocalZibeExtendedColors.current
     ZibeBaseFAB(
@@ -47,6 +48,7 @@ fun ZibePrimaryFAB(
         modifier = modifier,
         enabled = enabled,
         isLoading = isLoading,
+        expanded = expanded,
         containerColor = extendedColors.accent,
         contentColor = extendedColors.lightText
     )
@@ -63,7 +65,8 @@ fun ZibeSecondaryFAB(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    expanded: Boolean = true
 ) {
     ZibeBaseFAB(
         text = text,
@@ -72,6 +75,7 @@ fun ZibeSecondaryFAB(
         modifier = modifier,
         enabled = enabled,
         isLoading = isLoading,
+        expanded = expanded,
         containerColor = MaterialTheme.colorScheme.secondary,
         contentColor = MaterialTheme.colorScheme.onSurface
     )
@@ -88,6 +92,7 @@ private fun ZibeBaseFAB(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     isLoading: Boolean = false,
+    expanded: Boolean = true,
     containerColor: Color,
     contentColor: Color
 ) {
@@ -100,11 +105,17 @@ private fun ZibeBaseFAB(
     val finalContainerColor = if (isEffectivelyEnabled) containerColor else containerColor.copy(alpha = 0.24f)
     val finalContentColor = if (isEffectivelyEnabled) contentColor else extendedColors.hintText
 
+    val minWidth = if (expanded) {
+        dimensionResource(R.dimen.zibe_extfab_min_width)
+    } else {
+        0.dp
+    }
+
     ExtendedFloatingActionButton(
         onClick = { if (isEffectivelyEnabled) onClick() },
         modifier = modifier
             .heightIn(min = dimensionResource(R.dimen.zibe_btn_height))
-            .widthIn(min = dimensionResource(R.dimen.zibe_extfab_min_width)),
+            .widthIn(min = minWidth),
         shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_btn_corner)),
         containerColor = finalContainerColor,
         contentColor = finalContentColor,
@@ -112,6 +123,7 @@ private fun ZibeBaseFAB(
             defaultElevation = if (isEffectivelyEnabled) dimensionResource(R.dimen.zibe_btn_elevation) else 0.dp,
             pressedElevation = if (isEffectivelyEnabled) dimensionResource(R.dimen.zibe_btn_elevation_pressed) else 0.dp
         ),
+        expanded = expanded,
         icon = {
             if (isLoading) {
                 CircularProgressIndicator(

@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
@@ -34,7 +35,8 @@ fun ZibeDialog(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall)
+                style = LocalZibeTypography.current.h2
+            )
                 },
         text = content,
         confirmButton = {

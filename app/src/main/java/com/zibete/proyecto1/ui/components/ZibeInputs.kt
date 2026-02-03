@@ -380,7 +380,7 @@ fun ZibeAboutField(
     showCounter: Boolean = true,
     testTag: String? = null,
     minHeight: Dp = 120.dp,
-    maxHeight: Dp = 200.dp,
+    maxHeight: Dp = 240.dp,
     initialHeight: Dp = 140.dp,
     resizable: Boolean = true,
     bringIntoViewOnFocus: Boolean = true,

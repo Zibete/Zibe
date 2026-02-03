@@ -28,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -57,7 +56,7 @@ fun ZibeBottomSheet(
             containerColor = zibeColors.cardBackground.copy(alpha = 0.98f),
             tonalElevation = 0.dp,
             dragHandle = {
-                BottomSheetDefaults.DragHandle(color = colorResource(R.color.zibe_btn_primary_50))
+                BottomSheetDefaults.DragHandle(color = zibeColors.accent.copy(alpha = 0.4f))
             },
             modifier = Modifier,
             content = {

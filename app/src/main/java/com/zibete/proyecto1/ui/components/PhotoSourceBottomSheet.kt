@@ -1,6 +1,7 @@
-package com.zibete.proyecto1.ui.editprofile
+package com.zibete.proyecto1.ui.components
 
 import LocalZibeExtendedColors
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,9 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.ui.components.SheetHeader
-import com.zibete.proyecto1.ui.components.ZibeBottomSheet
-import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
@@ -110,7 +108,7 @@ private fun PhotoSourceMainItem(
         onClick = onClick,
         containerColor = zibeExtendedColors.contentLightBg,
         elevation = 0.dp,
-        border = androidx.compose.foundation.BorderStroke(
+        border = BorderStroke(
             1.dp, 
             zibeExtendedColors.accent.copy(alpha = 0.15f)
         )
