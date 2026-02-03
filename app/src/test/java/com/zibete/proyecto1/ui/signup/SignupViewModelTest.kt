@@ -195,7 +195,7 @@ class SignUpViewModelTest {
     }
 
     @Test
-    fun flow_onRegister_blankBirthdate_emitsSnack_noSideEffects() = runTest {
+    fun flow_onRegister_blankBirthdate_setsError_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
             authSessionActions = authSessionActions,
@@ -216,20 +216,19 @@ class SignUpViewModelTest {
         )
         advanceUntilIdle()
 
-        verify {
-            snackBarManager.show(
-                UiText.StringRes(R.string.signup_err_birthdate_required),
-                ZibeSnackType.WARNING
-            )
-        }
+        assertTrue(
+            vm.uiState.value.birthDateError ==
+                    UiText.StringRes(R.string.signup_err_birthdate_required)
+        )
         assertFalse(vm.uiState.value.isLoading)
 
+        verify { snackBarManager wasNot Called }
         coVerify { authSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }
 
     @Test
-    fun flow_onRegister_underAge_emitsSnack_noSideEffects() = runTest {
+    fun flow_onRegister_underAge_setsError_noSideEffects() = runTest {
         // Given
         val vm = SignUpViewModel(
             authSessionActions = authSessionActions,
@@ -250,14 +249,13 @@ class SignUpViewModelTest {
         )
         advanceUntilIdle()
 
-        verify {
-            snackBarManager.show(
-                UiText.StringRes(R.string.err_under_age),
-                ZibeSnackType.WARNING
-            )
-        }
+        assertTrue(
+            vm.uiState.value.birthDateError ==
+                    UiText.StringRes(R.string.err_under_age)
+        )
         assertFalse(vm.uiState.value.isLoading)
 
+        verify { snackBarManager wasNot Called }
         coVerify { authSessionActions wasNot Called }
         coVerify { sessionBootstrapper wasNot Called }
     }

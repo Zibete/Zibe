@@ -17,6 +17,7 @@ import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
@@ -70,6 +71,10 @@ object TestAppBindingsModule {
     @Singleton
     fun provideLogoutUseCase(store: TestScenarioStore): LogoutUseCase =
         FakeLogoutUseCase { store.scenario }
+
+    @Provides
+    @Singleton
+    fun provideSessionConflictMonitor(): SessionConflictMonitor = mockk(relaxed = true)
 
     @Provides
     @Singleton

@@ -39,6 +39,7 @@ class SessionBootstrapperTest {
         )
         val firebaseUser = mockk<FirebaseUser>(relaxed = true)
         every { firebaseUser.uid } returns TestData.UID
+        every { firebaseUser.displayName } returns "AuthName"
         
         val authSessionProvider = FakeAuthSessionProvider(
             currentUser = firebaseUser
@@ -51,13 +52,14 @@ class SessionBootstrapperTest {
         )
 
         // When
-        bootstrapper.bootstrap(uid = TestData.UID)
+        bootstrapper.bootstrap(uid = TestData.UID, name = "ExplicitName")
         advanceUntilIdle()
 
         // Then
         val lastCall = userRepositoryActions.lastCreateUserNodeCall
         assertTrue("Expected createUserNode to be called", lastCall != null)
         assertEquals(firebaseUser, lastCall?.user)
+        assertEquals("ExplicitName", lastCall?.name)
         assertEquals("", lastCall?.birthDate)
         assertEquals("", lastCall?.description)
         
@@ -171,6 +173,7 @@ class SessionBootstrapperTest {
         authSessionProvider: AuthSessionProvider = FakeAuthSessionProvider(),
         sessionRepositoryActions: SessionRepositoryActions = FakeSessionRepositoryActions { scenario },
         sessionRepositoryProvider: SessionRepositoryProvider = FakeSessionRepositoryProvider { scenario },
+        sessionConflictMonitor: SessionConflictMonitor = mockk(relaxed = true),
         userRepositoryActions: UserRepositoryActions = FakeUserRepositoryActions { scenario },
         userRepositoryProvider: UserRepositoryProvider = FakeUserRepositoryProvider { scenario },
         userPreferencesActions: UserPreferencesActions = FakeUserPreferencesActions { scenario }
@@ -179,6 +182,7 @@ class SessionBootstrapperTest {
             authSessionProvider = authSessionProvider,
             sessionRepositoryActions = sessionRepositoryActions,
             sessionRepositoryProvider = sessionRepositoryProvider,
+            sessionConflictMonitor = sessionConflictMonitor,
             userRepositoryActions = userRepositoryActions,
             userRepositoryProvider = userRepositoryProvider,
             userPreferencesActions = userPreferencesActions
