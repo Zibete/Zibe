@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.theme
 
-import LocalZibeExtendedColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -9,10 +8,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import com.zibete.proyecto1.R
-import rememberZibeExtendedColors
 
 @Composable
 fun ZibeTheme(content: @Composable () -> Unit) {

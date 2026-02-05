@@ -56,10 +56,13 @@
     <!-- SNACK -->
     <color name="snackbar_surface">#1E2A38</color>
 
-    <color name="zibe_red">#FF4C4C</color>
-    <color name="zibe_yellow">#FFD93B</color>
-    <color name="zibe_green">#4CAF50</color>
-    <color name="zibe_blue">#3A7BFF</color>
+    <color name="zibe_red">#FF5A5F</color>
+    <color name="zibe_yellow">#FFC247</color>
+    <color name="zibe_green">#3DDC97</color>
+    <color name="zibe_blue">#5C9DFF</color>
+
+    <color name="snack_background">#1F1F2B</color>
+    <color name="snack_action">#6EA8FF</color>
 
     <!-- ESTADOS -->
     <color name="zibe_shadow">#1A000000</color>
