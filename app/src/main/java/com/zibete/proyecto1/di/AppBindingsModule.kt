@@ -4,7 +4,11 @@ import com.zibete.proyecto1.core.device.DefaultDeviceInfoProvider
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
+import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.ProfileRepositoryActions
+import com.zibete.proyecto1.data.ProfileRepositoryProvider
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -54,73 +58,37 @@ abstract class AppBindingsModule {
     ): AppChecksProvider
 
     @Binds
-    @Singleton
-    abstract fun bindUserPreferencesProvider(
-        impl: UserPreferencesRepository
-    ): UserPreferencesProvider
+    abstract fun bindAuthSessionActions(
+        impl: FirebaseSessionManager
+    ): AuthSessionActions
+
+    @Binds
+    abstract fun bindAuthSessionProvider(
+        impl: FirebaseSessionManager
+    ): AuthSessionProvider
 
     @Binds
     @Singleton
-    abstract fun bindUserPreferencesActions(
-        impl: UserPreferencesRepository
-    ): UserPreferencesActions
+    abstract fun bindDeviceInfoProvider(
+        impl: DefaultDeviceInfoProvider
+    ): DeviceInfoProvider
 
-    // --- Domain orchestrators ---
     @Binds
-    @Singleton
-    abstract fun bindSessionBootstrapper(
-        impl: DefaultSessionBootstrapper
-    ): SessionBootstrapper
+    abstract fun bindLocalRepositoryProvider(
+        impl: UserRepository
+    ): LocalRepositoryProvider
 
     @Binds
     @Singleton
-    abstract fun bindSessionConflictMonitor(
-        impl: DefaultSessionConflictMonitor
-    ): SessionConflictMonitor
+    abstract fun bindProfileRepositoryProvider(
+        impl: UserRepository
+    ): ProfileRepositoryProvider
 
     @Binds
     @Singleton
-    abstract fun bindLogoutUseCase(
-        impl: DefaultLogoutUseCase
-    ): LogoutUseCase
-
-    @Binds
-    @Singleton
-    abstract fun bindDeleteAccountUseCase(
-        impl: DefaultDeleteAccountUseCase
-    ): DeleteAccountUseCase
-
-    @Binds
-    abstract fun bindExitGroupUseCase(
-        impl: DefaultExitGroupUseCase
-    ): ExitGroupUseCase
-
-    @Binds
-    abstract fun bindSendFeedbackUseCase(
-        impl: DefaultSendFeedbackUseCase
-    ): SendFeedbackUseCase
-
-    @Binds
-    @Singleton
-    abstract fun bindUpdateProfileUseCase(
-        impl: DefaultUpdateProfileUseCase
-    ): UpdateProfileUseCase
-
-    @Binds
-    abstract fun bindUpdateEmailUseCase(
-        impl: DefaultUpdateEmailUseCase
-    ): UpdateEmailUseCase
-
-    @Binds
-    abstract fun bindUpdatePasswordUseCase(
-        impl: DefaultUpdatePasswordUseCase
-    ): UpdatePasswordUseCase
-
-    @Binds
-    @Singleton
-    abstract fun bindGoogleSignInUseCase(
-        impl: DefaultGoogleSignInUseCase
-    ): GoogleSignInUseCase
+    abstract fun bindProfileRepositoryActions(
+        impl: UserRepository
+    ): ProfileRepositoryActions
 
     @Binds
     @Singleton
@@ -136,6 +104,18 @@ abstract class AppBindingsModule {
 
     @Binds
     @Singleton
+    abstract fun bindUserPreferencesActions(
+        impl: UserPreferencesRepository
+    ): UserPreferencesActions
+
+    @Binds
+    @Singleton
+    abstract fun bindUserPreferencesProvider(
+        impl: UserPreferencesRepository
+    ): UserPreferencesProvider
+
+    @Binds
+    @Singleton
     abstract fun bindUserRepositoryActions(
         impl: UserRepository
     ): UserRepositoryActions
@@ -147,25 +127,64 @@ abstract class AppBindingsModule {
     ): UserRepositoryProvider
 
     @Binds
-    abstract fun bindLocalRepositoryProvider(
-        impl: UserRepository
-    ): LocalRepositoryProvider
+    @Singleton
+    abstract fun bindDeleteAccountUseCase(
+        impl: DefaultDeleteAccountUseCase
+    ): DeleteAccountUseCase
 
     @Binds
-    abstract fun bindAuthSessionProvider(
-        impl: FirebaseSessionManager
-    ): AuthSessionProvider
+    abstract fun bindExitGroupUseCase(
+        impl: DefaultExitGroupUseCase
+    ): ExitGroupUseCase
 
     @Binds
-    abstract fun bindAuthSessionActions(
-        impl: FirebaseSessionManager
-    ): AuthSessionActions
-
+    abstract fun bindGroupRepositoryProvider(
+        impl: GroupRepository
+    ): GroupRepositoryProvider
 
     @Binds
     @Singleton
-    abstract fun bindDeviceInfoProvider(
-        impl: DefaultDeviceInfoProvider
-    ): DeviceInfoProvider
+    abstract fun bindGoogleSignInUseCase(
+        impl: DefaultGoogleSignInUseCase
+    ): GoogleSignInUseCase
 
+    @Binds
+    @Singleton
+    abstract fun bindLogoutUseCase(
+        impl: DefaultLogoutUseCase
+    ): LogoutUseCase
+
+    @Binds
+    abstract fun bindSendFeedbackUseCase(
+        impl: DefaultSendFeedbackUseCase
+    ): SendFeedbackUseCase
+
+    @Binds
+    abstract fun bindUpdateEmailUseCase(
+        impl: DefaultUpdateEmailUseCase
+    ): UpdateEmailUseCase
+
+    @Binds
+    abstract fun bindUpdatePasswordUseCase(
+        impl: DefaultUpdatePasswordUseCase
+    ): UpdatePasswordUseCase
+
+    @Binds
+    @Singleton
+    abstract fun bindUpdateProfileUseCase(
+        impl: DefaultUpdateProfileUseCase
+    ): UpdateProfileUseCase
+
+    // --- Domain orchestrators ---
+    @Binds
+    @Singleton
+    abstract fun bindSessionBootstrapper(
+        impl: DefaultSessionBootstrapper
+    ): SessionBootstrapper
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionConflictMonitor(
+        impl: DefaultSessionConflictMonitor
+    ): SessionConflictMonitor
 }

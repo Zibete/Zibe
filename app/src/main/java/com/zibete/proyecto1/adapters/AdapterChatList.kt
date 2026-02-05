@@ -17,9 +17,6 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.RowChatlistaBinding
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.core.constants.Constants
-import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
-import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
@@ -143,9 +140,9 @@ class AdapterChatList(
             contextMenuPosition = holder.bindingAdapterPosition.coerceAtLeast(0)
 
             menuNotifTitle = if (b.notifOff.isVisible) {
-                ctx.getString(R.string.menu_notifications_on)
+                ctx.getString(R.string.menu_user_notifications_on)
             } else {
-                ctx.getString(R.string.menu_notifications_off)
+                ctx.getString(R.string.menu_user_notifications_off)
             }
 
             menuReadTitle = if (b.nuevoMsg.isVisible) {
@@ -195,24 +192,8 @@ class AdapterChatList(
 
     private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
         val state = chat.state
-        val photo = chat.otherPhotoUrl
-
-        when (state) {
-            NODE_DM -> {
-                binding.cardview.isVisible = true
-                binding.notifOff.isVisible = false
-            }
-            CHAT_STATE_SILENT -> {
-                binding.cardview.isVisible = true
-                binding.notifOff.isVisible = true
-            }
-            CHAT_STATE_BLOQ, CHAT_STATE_HIDE -> {
-                binding.cardview.isVisible = false
-            }
-            else -> {
-                binding.cardview.isVisible = photo != Constants.EMPTY
-            }
-        }
+        binding.cardview.isVisible = chat.isVisible()
+        binding.notifOff.isVisible = state == CHAT_STATE_SILENT
     }
 
     private fun bindChecks(binding: RowChatlistaBinding, chat: Conversation) {
@@ -294,11 +275,11 @@ class AdapterChatList(
     override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
         val ctx = v?.context ?: return
         val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
-        val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_notifications_off)
+        val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_user_notifications_off)
 
         menu.add(FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, titleRead)
         menu.add(FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, titleNotif)
-        menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_block)
+        menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_user_block)
         menu.add(FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
         menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.delete)
     }

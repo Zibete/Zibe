@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
@@ -80,7 +81,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             val summary = chatRepository.getUnreadSummaryForChats(myUid, nodeType)
 
             // Si tu chatId es uid1_uid2 ordenado:
-            val chatId = chatRepository.getChatId(otherId)
+            val chatId = getChatId(myUid,otherId)
 
             notificationHelper.showChatSummaryNotification(
                 summary = summary,

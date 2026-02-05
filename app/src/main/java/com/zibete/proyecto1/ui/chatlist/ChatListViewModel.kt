@@ -6,8 +6,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants
-import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOQ
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
@@ -72,12 +71,8 @@ class ChatListViewModel @Inject constructor(
 
                 all.sort()
 
-                // Visible = (foto != EMPTY) y (estado == NODE_CURRENT_CHAT o estado == SILENT)
-                val visible = all.filter { chat ->
-                    val photo = chat.otherPhotoUrl
-                    val state = chat.state
-                    photo != Constants.EMPTY && (state == NODE_DM || state == CHAT_STATE_SILENT)
-                }
+                // Visible = (foto != EMPTY) y (estado == NODE_DM o estado == SILENT)
+                val visible = all.filter { chat -> chat.isVisible() }
 
                 val q = _uiState.value.searchQuery
                 val filtered = filterChats(visible, q)
@@ -134,7 +129,7 @@ class ChatListViewModel @Inject constructor(
             val currentState = chatWith?.state
 
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
-            userRepository.updateStateChatWith(userId, userName, nodeType, newState)
+            userRepository.updateChatState(userId, userName, nodeType, newState)
 
             val enabled = newState != CHAT_STATE_SILENT
             _events.tryEmit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
@@ -142,22 +137,22 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun onBlockClicked(userId: String, userName: String, nodeType: String) {
-        viewModelScope.launch {
-            _events.emit(
-                ChatSessionUiEvent.ConfirmBlock(
-                    name = userName,
-                    onConfirm = {
-                        userRepository.updateStateChatWith(
-                            userId,
-                            userName,
-                            nodeType,
-                            CHAT_STATE_BLOQ
-                        )
-                        _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
-                    }
-                )
-            )
-        }
+//        viewModelScope.launch {
+//            _events.emit(
+//                ChatSessionUiEvent.ConfirmBlock(
+//                    name = userName,
+//                    onConfirm = {
+//                        userRepository.updateChatState(
+//                            userId,
+//                            userName,
+//                            nodeType,
+//                            CHAT_STATE_BLOCKED
+//                        )
+//                        _events.emit(ChatSessionUiEvent.ShowBlockSuccess(userName))
+//                    }
+//                )
+//            )
+//        }
     }
 
     fun onHideClicked(userId: String, userName: String, nodeType: String) {
@@ -166,7 +161,7 @@ class ChatListViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmHideChat(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateStateChatWith(
+                        userRepository.updateChatState(
                             userId,
                             userName,
                             nodeType,

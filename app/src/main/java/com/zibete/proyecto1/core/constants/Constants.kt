@@ -198,7 +198,9 @@ object Constants {
     const val MSG_RECEIVED = 2
     const val MSG_SEEN = 3
 
-    const val CHAT_STATE_BLOQ = "bloq"
+    const val CHAT_STATE_DEFAULT_DM = NODE_DM
+    const val CHAT_STATE_DEFAULT_GROUP_DM_DM = NODE_GROUP_DM
+    const val CHAT_STATE_BLOCKED = "blocked"
     const val CHAT_STATE_SILENT = "silent"
     const val CHAT_STATE_HIDE = "hide"
 
