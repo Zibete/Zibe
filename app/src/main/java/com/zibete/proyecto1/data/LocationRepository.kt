@@ -6,6 +6,8 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LONGITUDE
+import com.zibete.proyecto1.core.constants.UID_NOT_FOUND_EXCEPTION
+import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
@@ -61,17 +63,17 @@ class LocationRepository @Inject constructor(
     }
 
     private suspend fun getLocation(uid: String? = myUid): Pair<Double, Double> {
-        val targetUid = uid ?: throw Exception("User UID not found or not provided")
+        val targetUid = uid ?: throw Exception(UID_NOT_FOUND_EXCEPTION)
         val snapshot = firebaseRefsContainer.refAccounts.child(targetUid).get().await()
         val user = snapshot.getValue(Users::class.java)
-            ?: throw Exception("User not found")
+            ?: throw Exception(USER_NOT_FOUND_EXCEPTION)
         return user.latitude to user.longitude
     }
 
-    suspend fun getDistanceToUser(userId: String): String {
+    suspend fun getDistanceToUser(otherUid: String): String {
         val currentUid = myUid ?: return ""
         val (myLat, myLng) = getLocation(currentUid)
-        val (otherLat, otherLng) = getLocation(userId)
+        val (otherLat, otherLng) = getLocation(otherUid)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
         return formatDistance(distance)
     }
