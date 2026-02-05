@@ -1,28 +1,41 @@
 package com.zibete.proyecto1.ui.components
 
-import LocalZibeExtendedColors
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,29 +43,135 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 enum class ZibeSnackType { SUCCESS, ERROR, WARNING, INFO }
 
-// Helper para mostrar mensajes tipados
+class ZibeSnackVisuals(
+    override val message: String,
+    val type: ZibeSnackType,
+    override val actionLabel: String? = null,
+    override val withDismissAction: Boolean = false,
+    override val duration: SnackbarDuration = SnackbarDuration.Short
+) : SnackbarVisuals
+
 suspend fun SnackbarHostState.showZibeMessage(
-    type: ZibeSnackType,
-    message: String
-) {
+    message: String,
+    snackType: ZibeSnackType = ZibeSnackType.INFO,
+    actionLabel: String? = null,
+    withDismissAction: Boolean = false,
+    duration: SnackbarDuration = SnackbarDuration.Short
+): SnackbarResult {
     currentSnackbarData?.dismiss()
-    val prefix = when (type) {
-        ZibeSnackType.SUCCESS -> "[success]"
-        ZibeSnackType.ERROR -> "[error]"
-        ZibeSnackType.WARNING -> "[warning]"
-        ZibeSnackType.INFO -> "[info]"
-    }
-    showSnackbar(prefix + message)
+    return showSnackbar(
+        ZibeSnackVisuals(
+            message = message,
+            type = snackType,
+            actionLabel = actionLabel,
+            withDismissAction = withDismissAction,
+            duration = duration
+        )
+    )
 }
+
+@Composable
+private fun ZibeSnackPill(
+    type: ZibeSnackType,
+    message: String,
+    actionLabel: String?,
+    withDismissAction: Boolean,
+    onAction: (() -> Unit)?,
+    onDismiss: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    val zibeColors = LocalZibeExtendedColors.current
+
+    val (icon, iconTint) = remember(type) {
+        when (type) {
+            ZibeSnackType.SUCCESS -> Icons.Filled.CheckCircle to zibeColors.snackGreen
+            ZibeSnackType.ERROR -> Icons.Filled.Cancel to zibeColors.snackRed
+            ZibeSnackType.WARNING -> Icons.Filled.Warning to zibeColors.snackYellow
+            ZibeSnackType.INFO -> Icons.Filled.Info to zibeColors.snackBlue
+        }
+    }
+
+    val shape = RoundedCornerShape(24.dp)
+
+    Surface(
+        color = zibeColors.snackBackground,
+        contentColor = zibeColors.lightText,
+        shape = shape,
+        modifier = modifier
+            .padding(all = 4.dp)
+            .shadow(elevation = 10.dp, shape = shape)
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 560.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(
+                    horizontal = 14.dp,
+                    vertical = 12.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(22.dp)
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+
+            if (!actionLabel.isNullOrBlank() && onAction != null) {
+                Spacer(Modifier.width(10.dp))
+                TextButton(
+                    onClick = onAction,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                    modifier = Modifier.defaultMinSize(minWidth = 0.dp, minHeight = 0.dp)
+                ) {
+                    Text(
+                        text = actionLabel,
+                        style = LocalZibeTypography.current.actionLabel,
+                        color = zibeColors.snackAction,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (withDismissAction && onDismiss != null) {
+                Spacer(Modifier.width(4.dp))
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Cerrar",
+                        tint = zibeColors.lightText.copy(alpha = 0.9f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,173 +179,104 @@ fun ZibeSnackbar(
     hostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
-    val zibeColors = LocalZibeExtendedColors.current
+    SnackbarHost(hostState = hostState, modifier = modifier) { data: SnackbarData ->
+        val visuals = data.visuals as? ZibeSnackVisuals
+            ?: ZibeSnackVisuals(message = data.visuals.message, type = ZibeSnackType.INFO)
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ),
-        contentAlignment = Alignment.BottomCenter // El crecimiento es hacia ARRIBA
-    ) {
-        SnackbarHost(hostState = hostState) { data ->
-
-            val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = {
-                    it == SwipeToDismissBoxValue.StartToEnd ||
-                            it == SwipeToDismissBoxValue.EndToStart
-                }
-            )
-
-            LaunchedEffect(dismissState.currentValue) {
-                if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd ||
-                    dismissState.currentValue == SwipeToDismissBoxValue.EndToStart
-                ) {
-                    data.dismiss()
-                }
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                value == SwipeToDismissBoxValue.EndToStart ||
+                        value == SwipeToDismissBoxValue.StartToEnd
             }
+        )
 
-            // Decodificar tipo
-            val (type, cleanMsg) = remember(data) {
-                val raw = data.visuals.message
-                when {
-                    raw.startsWith("[success]") -> ZibeSnackType.SUCCESS to raw.removePrefix("[success]")
-                    raw.startsWith("[error]") -> ZibeSnackType.ERROR to raw.removePrefix("[error]")
-                    raw.startsWith("[warning]") -> ZibeSnackType.WARNING to raw.removePrefix("[warning]")
-                    raw.startsWith("[info]") -> ZibeSnackType.INFO to raw.removePrefix("[info]")
-                    else -> ZibeSnackType.INFO to raw
-                }
-            }
+        LaunchedEffect(dismissState.currentValue) {
+            if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) data.dismiss()
+        }
 
-            val (iconColor, iconRes) = remember(type) {
-                when (type) {
-                    ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
-                    ZibeSnackType.ERROR -> zibeColors.snackRed to R.drawable.ic_baseline_cancel_24
-                    ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
-                    ZibeSnackType.INFO -> zibeColors.snackBlue to R.drawable.ic_info_24
-                }
-            }
-
+        // ✅ centrado horizontal, ancho se ajusta al contenido
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
             SwipeToDismissBox(
                 state = dismissState,
-                enableDismissFromStartToEnd = true,
-                enableDismissFromEndToStart = true,
-                backgroundContent = { /* sin fondo extra */ },
+                backgroundContent = {},
                 content = {
-                    Snackbar(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .padding(
-                                horizontal = dimensionResource(R.dimen.zibe_snack_padding_horizontal),
-                                vertical = dimensionResource(R.dimen.zibe_snack_padding_vertical)
-                            )
-                            .shadow(
-                                elevation = dimensionResource(R.dimen.zibe_snack_shadow_elevation),
-                                shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_snack_radius))
-                            ),
-                        shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_snack_radius)),
-                        containerColor = zibeColors.snackbarSurface,
-                        contentColor = zibeColors.hintText
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = iconRes),
-                                contentDescription = null,
-                                tint = iconColor,
-                                modifier = Modifier.align(Alignment.CenterStart)
-                            )
-                            Text(
-                                text = cleanMsg.trim(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 40.dp)
-                                    .align(Alignment.Center)
-                            )
+                    ZibeSnackPill(
+                        type = visuals.type,
+                        message = visuals.message,
+                        actionLabel = visuals.actionLabel,
+                        withDismissAction = visuals.withDismissAction,
+                        onAction = {
+                            data.performAction()
+                        },
+                        onDismiss = {
+                            data.dismiss()
                         }
-                    }
+                    )
                 }
             )
         }
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun SnackbarItemPreview(type: ZibeSnackType, message: String) {
-    val zibeColors = LocalZibeExtendedColors.current
-    val (iconColor, iconRes) = when (type) {
-        ZibeSnackType.SUCCESS -> zibeColors.snackGreen to R.drawable.ic_check_24
-        ZibeSnackType.ERROR -> zibeColors.snackRed to R.drawable.ic_baseline_cancel_24
-        ZibeSnackType.WARNING -> zibeColors.snackYellow to R.drawable.ic_warning_24
-        ZibeSnackType.INFO -> zibeColors.snackBlue to R.drawable.ic_info_24
-    }
-
-    Snackbar(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(8.dp)
-            .shadow(4.dp, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        containerColor = zibeColors.snackbarSurface,
-        contentColor = zibeColors.hintText
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(vertical = 4.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                tint = iconColor
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center, // <--- Centro Horizontal
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF121212)
-@Composable
-fun ZibeSnackbarShowcasePreview() {
+private fun ZibeSnackbarAllCasesStackedPreview() {
     ZibeTheme {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            SnackbarItemPreview(ZibeSnackType.SUCCESS, "Operación completada con éxito")
-            SnackbarItemPreview(ZibeSnackType.ERROR, "Error: No se pudo conectar al servidor")
-            SnackbarItemPreview(ZibeSnackType.WARNING, "Advertencia: Tu sesión expirará pronto")
-            SnackbarItemPreview(ZibeSnackType.INFO, "Información: Nueva actualización disponible")
-            SnackbarItemPreview(
-                ZibeSnackType.ERROR,
-                "Este es un mensaje de error extremadamente largo que debería forzar al componente a estirarse verticalmente para demostrar que el texto no se corta y que el icono permanece centrado correctamente."
+            ZibeSnackPill(
+                type = ZibeSnackType.SUCCESS,
+                message = "Perfil actualizado",
+                actionLabel = null,
+                withDismissAction = false,
+                onAction = null,
+                onDismiss = null
             )
-            SnackbarItemPreview(
-                ZibeSnackType.SUCCESS,
-                "¡Bien hecho! Has configurado todo correctamente y ahora puedes disfrutar de todas las funcionalidades de Zibe sin interrupciones."
+
+            ZibeSnackPill(
+                type = ZibeSnackType.ERROR,
+                message = "No se pudo guardar. Reintentá.",
+                actionLabel = "REINTENTAR",
+                withDismissAction = true,
+                onAction = {},
+                onDismiss = {}
+            )
+
+            ZibeSnackPill(
+                type = ZibeSnackType.WARNING,
+                message = "Conexión inestable",
+                actionLabel = null,
+                withDismissAction = false,
+                onAction = null,
+                onDismiss = null
+            )
+
+            ZibeSnackPill(
+                type = ZibeSnackType.INFO,
+                message = "Chat oculto",
+                actionLabel = "DESHACER",
+                withDismissAction = false,
+                onAction = {},
+                onDismiss = null
+            )
+
+            ZibeSnackPill(
+                type = ZibeSnackType.WARNING,
+                message = "Acción pendiente: se requiere confirmación",
+                actionLabel = "VER",
+                withDismissAction = true,
+                onAction = {},
+                onDismiss = {}
             )
         }
     }
 }
+
