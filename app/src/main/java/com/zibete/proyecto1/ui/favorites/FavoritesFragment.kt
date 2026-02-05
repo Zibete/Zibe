@@ -26,9 +26,13 @@ import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
+
+    @Inject
+    lateinit var snackDispatcher: ZibeSnackDispatcher
 
     private var _binding: FragmentFavoritesBinding? = null
     private val binding get() = _binding!!
@@ -123,8 +127,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                 favoritesViewModel.events.collect { event ->
                     when (event) {
                         is FavoritesUiEvent.ShowSnack -> {
-                            ZibeSnackDispatcher.show(
-                                context = requireContext(),
+                            snackDispatcher.show(
                                 uiText = event.uiText,
                                 type = event.type
                             )

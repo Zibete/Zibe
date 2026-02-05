@@ -1,9 +1,11 @@
 package com.zibete.proyecto1.ui.chat.session
 
 import android.content.Context
-import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -12,64 +14,46 @@ object ChatSessionUiHandler {
     fun handle(
         context: Context,
         event: ChatSessionUiEvent,
-        scope: CoroutineScope
-
+        scope: CoroutineScope,
+        snackBarManager: SnackBarManager
     ) {
         when (event) {
-
-            is ChatSessionUiEvent.ConfirmBlock -> {
-                UserMessageUtils.confirm(
-                    context = context,
-                    title = "Bloquear usuario",
-                    message = "¿Bloquear a ${event.name}? No podrán enviarse mensajes.",
-                    onConfirm = {
-                        scope.launch { event.onConfirm() }
-                    }
+            is ChatSessionUiEvent.ShowToggleBlockSuccess -> {
+                snackBarManager.show(
+                    uiText = UiText.StringRes(
+                        if (event.isBlocked) R.string.chat_block_success
+                        else R.string.chat_unblock_success,
+                        listOf(event.name)
+                    ),
+                    type = ZibeSnackType.INFO
                 )
             }
 
-            is ChatSessionUiEvent.ShowBlockSuccess -> {
-                ZibeSnackDispatcher.show(
+            is ChatSessionUiEvent.ConfirmBlockAction -> {
+                UserMessageUtils.confirm(
                     context = context,
-                    message = "Se ha bloqueado a ${event.name}",
-                    type = ZibeSnackType.SUCCESS
+                    title = if (event.isBlockedByMe)
+                        context.getString(R.string.chat_confirm_unblock_title)
+                    else context.getString(R.string.chat_confirm_block_title),
+                    message = if (event.isBlockedByMe)
+                        context.getString(R.string.chat_confirm_unblock_message, event.name)
+                    else context.getString(R.string.chat_confirm_block_message, event.name),
+                    onConfirm = { scope.launch { event.onConfirm() } }
                 )
             }
 
             is ChatSessionUiEvent.ConfirmHideChat -> {
                 UserMessageUtils.confirm(
                     context = context,
-                    title = "Ocultar chat",
-                    message = "¿Ocultar chat con ${event.name}?",
-                    onConfirm = {
-                        scope.launch { event.onConfirm() }
-                    }
+                    title = context.getString(R.string.chat_confirm_hide_title),
+                    message = context.getString(R.string.chat_confirm_hide_message, event.name),
+                    onConfirm = { scope.launch { event.onConfirm() } }
                 )
             }
 
             is ChatSessionUiEvent.ShowChatHiddenSuccess -> {
-                ZibeSnackDispatcher.show(
-                    context = context,
-                    message = "Se ha ocultado el chat",
-                    type = ZibeSnackType.SUCCESS
-                )
-            }
-
-            is ChatSessionUiEvent.ConfirmUnblock -> {
-                UserMessageUtils.confirm(
-                    context = context,
-                    title = "Desbloquear usuario",
-                    message = "¿Desbloquear a ${event.name}? Podrá volver a enviarte mensajes.",
-                    onConfirm = {
-                        scope.launch { event.onConfirm() }
-                    }
-                )
-            }
-
-            is ChatSessionUiEvent.ShowUnblockSuccess -> {
-                ZibeSnackDispatcher.show(
-                    context = context,
-                    message = "Se ha desbloqueado a ${event.name}",
+                snackBarManager.show(
+                    uiText = UiText.StringRes(R.string.chat_hidden_success),
                     type = ZibeSnackType.SUCCESS
                 )
             }
@@ -78,44 +62,56 @@ object ChatSessionUiHandler {
                 var deleteMessages = false
 
                 val choices = arrayOf(
-                    "Ocultar chat",
-                    if (event.countMessages == 1)
-                        "Eliminar 1 mensaje"
-                    else
-                        "Eliminar ${event.countMessages} mensajes"
+                    context.getString(R.string.chat_choice_hide_chat),
+                    context.resources.getQuantityString(
+                        R.plurals.chat_choice_delete_messages,
+                        event.countMessages,
+                        event.countMessages
+                    )
                 )
 
                 UserMessageUtils.confirm(
                     context = context,
-                    title = "Eliminar chat",
-                    message = "¿Eliminar el chat con ${event.name}? Se eliminarán los mensajes en este dispositivo.",
+                    title = context.getString(R.string.chat_confirm_delete_title),
+                    message = context.getString(R.string.chat_confirm_delete_message, event.name),
                     choices = choices,
                     selectedIndex = 0,
                     onChoiceSelected = { index -> deleteMessages = (index == 1) },
-                    onConfirm = {
-                        scope.launch { event.onConfirm(deleteMessages) }
-                    }
+                    onConfirm = { scope.launch { event.onConfirm(deleteMessages) } }
                 )
             }
 
             is ChatSessionUiEvent.ShowDeleteMessagesSuccess -> {
-
-                ZibeSnackDispatcher.show(
-                    context = context,
-                    message = if (event.count > 1) {
-                        "${event.count} mensajes eliminados"
-                    } else {
-                        "Mensaje eliminado"
-                    },
+                val message = UiText.Dynamic(
+                    context.resources.getQuantityString(
+                        R.plurals.chat_delete_messages_success,
+                        event.count,
+                        event.count
+                    )
+                )
+                snackBarManager.show(
+                    uiText = message,
                     type = ZibeSnackType.INFO
                 )
             }
 
             is ChatSessionUiEvent.ShowToggleNotificationSuccess -> {
-                ZibeSnackDispatcher.show(
-                    context = context,
-                    message = if (event.enabled) "Notificaciones de ${event.name} activadas"
-                    else "Notificaciones de ${event.name} desactivadas",
+                snackBarManager.show(
+                    uiText = UiText.StringRes(
+                        if (event.isNotificationsSilenced) R.string.chat_notifications_enabled
+                        else R.string.chat_notifications_disabled,
+                        listOf(event.name)
+                    ),
+                    type = ZibeSnackType.INFO
+                )
+            }
+
+            is ChatSessionUiEvent.ShowToggleFavoriteSuccess -> {
+                snackBarManager.show(
+                    uiText = UiText.StringRes(
+                        if (event.newFavoriteState) R.string.favorite_added
+                        else R.string.favorite_removed, listOf(event.name)
+                    ),
                     type = ZibeSnackType.INFO
                 )
             }
@@ -123,23 +119,25 @@ object ChatSessionUiHandler {
             is ChatSessionUiEvent.OtherUserNoLongerAvailable -> {
                 UserMessageUtils.alert(
                     context = context,
-                    message = "Lo sentimos, ${event.userName} ya no está disponible",
-                    onConfirm = { scope.launch { event.onConfirm() }
-                    }
+                    message = context.getString(
+                        R.string.chat_other_user_no_longer_available,
+                        event.userName
+                    ),
+                    onConfirm = { scope.launch { event.onConfirm() } }
                 )
             }
 
             is ChatSessionUiEvent.ShowBlockedByOther -> {
                 UserMessageUtils.alert(
                     context = context,
-                    message = "Lo sentimos, ${event.userName} ha bloqueado tus mensajes"
+                    message = context.getString(R.string.chat_blocked_by_other_user, event.userName)
                 )
             }
 
             is ChatSessionUiEvent.ShowErrorDialog -> {
                 UserMessageUtils.alert(
                     context = context,
-                    title = "ShowErrorDialog",
+                    title = context.getString(R.string.dialog_error_title),
                     message = event.uiText.asString(context)
                 )
             }

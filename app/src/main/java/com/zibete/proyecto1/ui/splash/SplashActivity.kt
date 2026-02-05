@@ -22,6 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -276,13 +279,16 @@ class SplashActivity : ComponentActivity() {
 
                 // ====== EVENTOS DEL SNACKBARMANAGER ======
                 val context = LocalContext.current
+                val lifecycleOwner = LocalLifecycleOwner.current
 
-                LaunchedEffect(Unit) {
-                    snackBarManager.events.collectLatest { event ->
-                        snackHostState.showZibeMessage(
-                            message = event.uiText.asString(context),
-                            type = event.type
-                        )
+                LaunchedEffect(lifecycleOwner) {
+                    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        snackBarManager.events.collectLatest { event ->
+                            snackHostState.showZibeMessage(
+                                message = event.uiText.asString(context),
+                                snackType = event.type
+                            )
+                        }
                     }
                 }
 
