@@ -15,6 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import kotlinx.coroutines.launch
 
 @Composable
@@ -107,7 +108,7 @@ fun GroupChatTab(
                     text = ""
                 }
             ) {
-                if (state.isSending) CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                if (state.isSending) ZibeCircularProgress(size = 16.dp)
                 else Text("Enviar")
             }
         }

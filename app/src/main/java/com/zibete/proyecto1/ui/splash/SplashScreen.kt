@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -20,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
+import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
@@ -48,10 +48,10 @@ fun SplashScreen() {
             Spacer(modifier = Modifier.height(30.dp))
 
             // Siempre visible mientras exista el Splash
-            CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.primary,
+            ZibeCircularProgress(
+                size = 48.dp,
                 strokeWidth = 4.dp,
-                modifier = Modifier.size(48.dp)
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

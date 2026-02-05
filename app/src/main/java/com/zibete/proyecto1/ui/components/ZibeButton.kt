@@ -14,7 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -70,9 +69,9 @@ fun ZibeButtonPrimary(
         colors = buttonColors
     ) {
         if (isLoading) {
-            CircularProgressIndicator(
+            ZibeCircularProgress(
+                size = 20.dp,
                 strokeWidth = 2.dp,
-                modifier = Modifier.size(20.dp),
                 color = LocalContentColor.current
             )
         } else {
@@ -146,9 +145,9 @@ fun ZibeButtonOutlined(
         colors = buttonColors
     ) {
         if (isLoading) {
-            CircularProgressIndicator(
+            ZibeCircularProgress(
+                size = 20.dp,
                 strokeWidth = 2.dp,
-                modifier = Modifier.size(20.dp),
                 color = LocalContentColor.current
             )
         } else {
