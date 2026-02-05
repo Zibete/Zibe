@@ -6,13 +6,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.appbar.MaterialToolbar
+import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 abstract class BaseChatSessionFragment : Fragment() {
-
+    @Inject
+    lateinit var snackBarManager: SnackBarManager
     protected fun observeChatSessionEvents(events: Flow<ChatSessionUiEvent>) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -20,7 +23,8 @@ abstract class BaseChatSessionFragment : Fragment() {
                     ChatSessionUiHandler.handle(
                         requireContext(),
                         event,
-                        this // coroutineScope dentro de repeatOnLifecycle
+                        this,
+                        snackBarManager = snackBarManager
                     )
                 }
             }

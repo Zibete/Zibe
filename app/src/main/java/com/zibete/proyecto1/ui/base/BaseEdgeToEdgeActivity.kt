@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.dimensionResource
 import androidx.core.view.ViewCompat
@@ -23,6 +24,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.appbar.MaterialToolbar
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.ui.SnackBarManager
@@ -233,13 +236,16 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
 private fun ZibeGlobalSnackHost(snackBarManager: SnackBarManager) {
     val snackHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(snackBarManager) {
-        snackBarManager.events.collectLatest { event ->
-            snackHostState.showZibeMessage(
-                type = event.type,
-                message = event.uiText.asString(context)
-            )
+    LaunchedEffect(lifecycleOwner, snackBarManager) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            snackBarManager.events.collectLatest { event ->
+                snackHostState.showZibeMessage(
+                    message = event.uiText.asString(context),
+                    snackType = event.type
+                )
+            }
         }
     }
 

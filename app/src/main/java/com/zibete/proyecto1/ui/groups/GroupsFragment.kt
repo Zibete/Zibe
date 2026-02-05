@@ -35,9 +35,13 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
+
+    @Inject
+    lateinit var snackDispatcher: ZibeSnackDispatcher
 
     private var joinGroupDialog: AlertDialog? = null
 
@@ -99,24 +103,21 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupsViewModel.events.collect { event ->
                     when (event) {
                         is GroupsUiEvent.NickInUse -> {
-                            ZibeSnackDispatcher.show(
-                                context = requireContext(),
-                                message = "${event.nick} está en uso",
+                            snackDispatcher.show(
+                                uiText = UiText.Dynamic("${event.nick} está en uso"),
                                 type = ZibeSnackType.INFO
                             )
                         }
 
                         is GroupsUiEvent.GroupNameInUse -> {
-                            ZibeSnackDispatcher.show(
-                                context = requireContext(),
-                                message = "El nombre ${event.name} ya está en uso",
+                            snackDispatcher.show(
+                                uiText = UiText.Dynamic("El nombre ${event.name} ya está en uso"),
                                 type = ZibeSnackType.WARNING
                             )
                         }
 
                         is GroupsUiEvent.ShowSnack -> {
-                            ZibeSnackDispatcher.show(
-                                context = requireContext(),
+                            snackDispatcher.show(
                                 uiText = event.message,
                                 type = ZibeSnackType.INFO
                             )
