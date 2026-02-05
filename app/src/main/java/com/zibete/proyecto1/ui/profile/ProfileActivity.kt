@@ -1,25 +1,28 @@
 package com.zibete.proyecto1.ui.profile
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.databinding.FragmentProfileBinding
-import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
+import com.zibete.proyecto1.databinding.ActivityProfileBinding
+import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlin.getValue
 
 @AndroidEntryPoint
 class ProfileActivity : BaseChatSessionActivity() {
 
-    private lateinit var binding: FragmentProfileBinding
+    private lateinit var binding: ActivityProfileBinding
+    override val enableComposeSnackHost: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = FragmentProfileBinding.inflate(layoutInflater)
+        binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         val userIds = intent.getStringArrayListExtra(EXTRA_USER_IDS)
