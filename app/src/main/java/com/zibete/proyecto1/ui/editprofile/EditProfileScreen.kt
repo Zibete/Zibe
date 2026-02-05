@@ -41,7 +41,6 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +79,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.copyToTempFile
+import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.PhotoSourceBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
@@ -89,6 +89,7 @@ import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputBirthdate
 import com.zibete.proyecto1.ui.components.ZibeInputField
+import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeToolbar
@@ -393,9 +394,8 @@ fun EditProfileScreen(
                                 }
                         )
                         if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .align(Alignment.Center)
+                            ZibeCircularProgress(
+                                modifier = Modifier.align(Alignment.Center)
                             )
                         }
                     }

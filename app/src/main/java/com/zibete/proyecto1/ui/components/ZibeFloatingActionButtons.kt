@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -106,7 +104,7 @@ private fun ZibeBaseFAB(
     val finalContentColor = if (isEffectivelyEnabled) contentColor else extendedColors.hintText
 
     val minWidth = if (expanded) {
-        dimensionResource(R.dimen.zibe_extfab_min_width)
+        dimensionResource(R.dimen.fab_min_width)
     } else {
         0.dp
     }
@@ -126,8 +124,8 @@ private fun ZibeBaseFAB(
         expanded = expanded,
         icon = {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
+                ZibeCircularProgress(
+                    size = 24.dp,
                     strokeWidth = 2.dp,
                     color = finalContentColor
                 )

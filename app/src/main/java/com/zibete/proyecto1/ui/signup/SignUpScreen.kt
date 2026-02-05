@@ -124,7 +124,7 @@ fun SignUpScreen(
         containerColor = Color.Transparent,
         topBar = {
             ZibeToolbar(
-                title = stringResource(id = R.string.your_data),
+                title = stringResource(id = R.string.signup_title),
                 onBack = onBack
             )
         }

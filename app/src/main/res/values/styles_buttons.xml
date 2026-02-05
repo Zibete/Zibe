@@ -37,10 +37,10 @@
         <item name="android:textSize">@dimen/zibe_text_size_label</item>
         <item name="fontFamily">@font/poppins_medium</item>
 
-        <item name="android:minWidth">@dimen/zibe_extfab_min_width</item>
-        <item name="android:paddingStart">@dimen/zibe_extfab_padding_h</item>
-        <item name="android:paddingEnd">@dimen/zibe_extfab_padding_h</item>
-        <item name="iconPadding">@dimen/zibe_extfab_icon_padding</item>
+        <item name="android:minWidth">@dimen/fab_min_width</item>
+        <item name="android:paddingStart">@dimen/fab_padding_h</item>
+        <item name="android:paddingEnd">@dimen/fab_padding_h</item>
+        <item name="iconPadding">@dimen/fab_icon_padding</item>
 
     </style>
 
