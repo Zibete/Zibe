@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
-import LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn

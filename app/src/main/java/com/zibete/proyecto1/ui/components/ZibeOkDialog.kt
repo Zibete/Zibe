@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
-import LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

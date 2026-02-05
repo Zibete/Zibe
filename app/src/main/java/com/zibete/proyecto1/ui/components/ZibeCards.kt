@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
-import LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn

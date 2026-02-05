@@ -1,3 +1,4 @@
+package com.zibete.proyecto1.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -27,6 +28,8 @@ class ZibeExtendedColors(
     val snackbarSurface: Color,
     val accent: Color,
     val cardBackground: Color,
+    val snackBackground: Color,
+    val snackAction: Color
 ) {
     val gradientZibe: Brush = Brush.verticalGradient(
         colors = listOf(zibeGradientStart, zibeGradientMedium, zibeGradientEnd)
@@ -34,7 +37,7 @@ class ZibeExtendedColors(
 }
 
 // El Local para acceder desde cualquier Composable
-val LocalZibeExtendedColors = staticCompositionLocalOf<ZibeExtendedColors>{
+val LocalZibeExtendedColors = staticCompositionLocalOf<ZibeExtendedColors> {
     error("ZibeExtendedColors not provided")
 }
 
@@ -66,7 +69,10 @@ fun rememberZibeExtendedColors(): ZibeExtendedColors {
 
         snackbarSurface = colorResource(R.color.snackbar_surface),
         accent = colorResource(R.color.zibe_pink),
-        cardBackground = colorResource(R.color.zibe_dark_bg)
+        cardBackground = colorResource(R.color.zibe_dark_bg),
+
+        snackBackground = Color(0xFF1F1F2B),
+        snackAction = Color(0xFF6EA8FF)
     )
 }
 
