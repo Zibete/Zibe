@@ -8,6 +8,8 @@ data class ChatState(
     val photoReady: Boolean = false,
     val textReady: Boolean = false,
     val pendingFileUrl: String? = null,
+    val pendingPhotoUri: Uri? = null,
+    val isRecording: Boolean = false,
     val messages: List<ChatMessageItem> = emptyList(),
     val selectedIds: Set<String> = emptySet()
 )
