@@ -110,9 +110,10 @@
 
     <!--Fabs-->
 
-    <dimen name="zibe_extfab_min_width">140dp</dimen>
-    <dimen name="zibe_extfab_padding_h">16dp</dimen>
-    <dimen name="zibe_extfab_icon_padding">8dp</dimen>
+    <dimen name="fab_min_width">140dp</dimen>
+    <dimen name="fab_padding_h">16dp</dimen>
+    <dimen name="fab_icon_padding">8dp</dimen>
+    <dimen name="fab_collapse_scroll_threshold">56dp</dimen>
 
     <!--BotomNav-->
 

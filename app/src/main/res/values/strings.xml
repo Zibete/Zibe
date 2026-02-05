@@ -1,218 +1,475 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
+    <string name="app_name">ZIBE</string>
+    <string name="company_name">ZibeteProyects</string>
+    <string name="version_string">Versión %1$s</string>
 
+    <!-- ============================= -->
+    <!-- EditProfile -->
+    <!-- ============================= -->
+
+    <string name="editprofile_welcome_pager_1_title">¡Bienvenido a ZIBE!</string>
+    <string name="editprofile_welcome_pager_1_body">¡Estamos emocionados de tenerte aquí!. Para comenzar, te recomendamos completar tu perfil con información auténtica y una foto clara.</string>
+
+    <string name="editprofile_welcome_pager_2_title">Un perfil real conecta mejor</string>
+    <string name="editprofile_welcome_pager_2_body">Una foto clara y datos reales ayudan a que otras personas te conozcan mejor y aumentan tus chances de hacer conexiones significativas.</string>
+
+    <string name="editprofile_welcome_pager_3_title">Listo para empezar</string>
+    <string name="editprofile_welcome_pager_3_body">Completá tu fecha de nacimiento y guardá los cambios para continuar. ¡Disfrutá la experiencia ZIBE!</string>
+
+    <string name="edit_profile_hints_text">Una foto clara 📸 y una buena descripción aumentan tus coincidencias.</string>
+
+    <string name="name">Nombre visible</string>
+    <string name="age">Edad</string>
+    <string name="birth_date">Fecha de nacimiento</string>
+    <string name="description">¿Algo sobre vos?</string>
+    <string name="edit_picture">Editar foto</string>
+
+    <string name="content_description_save">Guardar cambios</string>
+    <string name="content_description_photo">Foto de perfil. Tocar para agrandar</string>
+    <string name="content_description_edit_photo">Editar foto de perfil</string>
+    <string name="content_description_edit_birthdate">Editar fecha de nacimiento</string>
+    <string name="content_description_loading">Cargando foto</string>
+
+    <string name="close">Cerrar</string>
+    <string name="delete">Eliminar</string>
+    <string name="camera">Cámara</string>
+    <string name="gallery">Galería</string>
+
+    <string name="send_photo">Enviar foto</string>
+
+    <string name="discard_changes_title">Parece que hiciste algunos cambios 😊</string>
+    <string name="discard_changes_message">Si salís ahora, se van a perder.</string>
+    <string name="action_dont_discard">Seguir editando</string>
+
+    <string name="msg_profile_saved">Perfil guardado con éxito</string>
+    <string name="msg_profile_save_error">Error guardando perfil</string>
+    <string name="msg_profile_load_error">No se pudo cargar el perfil</string>
+
+    <!-- ============================= -->
+    <!-- SignUp -->
+    <!-- ============================= -->
+
+    <string name="signup_title">Tus datos</string>
+    <string name="signup_msg_success">Registro completado 🎉</string>
+    <string name="signup_err_exception">El usuario no pudo ser creado.</string>
+    <string name="signup_facebook_cancelled">Inicio con Facebook cancelado</string>
+    <string name="signup_facebook_error_prefix">Error con Facebook: </string>
+    <string name="signup_facebook_error">Error con Facebook</string>
+    <string name="signup_animated_message_1">💬 Contá algo que te haga único — así otros pueden conectar con vos 😉</string>
+    <string name="signup_animated_message_2">🌟 Compartí quién sos, qué te gusta o qué te inspira</string>
+    <string name="signup_animated_message_3">⚡ Mostrate auténtico: tus intereses dicen más que mil palabras.</string>
+
+    <!-- ============================= -->
+    <!-- Profile -->
+    <!-- ============================= -->
+
+
+
+    <!-- ============================= -->
+    <!-- Chat Session -->
+    <!-- ============================= -->
+
+    <!-- confirm dialogs -->
+    <string name="chat_confirm_block_title">Bloquear usuario</string>
+    <string name="chat_confirm_block_message">¿Bloquear a %1$s? No podrán enviarse mensajes.</string>
+
+    <string name="chat_block_success">Se ha bloqueado a %1$s</string>
+
+    <string name="chat_confirm_hide_title">Ocultar chat</string>
+    <string name="chat_confirm_hide_message">¿Ocultar chat con %1$s?</string>
+
+    <string name="chat_hidden_success">Se ha ocultado el chat</string>
+
+    <string name="chat_confirm_unblock_title">Desbloquear usuario</string>
+    <string name="chat_confirm_unblock_message">¿Desbloquear a %1$s? Podrá volver a enviarte mensajes.</string>
+
+    <string name="chat_unblock_success">Se ha desbloqueado a %1$s</string>
+
+    <!-- delete -->
+    <string name="chat_confirm_delete_title">Eliminar chat</string>
+    <string name="chat_confirm_delete_message">¿Eliminar el chat con %1$s? Se eliminarán los mensajes en este dispositivo.</string>
+
+    <string name="chat_choice_hide_chat">Ocultar chat</string>
+
+    <plurals name="chat_choice_delete_messages">
+        <item quantity="one">Eliminar %1$d mensaje</item>
+        <item quantity="other">Eliminar %1$d mensajes</item>
+    </plurals>
+
+    <plurals name="chat_delete_messages_success">
+        <item quantity="one">Mensaje eliminado</item>
+        <item quantity="other">%1$d mensajes eliminados</item>
+    </plurals>
+
+    <!-- notifications -->
+    <string name="chat_notifications_enabled">Notificaciones de %1$s activadas</string>
+    <string name="chat_notifications_disabled">Notificaciones de %1$s desactivadas</string>
+
+    <!-- availability / blocking -->
+    <string name="chat_other_user_no_longer_available">Lo sentimos, %1$s ya no está disponible</string>
+    <string name="chat_blocked_by_other_user">Lo sentimos, %1$s ha bloqueado tus mensajes</string>
+
+    <!-- Generic -->
+    <string name="dialog_error_title">Error</string>
+
+    <!-- ============================= -->
+    <!-- Cámara -->
+    <!-- ============================= -->
+    <string name="msg_camera_error">No se pudo abrir la cámara</string>
+    <string name="msg_camera_permission_required">Necesitás otorgar permiso de cámara para sacar una foto.</string>
+
+    <!-- ============================= -->
+    <!-- Audio -->
+    <!-- ============================= -->
+
+    <string name="chat_error_create_audio">No se pudo crear el archivo de audio</string>
+    <string name="chat_error_open_audio">No se pudo abrir el archivo de audio</string>
+    <string name="chat_error_no_music_dir">No hay directorio de música disponible</string>
+    <string name="chat_error_upload_audio">No se pudo subir el audio</string>
+
+    <!-- ============================= -->
+    <!-- Reset password -->
+    <!-- ============================= -->
+    <string name="reset_password_email_instruction">Ingresá tu email para reestablecer la contraseña</string>
+    <string name="reset_password_title">Reestablecimiento de contraseña</string>
+    <string name="reset_password_content">Ingresá tu correo electrónico para reestablecer tu contraseña</string>
+    <string name="action_send_email">Enviar e-mail</string>
+    <string name="reset_password_success">Instrucciones enviadas a %1$s</string>
+    <string name="reset_password_error">No pudimos enviar el correo a %1$s. Verificá que esté correcto.</string>
+
+    <!-- ============================= -->
+    <!-- Sala / Chat -->
+    <!-- ============================= -->
+    <string name="msg_user_joined">se unió a la sala</string>
+    <string name="msg_user_leaved">abandonó la sala</string>
+    <string name="message_not_sent_user_blocked">Mensaje no enviado: Estás bloqueado por el usuario.</string>
+
+    <!-- ============================= -->
+    <!-- Errores generales -->
+    <!-- ============================= -->
+    <string name="err_network_connection">No hay conexión a Internet.</string>
+
+
+    <string name="err_zibe">Ocurrió un error inesperado. Intentá nuevamente.</string>
+    <string name="err_zibe_prefix">Error inesperado: %1$s</string>
+
+    <string name="error_no_connection_title">Sin conexión</string>
+    <string name="error_no_connection_message">Revisá tu conexión e intentá nuevamente.</string>
+
+    <!-- ============================= -->
+    <!-- Signup – Auth - Errors -->
+    <!-- ============================= -->
+    <string name="err_email_required">Ingresá tu email</string>
+    <string name="err_password_required">Ingresá una contraseña</string>
+    <string name="err_password_trim_spaces">Quitá los espacios al inicio o al final</string>
+    <string name="err_invalid_format_password">Usá %1$s caracteres o más</string>
+    <string name="err_password_letter">Ingrese al menos una letra</string>
+    <string name="err_password_digit">Ingrese al menos un número</string>
+    <string name="err_invalid_format_email">El formato de correo es inválido</string>
+
+    <string name="signup_err_name_required">Ingresá tu nombre visible</string>
+    <string name="signup_err_birthdate_required">Ingresá tu fecha de nacimiento</string>
+    <string name="err_save_required">Guardá los cambios para continuar</string>
+    <string name="err_birthdate_required">Debes ingresar tu fecha de nacimiento para utilizar la app</string>
+    <string name="err_under_age">Lo sentimos, debes ser mayor de 18 años para utilizar la App</string>
+    <string name="signup_err_mail_in_use">El correo electrónico ya está registrado.</string>
+
+    <string name="login_err_cancelled">Inicio de sesión cancelado</string>
+    <string name="login_err_no_credentials">No hay cuentas disponibles para iniciar sesión con Google</string>
+    <string name="login_err_token_parsing">No se pudo validar el token de Google</string>
+    <string name="login_err_generic">No se pudo iniciar sesión con Google</string>
+
+    <string name="signup_err_prefix">Error creando el usuario: </string>
+    <string name="signup_err_generic">El usuario no pudo ser creado</string>
+
+    <string name="auth_err_user_not_found">Usuario no encontrado.</string>
+    <string name="auth_err_reauthentication_required">Por seguridad, volvé a iniciar sesión.</string>
+    <string name="password_is_required">Por seguridad, ingresá tu contraseña actual para finalizar.</string>
+    <string name="auth_err_invalid_credentials">Email o contraseña incorrectos.</string>
+
+    <string name="err_passwords_do_not_match">La contraseña debe ser diferente a la actual</string>
+    <string name="err_emails_do_not_match">El correo debe ser diferente al actual</string>
+
+    <string name="action_login">Entrar</string>
+
+    <!-- ============================= -->
+    <!-- Mensaje onboarding perfil -->
+    <!-- ============================= -->
+    <string name="signup_profile_message">
+            ¡Bienvenido a ZIBE! 🎉\n\n
+            Estamos emocionados de tenerte aquí. Para comenzar, te recomendamos completar tu perfil
+            con información auténtica y una foto clara. Esto ayudará a que otros usuarios te conozcan
+            mejor y aumentará tus posibilidades de hacer conexiones significativas.\n\n
+            ¡Disfrutá de la experiencia ZIBE y conectate con personas increíbles! 🌟
+        </string>
+
+    <!-- ============================= -->
+    <!-- Permisos -->
+    <!-- ============================= -->
+    <string name="permission_location_message">
+            Para ofrecerte una mejor experiencia, ZIBE utiliza tu ubicación mientras la app está en uso.
+            Esto nos permite mostrarte personas cercanas y mejorar tus coincidencias.
+        </string>
+
+    <string name="permission_legal_disclaimer">
+            Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad.
+        </string>
+
+    <string name="permission_rationale_title">Permiso de ubicación</string>
+    <string name="permission_rationale_message">
+            ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas.
+        </string>
+
+    <string name="permission_denied_title">Permiso denegado</string>
+    <string name="permission_denied_message">
+            Zibe necesita acceso a tu ubicación para funcionar correctamente.\n\n
+            Podés activar el permiso desde: Ajustes &gt; Aplicaciones &gt; Zibe &gt; Permisos &gt; Ubicación.
+        </string>
+
+    <!-- ============================= -->
+    <!-- Session -->
+    <!-- ============================= -->
+
+    <string name="account_not_found">Cuenta no encontrada.</string>
+    <string name="account_delete_success">La cuenta ha sido eliminada.</string>
+    <string name="account_delete_cancelled">La cuenta se mantendrá activa.</string>
+
+    <string name="token_dialog_title">Un momento…</string>
+    <string name="token_dialog_message">
+            Este dispositivo ya tiene una cuenta vinculada.\n
+            Continuar desvinculará la cuenta asociada a %1$s.
+        </string>
+
+    <string name="attention_title">Atención</string>
+    <string name="session_conflict_message">
+            Se registró un inicio de sesión en otro dispositivo.\n
+            ¿Qué deseas hacer?
+        </string>
+
+    <string name="session_conflict_keep_here">Continuar en este dispositivo</string>
+    <string name="logout">Cerrar sesión</string>
+
+    <!-- ============================= -->
+    <!-- Auth UI -->
+    <!-- ============================= -->
+    <string name="auth_do_not_have_account">¿No tenés una cuenta?</string>
+    <string name="auth_do_not_delete_account">Ya no quiero eliminar mi cuenta</string>
+    <string name="auth_delete_account">Eliminar mi cuenta</string>
+    <string name="auth_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="auth_or_use_account">o utilizá tu cuenta</string>
+    <string name="continue_with_facebook">Continuar con Facebook</string>
+    <string name="continue_with_google">Continuar con Google</string>
+    <string name="password_content_desc">Contraseña visible/invisible</string>
+    <string name="logo_content_desc">Logo de ZIBE</string>
+
+    <!-- ============================= -->
+    <!-- Action Buttons -->
+    <!-- ============================= -->
+    <string name="action_start">Comenzar</string>
+    <string name="action_register">Registrarse</string>
+    <string name="action_next">Siguiente</string>
+    <string name="action_previous">Anterior</string>
+    <string name="action_skip">Saltar</string>
+    <string name="action_back">Atrás</string>
+    <string name="action_accept">Aceptar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_save">Listo</string>
+
+    <string name="action_filter_on">Filtrar</string>
+    <string name="action_filter_off">Quitar filtro</string>
+    <string name="action_exit">Salir</string>
+    <string name="action_continue">Continuar</string>
+    <string name="action_retry">Reintentar</string>
+
+    <!-- ============================= -->
+    <!-- Onboarding -->
+    <!-- ============================= -->
+
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Comenzar</string>
+
+
+    <string name="onboarding_page_1_title">Chatea</string>
+    <string name="onboarding_page_1_body">Chatea con amigos en tiempo real.</string>
+
+    <string name="onboarding_page_2_title">Descubre</string>
+    <string name="onboarding_page_2_body">Encuentra personas cercanas.</string>
+
+    <string name="onboarding_page_3_title">Socializa</string>
+    <string name="onboarding_page_3_body">Únete a salas de chat!</string>
+
+    <!-- ============================= -->
+    <!-- Chat -->
+    <!-- ============================= -->
+
+    <string name="chat_error_delete_messages">Error al eliminar mensajes</string>
+    <string name="chat_error_crop_image">Fallo al recortar la imagen.</string>
+    <string name="chat_error_upload_image">No se pudo subir la imagen</string>
+    <string name="chat_error_get_cropped_image">Error al obtener la imagen recortada</string>
+
+    <!-- ============================= -->
+    <!-- Settings -->
+    <!-- ============================= -->
+
+    <string name="menu_settings">Ajustes</string>
+    <string name="account">Cuenta</string>
+    <string name="notifications">Notificaciones</string>
+
+    <string name="change_email_title">Cambiar email</string>
+    <string name="change_email_message">
+        Podrás actualizar tu dirección de contacto. Tené en cuenta que te enviaremos un enlace de verificación para asegurar que la nueva cuenta te pertenece.</string>
+
+    <string name="change_password_title">Cambiar contraseña</string>
+    <string name="change_password_message">
+        Para mantener tu cuenta segura, elegí una combinación mayor a %1$s caracteres, que sea fácil de recordar para vos pero difícil de adivinar para otros.</string>
+
+    <string name="settings_err_provider">No disponible para inicios de sesión con %1$s</string>
+    <string name="settings_err_provider_title">Tu cuenta está protegida con %1$s</string>
+    <string name="err_not_available_title">No disponible</string>
+    <string name="message_err_not_available_generic">Opción no disponible en este momento, intentá nuevamente más tarde</string>
+    <string name="settings_err_provider_message">Esta opción no está disponible porque iniciaste sesión a través de %1$s. Por favor, gestiona tu configuración directamente en ese servicio.</string>
+
+    <string name="individual_notifications">Notificaciones individuales</string>
+    <string name="individual_notifications_status">Notificaciones individuales %1$s</string>
+    <string name="individual_notifications_supporting">De chats privados</string>
+    <string name="group_notifications_supporting">De chats grupales y chats privados dentro de grupos</string>
+
+    <string name="group_notifications">Notificaciones grupales</string>
+    <string name="group_notifications_status">Notificaciones grupales %1$s</string>
+    <string name="state_enabled">encendidas</string>
+    <string name="state_disabled">apagadas</string>
+
+    <string name="settings_individual_notifications">Notificaciones grupales apagadas</string>
+    <string name="settings_group_notifications">Notificaciones grupales apagadas</string>
+
+    <string name="err_incorrect_password">La contraseña es incorrecta</string>
+
+    <string name="settings_success_actualize_email">Email actualizado correctamente</string>
+    <string name="settings_success_actualize_password">Contraseña actualizada correctamente</string>
+
+    <string name="dialog_delete_account_title">¿Seguro quiere eliminar su cuenta?</string>
+    <string name="dialog_delete_account_message">Esta acción eliminará toda la información y no se podrá recuperar</string>
+    <string name="action_yes">Sí</string>
+    <string name="action_send">Enviar</string>
+    <string name="action_delete_photo">Eliminar foto</string>
+
+    <string name="dialog_delete_account_final_message">Si elimina la cuenta, no podrá recuperar sus datos</string>
+    <string name="action_delete_account">Eliminar cuenta</string>
+
+    <string name="dialog_logout_message">¿Seguro querés cerrar tu sesión?</string>
+
+    <string name="enter_your_password">"Introduzca su contraseña"</string>
+    <string name="content_description_back">Volver</string>
+
+    <string name="send_feedback">Enivar comentarios</string>
+    <string name="new_email">Nuevo correo</string>
+    <string name="new_password">Nueva contraseña</string>
+    <string name="current_password">Contraseña actual</string>
+
+    <string name="send_feedback_title">¿Qué te parece %1$s?</string>
+    <string name="send_feedback_subtitle">Tu opinión es clave para que sigamos mejorando. ¡Contanos qué pensás!</string>
+    <string name="feedback_sent">¡Muchas gracias! El mensaje ha sido enviado a nuestro equipo de soporte.</string>
+
+    <string name="err_current_password_required">Ingresá tu contraseña</string>
+    <string name="err_new_password_required">Ingresá tu nueva contraseña</string>
+    <string name="err_feedback_required">Ingresá tu mensaje</string>
+
+    <string name="user_email_format">%1$s (%2$s)</string>
+    <string name="err_future_date">Fecha futura no permitida\n</string>
+    <string name="err_camera_permission_denied">No concediste permiso para acceder a la cámara</string>
+
+    <!-- ============================= -->
+    <!-- Menu -->
+    <!-- ============================= -->
+
+    <string name="menu_add_favorite">Agregar a favoritos</string>
+    <string name="menu_remove_favorite">Eliminar de favoritos</string>
+    <string name="menu_user_notifications_on">Mostrar notificaciones</string>
+    <string name="menu_user_notifications_off">Ocultar notificaciones</string>
+    <string name="menu_user_block">Bloquear usuario</string>
+    <string name="menu_user_unblock">Desbloquear usuario</string>
+    <string name="menu_delete_chat">Eliminar chat</string>
+
+    <string name="content_description_toggle_favorite">Agregar o eliminar de favoritos</string>
+
+    <!-- ============================= -->
+    <!-- Legacy -->
+    <!-- ============================= -->
 
     <string name="email">Correo electrónico</string>
     <string name="password">Contraseña</string>
-    <string name="repeat_password">Repita la contraseña</string>
 
-
-    <string name="fin_registro">Finalizar registro</string>
-
-
-
-
-
-    <string name="datos">Complete sus datos</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Name User</string>
     <string name="nav_header_subtitle">Email User</string>
-    <string name="nav_header_desc">Navigation header</string>
-
-
-
-    <string name="usuario">Usuario</string>
-    <string name="atras">Atrás</string>
-    <string name="siguiente">Siguiente</string>
-    <string name="saltar">Saltar</string>
 
     <string name="facebook_app_id">fb971156603326191</string>
     <string name="fb_login_protocol_scheme">fbfb971156603326191</string>
     <string name="facebook_client_token">52746d92bbf5fc8ac964d3e72ac07795</string>
 
-
     <string name="channel_name">APP Zibe</string>
-    <string name="channel_description">Tienes un nuevo mensaje</string>
-    <string name="reply_name">aña</string>
-    <string name="snooze">snozze</string>
 
     <string name="noleido">Marcar no leído</string>
     <string name="leido">Marcar leído</string>
-
-
-    <string name="menu_exit_group">Salir</string>
 
     <string name="menu_edit_profile">Editar Perfil</string>
 
     <string name="menu_groups">Grupos</string>
     <string name="menu_users">Personas</string>
     <string name="menu_chat">Chat</string>
+    <string name="chat_zibe_app">Chatea en Zibe</string>
 
     <string name="tab_group_users">Personas</string>
     <string name="tab_group_chat">Chat</string>
     <string name="tab_group_chats">Privados</string>
-
-
-    <string name="menu_unblock_users">Desbloquear usuarios</string>
     <string name="menu_favorites">Favoritos</string>
 
-
-
+    <string name="menu_unblock_users">Desbloquear usuarios</string>
     <string name="menu_unhide_chats">Chats ocultos</string>
 
-    <string name="menu_notifications_on">Mostrar notificaciones</string>
-    <string name="menu_notifications_off">Silenciar</string>
 
-    <string name="menu_block">Bloquear</string>
-    <string name="menu_unblock">Desbloquear</string>
-    <string name="menu_delete_chat">Eliminar chat</string>
-
-
-
-
-
-
-
-
-
-    <string name="archivar">Archivar</string>
+    <string name="menu_hide_chat">Ocultar chat"</string>
+    <string name="menu_unhide_chat">Mostrar chat"</string>
 
     <string name="ultVez">últ. vez</string>
     <string name="last_seen_format">últ. vez %1$s a las %2$s</string>
 
-
     <string name="today">hoy</string>
     <string name="yesterday">ayer</string>
-    <string name="a_las">a las</string>
     <string name="online">en línea</string>
     <string name="typing">escribiendo…</string>
     <string name="online_upercase">En línea</string>
     <string name="offline">desconectado</string>
 
-
-
-    <string name="title_activity_main2">MainActivity</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
     <string name="delete_account">Eliminar cuenta</string>
     <string name="Buscar">Buscar…</string>
 
-
-
     <string name="photo_received">Foto recibida</string>
+    <string name="photos_received">Fotos recibidas</string>
     <string name="photo_send">Foto enviada</string>
     <string name="audio_received">Audio recibido</string>
     <string name="audio_send">Audio enviado</string>
 
     <string name="photo_message">Photo message</string>
-    <string name="perfil_incognito">Perfil incógnito</string>
-    <string name="user_not_available_fmt">Lo sentimos, %1$s ya no está disponible.</string>
-    <string name="user_not_in_chat_anymore_fmt">Lo sentimos, %1$s ya no está en este chat. Encuéntralo en <xliff:g id="menu">@string/menu_usuarios</xliff:g>.</string>
-
 
     <string name="inicio">Inicio</string>
     <string name="ocultar">Ocultar</string>
     <string name="recording">grabando audio…</string>
 
 
-
     <string name="chatlist_onboarding_title">Acá verás tus conversaciones</string>
-    <string name="escribe_un_mensaje">Escribe un mensaje</string>
-    <string name="espere">Espere…</string>
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finish_registration">Finalizar registro</string>
     <string name="loading">Cargando…</string>
-    <string name="anonimous">Anónimo</string>
     <string name="deleted_profile_fallback">Perfil eliminado</string>
     <string name="chat_private_in_group">Chat privado en %1$s</string>
 
-
-    <string-array name="edad">
-        <item>18</item>
-        <item>19</item>
-        <item>20</item>
-        <item>21</item>
-        <item>22</item>
-        <item>23</item>
-        <item>24</item>
-        <item>25</item>
-        <item>26</item>
-        <item>27</item>
-        <item>28</item>
-        <item>29</item>
-        <item>30</item>
-        <item>31</item>
-        <item>32</item>
-        <item>33</item>
-        <item>34</item>
-        <item>35</item>
-        <item>36</item>
-        <item>37</item>
-        <item>38</item>
-        <item>39</item>
-        <item>40</item>
-        <item>41</item>
-        <item>42</item>
-        <item>43</item>
-        <item>44</item>
-        <item>45</item>
-        <item>46</item>
-        <item>47</item>
-        <item>48</item>
-        <item>49</item>
-        <item>50</item>
-        <item>51</item>
-        <item>52</item>
-        <item>53</item>
-        <item>54</item>
-        <item>55</item>
-        <item>56</item>
-        <item>57</item>
-        <item>58</item>
-        <item>59</item>
-        <item>60</item>
-        <item>61</item>
-        <item>62</item>
-        <item>63</item>
-        <item>64</item>
-        <item>65</item>
-        <item>66</item>
-        <item>67</item>
-        <item>68</item>
-        <item>69</item>
-        <item>70</item>
-        <item>71</item>
-        <item>72</item>
-        <item>73</item>
-        <item>74</item>
-        <item>75</item>
-        <item>76</item>
-        <item>77</item>
-        <item>78</item>
-        <item>79</item>
-        <item>80</item>
-        <item>81</item>
-        <item>82</item>
-        <item>83</item>
-        <item>84</item>
-        <item>85</item>
-        <item>86</item>
-        <item>87</item>
-        <item>88</item>
-        <item>89</item>
-        <item>90</item>
-        <item>91</item>
-        <item>92</item>
-        <item>93</item>
-        <item>94</item>
-        <item>95</item>
-        <item>96</item>
-        <item>97</item>
-        <item>98</item>
-        <item>99</item>
-    </string-array>
+    <string name="escribe_un_mensaje">escribí tu mensaje</string>
+    <string name="espere">espere</string>
+    <string name="favorite_added">%1$s agregado a tus favoritos</string>
+    <string name="favorite_removed">%1$s removido de tus favoritos</string>
+    <string name="empty_chat">Chat vacío</string>
 
 </resources>
