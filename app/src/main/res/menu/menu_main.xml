@@ -56,25 +56,25 @@
 
     <item
         android:id="@+id/action_notifications_on"
-        android:title="@string/menu_notifications_on"
+        android:title="@string/menu_user_notifications_on"
         android:orderInCategory="100"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_notifications_off"
-        android:title="@string/menu_notifications_off"
+        android:title="@string/menu_user_notifications_off"
         android:orderInCategory="100"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_block"
-        android:title="@string/menu_block"
+        android:title="@string/menu_user_block"
         android:orderInCategory="100"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_unblock"
-        android:title="@string/menu_unblock"
+        android:title="@string/menu_user_unblock"
         android:orderInCategory="100"
         app:showAsAction="never" />
 

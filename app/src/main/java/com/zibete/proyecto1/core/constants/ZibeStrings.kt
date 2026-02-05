@@ -16,6 +16,7 @@ package com.zibete.proyecto1.core.constants
 //const val SIGNUP_MSG_SUCCESS = "Registro completado 🎉"
 const val SIGNUP_ERR_EXCEPTION = "SIGNUP_ERR_EXCEPTION"
 const val USER_NOT_FOUND_EXCEPTION = "User not found"
+const val UID_NOT_FOUND_EXCEPTION = "User UID not found or not provided"
 const val EXIT_GROUP_ERR_EXCEPTION = "Error abandonando grupo"
 const val USER_PROVIDER_ERR_EXCEPTION = "User must be logged in to access this property"
 const val GOOGLE_SIGN_IN_ERR_EXCEPTION = "Google Sign-In failed"

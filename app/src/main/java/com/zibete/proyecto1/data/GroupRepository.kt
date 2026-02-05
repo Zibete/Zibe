@@ -23,6 +23,7 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
@@ -35,7 +36,6 @@ import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.model.UserGroup
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -49,11 +49,19 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
+interface GroupRepositoryProvider {
+
+    suspend fun findUserGroup(userId: String, groupName: String): UserGroup?
+
+    suspend fun isGroupMatch(otherUid: String, groupName: String): Boolean
+}
+
+@ApplicationScope
 @Singleton
 class GroupRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
-) {
+) : GroupRepositoryProvider {
     val firebaseUser: FirebaseUser
         get() = checkNotNull(authSessionProvider.currentUser) {
             USER_PROVIDER_ERR_EXCEPTION
@@ -195,13 +203,19 @@ class GroupRepository @Inject constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    suspend fun getUserGroup(userId: String = myUid, groupName: String): UserGroup? =
+    override suspend fun findUserGroup(userId: String, groupName: String): UserGroup? =
         groupUsersRef(groupName)
             .child(userId)
             .get()
             .await()
             .takeIf { it.exists() }
             ?.getValue(UserGroup::class.java)
+
+    override suspend fun isGroupMatch(otherUid: String, groupName: String): Boolean {
+        if (groupName.isBlank()) return false
+        val userGroup = findUserGroup(otherUid, groupName) ?: return false
+        return userGroup.type == PUBLIC_USER
+    }
 
     suspend fun getGroup(groupName: String): Groups? =
         groupMetaRef(groupName)
