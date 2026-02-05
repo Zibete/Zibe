@@ -1,9 +1,8 @@
 package com.zibete.proyecto1.ui.editprofile
 
-import LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
