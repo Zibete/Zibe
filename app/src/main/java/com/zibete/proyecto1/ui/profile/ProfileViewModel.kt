@@ -16,9 +16,9 @@ import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepository
-import com.zibete.proyecto1.data.ProfileRepositoryActions
-import com.zibete.proyecto1.data.ProfileRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel

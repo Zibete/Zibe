@@ -7,8 +7,6 @@ import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
-import com.zibete.proyecto1.data.ProfileRepositoryActions
-import com.zibete.proyecto1.data.ProfileRepositoryProvider
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -23,6 +21,9 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.DefaultGoogleSignInUseCase
 import com.zibete.proyecto1.data.auth.FirebaseSessionManager
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
+import com.zibete.proyecto1.data.profile.ProfileRepository
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.domain.profile.DefaultSendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdatePasswordUseCase
@@ -81,13 +82,13 @@ abstract class AppBindingsModule {
     @Binds
     @Singleton
     abstract fun bindProfileRepositoryProvider(
-        impl: UserRepository
+        impl: ProfileRepository
     ): ProfileRepositoryProvider
 
     @Binds
     @Singleton
     abstract fun bindProfileRepositoryActions(
-        impl: UserRepository
+        impl: ProfileRepository
     ): ProfileRepositoryActions
 
     @Binds
