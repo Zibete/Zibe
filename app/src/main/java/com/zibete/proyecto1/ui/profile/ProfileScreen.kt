@@ -1,36 +1,27 @@
 package com.zibete.proyecto1.ui.profile
 
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -49,10 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -60,13 +49,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.ui.SnackBarManagerEntryPoint
-import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
-import com.zibete.proyecto1.ui.components.ChatPhotoItem
 import com.zibete.proyecto1.ui.components.PhotoHeader
-import com.zibete.proyecto1.ui.components.UserStatusRow
+import com.zibete.proyecto1.ui.components.ProfileCard
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
@@ -74,6 +61,7 @@ import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.EntryPointAccessors
@@ -83,6 +71,7 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun ProfileRoute(
     profileViewModel: ProfileViewModel = hiltViewModel(),
+    isActive: Boolean = true,
     onBack: () -> Unit,
     onOpenChat: (String) -> Unit,
     onOpenPhoto: (String) -> Unit
@@ -108,7 +97,8 @@ fun ProfileRoute(
         profileViewModel.loadProfile()
     }
 
-    LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(lifecycleOwner, isActive) {
+        if (!isActive) return@LaunchedEffect
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             profileViewModel.snackEvents.collectLatest { snackEvent ->
                 snackbarHostState.showZibeMessage(
@@ -359,105 +349,15 @@ fun ProfileScreen(
                                 }
                             )
 
-                            ZibeCard(
-                                contentPadding = PaddingValues(spacingSm)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(spacingSm)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.LocationOn,
-                                        contentDescription = null,
-                                        tint = zibeColors.accent
-                                    )
-                                    Text(
-                                        text = distanceLabel,
-                                        style = zibeTypography.label,
-                                        color = zibeColors.accent,
-                                        modifier = Modifier.weight(1f)
-                                    )
-
-                                    IconButton(onClick = onToggleFavorite) {
-                                        Icon(
-                                            imageVector = if (state.isFavorite) {
-                                                Icons.Filled.Star
-                                            } else {
-                                                Icons.Outlined.StarOutline
-                                            },
-                                            contentDescription = stringResource(R.string.content_description_toggle_favorite),
-                                            tint = zibeColors.accent
-                                        )
-                                    }
-
-                                    if (state.isBlockedByMe) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_baseline_block_24),
-                                            contentDescription = stringResource(R.string.menu_user_block),
-                                            tint = zibeColors.snackRed
-                                        )
-                                    }
-
-                                    if (state.hasBlockedMe) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_baseline_cancel_schedule_send_24),
-                                            contentDescription = stringResource(R.string.menu_user_unblock),
-                                            tint = zibeColors.snackRed
-                                        )
-                                    }
-                                }
-                            }
-
-                            ZibeCard(
-                                contentPadding = PaddingValues(spacingSm)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    val ageText = remember(profile.birthDate) {
-                                        ageCalculator(profile.birthDate).toString()
-                                    }
-                                    Text(
-                                        text = ageText,
-                                        style = zibeTypography.h1,
-                                        color = zibeColors.lightText
-                                    )
-                                    Text(
-                                        text = profile.name,
-                                        style = zibeTypography.h2,
-                                        color = zibeColors.lightText
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(spacingSm))
-
-                                UserStatusRow(userStatus = userStatus)
-                            }
-
-                            if (photoList.isNotEmpty()) {
-                                ZibeCard(contentPadding = PaddingValues(spacingSm)) {
-                                    Text(
-                                        text = stringResource(R.string.photos_received),
-                                        style = zibeTypography.subtitle,
-                                        color = zibeColors.lightText
-                                    )
-
-                                    Spacer(modifier = Modifier.height(spacingSm))
-
-                                    LazyRow(
-                                        horizontalArrangement = Arrangement.spacedBy(spacingSm)
-                                    ) {
-                                        items(photoList) { url ->
-                                            ChatPhotoItem(
-                                                url = url,
-                                                onClick = { onOpenPhoto(url) }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            ProfileCard(
+                                profile = profile,
+                                state = state,
+                                userStatus = userStatus,
+                                distanceLabel = distanceLabel,
+                                photoList = photoList,
+                                onToggleFavorite = onToggleFavorite,
+                                onOpenPhoto = { url -> onOpenPhoto(url) }
+                            )
 
                             if (profile.description.isNotBlank()) {
                                 ZibeCard(contentPadding = PaddingValues(spacingSm)) {
@@ -492,7 +392,7 @@ fun ProfileScreenPreview() {
         content = ProfileContent.Ready(sampleUser),
         isActionLoading = false,
         profile = sampleUser,
-        distanceLabel = "1.2 km away",
+        distanceLabel = "1.2 km",
         isFavorite = true
     )
 
