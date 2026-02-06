@@ -47,12 +47,4 @@
         android:name="com.zibete.proyecto1.ui.groups.host.GroupHostFragment"
         android:label="@string/menu_groups" />
 
-
-    <!--    <fragment-->
-    <!--        android:id="@+id/nav_group_chat"-->
-    <!--        android:name="com.zibete.proyecto1.ui.chatgroup.ChatGroupFragment"-->
-    <!--        android:label="@string/menu_chat"-->
-    <!--        tools:layout="@layout/fragment_group" />-->
-    <!--    -->
-
 </navigation>
