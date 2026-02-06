@@ -447,7 +447,7 @@
     <string name="Buscar">Buscar…</string>
 
     <string name="photo_received">Foto recibida</string>
-    <string name="photos_received">Fotos recibidas</string>
+    <string name="photos_received">Imágenes del chat</string>
     <string name="photo_send">Foto enviada</string>
     <string name="audio_received">Audio recibido</string>
     <string name="audio_send">Audio enviado</string>
