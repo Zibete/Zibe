@@ -12,9 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
 fun ChatPhotoItem(
@@ -30,7 +32,7 @@ fun ChatPhotoItem(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, zibeColors.accent.copy(alpha = 0.18f))
+        border = BorderStroke(1.dp, zibeColors.accent.copy(alpha = 0.4f))
     ) {
         val painter = rememberAsyncImagePainter(model = url)
         Image(
@@ -38,6 +40,17 @@ fun ChatPhotoItem(
             contentDescription = stringResource(R.string.photo_received),
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChatPhotoItemPreview() {
+    ZibeTheme {
+        ChatPhotoItem(
+            url = "https://example.com/photo.jpg",
+            onClick = {}
         )
     }
 }
