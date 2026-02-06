@@ -58,11 +58,6 @@ class FakeUserRepositoryProvider(
         }
     }
 
-    override suspend fun getChatStateWith(otherUid: String, nodeType: String): String {
-        failIfNeeded()
-        return TestData.CHAT_STATE
-    }
-
     override suspend fun getMyAccount(): ZibeResult<Users> {
         return if (scenarioProvider().shouldFail) {
             ZibeResult.Failure(scenarioProvider().runtimeException)
@@ -71,11 +66,6 @@ class FakeUserRepositoryProvider(
         } else {
             ZibeResult.Failure(RuntimeException("USER_NOT_FOUND"))
         }
-    }
-
-    suspend fun getChatPhotosWithUser(otherUid: String, nodeType: String): List<String> {
-        failIfNeeded()
-        return emptyList()
     }
 }
 
