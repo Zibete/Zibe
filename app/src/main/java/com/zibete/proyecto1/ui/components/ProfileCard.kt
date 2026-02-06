@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -86,6 +85,8 @@ fun ProfileCard(
                 }
             }
 
+            HorizontalDivider(color = zibeColors.accent.copy(alpha = 0.5f))
+
             // 2) Meta row (status + distancia + badges)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -147,12 +148,9 @@ fun ProfileCard(
 
             // Divider suave antes de fotos
             if (photoList.isNotEmpty()) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(top = spacingSm),
-                    color = zibeColors.accent.copy(alpha = 0.5f)
-                )
 
-                // 3) Galería
+                HorizontalDivider(color = zibeColors.accent.copy(alpha = 0.5f))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -190,7 +188,7 @@ fun ProfileCardPreview() {
         ProfileCard(
             profile = Users(
                 id = "1",
-                name = "John Doe",
+                name = "Ziberiano Peralta",
                 birthDate = "1990-01-01"
             ),
             state = ProfileUiState(
@@ -198,8 +196,8 @@ fun ProfileCardPreview() {
                 isBlockedByMe = false,
                 hasBlockedMe = false
             ),
-            userStatus = UserStatus.Online,
-            distanceLabel = "1.2 km",
+            userStatus = UserStatus.LastSeen("últ. vez 12/01/2026 a las 16:55"),
+            distanceLabel = "1600.5 km",
             photoList = listOf("url1", "url2", "url3"),
             onToggleFavorite = {},
             onOpenPhoto = {}

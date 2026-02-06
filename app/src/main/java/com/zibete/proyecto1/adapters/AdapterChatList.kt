@@ -21,6 +21,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.utils.TimeUtils
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
     private val userRepository: UserRepository,
+    private val profileRepositoryProvider : ProfileRepositoryProvider,
     private val onChatClicked: (Conversation) -> Unit
 ) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(
     ChatListDiffCallback
@@ -113,7 +115,7 @@ class AdapterChatList(
 
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
-            userRepository.observeUserStatus(chat.otherId, NODE_DM)
+            profileRepositoryProvider.observeUserStatus(chat.otherId, NODE_DM)
                 .collectLatest { status ->
                     bindUserStatus(b, status)
                 }
