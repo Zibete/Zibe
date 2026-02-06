@@ -33,7 +33,7 @@ class FakeUserRepositoryProvider(
         return if (scenarioProvider().accountExists) TestData.USER.copy(id = uid) else null
     }
 
-    override suspend fun getChatStateWith(
+    suspend fun getChatStateWith(
         otherUid: String,
         nodeType: String
     ): String {

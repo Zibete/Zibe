@@ -2,11 +2,14 @@ package com.zibete.proyecto1.di
 
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
@@ -98,6 +101,16 @@ object TestAppBindingsModule {
 
     @Provides
     @Singleton
+    fun provideProfileRepositoryProvider(): ProfileRepositoryProvider =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideProfileRepositoryActions(): ProfileRepositoryActions =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
     fun provideLocalRepositoryProvider(store: TestScenarioStore): LocalRepositoryProvider {
         return object : LocalRepositoryProvider {
             override val myUserName: String = "Test User"
@@ -105,6 +118,11 @@ object TestAppBindingsModule {
             override val myEmail: String = "test@example.com"
         }
     }
+
+    @Provides
+    @Singleton
+    fun provideGroupRepositoryProvider(): GroupRepositoryProvider =
+        mockk(relaxed = true)
 
     @Provides
     @Singleton
