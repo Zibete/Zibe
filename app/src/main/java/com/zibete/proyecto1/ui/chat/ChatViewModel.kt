@@ -35,6 +35,7 @@ import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
@@ -65,6 +66,7 @@ class ChatViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
+    private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val chatRepository: ChatRepository,
     private val sessionRepository: SessionRepository,
     private val userPreferencesProvider: UserPreferencesProvider
@@ -98,7 +100,7 @@ class ChatViewModel @Inject constructor(
 
     // ------------------------------------------------------------------------------------------------------------------------
     // Estado de conexión del otro usuario
-    val userStatus: StateFlow<UserStatus> = userRepository
+    val userStatus: StateFlow<UserStatus> = profileRepositoryProvider
         .observeUserStatus(otherUid, nodeType)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
 

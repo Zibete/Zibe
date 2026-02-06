@@ -28,6 +28,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -38,6 +39,7 @@ import javax.inject.Inject
 class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     @Inject lateinit var userRepository: UserRepository
+    @Inject lateinit var profileRepositoryProvider: ProfileRepositoryProvider
 
     private val chatListViewModel: ChatListViewModel by viewModels()
 
@@ -112,6 +114,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         adapterChatList = AdapterChatList(
             lifecycleScope = viewLifecycleOwner.lifecycleScope,
             userRepository = userRepository,
+            profileRepositoryProvider = profileRepositoryProvider,
             onChatClicked = ::openChat
         )
 
