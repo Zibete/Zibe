@@ -11,18 +11,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,7 +39,6 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -55,11 +50,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -72,13 +64,13 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_SCREEN
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
 import com.zibete.proyecto1.core.utils.copyToTempFile
+import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.PhotoSourceBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeAboutField
 import com.zibete.proyecto1.ui.components.ZibeAnimatedQuotesCard
@@ -88,7 +80,6 @@ import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputBirthdate
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeToolbar
@@ -177,6 +168,7 @@ fun EditProfileScreen(
     val zibeColors = LocalZibeExtendedColors.current
     val zibeTypography = LocalZibeTypography.current
     val context = LocalContext.current
+    val resolvedPhoto = photoModel?.toString().orEmpty()
 
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
@@ -367,38 +359,15 @@ fun EditProfileScreen(
                     .imePadding(),
                 verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_medium))
             ) {
-                ZibeCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 4f),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(MaterialTheme.shapes.medium),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val painter = rememberAsyncImagePainter(model = photoModel)
-                        Image(
-                            painter = painter,
-                            contentDescription = stringResource(id = R.string.content_description_photo),
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable {
-                                    photoModel?.let {
-                                        PhotoViewerActivity.startSingle(context, it.toString())
-                                    }
-                                }
-                        )
-                        if (state.isLoading) {
-                            ZibeCircularProgress(
-                                modifier = Modifier.align(Alignment.Center)
-                            )
+                PhotoHeader(
+                    photoUrl = resolvedPhoto,
+                    isLoading = state.isLoading,
+                    onClick = {
+                        if (resolvedPhoto.isNotBlank()) {
+                            PhotoViewerActivity.startSingle(context, resolvedPhoto)
                         }
                     }
-                }
+                )
 
                 ZibeCard(
                     modifier = Modifier
