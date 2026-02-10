@@ -47,11 +47,9 @@ fun SplashScreen() {
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // Siempre visible mientras exista el Splash
             ZibeCircularProgress(
                 size = 48.dp,
-                strokeWidth = 4.dp,
-                color = MaterialTheme.colorScheme.primary
+                strokeWidth = 4.dp
             )
         }
     }

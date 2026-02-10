@@ -121,7 +121,7 @@ fun ProfileCard(
                     if (state.isBlockedByMe) {
                         AssistChip(
                             onClick = {},
-                            label = { Text(stringResource(R.string.menu_user_block)) },
+                            label = { Text(stringResource(R.string.chip_user_blocked)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.PersonOff,

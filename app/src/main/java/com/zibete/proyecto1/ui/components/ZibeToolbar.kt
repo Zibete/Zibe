@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -33,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
@@ -47,6 +50,8 @@ fun ZibeToolbar(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
+    val zibeExtendedColors = LocalZibeExtendedColors.current
+
     TopAppBar(
         title = {
             Text(
@@ -57,7 +62,7 @@ fun ZibeToolbar(
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_baseline_arrow_back_24),
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.content_description_back)
                 )
             }
@@ -68,7 +73,7 @@ fun ZibeToolbar(
                     Text(
                         text = "Saltar",
                         style = LocalZibeTypography.current.actionLabel,
-                        color = colorResource(R.color.zibe_text_light)
+                        color = zibeExtendedColors.lightText
                     )
                 }
             }
@@ -79,12 +84,10 @@ fun ZibeToolbar(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             contentDescription = "Opciones",
-                            tint = colorResource(R.color.zibe_text_light)
+                            tint = zibeExtendedColors.lightText
                         )
                     }
 
-                    // Menú con diseño moderno. 
-                    // Se usa MaterialTheme.shapes para evitar el fondo cuadrado por defecto de Material 3
                     MaterialTheme(
                         shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp))
                     ) {
@@ -94,7 +97,7 @@ fun ZibeToolbar(
                             modifier = Modifier
                                 .background(colorResource(R.color.zibe_surface).copy(alpha = 0.92f))
                                 .padding(vertical = 4.dp),
-                            containerColor = Color.Transparent, // Evita el doble fondo
+                            containerColor = Color.Transparent,
                             shadowElevation = 8.dp
                         ) {
                             menuItems.forEach { item ->
@@ -106,7 +109,7 @@ fun ZibeToolbar(
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Medium
                                             ),
-                                            color = colorResource(R.color.zibe_text_light)
+                                            color = zibeExtendedColors.lightText
                                         )
                                     },
                                     onClick = {
@@ -119,7 +122,7 @@ fun ZibeToolbar(
                                                 imageVector = it,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(20.dp),
-                                                tint = colorResource(R.color.zibe_text_light).copy(alpha = 0.7f)
+                                                tint = zibeExtendedColors.lightText.copy(alpha = 0.7f)
                                             )
                                         }
                                     },
@@ -133,9 +136,9 @@ fun ZibeToolbar(
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
-            titleContentColor = colorResource(R.color.zibe_text_light),
-            navigationIconContentColor = colorResource(R.color.zibe_text_light),
-            actionIconContentColor = colorResource(R.color.zibe_text_light)
+            titleContentColor = zibeExtendedColors.lightText,
+            navigationIconContentColor = zibeExtendedColors.lightText,
+            actionIconContentColor = zibeExtendedColors.lightText
         )
     )
 }
@@ -143,7 +146,7 @@ fun ZibeToolbar(
 data class ZibeMenuItem(
     val label: String,
     val onClick: () -> Unit,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+    val icon: ImageVector? = null
 )
 
 @Preview(name = "Toolbar with Skip", showBackground = true, backgroundColor = 0xFF121212)
