@@ -94,8 +94,8 @@ fun ZibeInputField(
     val shape = RoundedCornerShape(
         topStart = dimensionResource(R.dimen.zibe_input_corner_top),
         topEnd = dimensionResource(R.dimen.zibe_input_corner_top),
-        bottomStart = dimensionResource(R.dimen.zibe_input_corner_bottom),
-        bottomEnd = dimensionResource(R.dimen.zibe_input_corner_bottom)
+        bottomStart = dimensionResource(R.dimen.zibe_input_corner_top),
+        bottomEnd = dimensionResource(R.dimen.zibe_input_corner_top)
     )
     Column(modifier = modifier) {
         TextField(

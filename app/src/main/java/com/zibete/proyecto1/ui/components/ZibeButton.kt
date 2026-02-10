@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -24,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -35,10 +38,11 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
 fun ZibeButtonPrimary(
-    text: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    text: String = "",
+    onClick: () -> Unit,
     iconRes: Int? = null,
+    iconVector: ImageVector? = null,
     iconTint: Color? = null,
     enabled: Boolean = true,
     isLoading: Boolean = false,
@@ -59,7 +63,6 @@ fun ZibeButtonPrimary(
             .fillMaxWidth()
             .heightIn(min = buttonHeight),
         shape = MaterialTheme.shapes.medium,
-        // Eliminamos padding vertical para que el icono no empuje la altura
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         elevation = ButtonDefaults.buttonElevation(
             defaultElevation = buttonElevation,
@@ -75,12 +78,20 @@ fun ZibeButtonPrimary(
                 color = LocalContentColor.current
             )
         } else {
-            iconRes?.let { res ->
+            if (iconVector != null) {
                 Icon(
-                    painter = painterResource(id = res),
+                    imageVector = iconVector,
                     contentDescription = null,
                     tint = iconTint ?: Color.Unspecified,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(spacingSmall))
+            } else if (iconRes != null) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    tint = iconTint ?: Color.Unspecified,
+                    modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             }
@@ -170,6 +181,21 @@ fun ZibeButtonOutlined(
 }
 
 @Composable
+fun ChatSendActionButton(
+    sendEnabled: Boolean,
+    isLoading: Boolean,
+    onSendClick: () -> Unit
+) {
+    ZibeButtonPrimary(
+        onClick = { if (sendEnabled) onSendClick() },
+        enabled = sendEnabled,
+        isLoading = isLoading,
+        iconVector = Icons.AutoMirrored.Filled.Send,
+    )
+}
+
+
+@Composable
 @Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
 fun ZibeButtonsComparisonPreview() {
     ZibeTheme {
@@ -183,18 +209,18 @@ fun ZibeButtonsComparisonPreview() {
                 text = "ENTRAR",
                 onClick = {}
             )
-            
+
             Spacer(Modifier.height(16.dp))
-            
+
             Text("Botones con Iconos (40dp)", style = MaterialTheme.typography.labelSmall)
             ZibeButtonOutlined(
                 text = "Continuar con Google",
                 onClick = {},
                 iconRes = R.drawable.ic_google
             )
-            
+
             Spacer(Modifier.height(8.dp))
-            
+
             ZibeButtonOutlined(
                 text = "Continuar con Facebook",
                 onClick = {},
