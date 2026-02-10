@@ -4,6 +4,7 @@ import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
@@ -78,6 +79,10 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSessionConflictMonitor(): SessionConflictMonitor = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideSessionRepositoryProvider(): SessionRepositoryProvider = mockk(relaxed = true)
 
     @Provides
     @Singleton
