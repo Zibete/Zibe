@@ -1,16 +1,9 @@
 package com.zibete.proyecto1.ui.chat
 
 import android.Manifest
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Typeface
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -21,362 +14,438 @@ import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.MediaStore
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.Gravity
-import android.view.Menu
-import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.view.isVisible
-import androidx.dynamicanimation.animation.SpringAnimation
-import androidx.dynamicanimation.animation.SpringForce
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.adapters.AdapterChat
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
-import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.databinding.ActivityChatBinding
-import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
-import com.zibete.proyecto1.ui.media.PhotoSourceSheet
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
 
-    companion object {
-        const val REQ_KEY_CHAT_SEND = "REQ_KEY_CHAT_SEND"
-    }
-
-    // ===== VM / Binding =====
     private val chatViewModel: ChatViewModel by viewModels()
-    private lateinit var binding: ActivityChatBinding
-    private val hideDateRunnable = Runnable { binding.linearDate.isVisible = false }
-
-    // ===== Recycler =====
-    private lateinit var adapter: AdapterChat
-    private lateinit var layoutManager: LinearLayoutManager
-
-    // ===== Media / Storage =====
     private var imageUriCamera: Uri? = null
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioUri: Uri? = null
+    private var currentAudioFile: File? = null
     private var currentPfd: ParcelFileDescriptor? = null
     private var pendingAudioName: String? = null
     private var pendingImageName: String? = null
     private var recordStartElapsed: Long = 0L
     private lateinit var iconVibrator: Vibrator
-
-    // ===== Launchers / Permisos =====
     private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var pickImageLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
     private lateinit var requestPermissionsLauncher: ActivityResultLauncher<Array<String>>
     private var onPermissionsGranted: (() -> Unit)? = null
+    private var onPermissionsDenied: (() -> Unit)? = null
+    private val pendingAudioUrl = mutableStateOf<String?>(null)
+    private val pendingAudioDurationMs = mutableLongStateOf(0L)
+    private val recordingElapsedMs = mutableLongStateOf(0L)
+    private val isRecordingCanceled = mutableStateOf(false)
+    private var recordingJob: Job? = null
 
-    // ==================================== onCreate ====================================
-    @SuppressLint("ClickableViewAccessibility")
+    private val isAudioUploading = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityChatBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
         chatViewModel.init()
-
         observeChatSessionEvents(chatViewModel.events)
 
-        setupToolbar()
+        iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+
         initActivityResultLaunchers()
-        setupUiListeners()
-        setupTextWatcher()
-        setupMicGesture()
-        setupScrollHelpers()
+        installBackHandler()
 
-        resetUiState()
+        setContent {
+            ZibeTheme {
+                val mediaUiState = ChatMediaUiState(
+                    recordingElapsedMs = recordingElapsedMs.longValue,
+                    isRecordingCanceled = isRecordingCanceled.value,
+                    isAudioUploading = isAudioUploading.value
+                )
+                val callbacks = ChatCallbacks(
+                    onBackClick = { onBackPressedDispatcher.onBackPressed() },
+                    onProfileClick = { openProfile() },
+                    onToggleNotifications = chatViewModel::onToggleNotificationsClicked,
+                    onToggleBlock = chatViewModel::onToggleBlockClicked,
+                    onDeleteChat = chatViewModel::onDeleteChatClicked,
+                    onDeleteSelected = chatViewModel::onDeleteSelectedMessages,
+                    onClearSelection = chatViewModel::clearSelection,
+                    onPhotoSourceClick = chatViewModel::onSendPhotoClicked,
+                    onLaunchCamera = { launchCamera() },
+                    onLaunchGallery = { launchGallery() },
+                    onRemovePendingPhoto = chatViewModel::onRemovePendingPhoto,
+                    onTextChanged = chatViewModel::onTextChanged,
+                    onSendText = chatViewModel::onSendMessage,
+                    onSendPhoto = { url -> lifecycleScope.launch { chatViewModel.onSendPhoto(url) } },
+                    onSendAudio = { url, duration -> sendAudio(url, duration) },
+                    onSelectionChanged = chatViewModel::onMessageSelectionChanged,
+                    onMicPressed = { handleMicPressed() },
+                    onMicMoved = { x, y, width -> handleMicMoved(x, y, width) },
+                    onMicReleased = { handleMicReleased() }
+                )
+                ChatRoute(
+                    viewModel = chatViewModel,
+                    mediaUiState = mediaUiState,
+                    callbacks = callbacks
+                )
+            }
+        }
 
-
-        collectUiState()
-        configureChatTitle()
-        startAudioCancelBlink()
         clearNotifications()
     }
 
-    // ==================================== Setup ====================================
+    override fun onStart() {
+        super.onStart()
+        chatViewModel.onThreadScreenStarted()
+    }
 
-    private fun setupToolbar() {
-//        val toolbar = findViewById<Toolbar>(R.id.toolbar_chat)
-//        setSupportActionBar(toolbar)
-//        supportActionBar?.title = ""
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        setupToolbar(
-            toolbar = binding.toolbarChat
-        )
+    override fun onStop() {
+        super.onStop()
+        chatViewModel.onThreadScreenStopped()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        releaseRecorder()
+        ChatAudioPlayer.release()
+    }
+
+    private fun installBackHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (chatViewModel.chatState.value.selectedIds.isNotEmpty()) {
+                    chatViewModel.clearSelection()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 
     private fun initActivityResultLaunchers() {
-        pickImageLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            if (uri != null) {
-                chatViewModel.onPhotoSelected(uri)
-            }
-        }
-        takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            if (success) {
-                imageUriCamera?.let { chatViewModel.onPhotoSelected(it) }
-            }
-        }
-    }
-
-    private fun setupRecycler(myPhoto: String?, otherPhoto: String?) {
-        layoutManager = LinearLayoutManager(this).apply {
-            reverseLayout = false
-            stackFromEnd = true
-        }
-        binding.rvMsg.layoutManager = layoutManager
-
-        adapter = AdapterChat(
-            maxSize = MAX_CHAT_SIZE,
-            context = this,
-            hasSelection = { chatViewModel.chatState.value.selectedIds.isNotEmpty() },
-            isSelected = { item -> chatViewModel.chatState.value.selectedIds.contains(item.id) },
-            onSelectionChanged = { item, selected ->
-                chatViewModel.onMessageSelectionChanged(item, selected)
-            },
-            myAudioAvatarUrl = myPhoto,
-            otherAudioAvatarUrl = otherPhoto,
-            myUid = chatViewModel.myUid
-        )
-        binding.rvMsg.adapter = adapter
-    }
-
-    private fun setupUiListeners() {
-        binding.userImage.setOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java).apply {
-                putExtra(EXTRA_USER_ID, chatViewModel.partnerId)
-            }
-            startActivity(intent)
-        }
-
-        binding.nameUser.setOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java).apply {
-                putExtra(EXTRA_USER_ID, chatViewModel.partnerId)
-            }
-            startActivity(intent)
-        }
-
-        binding.btnSendMsg.setOnClickListener {
-            chatViewModel.onSendMessage(binding.msg.text.toString())
-        }
-
-        binding.btnCamera.setOnClickListener {
-            chatViewModel.onCameraClicked()
-        }
-
-        binding.cancelAction.setOnClickListener {
-            chatViewModel.onRemovePendingPhoto()
-        }
-
-        binding.layoutBloq.setOnClickListener {
-            // Unblock logic if needed
-        }
-    }
-
-    private fun setupTextWatcher() {
-        binding.msg.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                chatViewModel.onTextChanged(s.toString())
+        uCropResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                chatViewModel.handleCroppedImageResult(
+                    result.resultCode,
+                    pendingImageName,
+                    result.data
+                )
+                pendingImageName = null
             }
 
-            override fun afterTextChanged(s: Editable?) {}
-        })
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupMicGesture() {
-        binding.btnMic.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    chatViewModel.onMicPressed()
-                    true
+        pickImageLauncher =
+            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                if (uri != null) {
+                    chatViewModel.onPhotoSelected(uri)
+                    chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
                 }
-
-                MotionEvent.ACTION_MOVE -> {
-                    chatViewModel.onMicMoved(event.x, event.y, binding.btnMic.width.toFloat())
-                    true
-                }
-
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    chatViewModel.onMicReleased()
-                    true
-                }
-
-                else -> false
             }
-        }
-    }
 
-    private fun setupScrollHelpers() {
-        binding.rvMsg.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-
-                // Date logic
-                val firstVisible = layoutManager.findFirstVisibleItemPosition()
-                if (firstVisible != RecyclerView.NO_POSITION && ::adapter.isInitialized) {
-                    val item = adapter.currentList.getOrNull(firstVisible)
-                    item?.message?.createdAt?.let { ts ->
-                        binding.tvDate.text = formatHeaderDate(ts)
-                        binding.linearDate.isVisible = true
-                        binding.linearDate.handler?.removeCallbacks(hideDateRunnable)
-                        binding.linearDate.postDelayed(hideDateRunnable, 2000)
+        takePictureLauncher =
+            registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+                if (success) {
+                    imageUriCamera?.let { uri ->
+                        chatViewModel.onPhotoSelected(uri)
+                        chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
                     }
                 }
             }
-        })
+
+        requestPermissionsLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+                val granted = result.values.all { it }
+                if (granted) {
+                    onPermissionsGranted?.invoke()
+                } else {
+                    onPermissionsDenied?.invoke()
+                }
+                onPermissionsGranted = null
+                onPermissionsDenied = null
+            }
     }
 
-    private fun formatHeaderDate(timestamp: Long): String {
-        val sdf = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
-        return sdf.format(Date(timestamp))
+    private fun launchCamera() {
+        requestPermissions(
+            permissions = arrayOf(Manifest.permission.CAMERA),
+            onGranted = {
+                pendingImageName = createPhotoFileName()
+                val cameraUri = createCameraImageUri()
+                if (cameraUri == null) {
+                    lifecycleScope.launch {
+                        chatViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
+                    }
+                    return@requestPermissions
+                }
+                imageUriCamera = cameraUri
+                takePictureLauncher.launch(cameraUri)
+            },
+            onDenied = {
+                lifecycleScope.launch {
+                    chatViewModel.onError(UiText.StringRes(R.string.err_camera_permission_denied))
+                }
+            }
+        )
     }
 
-    private fun resetUiState() {
-        binding.frameSendMsg.isVisible = false
-        binding.btnMic.isVisible = true
-        binding.btnCamera.isVisible = true
-        binding.msg.hint = getString(R.string.escribe_un_mensaje)
-
-        binding.linearPhotoView.isVisible = false
-        binding.msg.text?.clear()
+    private fun launchGallery() {
+        pendingImageName = createPhotoFileName()
+        pickImageLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
     }
 
-    private fun updateSendUiState() {
-        binding.frameSendMsg.isVisible = true
-        binding.btnMic.isVisible = false
-        binding.btnCamera.isVisible = false
+    private fun createPhotoFileName(): String = "chat_photo_${System.currentTimeMillis()}.jpg"
+
+    private fun createCameraImageUri(): Uri? {
+        val picturesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: return null
+        if (!picturesDir.exists() && !picturesDir.mkdirs()) return null
+        val file = File.createTempFile("chat_camera_", ".jpg", picturesDir)
+        return FileProvider.getUriForFile(this, "${packageName}.provider", file)
     }
 
-    private fun configureChatTitle() {
-        // ...
+    private fun handleMicPressed() {
+        requestPermissions(
+            permissions = arrayOf(Manifest.permission.RECORD_AUDIO),
+            onGranted = { startRecording() },
+            onDenied = {
+                lifecycleScope.launch {
+                    chatViewModel.onError(UiText.StringRes(R.string.err_zibe))
+                }
+            }
+        )
     }
 
-    private fun startAudioCancelBlink() {
-        // ...
+    private fun handleMicMoved(x: Float, y: Float, width: Float) {
+        chatViewModel.onMicMoved(x, y, width)
+        if (mediaRecorder == null) return
+        val threshold = -width * 0.5f
+        val canceled = x < threshold
+        if (isRecordingCanceled.value != canceled) {
+            isRecordingCanceled.value = canceled
+        }
+    }
+
+    private fun handleMicReleased() {
+        if (mediaRecorder == null) {
+            chatViewModel.onMicReleased()
+            return
+        }
+        finishRecording(send = !isRecordingCanceled.value)
+        chatViewModel.onMicReleased()
+    }
+
+    private fun startRecording() {
+        if (mediaRecorder != null) return
+
+        val fileName = createAudioFileName()
+        val output = prepareAudioOutput(fileName)
+        if (output == null) {
+            lifecycleScope.launch {
+                chatViewModel.onError(UiText.StringRes(R.string.chat_error_create_audio))
+            }
+            return
+        }
+
+        pendingAudioName = fileName
+        currentAudioUri = output.first
+        currentPfd = output.second
+
+        val recorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(output.second.fileDescriptor)
+        }
+
+        try {
+            recorder.prepare()
+            recorder.start()
+        } catch (_: Exception) {
+            lifecycleScope.launch {
+                chatViewModel.onError(UiText.StringRes(R.string.chat_error_open_audio))
+            }
+            recorder.release()
+            releaseRecorder()
+            return
+        }
+
+        mediaRecorder = recorder
+        recordStartElapsed = SystemClock.elapsedRealtime()
+        isRecordingCanceled.value = false
+        startRecordingTicker()
+        chatViewModel.onMicPressed()
+        vibrateShort()
+    }
+
+    private fun finishRecording(send: Boolean) {
+        val elapsed = SystemClock.elapsedRealtime() - recordStartElapsed
+        val audioUri = currentAudioUri
+        val audioFile = currentAudioFile
+        val audioName = pendingAudioName
+
+        releaseRecorder()
+        stopRecordingTicker()
+        recordStartElapsed = 0L
+        isRecordingCanceled.value = false
+        pendingAudioName = null
+        currentAudioUri = null
+        currentAudioFile = null
+
+        if (!send) {
+            deleteAudioOutput(audioUri, audioFile)
+            return
+        }
+
+        if (audioUri == null || audioName == null) return
+
+        isAudioUploading.value = true
+
+        lifecycleScope.launch {
+            val url = chatViewModel.uploadMedia(audioName, audioUri, PATH_AUDIOS)
+            isAudioUploading.value = false
+            if (url == null) {
+                chatViewModel.onError(UiText.StringRes(R.string.chat_error_upload_audio))
+            } else {
+                sendAudio(url, elapsed)
+            }
+        }
+    }
+
+    private fun createAudioFileName(): String = "audio_${System.currentTimeMillis()}.m4a"
+
+    private fun prepareAudioOutput(fileName: String): Pair<Uri, ParcelFileDescriptor>? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val uri = createAudioMediaUri(fileName) ?: return null
+            val pfd = contentResolver.openFileDescriptor(uri, "w") ?: return null
+            currentAudioFile = null
+            Pair(uri, pfd)
+        } else {
+            val musicDir = getExternalFilesDir(Environment.DIRECTORY_MUSIC) ?: return null
+            if (!musicDir.exists() && !musicDir.mkdirs()) return null
+            val file = File(musicDir, fileName)
+            val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_WRITE)
+            currentAudioFile = file
+            Pair(Uri.fromFile(file), pfd)
+        }
+    }
+
+    private fun createAudioMediaUri(fileName: String): Uri? {
+        val values = ContentValues().apply {
+            put(MediaStore.Audio.Media.DISPLAY_NAME, fileName)
+            put(MediaStore.Audio.Media.MIME_TYPE, "audio/m4a")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.Audio.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_MUSIC + File.separator + "Zibe"
+                )
+            }
+        }
+        return contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
+    }
+
+    private fun deleteAudioOutput(uri: Uri?, file: File?) {
+        if (uri != null) {
+            contentResolver.delete(uri, null, null)
+        }
+        file?.delete()
+    }
+
+    private fun releaseRecorder() {
+        try {
+            mediaRecorder?.stop()
+        } catch (_: Exception) {
+        }
+        mediaRecorder?.release()
+        mediaRecorder = null
+
+        try {
+            currentPfd?.close()
+        } catch (_: Exception) {
+        }
+        currentPfd = null
+    }
+
+    private fun startRecordingTicker() {
+        recordingJob?.cancel()
+        recordingJob = lifecycleScope.launch {
+            while (mediaRecorder != null) {
+                recordingElapsedMs.longValue = SystemClock.elapsedRealtime() - recordStartElapsed
+                delay(100)
+            }
+        }
+    }
+
+    private fun stopRecordingTicker() {
+        recordingJob?.cancel()
+        recordingJob = null
+        recordingElapsedMs.longValue = 0L
+    }
+
+    private fun vibrateShort() {
+        if (::iconVibrator.isInitialized) {
+            iconVibrator.vibrate(
+                VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE)
+            )
+        }
+    }
+
+    private fun sendAudio(url: String, duration: Long) {
+        lifecycleScope.launch {
+            chatViewModel.onSendAudio(url, duration)
+        }
+    }
+
+    private fun openProfile() {
+        val intent = Intent(this, ProfileActivity::class.java).apply {
+            putExtra(EXTRA_USER_ID, chatViewModel.otherUid)
+        }
+        startActivity(intent)
+    }
+
+    private fun requestPermissions(
+        permissions: Array<String>,
+        onGranted: () -> Unit,
+        onDenied: () -> Unit
+    ) {
+        val missing = permissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missing.isEmpty()) {
+            onGranted()
+            return
+        }
+
+        onPermissionsGranted = onGranted
+        onPermissionsDenied = onDenied
+        requestPermissionsLauncher.launch(missing.toTypedArray())
     }
 
     private fun clearNotifications() {
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         nm.cancelAll()
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        currentAudioUri = null
-        iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
-    }
-
-    // ==================================== Collectors ====================================
-
-    private fun collectUiState() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-
-                launch {
-                    chatViewModel.headerState.collect { state ->
-                        when (state) {
-                            ChatHeaderState.Loading -> {
-                                binding.nameUser.text = getString(R.string.loading)
-                                binding.tvStatus.text = getString(R.string.loading)
-                            }
-
-                            is ChatHeaderState.Loaded -> {
-                                binding.nameUser.text = state.name
-                                binding.tvStatus.text = state.status
-                                Glide.with(this@ChatActivity)
-                                    .load(state.photoUrl)
-                                    .into(binding.userImage)
-
-                                binding.layoutChat.isVisible = !state.isBlocked
-                                binding.layoutBloq.isVisible = state.isBlocked
-                                binding.linearLottie.isVisible = !state.isBlocked
-
-                                // Initialize recycler once header is loaded (myIdentity will be ready)
-                                if (binding.rvMsg.adapter == null) {
-                                    setupRecycler(
-                                        myPhoto = chatViewModel.myIdentity.userPhotoUrl,
-                                        otherPhoto = state.photoUrl
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                launch {
-                    chatViewModel.chatState.collect { state ->
-                        if (::adapter.isInitialized) {
-                            adapter.submitList(state.messages) {
-                                if (adapter.itemCount > 0) {
-                                    binding.rvMsg.scrollToPosition(adapter.itemCount - 1)
-                                }
-                            }
-                        }
-
-                        if (state.photoReady || state.textReady) updateSendUiState() else resetUiState()
-
-                        if (state.showPhotoPicker) {
-                            PhotoSourceSheet.newInstance(
-                                showDelete = false,
-                                titleRes = R.string.send_photo,
-                                requestKey = REQ_KEY_CHAT_SEND
-                            ).show(supportFragmentManager, PhotoSourceSheet.TAG)
-                            chatViewModel.onPhotoPickerShown()
-                        }
-
-                        if (state.pendingPhotoUri != null) {
-                            binding.linearPhotoView.isVisible = true
-                            Glide.with(this@ChatActivity)
-                                .load(state.pendingPhotoUri)
-                                .into(binding.photo)
-                        } else {
-                            binding.linearPhotoView.isVisible = false
-                        }
-
-                        if (state.isRecording) {
-                            // Show recording UI
-                        } else {
-                            // Hide recording UI
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ... Rest of the activity
 }
