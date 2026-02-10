@@ -10,6 +10,7 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.Locale
 
 object TimeUtils {
 
@@ -61,6 +62,12 @@ object TimeUtils {
             isYesterday(ms) -> context.getString(R.string.yesterday)
             else -> formatUiDate(ms)
         }
+    }
+
+    fun formatHeaderDate(ms: Long): String {
+        if (ms <= 0L) return ""
+        val formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.getDefault())
+        return formatter.format(zonedDateTime(ms))
     }
 
     fun formatAudioDuration(ms: Long): String {
