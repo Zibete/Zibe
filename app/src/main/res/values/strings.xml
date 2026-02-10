@@ -127,6 +127,7 @@
     <string name="chat_error_open_audio">No se pudo abrir el archivo de audio</string>
     <string name="chat_error_no_music_dir">No hay directorio de música disponible</string>
     <string name="chat_error_upload_audio">No se pudo subir el audio</string>
+    <string name="chat_cancel_recording_hint">Deslice para cancelar</string>
 
     <!-- ============================= -->
     <!-- Reset password -->
@@ -281,6 +282,12 @@
     <string name="action_exit">Salir</string>
     <string name="action_continue">Continuar</string>
     <string name="action_retry">Reintentar</string>
+
+    <!-- ============================= -->
+    <!-- Chips -->
+    <!-- ============================= -->
+
+    <string name="chip_user_blocked">Usuario bloqueado</string>
 
     <!-- ============================= -->
     <!-- Onboarding -->
