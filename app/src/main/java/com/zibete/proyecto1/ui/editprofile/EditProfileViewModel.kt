@@ -41,7 +41,7 @@ class EditProfileViewModel @Inject constructor(
     private val snackBarManager: SnackBarManager,
     private val config: SettingsConfig,
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(EditProfileUiState())
     val uiState: StateFlow<EditProfileUiState> = _uiState
 
@@ -53,10 +53,6 @@ class EditProfileViewModel @Inject constructor(
     fun load() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-
-            if (!userPreferencesProvider.isEditProfileWelcomeShown()) {
-                _uiState.update { it.copy(showWelcomeSheet = true) }
-            }
 
             userRepositoryProvider.getMyAccount()
                 .onFailure { e ->
@@ -74,6 +70,8 @@ class EditProfileViewModel @Inject constructor(
                     }
 
                     val birthDate = u.birthDate.trim()
+                    val isFirstLoginDone = userPreferencesProvider.isFirstLoginDone()
+                    val showWelcomeSheet = !userPreferencesProvider.isEditProfileWelcomeShown()
 
                     _uiState.update { it ->
                         it.copy(
@@ -92,7 +90,9 @@ class EditProfileViewModel @Inject constructor(
                             originalName = u.name,
                             originalDescription = u.description,
                             originalBirthDate = birthDate,
-                            originalPhotoUrl = u.photoUrl
+                            originalPhotoUrl = u.photoUrl,
+                            showWelcomeSheet = showWelcomeSheet,
+                            showSkipButton = !isFirstLoginDone && birthDate.isNotBlank()
                         )
                     }
                 }.onFinally {

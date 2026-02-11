@@ -71,7 +71,7 @@ fun ZibeToolbar(
             if (showSkipButton) {
                 TextButton(onClick = onSkipClick) {
                     Text(
-                        text = "Saltar",
+                        text = stringResource(R.string.action_skip),
                         style = LocalZibeTypography.current.actionLabel,
                         color = zibeExtendedColors.lightText
                     )

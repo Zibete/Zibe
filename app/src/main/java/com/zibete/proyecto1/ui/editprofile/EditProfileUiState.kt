@@ -30,5 +30,7 @@ data class EditProfileUiState(
     val nameError: UiText? = null,
     val showDiscardDialog: Boolean = false,
     val showWelcomeSheet: Boolean = false,
+    val showSkipButton: Boolean = false,
+    val isFirstLoginDone: Boolean = true,
     val pendingNav: PendingNav? = null,
 )
