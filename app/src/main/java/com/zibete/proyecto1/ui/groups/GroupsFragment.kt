@@ -2,14 +2,9 @@ package com.zibete.proyecto1.ui.groups
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -68,8 +63,6 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        setupOptionMenu()
 
         collectUiState()
         collectEvents()
@@ -233,26 +226,6 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
         dialogBinding.btnClose.setOnClickListener { joinGroupDialog?.dismiss() }
         joinGroupDialog?.show()
-    }
-
-    private fun setupOptionMenu() {
-        val menuHost = requireActivity() as MenuHost
-
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = Unit
-
-                override fun onPrepareMenu(menu: Menu) {
-                    menu.findItem(R.id.action_settings)?.isVisible = true
-                    menu.findItem(R.id.action_search)?.isVisible = true
-                    menu.findItem(R.id.action_favorites)?.isVisible = true
-                }
-
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
-            },
-            viewLifecycleOwner,
-            Lifecycle.State.RESUMED
-        )
     }
 
     override fun onDestroyView() {

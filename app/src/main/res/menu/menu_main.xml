@@ -46,12 +46,6 @@
         android:orderInCategory="100"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/action_skip"
-        android:title="@string/action_skip"
-        android:orderInCategory="100"
-        app:showAsAction="always" />
-
     <!-- ChatActivity | ProfileActivity-->
 
     <item

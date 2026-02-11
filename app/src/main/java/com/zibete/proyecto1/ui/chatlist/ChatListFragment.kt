@@ -3,13 +3,9 @@ package com.zibete.proyecto1.ui.chatlist
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -56,7 +52,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     ): View {
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
 
-        setupOptionMenu()
         setupRecycler()
         setupInitialUi()
         setupAdapterObserver()
@@ -173,24 +168,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         if (::adapterChatList.isInitialized && adapterChatList.itemCount > 0) {
             b.rv.scrollToPosition(adapterChatList.itemCount - 1)
         }
-    }
-
-    private fun setupOptionMenu() {
-        val menuHost = requireActivity() as MenuHost
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = Unit
-                override fun onPrepareMenu(menu: Menu) {
-                    menu.findItem(R.id.action_settings)?.isVisible = true
-                    menu.findItem(R.id.action_search)?.isVisible = true
-                    menu.findItem(R.id.action_favorites)?.isVisible = true
-                    menu.findItem(R.id.action_unblock_users)?.isVisible = true
-                }
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean = false
-            },
-            viewLifecycleOwner,
-            Lifecycle.State.RESUMED
-        )
     }
 
     override fun onContextItemSelected(item: MenuItem): Boolean {

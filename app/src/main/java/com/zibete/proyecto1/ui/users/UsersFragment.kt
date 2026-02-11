@@ -4,14 +4,9 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import androidx.core.view.MenuHost
-import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -32,11 +27,12 @@ import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
+import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class UsersFragment : BaseChatSessionFragment(), SearchHandler {
+class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHandler {
 
     private var _binding: FragmentUsersBinding? = null
     private val binding get() = _binding!!
@@ -58,7 +54,6 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupOptionMenu()
         setupRecyclerView()
         setupSwipeRefresh()
 
@@ -200,42 +195,17 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler {
             .show()
     }
 
-    private fun setupOptionMenu() {
-        val menuHost = requireActivity() as MenuHost
-
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-
-                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    // No-op: el menú lo infla BaseEdgeToEdgeActivity
-                }
-
-                override fun onPrepareMenu(menu: Menu) {
-                    // Mostramos SOLO lo que Users necesita.
-                    // El resto ya queda oculto por BaseEdgeToEdgeActivity.
-                    menu.findItem(R.id.action_settings)?.isVisible = true
-                    menu.findItem(R.id.action_unblock_users)?.isVisible = true
-                    menu.findItem(R.id.action_unhide_chats)?.isVisible = true
-                    menu.findItem(R.id.action_favorites)?.isVisible = true
-                    menu.findItem(R.id.action_search)?.isVisible = true
-
-                    // Si tenés ítems que NO querés en Users, asegurate de dejarlos false acá.
-                }
-
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                    // No manejamos clicks desde el fragment:
-                    // se delega a BaseEdgeToEdgeActivity/MainActivity
-                    return false
-                }
-            },
-            viewLifecycleOwner,
-            Lifecycle.State.RESUMED
-        )
-    }
-
     // SearchHandler: llamado por MainActivity cuando el SearchView cambia
     override fun onSearchQueryChanged(query: String?) {
         adapterUsers?.filterByName(query)
+    }
+
+    override fun onRefreshUsers() {
+        usersViewModel.loadUsers()
+    }
+
+    override fun onFilterUsers() {
+        usersViewModel.onFilterClicked()
     }
 
     private fun scrollToBottom() {
