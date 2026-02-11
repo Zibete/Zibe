@@ -18,6 +18,8 @@ import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
+import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -65,8 +67,8 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _toolbarState = MutableStateFlow(ToolbarState())
-    val toolbarState = _toolbarState.asStateFlow()
+    private val _destinationUiState = MutableStateFlow(MainDestinationUiState())
+    val destinationUiState = _destinationUiState.asStateFlow()
 
     private val _uiEvents = MutableSharedFlow<MainUiEvent>()
     val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
@@ -142,24 +144,12 @@ class MainViewModel @Inject constructor(
     }
 
     fun setScreen(screen: CurrentScreen) {
-        _toolbarState.update { it.copy(currentScreen = screen) }
+        _destinationUiState.update { it.copy(currentScreen = screen) }
     }
 
     fun showToolbar(show: Boolean) {
-        _toolbarState.update { it.copy(showToolbar = show) }
+        _destinationUiState.update { it.copy(showToolbar = show) }
     }
-
-//    fun showLayoutSettings(show: Boolean) {
-//        _toolbarState.update { it.copy(showUsersFragmentSettings = show) }
-//    }
-//
-//    fun showBottomNav(show: Boolean) {
-//        _toolbarState.update { it.copy(showBottomNav = show) }
-//    }
-//
-//    fun showSkipButton(show: Boolean) {
-//        _toolbarState.update { it.copy(showSkipButton = show) }
-//    }
 
     // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
     fun onLocationChanged(location: Location) {
@@ -167,8 +157,6 @@ class MainViewModel @Inject constructor(
             locationRepository.updateLocation(location)
         }
     }
-
-    val showSkipButton = _toolbarState.value.showSkipButton
 
     fun onLogoutConfirmed() {
         viewModelScope.launch {
@@ -233,17 +221,17 @@ class MainViewModel @Inject constructor(
     }
 
     fun onUsersTabSelected() {
-        if (_toolbarState.value.currentScreen == CurrentScreen.USERS) return
+        if (_destinationUiState.value.currentScreen == CurrentScreen.USERS) return
         viewModelScope.launch { toUsers() }
     }
 
     fun onChatTabSelected() {
-        if (_toolbarState.value.currentScreen == CurrentScreen.CHAT) return
+        if (_destinationUiState.value.currentScreen == CurrentScreen.CHAT) return
         viewModelScope.launch { toChat() }
     }
 
     fun onFavoritesTabSelected() {
-        if (_toolbarState.value.currentScreen == CurrentScreen.FAVORITES) return
+        if (_destinationUiState.value.currentScreen == CurrentScreen.FAVORITES) return
         viewModelScope.launch { toFavorites() }
     }
 
@@ -256,7 +244,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onEditProfileSelected() {
-        if (_toolbarState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
+        if (_destinationUiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
         viewModelScope.launch { toEditProfile() }
     }
 
@@ -285,7 +273,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onBackPressed() {
-        when (_toolbarState.value.currentScreen) {
+        when (_destinationUiState.value.currentScreen) {
 
             CurrentScreen.CHAT,
             CurrentScreen.USERS,
@@ -324,24 +312,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun setToolbarState(
-        showToolbar: Boolean,
-        showBack: Boolean,
-        showUsersFragmentSettings: Boolean,
-        showBottomNav: Boolean,
-        currentScreen: CurrentScreen,
-        showSkipButton: Boolean
+    fun setDestinationUiState(
+        state: MainDestinationUiState
     ) {
-        _toolbarState.update {
-            it.copy(
-                showToolbar = showToolbar,
-                showBack = showBack,
-                showUsersFragmentSettings = showUsersFragmentSettings,
-                showBottomNav = showBottomNav,
-                currentScreen = currentScreen,
-                showSkipButton = showSkipButton
-            )
-        }
+        _destinationUiState.value = state
     }
 
     fun myDisplayName(): String = userRepository.myUserName

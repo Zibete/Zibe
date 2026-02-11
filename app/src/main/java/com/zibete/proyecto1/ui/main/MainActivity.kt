@@ -22,6 +22,7 @@ import androidx.core.content.IntentCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -63,12 +64,18 @@ import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
+import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
+import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
+import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
+import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
-import com.zibete.proyecto1.ui.users.UsersViewModel
+import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.core.view.size
+import androidx.core.view.get
 
 @AndroidEntryPoint
 class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
@@ -78,86 +85,25 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     @Inject
     lateinit var appNavigator: AppNavigator
     val mainViewModel: MainViewModel by viewModels()
-    private val usersViewModel: UsersViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var navController: NavController
     private lateinit var materialToolbar: MaterialToolbar
     private lateinit var bottomNavigationView: BottomNavigationView
     private var currentScreen: CurrentScreen = CurrentScreen.OTHER
-    private var showSkipButton: Boolean = false
     private var drawerLayout: DrawerLayout? = null
     private var navigationView: NavigationView? = null
     private var usersFragmentSettings: View? = null
     private var filterButton: ImageView? = null
     private var refreshButton: ImageView? = null
-    private var searchView: SearchView? = null
+    private val destinationUiMapper = MainDestinationUiMapper()
+    private val searchCoordinator = MainSearchCoordinator { activeSearchHandler() }
     private var badgeDrawableChat: BadgeDrawable? = null
     private var badgeDrawableGroup: BadgeDrawable? = null
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var settingsClient: SettingsClient? = null
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
-    private val destinationUiConfig: Map<Int, DestinationUiConfig> by lazy {
-        mapOf(
-            R.id.nav_users to DestinationUiConfig(
-                currentScreen = CurrentScreen.USERS,
-                showToolbar = true,
-                showBottomNav = true,
-                showDrawer = true,
-                showBack = false,
-                showUsersFragmentSettings = true
-            ),
-            R.id.nav_chat_list to DestinationUiConfig(
-                currentScreen = CurrentScreen.CHAT,
-                showToolbar = true,
-                showBottomNav = true,
-                showDrawer = true,
-                showBack = false,
-                showUsersFragmentSettings = false
-            ),
-            R.id.nav_group_select to DestinationUiConfig(
-                currentScreen = CurrentScreen.GROUPS,
-                showToolbar = true,
-                showBottomNav = true,
-                showDrawer = true,
-                showBack = false,
-                showUsersFragmentSettings = false
-            ),
-            R.id.nav_favorites to DestinationUiConfig(
-                currentScreen = CurrentScreen.FAVORITES,
-                showToolbar = true,
-                showBottomNav = true,
-                showDrawer = true,
-                showBack = false,
-                showUsersFragmentSettings = false
-            ),
-            R.id.editProfileFragment to DestinationUiConfig(
-                currentScreen = CurrentScreen.EDIT_PROFILE,
-                showToolbar = false,
-                showBottomNav = false,
-                showDrawer = false,
-                showBack = false,
-                showUsersFragmentSettings = false
-            ),
-            R.id.settingsFragment to DestinationUiConfig(
-                currentScreen = CurrentScreen.OTHER,
-                showToolbar = false,
-                showBottomNav = false,
-                showDrawer = false,
-                showBack = false,
-                showUsersFragmentSettings = false
-            ),
-            R.id.nav_group_host to DestinationUiConfig(
-                currentScreen = CurrentScreen.GROUPS,
-                showToolbar = true,
-                showBottomNav = true,
-                showDrawer = false,
-                showBack = true,
-                showUsersFragmentSettings = false
-            )
-        )
-    }
 
     override val toolbarMenuRes: Int = R.menu.menu_main
 
@@ -218,12 +164,12 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         // Botón de refrescar
         refreshButton?.setOnClickListener {
-            usersViewModel.loadUsers()
+            activeUsersToolbarHandler()?.onRefreshUsers()
         }
 
         // Botón de filtro → dispara un evento, el Fragment abre el diálogo
         filterButton?.setOnClickListener {
-            usersViewModel.onFilterClicked()
+            activeUsersToolbarHandler()?.onFilterUsers()
         }
 
         val hasActiveFilter = mainViewModel.hasActiveFilter.value
@@ -250,7 +196,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         materialToolbar.setNavigationOnClickListener {
             if (dismissImeIfVisible()) return@setNavigationOnClickListener
-            val showBack = mainViewModel.toolbarState.value.showBack
+            val showBack = mainViewModel.destinationUiState.value.showBack
             if (showBack) {
                 onBackPressedDispatcher.onBackPressed()
             } else {
@@ -374,18 +320,16 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.toolbarState.collect { state ->
+                mainViewModel.destinationUiState.collect { state ->
                     // Visibilidad
                     materialToolbar.isVisible = state.showToolbar
                     usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
                     bottomNavigationView.isVisible = state.showBottomNav
-                    showSkipButton = state.showSkipButton
                     // title
-                    if (navController.currentDestination?.id == R.id.nav_group_host) {
-                        materialToolbar.title = mainViewModel.groupName.value
-                    } else {
-                        materialToolbar.title =
-                            state.currentScreen.titleRes.asString(this@MainActivity)
+                    materialToolbar.title = when {
+                        state.useGroupNameTitle -> mainViewModel.groupName.value
+                        state.title != null -> state.title.asString(this@MainActivity)
+                        else -> state.currentScreen.titleRes.asString(this@MainActivity)
                     }
 
                     currentScreen = state.currentScreen
@@ -394,16 +338,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                 }
             }
         }
-
-//        lifecycleScope.launch {
-//            repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                mainViewModel.groupName.collect { name ->
-//                    if (navController.currentDestination?.id == R.id.nav_group_host) {
-//                        materialToolbar.title = name
-//                    }
-//                }
-//            }
-//        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -457,14 +391,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             }
 
                             is MainUiEvent.NavigateToSplash -> {
-                                val intent = Intent(this@MainActivity, SplashActivity::class.java)
-                                if (event.sessionConflict) intent.putExtra(
-                                    EXTRA_SESSION_CONFLICT,
-                                    true
+                                navigateToSplash(
+                                    sessionConflict = event.sessionConflict
                                 )
-                                stopLocationUpdates()
-                                finish()
-                                startActivity(intent)
                             }
 
                             is MainUiEvent.ToGroupsAfterExit -> {
@@ -479,8 +408,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             }
 
                             is MainUiEvent.BackExitAppOrCloseSearch -> {
-                                if (searchView?.isIconified == false) {
-                                    searchView?.onActionViewCollapsed()
+                                if (searchCoordinator.isSearchOpen()) {
+                                    searchCoordinator.collapseAndClear()
                                 } else if (
                                     currentScreen == CurrentScreen.GROUPS &&
                                     navController.currentDestination?.id == R.id.nav_group_host
@@ -540,14 +469,12 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     appNavigator.events.collect { event ->
                         when (event) {
                             is NavAppEvent.FinishFlowNavigateToSplash -> {
-                                val intent = Intent(this@MainActivity, SplashActivity::class.java)
-                                if (event.sessionConflict) intent.putExtra(EXTRA_SESSION_CONFLICT, true)
-                                if (event.deleteAccount) intent.putExtra(EXTRA_DELETE_ACCOUNT, true)
-                                intent.putExtra(EXTRA_UI_TEXT, event.snackMessage)
-                                intent.putExtra(EXTRA_SNACK_TYPE, event.snackType)
-                                stopLocationUpdates()
-                                finish()
-                                startActivity(intent)
+                                navigateToSplash(
+                                    sessionConflict = event.sessionConflict,
+                                    deleteAccount = event.deleteAccount,
+                                    snackMessage = event.snackMessage,
+                                    snackType = event.snackType
+                                )
                             }
                         }
                     }
@@ -568,6 +495,18 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         goToChatTab()
     }
 
+    private fun activeNavFragment(): Fragment? {
+        return supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+            ?.childFragmentManager
+            ?.primaryNavigationFragment
+    }
+
+    private fun activeSearchHandler(): SearchHandler? =
+        activeNavFragment() as? SearchHandler
+
+    private fun activeUsersToolbarHandler(): UsersToolbarHandler? =
+        activeNavFragment() as? UsersToolbarHandler
+
     private fun ensureNavHostController(): NavController {
         val current = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
         if (current is NavHostFragment) {
@@ -586,48 +525,28 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     }
 
     private fun applyDestinationUi(destinationId: Int) {
-        val config = destinationUiConfig[destinationId] ?: DestinationUiConfig()
+        val state = destinationUiMapper.map(destinationId)
 
-        mainViewModel.setToolbarState(
-            showToolbar = config.showToolbar,
-            showBack = config.showBack,
-            showUsersFragmentSettings = config.showUsersFragmentSettings,
-            showBottomNav = config.showBottomNav,
-            currentScreen = config.currentScreen,
-            showSkipButton = false
-        )
+        mainViewModel.setDestinationUiState(state)
 
         drawerLayout?.setDrawerLockMode(
-            if (config.showDrawer) {
+            if (state.showDrawer) {
                 DrawerLayout.LOCK_MODE_UNLOCKED
             } else {
                 DrawerLayout.LOCK_MODE_LOCKED_CLOSED
             }
         )
 
-        when (destinationId) {
-            R.id.nav_users -> bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked = true
-            R.id.nav_chat_list -> bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
-            R.id.nav_group_select -> bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
-            R.id.nav_group_host -> bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
-            R.id.nav_favorites -> bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked = true
+        state.selectedBottomNavItemId?.let { itemId ->
+            bottomNavigationView.menu.findItem(itemId)?.isChecked = true
         }
 
-        when (destinationId) {
-            R.id.nav_chat_list -> navigationView?.setCheckedItem(R.id.action_index)
-            R.id.settingsFragment -> navigationView?.setCheckedItem(R.id.action_settings)
-            R.id.editProfileFragment -> navigationView?.setCheckedItem(R.id.action_edit_profile)
+        state.selectedDrawerItemId?.let { itemId ->
+            navigationView?.setCheckedItem(itemId)
         }
+
+        searchCoordinator.updateAvailability(state.menuConfig.showSearch)
     }
-
-    private data class DestinationUiConfig(
-        val currentScreen: CurrentScreen = CurrentScreen.OTHER,
-        val showToolbar: Boolean = true,
-        val showBottomNav: Boolean = true,
-        val showDrawer: Boolean = true,
-        val showBack: Boolean = false,
-        val showUsersFragmentSettings: Boolean = false
-    )
 
     private fun setupLocation() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -683,53 +602,40 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
     }
 
-    override val toolbarMenuVisiblePredicate: (Menu) -> Unit = { menu ->
-        for (i in 0 until menu.size()) menu.getItem(i).isVisible = false
+    private fun navigateToSplash(
+        sessionConflict: Boolean = false,
+        deleteAccount: Boolean = false,
+        snackMessage: UiText? = null,
+        snackType: ZibeSnackType? = null
+    ) {
+        val intent = Intent(this@MainActivity, SplashActivity::class.java)
+        if (sessionConflict) intent.putExtra(EXTRA_SESSION_CONFLICT, true)
+        if (deleteAccount) intent.putExtra(EXTRA_DELETE_ACCOUNT, true)
+        if (snackMessage != null) intent.putExtra(EXTRA_UI_TEXT, snackMessage)
+        if (snackType != null) intent.putExtra(EXTRA_SNACK_TYPE, snackType)
+        stopLocationUpdates()
+        finish()
+        startActivity(intent)
+    }
 
-        when (currentScreen) {
-            CurrentScreen.USERS -> {
-                menu.findItem(R.id.action_search)?.isVisible = true
-                menu.findItem(R.id.action_settings)?.isVisible = true
-            }
+    override val toolbarMenuVisiblePredicate: (Menu) -> Unit = menu@{ menu ->
+        for (i in 0 until menu.size) menu[i].isVisible = false
+        val destinationUiState = mainViewModel.destinationUiState.value
+        val menuConfig = destinationUiState.menuConfig
 
-            CurrentScreen.CHAT -> {
-                menu.findItem(R.id.action_settings)?.isVisible = true
-            }
-
-            CurrentScreen.GROUPS -> {
-                menu.findItem(R.id.action_unhide_chats)?.isVisible = true
-            }
-
-            CurrentScreen.FAVORITES -> {
-                menu.findItem(R.id.action_favorites)?.isVisible = true
-            }
-
-            CurrentScreen.EDIT_PROFILE -> {
-                menu.findItem(R.id.action_settings)?.isVisible = true
-                menu.findItem(R.id.action_skip)?.isVisible = showSkipButton
-            }
-
-            else -> Unit
-        }
+        menu.findItem(R.id.action_settings)?.isVisible = menuConfig.showSettings
+        menu.findItem(R.id.action_unblock_users)?.isVisible = menuConfig.showUnblockUsers
+        menu.findItem(R.id.action_unhide_chats)?.isVisible = menuConfig.showUnhideChats
+        menu.findItem(R.id.action_favorites)?.isVisible = menuConfig.showFavorites
+        menu.findItem(R.id.action_search)?.isVisible = menuConfig.showSearch
+        menu.findItem(R.id.action_exit_group)?.isVisible = menuConfig.showExitGroup
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
 
         val searchView = (menu.findItem(R.id.action_search)?.actionView as? SearchView)
-        this.searchView = searchView
-
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                val active = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
-                    ?.childFragmentManager
-                    ?.primaryNavigationFragment
-
-                (active as? SearchHandler)?.onSearchQueryChanged(newText)
-                return true
-            }
-        })
+        searchCoordinator.bind(searchView)
         return true
     }
 
