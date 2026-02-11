@@ -316,7 +316,8 @@ fun EditProfileScreen(
                 ZibeToolbar(
                     title = stringResource(R.string.menu_edit_profile),
                     onBack = onBackRequest,
-                    menuItems = menuItems
+                    menuItems = menuItems,
+                    showSkipButton = state.showSkipButton
                 )
             },
             floatingActionButton = {
