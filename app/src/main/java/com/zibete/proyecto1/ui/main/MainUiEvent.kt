@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.main
 
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 
 sealed class MainUiEvent {
@@ -8,6 +9,10 @@ sealed class MainUiEvent {
     data class ShowSnack(
         val uiText: UiText,
         val type: ZibeSnackType
+    ) : MainUiEvent()
+
+    data class HandleChatSessionEvent(
+        val event: ChatSessionUiEvent
     ) : MainUiEvent()
 
     // ------------------- Navegación BottomNav ------------------
