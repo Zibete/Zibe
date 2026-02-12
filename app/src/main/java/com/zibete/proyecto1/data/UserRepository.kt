@@ -372,14 +372,14 @@ class UserRepository @Inject constructor(
         otherName: String,
         nodeType: String,
         newState: String
-    ) {
+    ) : ZibeResult<Unit> = zibeCatching {
         val chatRef = conversationRef(nodeType = nodeType, otherUid = otherUid)
         val snapshot = chatRef.get().await()
 
         if (!snapshot.exists()) {
             val newConversation = createDefaultConversation(otherUid, otherName, newState)
             chatRef.setValue(newConversation).await()
-            return
+            return@zibeCatching
         }
 
         chatRef.child(ConversationKeys.STATE).setValue(newState).await()
