@@ -92,7 +92,7 @@ class ProfileViewModel @Inject constructor(
                     runCatching {
                         val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
                         val count = chatRepository.getMessageCount(chatRefs)
-                        val chatState = profileRepositoryProvider.getChatState(otherUid)
+                        val chatState = profileRepositoryProvider.getMyChatState(otherUid)
                         val isFavorite = profileRepositoryProvider.isFavorite(otherUid)
                         val blockState = profileRepositoryProvider.getBlockStateWith(otherUid)
                         val distanceLabel = locationRepository.getDistanceToUser(otherUid)
