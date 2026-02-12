@@ -7,6 +7,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -25,6 +26,8 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -38,6 +41,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     @Inject lateinit var profileRepositoryProvider: ProfileRepositoryProvider
 
     private val chatListViewModel: ChatListViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     private var _binding: FragmentChatListBinding? = null
     private val binding get() = _binding!!
@@ -62,11 +66,20 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        observeChatSessionEvents(chatListViewModel.events)
-
         collectUiState()
+        collectEvents()
 
         chatListViewModel.loadChatList()
+    }
+
+    private fun collectEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                chatListViewModel.events.collect { event ->
+                    mainViewModel.emit(MainUiEvent.HandleChatSessionEvent(event))
+                }
+            }
+        }
     }
 
     private fun collectUiState() {
@@ -178,7 +191,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         when (item.itemId) {
             1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
             2 -> chatListViewModel.onToggleNotificationsClicked(chat.otherId, chat.otherName, NODE_DM)
-            3 -> chatListViewModel.onBlockClicked(chat.otherId, chat.otherName, NODE_DM)
+            3 -> chatListViewModel.onConfirmBlockAction(chat.otherId, chat.otherName)
             4 -> chatListViewModel.onHideClicked(chat.otherId, chat.otherName, NODE_DM)
             5 -> chatListViewModel.onDeleteClicked(chat.otherId, chat.otherName, NODE_DM)
         }
