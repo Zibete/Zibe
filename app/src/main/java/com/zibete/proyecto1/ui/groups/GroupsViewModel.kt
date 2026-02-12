@@ -120,5 +120,5 @@ class GroupsViewModel @Inject constructor(
     }
 
     fun myDisplayName(): String = userRepository.myUserName
-    fun myPhotoUrl(): String = userRepository.myUserName
+    fun myPhotoUrl(): String = userRepository.myProfilePhotoUrl
 }
