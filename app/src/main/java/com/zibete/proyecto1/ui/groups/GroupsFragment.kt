@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -24,23 +25,20 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
-import com.zibete.proyecto1.ui.main.MainActivity
+import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
-    @Inject
-    lateinit var snackDispatcher: ZibeSnackDispatcher
-
     private var joinGroupDialog: AlertDialog? = null
 
     private val groupsViewModel: GroupsViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     private var _binding: FragmentGroupsBinding? = null
     private val binding get() = _binding!!
@@ -96,30 +94,36 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupsViewModel.events.collect { event ->
                     when (event) {
                         is GroupsUiEvent.NickInUse -> {
-                            snackDispatcher.show(
-                                uiText = UiText.Dynamic("${event.nick} está en uso"),
-                                type = ZibeSnackType.INFO
+                            mainViewModel.emit(
+                                MainUiEvent.ShowSnack(
+                                    uiText = UiText.Dynamic("${event.nick} está en uso"),
+                                    type = ZibeSnackType.INFO
+                                )
                             )
                         }
 
                         is GroupsUiEvent.GroupNameInUse -> {
-                            snackDispatcher.show(
-                                uiText = UiText.Dynamic("El nombre ${event.name} ya está en uso"),
-                                type = ZibeSnackType.WARNING
+                            mainViewModel.emit(
+                                MainUiEvent.ShowSnack(
+                                    uiText = UiText.Dynamic("El nombre ${event.name} ya está en uso"),
+                                    type = ZibeSnackType.WARNING
+                                )
                             )
                         }
 
                         is GroupsUiEvent.ShowSnack -> {
-                            snackDispatcher.show(
-                                uiText = event.message,
-                                type = ZibeSnackType.INFO
+                            mainViewModel.emit(
+                                MainUiEvent.ShowSnack(
+                                    uiText = event.message,
+                                    type = ZibeSnackType.INFO
+                                )
                             )
                         }
 
                         is GroupsUiEvent.NavigateToGroupHost -> {
                             joinGroupDialog?.dismiss()
                             joinGroupDialog = null
-                            (activity as? MainActivity)?.mainViewModel?.toGroupHost()
+                            mainViewModel.toGroupHost()
                         }
                     }
                 }

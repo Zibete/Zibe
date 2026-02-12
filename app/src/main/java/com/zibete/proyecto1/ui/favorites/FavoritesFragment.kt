@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,23 +17,21 @@ import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
-import com.zibete.proyecto1.core.ui.ZibeSnackDispatcher
+import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
-
-    @Inject
-    lateinit var snackDispatcher: ZibeSnackDispatcher
 
     private var _binding: FragmentFavoritesBinding? = null
     private val binding get() = _binding!!
 
     private val favoritesViewModel: FavoritesViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     private lateinit var adapterFavoriteUsers: AdapterFavoriteUsers
 
@@ -96,9 +95,11 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                 favoritesViewModel.events.collect { event ->
                     when (event) {
                         is FavoritesUiEvent.ShowSnack -> {
-                            snackDispatcher.show(
-                                uiText = event.uiText,
-                                type = event.type
+                            mainViewModel.emit(
+                                MainUiEvent.ShowSnack(
+                                    uiText = event.uiText,
+                                    type = event.type
+                                )
                             )
                         }
                     }
