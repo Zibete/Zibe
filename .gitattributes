@@ -1,0 +1,17 @@
+# Normalizar textos a LF en el repo
+* text=auto eol=lf
+
+# Scripts Windows en CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.keystore binary
+*.jks binary
+*.apk binary
+*.aab binary
