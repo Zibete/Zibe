@@ -13,6 +13,7 @@ import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
 import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
@@ -47,6 +48,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class HiddenChat(
+    val id: String,
+    val name: String
+)
 
 interface LocalRepositoryProvider {
     val myUserName: String
@@ -344,12 +350,22 @@ class UserRepository @Inject constructor(
     // CHAT STATE (ConversationKeys.STATE)
     // ============================================================
 
-    suspend fun getChatState(otherUid: String, nodeType: String): String =
-        conversationRef(nodeType = nodeType, otherUid = otherUid)
-            .child(ConversationKeys.STATE)
-            .get().await()
-            .getValue(String::class.java)
-            .orEmpty()
+    suspend fun getHiddenChats(nodeType: String = NODE_DM): List<HiddenChat> {
+        val snapshot = conversationsRootRef(myUid, nodeType).get().await()
+        if (!snapshot.exists()) return emptyList()
+
+        return snapshot.children.mapNotNull { child ->
+            val conversation = child.getValue(Conversation::class.java) ?: return@mapNotNull null
+            if (conversation.state != CHAT_STATE_HIDE) return@mapNotNull null
+            val otherId = conversation.otherId
+            if (otherId.isBlank()) return@mapNotNull null
+
+            val name = conversation.otherName.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.deleted_profile_fallback)
+
+            HiddenChat(id = otherId, name = name)
+        }.sortedBy { it.name.lowercase() }
+    }
 
     suspend fun updateChatState(
         otherUid: String,
