@@ -28,18 +28,18 @@ import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -79,8 +79,8 @@ class MainViewModel @Inject constructor(
     private val _destinationUiState = MutableStateFlow(MainDestinationUiState())
     val destinationUiState = _destinationUiState.asStateFlow()
 
-    private val _uiEvents = MutableSharedFlow<MainUiEvent>()
-    val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
+    private val _uiEvents = Channel<MainUiEvent>(Channel.BUFFERED)
+    val uiEvents: Flow<MainUiEvent> = _uiEvents.receiveAsFlow()
 
     fun myDisplayName(): String = userRepository.myUserName
     fun myEmail(): String = userRepository.myEmail
@@ -226,7 +226,7 @@ class MainViewModel @Inject constructor(
     fun confirmExitGroup() = emit(MainUiEvent.ConfirmExitGroup)
 
     fun emit(event: MainUiEvent) {
-        viewModelScope.launch { _uiEvents.emit(event) }
+        viewModelScope.launch { _uiEvents.send(event) }
     }
 
     fun showSnack(
@@ -318,16 +318,15 @@ class MainViewModel @Inject constructor(
 
     fun onUnhideChatConfirmed(userId: String, userName: String) {
         viewModelScope.launch {
-            runCatching {
-                userRepository.updateChatState(userId, userName, NODE_DM, CHAT_STATE_DEFAULT_DM)
-            }.onSuccess {
-                showSnack(
-                    uiText = UiText.StringRes(R.string.chat_unhide_success, listOf(userName)),
-                    snackType = ZibeSnackType.SUCCESS
-                )
-            }.onFailure { e ->
-                showErrorSnack(e)
-            }
+            userRepository.updateChatState(userId, userName, NODE_DM, CHAT_STATE_DEFAULT_DM)
+                .onSuccess {
+                    showSnack(
+                        uiText = UiText.StringRes(R.string.chat_unhide_success, listOf(userName)),
+                        snackType = ZibeSnackType.SUCCESS
+                    )
+                }.onFailure { e ->
+                    showErrorSnack(e)
+                }
         }
     }
 
