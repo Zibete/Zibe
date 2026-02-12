@@ -86,6 +86,10 @@
 
     <string name="chat_unblock_success">Se ha desbloqueado a %1$s</string>
 
+    <string name="msg_no_blocked_users">No hay usuarios bloqueados</string>
+    <string name="msg_no_hidden_chats">No hay chats ocultos</string>
+    <string name="chat_unhide_success">Chat con %1$s visible</string>
+
     <!-- delete -->
     <string name="chat_confirm_delete_title">Eliminar chat</string>
     <string name="chat_confirm_delete_message">¿Eliminar el chat con %1$s? Se eliminarán los mensajes en este dispositivo.</string>
@@ -399,6 +403,12 @@
     <string name="menu_user_block">Bloquear usuario</string>
     <string name="menu_user_unblock">Desbloquear usuario</string>
     <string name="menu_delete_chat">Eliminar chat</string>
+    <string name="menu_unblock_users">Desbloquear usuarios</string>
+
+    <plurals name="unblock_users_title">
+        <item quantity="one">%1$d usuario bloqueado.</item>
+        <item quantity="other">%1$d usuarios bloqueados.</item>
+    </plurals>
 
     <string name="content_description_toggle_favorite">Agregar o eliminar de favoritos</string>
 
@@ -433,9 +443,7 @@
     <string name="tab_group_chats">Privados</string>
     <string name="menu_favorites">Favoritos</string>
 
-    <string name="menu_unblock_users">Desbloquear usuarios</string>
     <string name="menu_unhide_chats">Chats ocultos</string>
-
 
     <string name="menu_hide_chat">Ocultar chat"</string>
     <string name="menu_unhide_chat">Mostrar chat"</string>

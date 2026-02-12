@@ -4,7 +4,10 @@ import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.ui.SnackBarManager
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_DEFAULT_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.di.SettingsConfig
+import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
@@ -15,8 +18,11 @@ import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
@@ -48,7 +54,10 @@ class MainViewModel @Inject constructor(
     private val presenceRepository: PresenceRepository,
     private val logoutUseCase: DefaultLogoutUseCase,
     private val userPreferencesProvider: UserPreferencesProvider,
-    private val snackBarManager: SnackBarManager
+    private val profileRepositoryProvider: ProfileRepositoryProvider,
+    private val profileRepositoryActions: ProfileRepositoryActions,
+    private val appNavigator: AppNavigator,
+    private val config: SettingsConfig,
 ) : ViewModel() {
 
     val groupContext: StateFlow<GroupContext?> =
@@ -73,6 +82,10 @@ class MainViewModel @Inject constructor(
     private val _uiEvents = MutableSharedFlow<MainUiEvent>()
     val uiEvents: SharedFlow<MainUiEvent> = _uiEvents.asSharedFlow()
 
+    fun myDisplayName(): String = userRepository.myUserName
+    fun myEmail(): String = userRepository.myEmail
+    fun myPhotoUrl(): String = userRepository.myProfilePhotoUrl
+
     fun startPresence() {
         viewModelScope.launch {
             presenceRepository.startPresence()
@@ -80,7 +93,6 @@ class MainViewModel @Inject constructor(
     }
 
     init {
-
         // 1) Badge chats
         viewModelScope.launch {
             userRepository.observeUnreadChatList()
@@ -137,31 +149,22 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // --- FUNCIONES DE UI ---
-
-    fun emit(event: MainUiEvent) {
-        viewModelScope.launch { _uiEvents.emit(event) }
-    }
-
-    fun setScreen(screen: CurrentScreen) {
-        _destinationUiState.update { it.copy(currentScreen = screen) }
-    }
-
-    fun showToolbar(show: Boolean) {
-        _destinationUiState.update { it.copy(showToolbar = show) }
-    }
-
-    // --- ACCIONES DE USUARIO (LOGOUT / EXIT GROUP) ---
+    // --- ACCIONES DE USUARIO ---
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
             locationRepository.updateLocation(location)
         }
     }
 
-    fun onLogoutConfirmed() {
+    fun onLogoutRequested() {
         viewModelScope.launch {
             logoutUseCase.execute()
-            _uiEvents.emit(MainUiEvent.NavigateToSplash())
+                .onSuccess {
+                    delay(config.navigationDelay)
+                    appNavigator.finishFlowNavigateToSplash()
+                }.onFailure { e ->
+                    showErrorSnack(e)
+                }
         }
     }
 
@@ -176,47 +179,11 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             exitGroupUseCase.performExitGroupDataCleanup(message)
                 .onSuccess {
-                    _uiEvents.emit(MainUiEvent.ToGroupsAfterExit)
+                    emit(MainUiEvent.ToGroupsAfterExit)
                 }
                 .onFailure { e ->
-                    val uiText = e.message.toUiText(
-                        R.string.err_zibe_prefix,
-                        R.string.err_zibe
-                    )
-                    showSnack(
-                        uiText = uiText,
-                        snackType = ZibeSnackType.ERROR
-                    )
+                    showErrorSnack(e)
                 }
-        }
-    }
-
-    fun showSnack(
-        uiText: UiText,
-        snackType: ZibeSnackType
-    ) {
-        snackBarManager.show(
-            uiText = uiText,
-            type = snackType
-        )
-    }
-
-    fun showPendingSnack(
-        uiText: UiText,
-        snackType: ZibeSnackType
-    ) {
-        viewModelScope.launch {
-            delay(1000L)
-            showSnack(uiText, snackType)
-        }
-    }
-
-    fun onBottomItemSelected(itemId: Int) {
-        when (itemId) {
-            R.id.navBottomUsers -> onUsersTabSelected()
-            R.id.navBottomChat -> onChatTabSelected()
-            R.id.navBottomFavorites -> onFavoritesTabSelected()
-            R.id.navBottomGroups -> onGroupsTabSelected()
         }
     }
 
@@ -248,28 +215,39 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch { toEditProfile() }
     }
 
-    suspend fun toEditProfile() {
-        _uiEvents.emit(MainUiEvent.ToEditProfile)
+    fun toEditProfile() = emit(MainUiEvent.ToEditProfile)
+
+    fun toGroupHost() = emit(MainUiEvent.ToGroupHost)
+    fun toGroupsSelect() = emit(MainUiEvent.ToGroupsSelect)
+    fun toFavorites() = emit(MainUiEvent.ToFavorites)
+    fun toChat() = emit(MainUiEvent.ToChat)
+    fun toUsers() = emit(MainUiEvent.ToUsers)
+    fun toSettings() = emit(MainUiEvent.NavigateToSettings)
+    fun confirmExitGroup() = emit(MainUiEvent.ConfirmExitGroup)
+
+    fun emit(event: MainUiEvent) {
+        viewModelScope.launch { _uiEvents.emit(event) }
     }
 
-    suspend fun toGroupHost() {
-        _uiEvents.emit(MainUiEvent.ToGroupHost)
+    fun showSnack(
+        delay: Boolean = false,
+        uiText: UiText,
+        snackType: ZibeSnackType
+    ) {
+        viewModelScope.launch {
+            if (delay) delay(1000L)
+            emit(MainUiEvent.ShowSnack(uiText, snackType))
+        }
     }
 
-    suspend fun toGroupsSelect() {
-        _uiEvents.emit(MainUiEvent.ToGroupsSelect)
-    }
-
-    suspend fun toFavorites() {
-        _uiEvents.emit(MainUiEvent.ToFavorites)
-    }
-
-    suspend fun toChat() {
-        _uiEvents.emit(MainUiEvent.ToChat)
-    }
-
-    suspend fun toUsers() {
-        _uiEvents.emit(MainUiEvent.ToUsers)
+    fun showErrorSnack(e: Throwable) {
+        showSnack(
+            uiText = e.message.toUiText(
+                R.string.err_zibe_prefix,
+                R.string.err_zibe
+            ),
+            snackType = ZibeSnackType.ERROR
+        )
     }
 
     fun onBackPressed() {
@@ -280,13 +258,13 @@ class MainViewModel @Inject constructor(
             CurrentScreen.FAVORITES,
             CurrentScreen.GROUPS -> {
                 viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.BackExitAppOrCloseSearch)
+                    emit(MainUiEvent.BackExitAppOrCloseSearch)
                 }
             }
 
             else -> {
                 viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.BackToChat)
+                    emit(MainUiEvent.BackToChat)
                 }
             }
         }
@@ -294,32 +272,96 @@ class MainViewModel @Inject constructor(
 
     fun onToolbarItemSelected(itemId: Int) {
         when (itemId) {
-
-            R.id.action_settings -> {
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.NavigateToSettings)
-                }
-            }
-
+            R.id.action_settings -> toSettings()
             R.id.action_favorites -> onBottomItemSelected(R.id.navBottomFavorites)
-
-            R.id.action_exit_group -> {
-                viewModelScope.launch {
-                    _uiEvents.emit(MainUiEvent.ConfirmExitGroup)
-                }
-            }
-
+            R.id.action_exit_group -> confirmExitGroup()
+            R.id.action_unblock_users -> onUnblockUsersSelected()
+            R.id.action_unhide_chats -> onUnhideChatsSelected()
         }
     }
 
-    fun setDestinationUiState(
-        state: MainDestinationUiState
-    ) {
+    fun onBottomItemSelected(itemId: Int) {
+        when (itemId) {
+            R.id.navBottomUsers -> onUsersTabSelected()
+            R.id.navBottomChat -> onChatTabSelected()
+            R.id.navBottomFavorites -> onFavoritesTabSelected()
+            R.id.navBottomGroups -> onGroupsTabSelected()
+        }
+    }
+
+    private fun onUnblockUsersSelected() {
+        viewModelScope.launch {
+            val blockedUsers = profileRepositoryProvider.getBlockedUsers()
+            if (blockedUsers.isEmpty()) {
+                showSnack(
+                    uiText = UiText.StringRes(R.string.msg_no_blocked_users),
+                    snackType = ZibeSnackType.WARNING
+                )
+            } else
+                emit(MainUiEvent.ShowUnblockUsersDialog(blockedUsers))
+        }
+    }
+
+    private fun onUnhideChatsSelected() {
+        viewModelScope.launch {
+            val hiddenChats = userRepository.getHiddenChats()
+            if (hiddenChats.isEmpty()) {
+                showSnack(
+                    uiText = UiText.StringRes(R.string.msg_no_hidden_chats),
+                    snackType = ZibeSnackType.WARNING
+                )
+            } else {
+                emit(MainUiEvent.ShowUnhideChatsDialog(hiddenChats))
+            }
+        }
+    }
+
+    fun onUnhideChatConfirmed(userId: String, userName: String) {
+        viewModelScope.launch {
+            runCatching {
+                userRepository.updateChatState(userId, userName, NODE_DM, CHAT_STATE_DEFAULT_DM)
+            }.onSuccess {
+                showSnack(
+                    uiText = UiText.StringRes(R.string.chat_unhide_success, listOf(userName)),
+                    snackType = ZibeSnackType.SUCCESS
+                )
+            }.onFailure { e ->
+                showErrorSnack(e)
+            }
+        }
+    }
+
+    fun onConfirmUnblockAction(otherUid: String, otherName: String) {
+        viewModelScope.launch {
+            emit(
+                MainUiEvent.HandleChatSessionEvent(
+                    ChatSessionUiEvent.ConfirmToggleBlockAction(
+                        name = otherName,
+                        isBlockedByMe = true,
+                        onConfirm = { toggleBlock(otherUid, otherName) }
+                    )
+                )
+            )
+        }
+    }
+
+    suspend fun toggleBlock(userId: String, userName: String) {
+        runCatching {
+            profileRepositoryActions.toggleBlock(userId, userName)
+        }.onSuccess { isBlockedByMe ->
+            emit(
+                MainUiEvent.HandleChatSessionEvent(
+                    ChatSessionUiEvent.ShowToggleBlockSuccess(userName, isBlockedByMe)
+                )
+            )
+        }.onFailure { e ->
+            showErrorSnack(e)
+        }
+    }
+
+    fun setDestinationUiState(state: MainDestinationUiState) {
         _destinationUiState.value = state
     }
 
-    fun myDisplayName(): String = userRepository.myUserName
-    fun myEmail(): String = userRepository.myEmail
-    fun myPhotoUrl(): String = userRepository.myUserName
 
 }

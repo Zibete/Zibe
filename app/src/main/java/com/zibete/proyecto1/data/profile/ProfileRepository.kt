@@ -51,6 +51,11 @@ data class BlockState(
     val hasBlockedMe: Boolean
 )
 
+data class BlockedUser(
+    val id: String,
+    val name: String
+)
+
 interface ProfileRepositoryActions {
     suspend fun toggleFavoriteUser(otherUid: String): Boolean
     suspend fun toggleNotificationsUser(
@@ -72,6 +77,7 @@ interface ProfileRepositoryProvider {
     suspend fun getOtherAccount(uid: String): ZibeResult<Users>
     suspend fun getBlockStateWith(otherUid: String, nodeType: String = NODE_DM): BlockState
     suspend fun getDmPhotoList(otherUid: String, nodeType: String = NODE_DM): List<String>
+    suspend fun getBlockedUsers(nodeType: String = NODE_DM): List<BlockedUser>
     fun observeUserStatus(userId: String, node: String): Flow<UserStatus>
 }
 
@@ -217,6 +223,23 @@ class ProfileRepository @Inject constructor(
         return photos.distinct()
     }
 
+    override suspend fun getBlockedUsers(nodeType: String): List<BlockedUser> {
+        val snapshot = conversationsRootRef(ownerUid = myUid, nodeType = nodeType).get().await()
+        if (!snapshot.exists()) return emptyList()
+
+        return snapshot.children.mapNotNull { child ->
+            val conversation = child.getValue(Conversation::class.java) ?: return@mapNotNull null
+            if (conversation.state != CHAT_STATE_BLOCKED) return@mapNotNull null
+            val otherId = conversation.otherId
+            if (otherId.isBlank()) return@mapNotNull null
+
+            val name = conversation.otherName.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.deleted_profile_fallback)
+
+            BlockedUser(id = otherId, name = name)
+        }.sortedBy { it.name.lowercase() }
+    }
+
     override suspend fun getMyChatState(otherUid: String): String =
         getChatState(ownerUid = myUid, otherUid = otherUid)
 
@@ -333,4 +356,3 @@ class ProfileRepository @Inject constructor(
         }.flowOn(Dispatchers.IO)
     }
 }
-
