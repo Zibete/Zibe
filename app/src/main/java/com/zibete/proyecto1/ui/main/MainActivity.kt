@@ -20,7 +20,9 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.IntentCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.get
 import androidx.core.view.isVisible
+import androidx.core.view.size
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -29,9 +31,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
-import androidx.navigation.navOptions
 import com.bumptech.glide.Glide
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -48,10 +50,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
@@ -74,8 +76,6 @@ import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.core.view.size
-import androidx.core.view.get
 
 @AndroidEntryPoint
 class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
@@ -105,6 +105,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private var settingsClient: SettingsClient? = null
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
+    private var locationUpdatesActive = false
 
     override val toolbarMenuRes: Int = R.menu.menu_main
 
@@ -173,14 +174,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         filterButton?.setOnClickListener {
             activeUsersToolbarHandler()?.onFilterUsers()
         }
-
-        val hasActiveFilter = mainViewModel.hasActiveFilter.value
-
-        val colorRes = if (hasActiveFilter) R.color.accent else R.color.blanco
-        filterButton?.setColorFilter(
-            this.getColorCompat(colorRes),
-            PorterDuff.Mode.SRC_IN
-        )
 
         // Transiciones suaves
         appBarMain.materialToolbar.layoutTransition = LayoutTransition().apply {
@@ -344,6 +337,18 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                mainViewModel.hasActiveFilter.collect { hasActiveFilter ->
+                    val colorRes = if (hasActiveFilter) R.color.accent else R.color.blanco
+                    filterButton?.setColorFilter(
+                        this@MainActivity.getColorCompat(colorRes),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Navegación
                 launch {
                     mainViewModel.uiEvents.collect { event ->
@@ -396,12 +401,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             is MainUiEvent.ToEditProfile -> {
                                 navController.navigate(R.id.editProfileFragment)
                                 drawerLayout?.closeDrawer(GravityCompat.START)
-                            }
-
-                            is MainUiEvent.NavigateToSplash -> {
-                                navigateToSplash(
-                                    sessionConflict = event.sessionConflict
-                                )
                             }
 
                             is MainUiEvent.ToGroupsAfterExit -> {
@@ -665,15 +664,18 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun startLocationUpdates() {
+        if (locationUpdatesActive) return
         fusedLocationProviderClient?.requestLocationUpdates(
             locationRequest!!,
             locationCallback!!,
             mainLooper
         )
+        locationUpdatesActive = true
     }
 
     private fun stopLocationUpdates() {
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback!!)
+        locationUpdatesActive = false
     }
 
     private fun navigateToSplash(
@@ -759,7 +761,19 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     override fun onResume() {
         super.onResume()
         invalidateOptionsMenu()
-        startLocationUpdates()
+        val hasPermission = ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            stopLocationUpdates()
+            return
+        }
+
+        if (!locationUpdatesActive) {
+            ensureLocationSettingsAndStart()
+        }
     }
 
     override fun onPause() {
