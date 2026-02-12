@@ -19,7 +19,7 @@ data class MainDestinationUiState(
     val showDrawer: Boolean = true,
     val showBack: Boolean = false,
     val showUsersFragmentSettings: Boolean = false,
-    val title: UiText? = UiText.Dynamic(""),
+    val title: UiText? = null,
     val useGroupNameTitle: Boolean = false,
     val selectedBottomNavItemId: Int? = null,
     val selectedDrawerItemId: Int? = null,
@@ -137,7 +137,6 @@ class MainDestinationUiMapper {
             showDrawer = false,
             showBack = false,
             showUsersFragmentSettings = false,
-            title = UiText.Dynamic(""),
             selectedDrawerItemId = R.id.action_settings,
             menuConfig = ToolbarMenuConfig()
         )
@@ -149,7 +148,6 @@ class MainDestinationUiMapper {
             showDrawer = true,
             showBack = false,
             showUsersFragmentSettings = false,
-            title = UiText.Dynamic(""),
             menuConfig = ToolbarMenuConfig()
         )
     }
