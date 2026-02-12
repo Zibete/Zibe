@@ -33,7 +33,7 @@ sealed class ChatSessionUiEvent {
     ) : ChatSessionUiEvent()
 
     // ------- BLOCK -------
-    data class ConfirmBlockAction(
+    data class ConfirmToggleBlockAction(
         val name: String,
         val isBlockedByMe: Boolean,
         val onConfirm: suspend () -> Unit

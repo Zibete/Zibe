@@ -182,7 +182,7 @@ class ProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             _events.emit(
-                ChatSessionUiEvent.ConfirmBlockAction(
+                ChatSessionUiEvent.ConfirmToggleBlockAction(
                     name = otherName,
                     isBlockedByMe = state.isBlockedByMe,
                     onConfirm = {
