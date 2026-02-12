@@ -60,6 +60,7 @@ class MainDestinationUiMapper {
             menuConfig = ToolbarMenuConfig(
                 showSettings = true,
                 showUnblockUsers = true,
+                showUnhideChats = true,
                 showFavorites = true,
                 showSearch = true
             )
