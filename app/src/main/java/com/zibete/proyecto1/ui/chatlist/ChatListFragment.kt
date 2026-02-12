@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
@@ -191,7 +190,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         when (item.itemId) {
             1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
             2 -> chatListViewModel.onToggleNotificationsClicked(chat.otherId, chat.otherName, NODE_DM)
-            3 -> chatListViewModel.onConfirmBlockAction(chat.otherId, chat.otherName)
+            3 -> chatListViewModel.onConfirmToggleBlockAction(chat.otherId, chat.otherName)
             4 -> chatListViewModel.onHideClicked(chat.otherId, chat.otherName, NODE_DM)
             5 -> chatListViewModel.onDeleteClicked(chat.otherId, chat.otherName, NODE_DM)
         }

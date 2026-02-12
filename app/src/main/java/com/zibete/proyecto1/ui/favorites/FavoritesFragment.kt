@@ -12,7 +12,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
@@ -98,7 +97,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
                                     uiText = event.uiText,
-                                    type = event.type
+                                    snackType = event.type
                                 )
                             )
                         }

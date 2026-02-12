@@ -97,7 +97,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
                                     uiText = UiText.Dynamic("${event.nick} está en uso"),
-                                    type = ZibeSnackType.INFO
+                                    snackType = ZibeSnackType.INFO
                                 )
                             )
                         }
@@ -106,7 +106,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
                                     uiText = UiText.Dynamic("El nombre ${event.name} ya está en uso"),
-                                    type = ZibeSnackType.WARNING
+                                    snackType = ZibeSnackType.WARNING
                                 )
                             )
                         }
@@ -115,7 +115,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
                                     uiText = event.message,
-                                    type = ZibeSnackType.INFO
+                                    snackType = ZibeSnackType.INFO
                                 )
                             )
                         }
