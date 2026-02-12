@@ -197,7 +197,7 @@ object UserMessageUtils {
     fun confirm(
         context: Context,
         title: String,
-        message: String,
+        message: String = "",
         positiveText: String = context.getString(R.string.action_accept),
         negativeText: String = context.getString(R.string.action_cancel),
         choices: Array<String>? = null,
@@ -230,7 +230,7 @@ object UserMessageUtils {
     }
 
     @JvmStatic
-    fun alert(
+    fun dialog(
         context: Context,
         message: String,
         title: String? = null,
