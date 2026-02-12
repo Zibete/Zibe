@@ -29,7 +29,7 @@ object ChatSessionUiHandler {
                 )
             }
 
-            is ChatSessionUiEvent.ConfirmBlockAction -> {
+            is ChatSessionUiEvent.ConfirmToggleBlockAction -> {
                 UserMessageUtils.confirm(
                     context = context,
                     title = if (event.isBlockedByMe)
@@ -117,7 +117,7 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.OtherUserNoLongerAvailable -> {
-                UserMessageUtils.alert(
+                UserMessageUtils.dialog(
                     context = context,
                     message = context.getString(
                         R.string.chat_other_user_no_longer_available,
@@ -128,14 +128,14 @@ object ChatSessionUiHandler {
             }
 
             is ChatSessionUiEvent.ShowBlockedByOther -> {
-                UserMessageUtils.alert(
+                UserMessageUtils.dialog(
                     context = context,
                     message = context.getString(R.string.chat_blocked_by_other_user, event.userName)
                 )
             }
 
             is ChatSessionUiEvent.ShowErrorDialog -> {
-                UserMessageUtils.alert(
+                UserMessageUtils.dialog(
                     context = context,
                     title = context.getString(R.string.dialog_error_title),
                     message = event.uiText.asString(context)
