@@ -68,7 +68,7 @@ interface ProfileRepositoryActions {
 
 interface ProfileRepositoryProvider {
     suspend fun isFavorite(otherUid: String): Boolean
-    suspend fun getChatState(otherUid: String, nodeType: String = NODE_DM): String
+    suspend fun getMyChatState(otherUid: String): String
     suspend fun getOtherAccount(uid: String): ZibeResult<Users>
     suspend fun getBlockStateWith(otherUid: String, nodeType: String = NODE_DM): BlockState
     suspend fun getDmPhotoList(otherUid: String, nodeType: String = NODE_DM): List<String>
@@ -159,7 +159,7 @@ class ProfileRepository @Inject constructor(
         otherName: String,
         nodeType: String
     ): Boolean {
-        val currentState = getChatState(otherUid)
+        val currentState = getChatState(ownerUid = myUid, otherUid = otherUid, nodeType = nodeType)
 
         val newState =
             if (currentState == CHAT_STATE_SILENT) CHAT_STATE_DEFAULT_DM else CHAT_STATE_SILENT
@@ -174,30 +174,19 @@ class ProfileRepository @Inject constructor(
         otherName: String,
         nodeType: String
     ): Boolean {
-        val currentState = getChatState(otherUid)
+        val currentState = getChatState(ownerUid = myUid, otherUid = otherUid)
 
         val newState =
-            if (currentState == CHAT_STATE_SILENT) CHAT_STATE_DEFAULT_DM else CHAT_STATE_SILENT
+            if (currentState == CHAT_STATE_BLOCKED) CHAT_STATE_DEFAULT_DM else CHAT_STATE_BLOCKED
 
         updateChatState(otherUid, otherName, nodeType, newState)
 
-        return newState == CHAT_STATE_SILENT
+        return newState == CHAT_STATE_BLOCKED
     }
 
     override suspend fun getBlockStateWith(otherUid: String, nodeType: String): BlockState {
-        val meState = conversationRef(ownerUid = myUid, nodeType = nodeType, otherUid = otherUid)
-            .child(ConversationKeys.STATE)
-            .get()
-            .await()
-            .getValue(String::class.java)
-            .orEmpty()
-
-        val otherState = conversationRef(ownerUid = otherUid, nodeType = nodeType, otherUid = myUid)
-            .child(ConversationKeys.STATE)
-            .get()
-            .await()
-            .getValue(String::class.java)
-            .orEmpty()
+        val meState = getChatState(ownerUid = myUid, otherUid = otherUid, nodeType = nodeType)
+        val otherState = getChatState(ownerUid = otherUid, otherUid = myUid, nodeType = nodeType)
 
         return BlockState(
             isBlockedByMe = meState == CHAT_STATE_BLOCKED,
@@ -228,8 +217,15 @@ class ProfileRepository @Inject constructor(
         return photos.distinct()
     }
 
-    override suspend fun getChatState(otherUid: String, nodeType: String): String =
-        conversationRef(nodeType = nodeType, otherUid = otherUid)
+    override suspend fun getMyChatState(otherUid: String): String =
+        getChatState(ownerUid = myUid, otherUid = otherUid)
+
+    suspend fun getChatState(
+        ownerUid: String,
+        otherUid: String,
+        nodeType: String = NODE_DM
+    ): String =
+        conversationRef(ownerUid = ownerUid, nodeType = nodeType, otherUid = otherUid)
             .child(ConversationKeys.STATE)
             .get()
             .await()

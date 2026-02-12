@@ -222,9 +222,7 @@ class ChatViewModel @Inject constructor(
     // Aplica notificaciones / bloqueo solo para chats 1 a 1
     private suspend fun applyChatStateForOneToOne() {
 
-//        val state = userRepository.getChatState(otherUid, nodeType)
-
-        val state = profileRepositoryProvider.getChatState(otherUid)
+        val state = profileRepositoryProvider.getMyChatState(otherUid)
         val notificationsEnabled = (state != CHAT_STATE_SILENT)
         val isBlocked = (state == CHAT_STATE_BLOCKED)
 
