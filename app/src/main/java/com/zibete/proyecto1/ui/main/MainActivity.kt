@@ -67,7 +67,6 @@ import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
-import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
 import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
@@ -83,6 +82,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     @Inject
     lateinit var snackBarManager: SnackBarManager
+
     @Inject
     lateinit var appNavigator: AppNavigator
     val mainViewModel: MainViewModel by viewModels()
@@ -142,7 +142,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
             IntentCompat.getParcelableExtra(intent, EXTRA_SNACK_TYPE, ZibeSnackType::class.java)
 
         if (uiText != null) {
-            mainViewModel.showPendingSnack(
+            mainViewModel.showSnack(
+                delay = true,
                 uiText = uiText,
                 snackType = snackType ?: ZibeSnackType.SUCCESS
             )
@@ -283,6 +284,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     navController.navigate(R.id.nav_chat_list)
                     bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
                 }
+
                 R.id.action_edit_profile -> mainViewModel.onEditProfileSelected()
                 R.id.action_settings -> mainViewModel.emit(MainUiEvent.NavigateToSettings)
                 R.id.action_logout -> mainViewModel.emit(MainUiEvent.ConfirmLogout)
@@ -349,13 +351,15 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
                             is MainUiEvent.ToUsers -> {
                                 navController.navigate(R.id.nav_users)
-                                bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked =
+                                    true
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainUiEvent.ToChat -> {
                                 navController.navigate(R.id.nav_chat_list)
-                                bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked =
+                                    true
                                 drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
@@ -368,7 +372,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                     R.id.nav_group_host,
                                     navOptions { launchSingleTop = true }
                                 )
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
+                                    true
                             }
 
                             is MainUiEvent.ToGroupsSelect -> {
@@ -378,12 +383,14 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                     navOptions { launchSingleTop = true }
                                 )
 
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
+                                    true
                             }
 
                             is MainUiEvent.ToFavorites -> {
                                 navController.navigate(R.id.nav_favorites)
-                                bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked =
+                                    true
                             }
 
                             is MainUiEvent.ToEditProfile -> {
@@ -405,7 +412,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                         launchSingleTop = true
                                     }
                                 )
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
+                                    true
                             }
 
                             is MainUiEvent.BackExitAppOrCloseSearch -> {
@@ -415,14 +423,16 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                     currentScreen == CurrentScreen.GROUPS &&
                                     navController.currentDestination?.id == R.id.nav_group_host
                                 ) {
-                                    val popped = navController.popBackStack(R.id.nav_group_select, false)
+                                    val popped =
+                                        navController.popBackStack(R.id.nav_group_select, false)
                                     if (!popped) {
                                         navController.navigate(
                                             R.id.nav_group_select,
                                             navOptions { launchSingleTop = true }
                                         )
                                     }
-                                    bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked = true
+                                    bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
+                                        true
                                 } else {
                                     finish()
                                 }
@@ -446,12 +456,11 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             is MainUiEvent.ConfirmLogout -> {
                                 UserMessageUtils.confirm(
                                     context = this@MainActivity,
-                                    title = "Cerrar sesión",
-                                    message = "¿Está seguro de cerrar su sesión?",
-                                    positiveText = getString(R.string.action_accept),
-                                    negativeText = getString(R.string.action_cancel),
+                                    title = getString(R.string.logout),
+                                    message = getString(R.string.dialog_logout_message),
+                                    positiveText = getString(R.string.logout),
                                     onConfirm = {
-                                        mainViewModel.onLogoutConfirmed()
+                                        mainViewModel.onLogoutRequested()
                                     }
                                 )
                             }
@@ -459,7 +468,62 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             is MainUiEvent.ShowSnack -> {
                                 snackBarManager.show(
                                     uiText = event.uiText,
-                                    type = event.type
+                                    type = event.snackType
+                                )
+                            }
+
+                            is MainUiEvent.ShowUnblockUsersDialog -> {
+                                val users = event.users
+                                if (users.isEmpty()) {
+                                    UserMessageUtils.dialog(
+                                        context = this@MainActivity,
+                                        message = getString(R.string.msg_no_blocked_users)
+                                    )
+                                    return@collect
+                                }
+
+                                var selectedIndex = 0
+                                val choices = users.map { it.name }.toTypedArray()
+
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = resources.getQuantityString(
+                                        R.plurals.unblock_users_title,
+                                        users.size, users.size
+                                    ),
+                                    choices = choices,
+                                    selectedIndex = selectedIndex,
+                                    onChoiceSelected = { index -> selectedIndex = index },
+                                    onConfirm = {
+                                        val user = users.getOrNull(selectedIndex) ?: return@confirm
+                                        mainViewModel.onConfirmUnblockAction(user.id, user.name)
+                                    }
+                                )
+                            }
+
+                            is MainUiEvent.ShowUnhideChatsDialog -> {
+                                val chats = event.chats
+                                if (chats.isEmpty()) {
+                                    UserMessageUtils.dialog(
+                                        context = this@MainActivity,
+                                        message = getString(R.string.msg_no_hidden_chats)
+                                    )
+                                    return@collect
+                                }
+
+                                var selectedIndex = 0
+                                val choices = chats.map { it.name }.toTypedArray()
+
+                                UserMessageUtils.confirm(
+                                    context = this@MainActivity,
+                                    title = getString(R.string.menu_unhide_chats),
+                                    choices = choices,
+                                    selectedIndex = selectedIndex,
+                                    onChoiceSelected = { index -> selectedIndex = index },
+                                    onConfirm = {
+                                        val chat = chats.getOrNull(selectedIndex) ?: return@confirm
+                                        mainViewModel.onUnhideChatConfirmed(chat.id, chat.name)
+                                    }
                                 )
                             }
 
@@ -710,5 +774,3 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
-
-
