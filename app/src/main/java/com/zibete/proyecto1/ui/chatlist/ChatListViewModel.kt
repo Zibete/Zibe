@@ -11,12 +11,15 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
+import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.main.MainUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -140,29 +143,32 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun toggleBlock(otherUid: String, otherName: String) {
-        viewModelScope.launch {
-            runCatching {
-                profileRepositoryActions.toggleBlock(otherUid, otherName)
-            }.onSuccess { isBlockedByMe ->
-                _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))
-            }
+    suspend fun toggleBlock(otherUid: String, otherName: String) {
+        runCatching {
+            profileRepositoryActions.toggleBlock(otherUid, otherName)
+        }.onSuccess { isBlockedByMe ->
+            _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))
+        }.onFailure { e ->
+            _events.emit(
+                ChatSessionUiEvent.ShowErrorDialog(
+                    e.message.toUiText(
+                        R.string.err_zibe_prefix,
+                        R.string.err_zibe
+                    )
+                )
+            )
         }
     }
 
-    fun onConfirmBlockAction(otherUid: String, otherName: String) {
+    fun onConfirmToggleBlockAction(otherUid: String, otherName: String) {
         viewModelScope.launch {
             val isBlockedByMe =
                 profileRepositoryProvider.getMyChatState(otherUid) == CHAT_STATE_BLOCKED
             _events.emit(
-                ChatSessionUiEvent.ConfirmBlockAction(
+                ChatSessionUiEvent.ConfirmToggleBlockAction(
                     name = otherName,
                     isBlockedByMe = isBlockedByMe,
-                    onConfirm = {
-                        viewModelScope.launch {
-                            toggleBlock(otherUid, otherName)
-                        }
-                    }
+                    onConfirm = { toggleBlock(otherUid, otherName) }
                 )
             )
         }
