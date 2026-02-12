@@ -42,10 +42,6 @@ sealed class MainUiEvent {
     // ------------------- Salir de la app / logout / salir de grupo ---------------------
     data object ToGroupsAfterExit : MainUiEvent()
 
-    data class NavigateToSplash(
-        val sessionConflict: Boolean = false
-    ) : MainUiEvent()
-
     data object BackExitAppOrCloseSearch : MainUiEvent()
     data object ConfirmExitGroup : MainUiEvent()
     data object ConfirmLogout : MainUiEvent()
