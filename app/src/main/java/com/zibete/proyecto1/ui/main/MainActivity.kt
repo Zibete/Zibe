@@ -61,6 +61,7 @@ import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
@@ -459,6 +460,15 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                 snackBarManager.show(
                                     uiText = event.uiText,
                                     type = event.type
+                                )
+                            }
+
+                            is MainUiEvent.HandleChatSessionEvent -> {
+                                ChatSessionUiHandler.handle(
+                                    context = this@MainActivity,
+                                    event = event.event,
+                                    scope = lifecycleScope,
+                                    snackBarManager = snackBarManager
                                 )
                             }
 
