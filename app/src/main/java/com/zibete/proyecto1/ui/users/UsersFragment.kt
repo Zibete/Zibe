@@ -60,11 +60,55 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
 
         setupRecyclerView()
         setupSwipeRefresh()
-
         usersViewModel.loadUsers()
-
         collectUiState()
         collectEvents()
+    }
+
+    private fun setupRecyclerView() {
+        layoutManager = LinearLayoutManager(requireContext()).apply {
+            reverseLayout = false
+            stackFromEnd = false
+        }
+
+        binding.rv.apply {
+            this.layoutManager = this@UsersFragment.layoutManager
+            setHasFixedSize(true)
+        }
+
+        adapterUsers = AdapterUsers(
+            onChatClicked = { userId -> usersViewModel.onUserChatClick(userId) },
+            onProfileClicked = { userId -> usersViewModel.onUserProfileClick(userId) },
+            formatDistance = { meters -> usersViewModel.formatDistance(meters) }
+        )
+        binding.rv.adapter = adapterUsers
+        setupScrollTopFab()
+    }
+
+    private fun setupSwipeRefresh() {
+        binding.swipeRefresh.apply {
+            setRecyclerView(binding.rv)
+            setOnRefreshListener {
+                usersViewModel.loadUsers()
+            }
+        }
+    }
+
+    private fun collectUiState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                usersViewModel.uiState.collect { state ->
+                    _binding?.let { b ->
+                        b.progressIndicator.isVisible = state.isLoading
+                        b.swipeRefresh.isRefreshing = state.isLoading
+
+                        adapterUsers?.submitUsers(state.users)
+
+                        updateScrollTopFab()
+                    }
+                }
+            }
+        }
     }
 
     private fun collectEvents() {
@@ -89,55 +133,6 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
                         }
                     }
                 }
-            }
-        }
-    }
-
-    private fun collectUiState() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                usersViewModel.uiState.collect { state ->
-
-                    binding.progressbar.isVisible = state.isLoading
-                    binding.swipeRefresh.isRefreshing = state.isLoading
-
-                    val shouldStickToBottom = isUserAtBottom()
-
-                    adapterUsers?.submitUsers(state.users)
-
-                    if (shouldStickToBottom) scrollToBottom()
-                    updateScrollTopFab()
-                }
-            }
-        }
-    }
-
-    private fun setupRecyclerView() {
-        layoutManager = LinearLayoutManager(requireContext()).apply {
-            reverseLayout = false
-            stackFromEnd = false
-        }
-
-        binding.rv.apply {
-            this.layoutManager = this@UsersFragment.layoutManager
-            setHasFixedSize(true)
-        }
-
-        adapterUsers = AdapterUsers(
-            onChatClicked = { userId -> usersViewModel.onUserChatClick(userId) },
-            onProfileClicked = { userId -> usersViewModel.onUserProfileClick(userId) },
-            formatDistance = { meters -> usersViewModel.formatDistance(meters) }
-        )
-
-        binding.rv.adapter = adapterUsers
-        setupScrollTopFab()
-    }
-
-    private fun setupSwipeRefresh() {
-        binding.swipeRefresh.apply {
-            setRecyclerView(binding.rv)
-            setOnRefreshListener {
-                usersViewModel.refresh()
             }
         }
     }
@@ -264,34 +259,18 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         )
     }
 
-    // SearchHandler: llamado por MainActivity cuando el SearchView cambia
-    override fun onSearchQueryChanged(query: String?) {
+    override fun onSearchQueryChanged(query: String?) =
         usersViewModel.onSearchQueryChanged(query)
-    }
 
-    override fun onRefreshUsers() {
-        usersViewModel.refresh()
-    }
+    override fun onRefreshUsers() = usersViewModel.loadUsers()
 
-    override fun onFilterUsers() {
-        usersViewModel.onFilterClicked()
-    }
-
-    private fun scrollToBottom() {
-        val count = adapterUsers?.itemCount ?: 0
-        if (count > 0) binding.rv.scrollToPosition(count - 1)
-    }
-
-    private fun isUserAtBottom(): Boolean {
-        val count = adapterUsers?.itemCount ?: 0
-        if (count == 0) return true
-        val lastVisible = layoutManager.findLastVisibleItemPosition()
-        return lastVisible >= count - 2
-    }
+    override fun onFilterUsers() = usersViewModel.onFilterClicked()
 
     override fun onDestroyView() {
         super.onDestroyView()
-        scrollListener?.let { binding.rv.removeOnScrollListener(it) }
+        _binding?.let { b ->
+            scrollListener?.let { b.rv.removeOnScrollListener(it) }
+        }
         scrollListener = null
         adapterUsers = null
         _binding = null
@@ -312,8 +291,9 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
     }
 
     private fun updateScrollTopFab() {
-        val firstVisible = layoutManager.findFirstVisibleItemPosition()
-        binding.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
+        _binding?.let { b ->
+            val firstVisible = layoutManager.findFirstVisibleItemPosition()
+            b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
+        }
     }
-
 }

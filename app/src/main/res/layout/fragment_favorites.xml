@@ -32,7 +32,7 @@
 
             <ProgressBar
                 android:paddingHorizontal="150dp"
-                android:id="@+id/progressbar"
+                android:id="@+id/progressIndicator"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 
