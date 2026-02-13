@@ -50,7 +50,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     private lateinit var adapterChatList: AdapterChatList
     private lateinit var layoutManager: LinearLayoutManager
-    private var didAutoScroll = false
     private var scrollListener: RecyclerView.OnScrollListener? = null
     private val scrollTopThreshold = 3
 
@@ -106,8 +105,8 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     private fun setupRecycler() {
         layoutManager = LinearLayoutManager(requireContext()).apply {
-            reverseLayout = true
-            stackFromEnd = true
+            reverseLayout = false
+            stackFromEnd = false
         }
 
         adapterChatList = AdapterChatList(
@@ -135,22 +134,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         adapterChatList.submitList(state.filteredChats)
         updateScrollTopFab()
-
-        if (state.isLoading) {
-            didAutoScroll = false
-            return
-        }
-
-        if (state.filteredChats.isEmpty()) {
-            didAutoScroll = false
-            return
-        }
-
-        if (!didAutoScroll && !state.showOnboarding) {
-            val lastIndex = state.filteredChats.lastIndex
-            if (lastIndex >= 0) b.rv.scrollToPosition(lastIndex)
-            didAutoScroll = true
-        }
     }
 
     private fun openChat(chat: Conversation) {
