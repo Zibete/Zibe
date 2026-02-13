@@ -283,6 +283,8 @@
 
     <string name="action_filter_on">Filtrar</string>
     <string name="action_filter_off">Quitar filtro</string>
+    <string name="action_scroll_to_top">Ir arriba</string>
+    <string name="label_age">%1$d años</string>
     <string name="action_exit">Salir</string>
     <string name="action_continue">Continuar</string>
     <string name="action_retry">Reintentar</string>
@@ -455,7 +457,7 @@
     <string name="yesterday">ayer</string>
     <string name="online">en línea</string>
     <string name="typing">escribiendo…</string>
-    <string name="online_upercase">En línea</string>
+    <string name="online_upper_case">En línea</string>
     <string name="offline">desconectado</string>
 
     <string name="delete_account">Eliminar cuenta</string>
@@ -486,5 +488,6 @@
     <string name="favorite_added">%1$s agregado a tus favoritos</string>
     <string name="favorite_removed">%1$s removido de tus favoritos</string>
     <string name="empty_chat">Chat vacío</string>
+    <string name="filter_title">Filtros de búsqueda</string>
 
 </resources>
