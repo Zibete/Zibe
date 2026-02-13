@@ -238,7 +238,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         val b = _binding ?: return
 
         b.progressIndicator.isVisible = state.isLoading
-        if (!state.isLoading) b.groupSwipeRefresh.isRefreshing = false
+        b.groupSwipeRefresh.isRefreshing = state.isRefreshing
 
         adapterGroups.submitOriginal(state.filteredGroups)
         updateScrollTopFab()

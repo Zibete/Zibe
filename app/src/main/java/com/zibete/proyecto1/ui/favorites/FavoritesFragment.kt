@@ -128,7 +128,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
         val b = _binding ?: return
 
         b.progressIndicator.isVisible = state.isLoading
-        if (!state.isLoading) b.favoriteSwipeRefresh.isRefreshing = false
+        b.favoriteSwipeRefresh.isRefreshing = state.isRefreshing
 
         if (state.showOnboarding) showOnBoarding(b)
         else showFavoritesList(b)

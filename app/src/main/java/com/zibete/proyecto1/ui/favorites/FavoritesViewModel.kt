@@ -38,20 +38,23 @@ class FavoritesViewModel @Inject constructor(
     private var allFavorites: List<FavoriteUserUi> = emptyList()
     private var searchQuery: String = ""
 
-    fun loadFavorites() = fetchFavorites(showLoading = true)
+    fun loadFavorites() = fetchFavorites(showLoading = true, isRefresh = false)
 
-    fun refreshFavorites() = fetchFavorites(showLoading = false)
+    fun refreshFavorites() = fetchFavorites(showLoading = false, isRefresh = true)
 
-    private fun fetchFavorites(showLoading: Boolean) {
+    private fun fetchFavorites(showLoading: Boolean, isRefresh: Boolean) {
         viewModelScope.launch {
             if (showLoading) {
                 _uiState.update { it.copy(isLoading = true) }
+            }
+            if (isRefresh) {
+                _uiState.update { it.copy(isRefreshing = true) }
             }
 
             runCatching { fetchFavoriteUsers() }
                 .onSuccess { result ->
                     allFavorites = result
-                    updateVisibleFavorites(isLoading = false)
+                    updateVisibleFavorites(isLoading = false, isRefreshing = false)
                 }
                 .onFailure { t ->
                     onError(
@@ -79,7 +82,7 @@ class FavoritesViewModel @Inject constructor(
             )
         )
         allFavorites = emptyList()
-        updateVisibleFavorites(isLoading = false)
+        updateVisibleFavorites(isLoading = false, isRefreshing = false)
     }
 
     private suspend fun fetchFavoriteUsers(): List<FavoriteUserUi> {
@@ -121,7 +124,10 @@ class FavoritesViewModel @Inject constructor(
         }.sortedBy { it.name.lowercase() }
     }
 
-    private fun updateVisibleFavorites(isLoading: Boolean? = null) {
+    private fun updateVisibleFavorites(
+        isLoading: Boolean? = null,
+        isRefreshing: Boolean? = null
+    ) {
         val query = searchQuery.trim()
         val filtered = if (query.isBlank()) {
             allFavorites
@@ -132,6 +138,7 @@ class FavoritesViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 isLoading = isLoading ?: state.isLoading,
+                isRefreshing = isRefreshing ?: state.isRefreshing,
                 favorites = allFavorites,
                 filteredFavorites = filtered,
                 showOnboarding = allFavorites.isEmpty(),
