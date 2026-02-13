@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.adapters.AdapterChatList
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
@@ -50,6 +51,8 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     private lateinit var adapterChatList: AdapterChatList
     private lateinit var layoutManager: LinearLayoutManager
     private var didAutoScroll = false
+    private var scrollListener: RecyclerView.OnScrollListener? = null
+    private val scrollTopThreshold = 3
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,6 +62,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
 
         setupRecycler()
+        setupScrollTopFab()
 
         return binding.root
     }
@@ -127,9 +131,10 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         b.progressIndicator.isVisible = state.isLoading
 
-        if (state.showOnboarding) showOnBoarding() else showChatList()
+        if (state.showOnboarding) showOnBoarding(b) else showChatList(b)
 
         adapterChatList.submitList(state.filteredChats)
+        updateScrollTopFab()
 
         if (state.isLoading) {
             didAutoScroll = false
@@ -156,23 +161,23 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         startActivity(intent)
     }
 
-    private fun showOnBoarding() = with(binding) {
-        binding.rv.isVisible = false
-        linearOnBoardingChatList.isVisible = true
+    private fun showOnBoarding(b: FragmentChatListBinding) {
+        b.rv.isVisible = false
+        b.linearOnBoardingChatList.isVisible = true
 
-        lottieChatLeft.playAnimation()
+        b.lottieChatLeft.playAnimation()
         viewLifecycleOwner.lifecycleScope.launch {
             delay(100)
-            lottieChatRight.playAnimation()
+            b.lottieChatRight.playAnimation()
         }
     }
 
-    private fun showChatList() = with(binding) {
-        binding.rv.isVisible = true
-        linearOnBoardingChatList.isVisible = false
+    private fun showChatList(b: FragmentChatListBinding) {
+        b.rv.isVisible = true
+        b.linearOnBoardingChatList.isVisible = false
 
-        lottieChatLeft.cancelAnimation()
-        lottieChatRight.cancelAnimation()
+        b.lottieChatLeft.cancelAnimation()
+        b.lottieChatRight.cancelAnimation()
     }
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
@@ -184,13 +189,24 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
             1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
             2 -> chatListViewModel.onToggleNotificationsClicked(
                 chat.otherId,
-                chat.otherName,
+                chat.otherName.orEmpty(),
                 NODE_DM
             )
 
-            3 -> chatListViewModel.onConfirmToggleBlockAction(chat.otherId, chat.otherName)
-            4 -> chatListViewModel.onHideClicked(chat.otherId, chat.otherName, NODE_DM)
-            5 -> chatListViewModel.onDeleteClicked(chat.otherId, chat.otherName, NODE_DM)
+            3 -> chatListViewModel.onConfirmToggleBlockAction(
+                chat.otherId,
+                chat.otherName.orEmpty()
+            )
+            4 -> chatListViewModel.onHideClicked(
+                chat.otherId,
+                chat.otherName.orEmpty(),
+                NODE_DM
+            )
+            5 -> chatListViewModel.onDeleteClicked(
+                chat.otherId,
+                chat.otherName.orEmpty(),
+                NODE_DM
+            )
         }
         return true
     }
@@ -201,8 +217,32 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.lottieChatLeft.cancelAnimation()
-        binding.lottieChatRight.cancelAnimation()
+        _binding?.let { b ->
+            scrollListener?.let { b.rv.removeOnScrollListener(it) }
+            b.lottieChatLeft.cancelAnimation()
+            b.lottieChatRight.cancelAnimation()
+        }
+        scrollListener = null
         _binding = null
+    }
+
+    private fun setupScrollTopFab() {
+        binding.fabScrollTop.setOnClickListener {
+            binding.rv.smoothScrollToPosition(0)
+        }
+
+        scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollTopFab()
+            }
+        }
+        scrollListener?.let { binding.rv.addOnScrollListener(it) }
+        updateScrollTopFab()
+    }
+
+    private fun updateScrollTopFab() {
+        val b = _binding ?: return
+        val firstVisible = layoutManager.findFirstVisibleItemPosition()
+        b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
     }
 }
