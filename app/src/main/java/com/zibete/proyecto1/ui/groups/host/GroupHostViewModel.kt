@@ -70,7 +70,13 @@ class GroupHostViewModel @Inject constructor(
             val groupMeta = groupRepository.getGroup(groupName)
 
             if (groupMeta == null) {
-                showSnack(UiText.Dynamic("Grupo '$groupName' ya no existe"), ZibeSnackType.WARNING)
+                showSnack(
+                    UiText.StringRes(
+                        R.string.group_not_exists,
+                        listOf(groupName)
+                    ),
+                    ZibeSnackType.WARNING
+                )
                 return@launch
             }
 
@@ -221,7 +227,7 @@ class GroupHostViewModel @Inject constructor(
         viewModelScope.launch {
             _events.send(
                 GroupHostEvent.ShowSnack(
-                    message = UiText.Dynamic("No implemented"),
+                    message = UiText.StringRes(R.string.not_implemented),
                     type = ZibeSnackType.WARNING
                 )
             )

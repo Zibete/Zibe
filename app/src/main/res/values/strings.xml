@@ -60,11 +60,21 @@
     <string name="signup_animated_message_2">🌟 Compartí quién sos, qué te gusta o qué te inspira</string>
     <string name="signup_animated_message_3">⚡ Mostrate auténtico: tus intereses dicen más que mil palabras.</string>
 
+    <string name="signup_profile_message">
+            ¡Bienvenido a ZIBE! 🎉\n\n
+            Estamos emocionados de tenerte aquí. Para comenzar, te recomendamos completar tu perfil
+            con información auténtica y una foto clara. Esto ayudará a que otros usuarios te conozcan
+            mejor y aumentará tus posibilidades de hacer conexiones significativas.\n\n
+            ¡Disfrutá de la experiencia ZIBE y conectate con personas increíbles! 🌟
+    </string>
+
     <!-- ============================= -->
     <!-- Profile -->
     <!-- ============================= -->
 
-
+    <string name="chat_zibe_app">Chatea en Zibe</string>
+    <string name="deleted_profile_fallback">Perfil eliminado</string>
+    <string name="chat_private_in_group">Chat privado en %1$s</string>
 
     <!-- ============================= -->
     <!-- Chat Session -->
@@ -165,6 +175,10 @@
     <!-- ============================= -->
     <!-- Signup – Auth - Errors -->
     <!-- ============================= -->
+
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+
     <string name="err_email_required">Ingresá tu email</string>
     <string name="err_password_required">Ingresá una contraseña</string>
     <string name="err_password_trim_spaces">Quitá los espacios al inicio o al final</string>
@@ -197,17 +211,6 @@
     <string name="err_emails_do_not_match">El correo debe ser diferente al actual</string>
 
     <string name="action_login">Entrar</string>
-
-    <!-- ============================= -->
-    <!-- Mensaje onboarding perfil -->
-    <!-- ============================= -->
-    <string name="signup_profile_message">
-            ¡Bienvenido a ZIBE! 🎉\n\n
-            Estamos emocionados de tenerte aquí. Para comenzar, te recomendamos completar tu perfil
-            con información auténtica y una foto clara. Esto ayudará a que otros usuarios te conozcan
-            mejor y aumentará tus posibilidades de hacer conexiones significativas.\n\n
-            ¡Disfrutá de la experiencia ZIBE y conectate con personas increíbles! 🌟
-        </string>
 
     <!-- ============================= -->
     <!-- Permisos -->
@@ -304,7 +307,6 @@
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Comenzar</string>
 
-
     <string name="onboarding_page_1_title">Chatea</string>
     <string name="onboarding_page_1_body">Chatea con amigos en tiempo real.</string>
 
@@ -374,7 +376,7 @@
 
     <string name="dialog_logout_message">¿Seguro querés cerrar tu sesión?</string>
 
-    <string name="enter_your_password">"Introduzca su contraseña"</string>
+    <string name="enter_your_password">Introduzca su contraseña</string>
     <string name="content_description_back">Volver</string>
 
     <string name="send_feedback">Enivar comentarios</string>
@@ -398,6 +400,11 @@
     <!-- Menu -->
     <!-- ============================= -->
 
+    <string name="menu_edit_profile">Editar Perfil</string>
+    <string name="menu_groups">Grupos</string>
+    <string name="menu_users">Personas</string>
+    <string name="menu_chat">Chat</string>
+
     <string name="menu_add_favorite">Agregar a favoritos</string>
     <string name="menu_remove_favorite">Eliminar de favoritos</string>
     <string name="menu_user_notifications_on">Mostrar notificaciones</string>
@@ -406,6 +413,10 @@
     <string name="menu_user_unblock">Desbloquear usuario</string>
     <string name="menu_delete_chat">Eliminar chat</string>
     <string name="menu_unblock_users">Desbloquear usuarios</string>
+    <string name="menu_hide_chat">Ocultar chat</string>
+    <string name="menu_unhide_chat">Mostrar chat</string>
+    <string name="menu_unhide_chats">Chats ocultos</string>
+
 
     <plurals name="unblock_users_title">
         <item quantity="one">%1$d usuario bloqueado.</item>
@@ -415,11 +426,20 @@
     <string name="content_description_toggle_favorite">Agregar o eliminar de favoritos</string>
 
     <!-- ============================= -->
-    <!-- Legacy -->
+    <!-- Fragments -->
     <!-- ============================= -->
 
-    <string name="email">Correo electrónico</string>
-    <string name="password">Contraseña</string>
+    <string name="chat_list_onboarding_title">Acá verás tus conversaciones</string>
+    <string name="favorites_onboarding_title">Acá verás tus favoritos</string>
+    <string name="group_nick_in_use">El nick %1$s ya esta en uso</string>
+    <string name="group_name_in_use">El nombre %1$s ya esta en uso</string>
+    <string name="group_not_exists">Grupo %1$s ya no existe</string>
+
+    <string name="not_implemented">No implemented</string>
+
+    <!-- ============================= -->
+    <!-- Legacy -->
+    <!-- ============================= -->
 
     <string name="nav_header_title">Name User</string>
     <string name="nav_header_subtitle">Email User</string>
@@ -433,22 +453,10 @@
     <string name="noleido">Marcar no leído</string>
     <string name="leido">Marcar leído</string>
 
-    <string name="menu_edit_profile">Editar Perfil</string>
-
-    <string name="menu_groups">Grupos</string>
-    <string name="menu_users">Personas</string>
-    <string name="menu_chat">Chat</string>
-    <string name="chat_zibe_app">Chatea en Zibe</string>
-
     <string name="tab_group_users">Personas</string>
     <string name="tab_group_chat">Chat</string>
     <string name="tab_group_chats">Privados</string>
     <string name="menu_favorites">Favoritos</string>
-
-    <string name="menu_unhide_chats">Chats ocultos</string>
-
-    <string name="menu_hide_chat">Ocultar chat"</string>
-    <string name="menu_unhide_chat">Mostrar chat"</string>
 
     <string name="ultVez">últ. vez</string>
     <string name="last_seen_format">últ. vez %1$s a las %2$s</string>
@@ -475,13 +483,9 @@
     <string name="ocultar">Ocultar</string>
     <string name="recording">grabando audio…</string>
 
-
-    <string name="chatlist_onboarding_title">Acá verás tus conversaciones</string>
     <string name="imagen_no_disponible">No se pudo mostrar la imagen</string>
     <string name="finish_registration">Finalizar registro</string>
     <string name="loading">Cargando…</string>
-    <string name="deleted_profile_fallback">Perfil eliminado</string>
-    <string name="chat_private_in_group">Chat privado en %1$s</string>
 
     <string name="escribe_un_mensaje">escribí tu mensaje</string>
     <string name="espere">espere</string>
