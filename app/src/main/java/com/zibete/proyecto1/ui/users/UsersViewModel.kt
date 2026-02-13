@@ -2,6 +2,8 @@ package com.zibete.proyecto1.ui.users
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
@@ -9,6 +11,7 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +34,13 @@ class UsersViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
+    private data class UsersFilters(
+        val applyAgeFilter: Boolean = false,
+        val applyOnlineFilter: Boolean = false,
+        val minAge: Int = 0,
+        val maxAge: Int = 0
+    )
+
     private val myUid: String get() = userRepository.myUid
 
     private val _uiState = MutableStateFlow(UsersUiState())
@@ -39,26 +49,27 @@ class UsersViewModel @Inject constructor(
     private val _events = MutableSharedFlow<UsersUiEvent>(extraBufferCapacity = 8)
     val events: SharedFlow<UsersUiEvent> = _events.asSharedFlow()
 
+    private var allUsers: List<UsersRowUiModel> = emptyList()
+    private var currentFilters = UsersFilters()
+    private var searchQuery: String = ""
+
     fun loadUsers() {
         viewModelScope.launch {
 
             _uiState.update { it.copy(isLoading = true) }
 
-            // Leer filtros una sola vez (snapshot) para esta carga
-            val applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first()
-            val applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first()
-            val minAge = userPreferencesProvider.minAgeFlow.first()
-            val maxAge = userPreferencesProvider.maxAgeFlow.first()
+            currentFilters = readFiltersFromPrefs()
 
             try {
                 val snapshot = firebaseRefsContainer.refAccounts.get().await()
 
                 if (!snapshot.exists()) {
-                    _uiState.value = UsersUiState(isLoading = false, users = emptyList())
+                    allUsers = emptyList()
+                    updateVisibleUsers(isLoading = false)
                     return@launch
                 }
 
-                val tempList = mutableListOf<Users>()
+                val tempList = mutableListOf<UsersRowUiModel>()
 
                 for (child in snapshot.children) {
                     val key = child.key ?: continue
@@ -66,37 +77,42 @@ class UsersViewModel @Inject constructor(
 
                     val user = child.getValue(Users::class.java) ?: continue
 
-                    user.age = ageCalculator(user.birthDate)
-
-                    user.distanceMeters = locationRepository.getDistanceMeters(
+                    val age = ageCalculator(user.birthDate)
+                    val distanceMeters = locationRepository.getDistanceMeters(
                         locationRepository.latitude,
                         locationRepository.longitude,
                         user.latitude,
                         user.longitude
                     )
 
-                    var isValid = true
-
-                    if (applyOnlineFilter && !user.isOnline) isValid = false
-
-                    if (isValid && applyAgeFilter) {
-                        if (user.age !in minAge..maxAge) isValid = false
-                    }
-
-                    if (isValid) tempList.add(user)
+                    tempList.add(
+                        UsersRowUiModel(
+                            id = user.id,
+                            name = user.name,
+                            age = age,
+                            isOnline = user.isOnline,
+                            distanceMeters = distanceMeters,
+                            photoUrl = user.photoUrl,
+                            description = user.description
+                        )
+                    )
                 }
 
-                tempList.sort()
+                tempList.sortBy { it.distanceMeters }
 
-                _uiState.value = UsersUiState(
-                    isLoading = false,
-                    users = tempList
+                allUsers = tempList
+                updateVisibleUsers(isLoading = false)
+            } catch (e: Throwable) {
+                _events.emit(
+                    UsersUiEvent.ShowSnack(
+                        uiText = e.message.toUiText(
+                            R.string.err_zibe_prefix,
+                            R.string.err_zibe
+                        ),
+                        snackType = ZibeSnackType.ERROR
+                    )
                 )
-            } catch (_: Throwable) {
-                _uiState.value = UsersUiState(
-                    isLoading = false,
-                    users = emptyList()
-                )
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -121,7 +137,13 @@ class UsersViewModel @Inject constructor(
                 userPreferencesActions.setFilterSwitch(applyOnlineFilter) // si online queda activo, sigue habiendo filtro
             }
 
-            loadUsers()
+            currentFilters = UsersFilters(
+                applyAgeFilter = applyAgeFilter,
+                applyOnlineFilter = applyOnlineFilter,
+                minAge = minAge,
+                maxAge = maxAge
+            )
+            updateVisibleUsers()
         }
     }
 
@@ -133,23 +155,89 @@ class UsersViewModel @Inject constructor(
             userPreferencesActions.setMaxAge(0)
             userPreferencesActions.setFilterSwitch(false)
 
-            loadUsers()
+            currentFilters = UsersFilters()
+            updateVisibleUsers()
         }
     }
 
     fun onFilterClicked() {
         viewModelScope.launch {
-            _events.emit(UsersUiEvent.ShowFilterDialog)
+            val filters = readFiltersFromPrefs()
+
+            _events.emit(
+                UsersUiEvent.ShowFilterDialog(
+                    applyAgeFilter = filters.applyAgeFilter,
+                    applyOnlineFilter = filters.applyOnlineFilter,
+                    minAge = filters.minAge,
+                    maxAge = filters.maxAge
+                )
+            )
         }
     }
 
-    // Helpers para UI actual (si tu fragment lo pide)
-    suspend fun currentApplyAgeFilter(): Boolean {
-        return userPreferencesProvider.applyAgeFilterFlow.first()
+    fun onUserChatClick(userId: String) {
+        viewModelScope.launch {
+            _events.emit(UsersUiEvent.NavigateToChat(userId))
+        }
     }
 
-    suspend fun currentApplyOnlineFilter(): Boolean {
-        return userPreferencesProvider.applyOnlineFilterFlow.first()
+    fun onUserProfileClick(userId: String) {
+        viewModelScope.launch {
+            val list = uiState.value.users
+            val position = list.indexOfFirst { it.id == userId }.coerceAtLeast(0)
+            val ids = ArrayList(list.map { it.id })
+
+            _events.emit(
+                UsersUiEvent.NavigateToProfile(
+                    userIds = ids,
+                    startIndex = position
+                )
+            )
+        }
+    }
+
+    fun onSearchQueryChanged(query: String?) {
+        viewModelScope.launch {
+            searchQuery = query.orEmpty()
+            updateVisibleUsers()
+        }
+    }
+
+    fun onRefreshUsers() {
+        loadUsers()
+    }
+
+    fun refresh() {
+        loadUsers()
+    }
+
+    private suspend fun readFiltersFromPrefs(): UsersFilters {
+        return UsersFilters(
+            applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first(),
+            applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first(),
+            minAge = userPreferencesProvider.minAgeFlow.first(),
+            maxAge = userPreferencesProvider.maxAgeFlow.first()
+        )
+    }
+
+    private fun updateVisibleUsers(isLoading: Boolean? = null) {
+        val query = searchQuery.trim().lowercase()
+        val filters = currentFilters
+        val filtered = allUsers.filter { user ->
+            if (filters.applyOnlineFilter && !user.isOnline) return@filter false
+            if (filters.applyAgeFilter && user.age !in filters.minAge..filters.maxAge) {
+                return@filter false
+            }
+            if (query.isBlank()) return@filter true
+            user.name.lowercase().contains(query)
+        }
+
+        _uiState.update { state ->
+            state.copy(
+                isLoading = isLoading ?: state.isLoading,
+                users = filtered
+            )
+        }
     }
 
     fun formatDistance(meters: Double): String =

@@ -1,18 +1,19 @@
 package com.zibete.proyecto1.ui.users
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
@@ -20,14 +21,14 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.databinding.FilterLayoutBinding
 import com.zibete.proyecto1.databinding.FragmentUsersBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.main.MainUiEvent
+import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
-import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -38,9 +39,12 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
     private val binding get() = _binding!!
 
     private val usersViewModel: UsersViewModel by viewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     private lateinit var layoutManager: LinearLayoutManager
     private var adapterUsers: AdapterUsers? = null
+    private var scrollListener: RecyclerView.OnScrollListener? = null
+    private val scrollTopThreshold = 3
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,9 +65,6 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
 
         collectUiState()
         collectEvents()
-
-        // Para que el menú se “reprepare” y muestre lo que corresponde al entrar
-        requireActivity().invalidateOptionsMenu()
     }
 
     private fun collectEvents() {
@@ -71,8 +72,21 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 usersViewModel.events.collect { event ->
                     when (event) {
-                        UsersUiEvent.ShowFilterDialog -> showFilterDialog()
-                        else -> Unit
+                        is UsersUiEvent.ShowFilterDialog -> showFilterDialog(event)
+                        is UsersUiEvent.NavigateToChat -> openChat(event.userId)
+                        is UsersUiEvent.NavigateToProfile -> openProfile(
+                            event.userIds,
+                            event.startIndex
+                        )
+
+                        is UsersUiEvent.ShowSnack -> {
+                            mainViewModel.emit(
+                                MainUiEvent.ShowSnack(
+                                    uiText = event.uiText,
+                                    snackType = event.snackType
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -99,8 +113,8 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
 
     private fun setupRecyclerView() {
         layoutManager = LinearLayoutManager(requireContext()).apply {
-            reverseLayout = true
-            stackFromEnd = true
+            reverseLayout = false
+            stackFromEnd = false
         }
 
         binding.rv.apply {
@@ -109,99 +123,153 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         }
 
         adapterUsers = AdapterUsers(
-            onChatClicked = { userId ->
-                startActivity(
-                    Intent(requireContext(), ChatActivity::class.java).apply {
-                        putExtra(EXTRA_CHAT_ID, userId)
-                        putExtra(EXTRA_CHAT_NODE, NODE_DM)
-                    }
-                ) },
-            onProfileClicked = { selectedUser ->
-                val list = ArrayList(usersViewModel.uiState.value.users)
-                list.reverse()
-
-                val position = list.indexOf(selectedUser).coerceAtLeast(0)
-                val ids = ArrayList(list.map { it.id })
-
-                startActivity(
-                    Intent(requireContext(), ProfileActivity::class.java)
-                        .putStringArrayListExtra(EXTRA_USER_IDS, ids)
-                        .putExtra(EXTRA_START_INDEX, position)
-                ) },
+            onChatClicked = { userId -> usersViewModel.onUserChatClick(userId) },
+            onProfileClicked = { userId -> usersViewModel.onUserProfileClick(userId) },
             formatDistance = { meters -> usersViewModel.formatDistance(meters) }
         )
 
         binding.rv.adapter = adapterUsers
+        setupScrollTopFab()
     }
 
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.apply {
             setRecyclerView(binding.rv)
             setOnRefreshListener {
-                usersViewModel.loadUsers()
+                usersViewModel.refresh()
             }
         }
     }
 
-    private fun showFilterDialog() {
+    private fun showFilterDialog(event: UsersUiEvent.ShowFilterDialog) {
         val ctx = requireContext()
         val dialogBinding = FilterLayoutBinding.inflate(layoutInflater)
+        val slider = dialogBinding.rangeAge
 
-        val ages = (18..99).toList()
-        val spinnerAdapter = ArrayAdapter(ctx, R.layout.tv_spinner_selected, ages).apply {
-            setDropDownViewResource(R.layout.tv_spinner_lista)
+        val minAllowed = 18
+        val maxAllowed = 99
+
+        // 1. Configuración inicial y valores de referencia
+        slider.valueFrom = minAllowed.toFloat()
+        slider.valueTo = maxAllowed.toFloat()
+        slider.stepSize = 1f
+
+        val initialMin = if (event.minAge in minAllowed..maxAllowed) event.minAge else minAllowed
+        val initialMax = if (event.maxAge in minAllowed..maxAllowed) event.maxAge else maxAllowed
+        slider.values = listOf(initialMin.toFloat(), initialMax.toFloat())
+
+        // 2. Funciones auxiliares
+        fun currentValues(): Pair<Int, Int> {
+            val v = slider.values
+            return (v.getOrNull(0)?.toInt() ?: minAllowed) to (v.getOrNull(1)?.toInt()
+                ?: maxAllowed)
         }
 
-        dialogBinding.spinnerMinAge.adapter = spinnerAdapter
-        dialogBinding.spinerMaxAge.adapter = spinnerAdapter
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            dialogBinding.switchAge.isChecked = usersViewModel.currentApplyAgeFilter()
-            dialogBinding.switchOnline.isChecked = usersViewModel.currentApplyOnlineFilter()
+        fun updateAgeLabels(minValue: Int, maxValue: Int) {
+            dialogBinding.tvMinAge.text = ctx.getString(R.string.label_age, minValue)
+            dialogBinding.tvMaxAge.text = ctx.getString(R.string.label_age, maxValue)
         }
 
-        dialogBinding.spinnerMinAge.isEnabled = dialogBinding.switchAge.isChecked
-        dialogBinding.spinerMaxAge.isEnabled = dialogBinding.switchAge.isChecked
+        // 3. Lógica de habilitación de botones (La clave de tu pedido)
+        fun checkChanges() {
+            val (currentMin, currentMax) = currentValues()
+            val currentAgeEnabled = dialogBinding.switchAge.isChecked
+            val currentOnlineEnabled = dialogBinding.switchOnline.isChecked
+
+            // ¿Cambió algo respecto al evento inicial?
+            val hasChanged = currentAgeEnabled != event.applyAgeFilter ||
+                    currentOnlineEnabled != event.applyOnlineFilter ||
+                    (currentAgeEnabled && (currentMin != event.minAge || currentMax != event.maxAge))
+
+            // ¿Hay algún filtro activo actualmente para permitir "Quitar Filtros"?
+            val anyFilterActive = event.applyAgeFilter || event.applyOnlineFilter
+
+            dialogBinding.btnApplyFilter.isEnabled = hasChanged
+            dialogBinding.btnClearFilter.isEnabled = anyFilterActive
+        }
+
+        // 4. Sincronización inicial de UI
+        val (startMin, startMax) = currentValues()
+        updateAgeLabels(startMin, startMax)
+
+        dialogBinding.switchOnline.isChecked = event.applyOnlineFilter
+        dialogBinding.switchAge.isChecked = event.applyAgeFilter
+
+        val isAgeActive = event.applyAgeFilter
+        slider.isEnabled = isAgeActive
+        dialogBinding.tvMinAge.isEnabled = isAgeActive
+        dialogBinding.tvMaxAge.isEnabled = isAgeActive
+
+        // Ejecutamos por primera vez para setear el estado inicial de los botones
+        checkChanges()
+
+        // 5. Listeners con llamada a checkChanges()
+        slider.addOnChangeListener { _, _, _ ->
+            val (min, max) = currentValues()
+            updateAgeLabels(min, max)
+            checkChanges()
+        }
 
         dialogBinding.switchAge.setOnCheckedChangeListener { _, checked ->
-            dialogBinding.spinnerMinAge.isEnabled = checked
-            dialogBinding.spinerMaxAge.isEnabled = checked
+            slider.isEnabled = checked
+            dialogBinding.tvMinAge.isEnabled = checked
+            dialogBinding.tvMaxAge.isEnabled = checked
+            checkChanges()
         }
 
-        val filterOn = UiText.StringRes(R.string.action_filter_on).asString(ctx)
-        val filterOff = UiText.StringRes(R.string.action_filter_off).asString(ctx)
-        val actionCancel = UiText.StringRes(R.string.action_cancel).asString(ctx)
+        dialogBinding.switchOnline.setOnCheckedChangeListener { _, _ ->
+            checkChanges()
+        }
 
-        AlertDialog.Builder(ctx)
+        // 6. Mostrar Diálogo
+        val dialog = MaterialAlertDialogBuilder(ctx)
             .setView(dialogBinding.root)
-            .setPositiveButton(filterOn) { _, _ ->
-                val applyAgeFilter = dialogBinding.switchAge.isChecked
-                val applyOnlineFilter = dialogBinding.switchOnline.isChecked
-                val minAge = ages[dialogBinding.spinnerMinAge.selectedItemPosition]
-                val maxAge = ages[dialogBinding.spinerMaxAge.selectedItemPosition]
-
-                usersViewModel.applyFilters(
-                    applyAgeFilter = applyAgeFilter,
-                    applyOnlineFilter = applyOnlineFilter,
-                    minAge = minAge,
-                    maxAge = maxAge
-                )
-            }
-            .setNegativeButton(actionCancel, null)
-            .setNeutralButton(filterOff) { _, _ ->
-                usersViewModel.clearFilters()
-            }
-            .create()
             .show()
+
+        // 7. Click Listeners finales
+        dialogBinding.btnApplyFilter.setOnClickListener {
+            val (finalMin, finalMax) = currentValues()
+            usersViewModel.applyFilters(
+                applyAgeFilter = dialogBinding.switchAge.isChecked,
+                applyOnlineFilter = dialogBinding.switchOnline.isChecked,
+                minAge = finalMin,
+                maxAge = finalMax
+            )
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnCancel.setOnClickListener { dialog.dismiss() }
+
+        dialogBinding.btnClearFilter.setOnClickListener {
+            usersViewModel.clearFilters()
+            dialog.dismiss()
+        }
+    }
+
+    private fun openChat(userId: String) {
+        startActivity(
+            Intent(requireContext(), ChatActivity::class.java).apply {
+                putExtra(EXTRA_CHAT_ID, userId)
+                putExtra(EXTRA_CHAT_NODE, NODE_DM)
+            }
+        )
+    }
+
+    private fun openProfile(userIds: ArrayList<String>, startIndex: Int) {
+        startActivity(
+            Intent(requireContext(), ProfileActivity::class.java)
+                .putStringArrayListExtra(EXTRA_USER_IDS, userIds)
+                .putExtra(EXTRA_START_INDEX, startIndex)
+        )
     }
 
     // SearchHandler: llamado por MainActivity cuando el SearchView cambia
     override fun onSearchQueryChanged(query: String?) {
-        adapterUsers?.filterByName(query)
+        usersViewModel.onSearchQueryChanged(query)
     }
 
     override fun onRefreshUsers() {
-        usersViewModel.loadUsers()
+        usersViewModel.refresh()
     }
 
     override fun onFilterUsers() {
