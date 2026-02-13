@@ -12,14 +12,12 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Lista de chatMessage -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false" />
 
-        <!-- Onboarding / estado vacío -->
         <LinearLayout
             android:id="@+id/linearOnBoardingChatList"
             android:layout_width="match_parent"
@@ -38,7 +36,7 @@
                     android:id="@+id/lottieChatLeft"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="left"
+                    android:layout_gravity="start"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
                     app:lottie_rawRes="@raw/chat_left" />
@@ -47,7 +45,7 @@
                     android:id="@+id/lottieChatRight"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="right"
+                    android:layout_gravity="end"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
                     app:lottie_rawRes="@raw/onboarding1" />
@@ -62,16 +60,16 @@
                 android:gravity="center"
                 android:text="@string/chatlist_onboarding_title"
                 android:textAppearance="@style/Zibe.Text.Regular"
-                android:textSize="@dimen/text_size_xlarge"/>
+                android:textSize="@dimen/text_size_xlarge" />
         </LinearLayout>
 
-        <!-- Progress de carga -->
-        <ProgressBar
-            android:id="@+id/progressbar2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:paddingHorizontal="150dp" />
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progressIndicator"
+            style="@style/Widget.Zibe.CircularLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:indeterminate="true" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
