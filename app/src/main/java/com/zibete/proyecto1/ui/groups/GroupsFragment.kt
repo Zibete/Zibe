@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -35,7 +34,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
-    private var joinGroupDialog: AlertDialog? = null
+    private var joinGroupDialog: android.app.AlertDialog? = null
 
     private val groupsViewModel: GroupsViewModel by viewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
@@ -114,8 +113,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                         is GroupsUiEvent.ShowSnack -> {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
-                                    uiText = event.message,
-                                    snackType = ZibeSnackType.INFO
+                                    uiText = event.uiText,
+                                    snackType = event.snackType
                                 )
                             )
                         }
@@ -234,9 +233,9 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
         joinGroupDialog?.dismiss()
         joinGroupDialog = null
+        _binding = null
     }
 
     override fun onSearchQueryChanged(query: String?) {
