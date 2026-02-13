@@ -58,7 +58,7 @@
                 android:layout_marginHorizontal="30dp"
                 android:layout_marginTop="20dp"
                 android:gravity="center"
-                android:text="@string/chatlist_onboarding_title"
+                android:text="@string/chat_list_onboarding_title"
                 android:textAppearance="@style/Zibe.Text.Regular"
                 android:textSize="@dimen/text_size_xlarge" />
         </LinearLayout>
@@ -68,8 +68,20 @@
             style="@style/Widget.Zibe.CircularLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
+            android:layout_gravity="center"
             android:indeterminate="true" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_scroll_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/screen_padding"
+            android:contentDescription="@string/action_scroll_to_top"
+            android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+            android:visibility="gone"
+            app:backgroundTint="?attr/colorPrimary"
+            app:tint="?attr/colorOnPrimary" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
