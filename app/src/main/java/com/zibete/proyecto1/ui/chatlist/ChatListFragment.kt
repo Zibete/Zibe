@@ -13,7 +13,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.adapters.AdapterChatList
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
@@ -36,8 +35,11 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
-    @Inject lateinit var userRepository: UserRepository
-    @Inject lateinit var profileRepositoryProvider: ProfileRepositoryProvider
+    @Inject
+    lateinit var userRepository: UserRepository
+
+    @Inject
+    lateinit var profileRepositoryProvider: ProfileRepositoryProvider
 
     private val chatListViewModel: ChatListViewModel by viewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
@@ -47,6 +49,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     private lateinit var adapterChatList: AdapterChatList
     private lateinit var layoutManager: LinearLayoutManager
+    private var didAutoScroll = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,8 +59,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         _binding = FragmentChatListBinding.inflate(inflater, container, false)
 
         setupRecycler()
-        setupInitialUi()
-        setupAdapterObserver()
 
         return binding.root
     }
@@ -67,8 +68,16 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         collectUiState()
         collectEvents()
+    }
 
-        chatListViewModel.loadChatList()
+    override fun onStart() {
+        super.onStart()
+        chatListViewModel.startObserving()
+    }
+
+    override fun onStop() {
+        chatListViewModel.stopObserving()
+        super.onStop()
     }
 
     private fun collectEvents() {
@@ -85,31 +94,10 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 chatListViewModel.uiState.collect { state ->
-                    val b = _binding ?: return@collect
-
-                    b.progressbar2.isVisible = state.isLoading
-
-                    if (state.showOnboarding) {
-                        showOnBoarding()
-                    } else {
-                        showChatList()
-                    }
-
-                    adapterChatList.submitList(state.filteredChats)
+                    render(state)
                 }
             }
         }
-    }
-
-    // ---------- UI inicial ----------
-
-    private fun setupInitialUi() = with(binding) {
-        binding.rv.isVisible = true
-        linearOnBoardingChatList.isVisible = false
-        progressbar2.isVisible = true
-
-        lottieChatLeft.cancelAnimation()
-        lottieChatRight.cancelAnimation()
     }
 
     private fun setupRecycler() {
@@ -134,6 +122,32 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         registerForContextMenu(binding.rv)
     }
 
+    private fun render(state: ChatListUiState) {
+        val b = _binding ?: return
+
+        b.progressIndicator.isVisible = state.isLoading
+
+        if (state.showOnboarding) showOnBoarding() else showChatList()
+
+        adapterChatList.submitList(state.filteredChats)
+
+        if (state.isLoading) {
+            didAutoScroll = false
+            return
+        }
+
+        if (state.filteredChats.isEmpty()) {
+            didAutoScroll = false
+            return
+        }
+
+        if (!didAutoScroll && !state.showOnboarding) {
+            val lastIndex = state.filteredChats.lastIndex
+            if (lastIndex >= 0) b.rv.scrollToPosition(lastIndex)
+            didAutoScroll = true
+        }
+    }
+
     private fun openChat(chat: Conversation) {
         val intent = Intent(requireContext(), ChatActivity::class.java).apply {
             putExtra(EXTRA_CHAT_ID, chat.otherId)
@@ -141,8 +155,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         }
         startActivity(intent)
     }
-
-    // ---------- Empty state / onboarding ----------
 
     private fun showOnBoarding() = with(binding) {
         binding.rv.isVisible = false
@@ -163,25 +175,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         lottieChatRight.cancelAnimation()
     }
 
-    // ---------- Observer para scroll y progress ----------
-
-    private fun setupAdapterObserver() {
-        adapterChatList.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                setScrollbar()
-                _binding?.progressbar2?.isVisible = false
-            }
-        })
-    }
-
-    private fun setScrollbar() {
-        val b = _binding ?: return
-        if (::adapterChatList.isInitialized && adapterChatList.itemCount > 0) {
-            b.rv.scrollToPosition(adapterChatList.itemCount - 1)
-        }
-    }
-
     override fun onContextItemSelected(item: MenuItem): Boolean {
         if (item.groupId != FRAGMENT_ID_CHATLIST) return false
 
@@ -189,7 +182,12 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         when (item.itemId) {
             1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
-            2 -> chatListViewModel.onToggleNotificationsClicked(chat.otherId, chat.otherName, NODE_DM)
+            2 -> chatListViewModel.onToggleNotificationsClicked(
+                chat.otherId,
+                chat.otherName,
+                NODE_DM
+            )
+
             3 -> chatListViewModel.onConfirmToggleBlockAction(chat.otherId, chat.otherName)
             4 -> chatListViewModel.onHideClicked(chat.otherId, chat.otherName, NODE_DM)
             5 -> chatListViewModel.onDeleteClicked(chat.otherId, chat.otherName, NODE_DM)
