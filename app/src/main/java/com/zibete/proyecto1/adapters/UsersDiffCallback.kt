@@ -1,6 +1,6 @@
 import android.os.Bundle
 import androidx.recyclerview.widget.DiffUtil
-import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.users.UsersRowUiModel
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
@@ -8,17 +8,17 @@ import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 
-object UsersDiffCallback : DiffUtil.ItemCallback<Users>() {
+object UsersDiffCallback : DiffUtil.ItemCallback<UsersRowUiModel>() {
 
-    override fun areItemsTheSame(oldItem: Users, newItem: Users): Boolean {
+    override fun areItemsTheSame(oldItem: UsersRowUiModel, newItem: UsersRowUiModel): Boolean {
         return oldItem.id == newItem.id
     }
 
-    override fun areContentsTheSame(oldItem: Users, newItem: Users): Boolean {
+    override fun areContentsTheSame(oldItem: UsersRowUiModel, newItem: UsersRowUiModel): Boolean {
         return oldItem == newItem
     }
 
-    override fun getChangePayload(oldItem: Users, newItem: Users): Any? {
+    override fun getChangePayload(oldItem: UsersRowUiModel, newItem: UsersRowUiModel): Any? {
         val diff = Bundle()
 
         if (oldItem.distanceMeters != newItem.distanceMeters) diff.putBoolean(PAYLOAD_DISTANCE_METERS, true)
