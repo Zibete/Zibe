@@ -80,7 +80,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 favoritesViewModel.uiState.collect { state ->
                     val b = _binding ?: return@collect
-                    b.progressbar.isVisible = state.isLoading
+                    b.progressIndicator.isVisible = state.isLoading
                     b.favoriteSwipeRefresh.isRefreshing = false
                     adapterFavoriteUsers.submitOriginal(state.favorites)
                 }

@@ -74,7 +74,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupsViewModel.uiState.collect { state ->
                     val b = _binding ?: return@collect
 
-                    b.progressbar.isVisible = state.isLoading
+                    b.progressIndicator.isVisible = state.isLoading
                     b.rvGroups.isVisible = !state.isLoading
 
                     // Spinner del swipe se apaga cuando termina la carga

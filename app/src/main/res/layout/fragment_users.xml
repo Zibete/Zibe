@@ -8,10 +8,10 @@
 
     <com.zibete.proyecto1.SwipeRefreshLayout
         android:id="@+id/swipe_refresh"
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/transparent">
+        android:background="@android:color/transparent"
+        android:orientation="vertical">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -22,11 +22,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
-            <ProgressBar
-                android:id="@+id/progressbar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingHorizontal="150dp" />
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressIndicator"
+                style="@style/Widget.Zibe.CircularLoading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:indeterminate="true" />
+
         </RelativeLayout>
 
     </com.zibete.proyecto1.SwipeRefreshLayout>
@@ -36,10 +39,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
+        android:layout_margin="@dimen/screen_padding"
         android:contentDescription="@string/action_scroll_to_top"
         android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
-        android:visibility="gone"
-        app:backgroundTint="@color/zibe_pink"
-        app:tint="@color/white" />
+        app:backgroundTint="?attr/colorPrimary"
+        app:tint="?attr/colorOnPrimary" />
 </FrameLayout>
