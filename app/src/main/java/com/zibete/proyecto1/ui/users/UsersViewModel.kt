@@ -87,7 +87,7 @@ class UsersViewModel @Inject constructor(
 
                     tempList.add(
                         UsersRowUiModel(
-                            id = user.id,
+                            id = key,
                             name = user.name,
                             age = age,
                             isOnline = user.isOnline,
@@ -203,22 +203,12 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-    fun onRefreshUsers() {
-        loadUsers()
-    }
-
-    fun refresh() {
-        loadUsers()
-    }
-
-    private suspend fun readFiltersFromPrefs(): UsersFilters {
-        return UsersFilters(
-            applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first(),
-            applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first(),
-            minAge = userPreferencesProvider.minAgeFlow.first(),
-            maxAge = userPreferencesProvider.maxAgeFlow.first()
-        )
-    }
+    private suspend fun readFiltersFromPrefs(): UsersFilters = UsersFilters(
+        applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first(),
+        applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first(),
+        minAge = userPreferencesProvider.minAgeFlow.first(),
+        maxAge = userPreferencesProvider.maxAgeFlow.first()
+    )
 
     private fun updateVisibleUsers(isLoading: Boolean? = null) {
         val query = searchQuery.trim().lowercase()
@@ -240,7 +230,6 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-    fun formatDistance(meters: Double): String =
-        locationRepository.formatDistance(meters)
+    fun formatDistance(meters: Double): String = locationRepository.formatDistance(meters)
 
 }
