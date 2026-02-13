@@ -26,7 +26,7 @@
                 style="@style/Widget.Zibe.CircularLoading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
+                android:layout_gravity="center"
                 android:indeterminate="true" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -34,10 +34,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|end"
-                android:layout_margin="20dp"
+                android:layout_margin="@dimen/screen_padding"
                 android:src="@drawable/ic_baseline_add_24"
                 app:backgroundTint="@color/zibe_pink"
                 app:tint="@color/white" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_scroll_top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="@dimen/screen_padding"
+                android:layout_marginBottom="@dimen/fab_collapse_scroll_threshold"
+                android:contentDescription="@string/action_scroll_to_top"
+                android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                android:visibility="gone"
+                app:backgroundTint="?attr/colorPrimary"
+                app:tint="?attr/colorOnPrimary" />
 
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

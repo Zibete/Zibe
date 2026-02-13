@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -11,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
@@ -30,7 +32,6 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import androidx.appcompat.app.AlertDialog
 
 @AndroidEntryPoint
 class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
@@ -44,6 +45,9 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
     private val binding get() = _binding!!
 
     private lateinit var adapterGroups: AdapterGroups
+    private lateinit var layoutManager: GridLayoutManager
+    private var scrollListener: RecyclerView.OnScrollListener? = null
+    private val scrollTopThreshold = 3
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,6 +59,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         setupRecyclerView()
         setupSwipeRefresh()
         setupFab()
+        setupScrollTopFab()
 
         return binding.root
     }
@@ -72,11 +77,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 groupsViewModel.uiState.collect { state ->
-                    val b = _binding ?: return@collect
-                    b.progressIndicator.isVisible = state.isLoading
-                    b.rvGroups.isVisible = !state.isLoading
-                    if (!state.isLoading) b.groupSwipeRefresh.isRefreshing = false
-                    adapterGroups.submitOriginal(state.groups)
+                    render(state)
                 }
             }
         }
@@ -90,7 +91,10 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                         is GroupsUiEvent.NickInUse -> {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
-                                    uiText = UiText.Dynamic("${event.nick} está en uso"),
+                                    uiText = UiText.StringRes(
+                                        R.string.group_nick_in_use,
+                                        listOf(event.nick)
+                                    ),
                                     snackType = ZibeSnackType.INFO
                                 )
                             )
@@ -99,7 +103,10 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                         is GroupsUiEvent.GroupNameInUse -> {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
-                                    uiText = UiText.Dynamic("El nombre ${event.name} ya está en uso"),
+                                    uiText = UiText.StringRes(
+                                        R.string.group_name_in_use,
+                                        listOf(event.name)
+                                    ),
                                     snackType = ZibeSnackType.WARNING
                                 )
                             )
@@ -126,8 +133,9 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
     }
 
     private fun setupRecyclerView() = with(binding) {
+        layoutManager = GridLayoutManager(requireContext(), 2)
         rvGroups.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
+            layoutManager = this@GroupsFragment.layoutManager
             setHasFixedSize(true)
             adapter = AdapterGroups { groupSelected ->
                 showJoinGroupDialog(groupSelected)
@@ -172,7 +180,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupName = group.name,
                 nick = displayName,
                 type = PUBLIC_USER,
-                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
+                message = requireContext().getString(R.string.msg_user_joined)
             )
         }
 
@@ -182,7 +190,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                 groupName = group.name,
                 nick = nick,
                 type = ANONYMOUS_USER,
-                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
+                message = requireContext().getString(R.string.msg_user_joined)
             )
         }
 
@@ -218,7 +226,7 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             groupsViewModel.onCreateNewGroupClicked(
                 groupName = dialogBinding.edtNameNewGroup.text.toString(),
                 groupData = dialogBinding.edtDataNewGroup.text.toString(),
-                message = UiText.StringRes(R.string.msg_user_joined).asString(requireContext())
+                message = requireContext().getString(R.string.msg_user_joined)
             )
         }
 
@@ -226,14 +234,48 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         joinGroupDialog?.show()
     }
 
+    private fun render(state: GroupsUiState) {
+        val b = _binding ?: return
+
+        b.progressIndicator.isVisible = state.isLoading
+        if (!state.isLoading) b.groupSwipeRefresh.isRefreshing = false
+
+        adapterGroups.submitOriginal(state.filteredGroups)
+        updateScrollTopFab()
+    }
+
+    private fun setupScrollTopFab() {
+        binding.fabScrollTop.setOnClickListener {
+            binding.rvGroups.smoothScrollToPosition(0)
+        }
+
+        scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollTopFab()
+            }
+        }
+        scrollListener?.let { binding.rvGroups.addOnScrollListener(it) }
+        updateScrollTopFab()
+    }
+
+    private fun updateScrollTopFab() {
+        val b = _binding ?: return
+        val firstVisible = layoutManager.findFirstVisibleItemPosition()
+        b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        _binding?.let { b ->
+            scrollListener?.let { b.rvGroups.removeOnScrollListener(it) }
+        }
+        scrollListener = null
         joinGroupDialog?.dismiss()
         joinGroupDialog = null
         _binding = null
     }
 
     override fun onSearchQueryChanged(query: String?) {
-        adapterGroups.filterByName(query)
+        groupsViewModel.onSearchQueryChanged(query.orEmpty())
     }
 }

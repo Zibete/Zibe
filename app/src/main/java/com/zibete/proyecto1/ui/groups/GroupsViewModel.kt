@@ -11,6 +11,7 @@ import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,20 +37,21 @@ class GroupsViewModel @Inject constructor(
     private val _events = MutableSharedFlow<GroupsUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<GroupsUiEvent> = _events.asSharedFlow()
 
+    private var allGroups: List<Groups> = emptyList()
+    private var searchQuery: String = ""
+
     fun loadGroups() = fetchGroups(showLoading = true)
 
     fun refreshGroups() = fetchGroups(showLoading = false)
 
     private fun fetchGroups(showLoading: Boolean) {
         viewModelScope.launch {
-            if (showLoading) {
-                _uiState.update { it.copy(isLoading = true) }
-            }
+            if (showLoading) _uiState.update { it.copy(isLoading = true) }
 
             runCatching { groupRepository.getAllGroups() }
                 .onSuccess { groupsList ->
-                    val sorted = groupsList.sortedBy { it.name.lowercase() }
-                    _uiState.update { it.copy(isLoading = false, groups = sorted) }
+                    allGroups = groupsList.sortedBy { it.name.lowercase() }
+                    updateVisibleGroups(isLoading = false)
                 }
                 .onFailure { e ->
                     onError(
@@ -62,16 +64,44 @@ class GroupsViewModel @Inject constructor(
         }
     }
 
-    fun onError(
-        uiText: UiText
-    ) {
-        _uiState.update { it.copy(isLoading = false, groups = emptyList()) }
+    fun onSearchQueryChanged(query: String) {
+        viewModelScope.launch {
+            searchQuery = query
+            updateVisibleGroups()
+        }
+    }
+
+    fun onError(uiText: UiText) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                groups = emptyList(),
+                filteredGroups = emptyList()
+            )
+        }
         viewModelScope.launch {
             _events.emit(
                 GroupsUiEvent.ShowSnack(
                     uiText = uiText,
                     snackType = ZibeSnackType.ERROR
                 )
+            )
+        }
+    }
+
+    private fun updateVisibleGroups(isLoading: Boolean? = null) {
+        val query = searchQuery.trim().lowercase()
+
+        val filtered =
+            if (query.isBlank()) allGroups
+            else allGroups.filter { it.name.lowercase().contains(query) }
+
+        _uiState.update { state ->
+            state.copy(
+                isLoading = isLoading ?: state.isLoading,
+                groups = allGroups,
+                filteredGroups = filtered,
+                searchQuery = searchQuery
             )
         }
     }
