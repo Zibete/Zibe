@@ -30,11 +30,12 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.core.utils.SimpleWatcher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import androidx.appcompat.app.AlertDialog
 
 @AndroidEntryPoint
 class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
 
-    private var joinGroupDialog: android.app.AlertDialog? = null
+    private var joinGroupDialog: AlertDialog? = null
 
     private val groupsViewModel: GroupsViewModel by viewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
@@ -72,15 +73,9 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 groupsViewModel.uiState.collect { state ->
                     val b = _binding ?: return@collect
-
                     b.progressIndicator.isVisible = state.isLoading
                     b.rvGroups.isVisible = !state.isLoading
-
-                    // Spinner del swipe se apaga cuando termina la carga
-                    if (!state.isLoading) {
-                        b.groupSwipeRefresh.isRefreshing = false
-                    }
-
+                    if (!state.isLoading) b.groupSwipeRefresh.isRefreshing = false
                     adapterGroups.submitOriginal(state.groups)
                 }
             }

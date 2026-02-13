@@ -104,7 +104,7 @@ class FavoritesViewModel @Inject constructor(
         _events.tryEmit(
             FavoritesUiEvent.ShowSnack(
                 uiText = uiText,
-                type = ZibeSnackType.ERROR
+                snackType = ZibeSnackType.ERROR
             )
         )
         _uiState.update { it.copy(isLoading = false, favorites = emptyList()) }
@@ -114,7 +114,7 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch {
             _events.emit(FavoritesUiEvent.ShowSnack(
                 UiText.Dynamic("Aún no hay favoritos"),
-                type = ZibeSnackType.INFO)
+                snackType = ZibeSnackType.INFO)
             )
         }
     }

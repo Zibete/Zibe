@@ -81,7 +81,8 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                 favoritesViewModel.uiState.collect { state ->
                     val b = _binding ?: return@collect
                     b.progressIndicator.isVisible = state.isLoading
-                    b.favoriteSwipeRefresh.isRefreshing = false
+                    b.rvFavorites.isVisible = !state.isLoading
+                    if (!state.isLoading) b.favoriteSwipeRefresh.isRefreshing = false
                     adapterFavoriteUsers.submitOriginal(state.favorites)
                 }
             }
@@ -97,7 +98,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
                             mainViewModel.emit(
                                 MainUiEvent.ShowSnack(
                                     uiText = event.uiText,
-                                    snackType = event.type
+                                    snackType = event.snackType
                                 )
                             )
                         }
