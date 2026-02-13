@@ -123,7 +123,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         setupUI()
 
-        setupNavigation()
+        setupNavigation(isFreshStart = savedInstanceState == null)
 
         setupObservers() // <--- Acá ViewModel
 
@@ -250,7 +250,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
     }
 
-    private fun setupNavigation() {
+    private fun setupNavigation(isFreshStart: Boolean) {
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment?
             ?: error(ERROR_NAV_HOST_FRAGMENT)
@@ -296,8 +296,11 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
             applyDestinationUi(destination.id)
         }
 
-//        // Estado inicial
-        goToChatTab()
+        if (isFreshStart) {
+            goToChatTab()
+        } else {
+            syncBottomNavSelection()
+        }
     }
 
     private fun setupObservers() {
@@ -619,6 +622,12 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
 
         searchCoordinator.updateAvailability(state.menuConfig.showSearch)
+    }
+
+    private fun syncBottomNavSelection() {
+        navController.currentDestination?.id?.let { destinationId ->
+            applyDestinationUi(destinationId)
+        }
     }
 
     private fun setupLocation() {
