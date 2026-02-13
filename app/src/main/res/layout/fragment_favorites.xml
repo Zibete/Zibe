@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,24 +11,44 @@
         android:id="@+id/favorite_swipe_refresh"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:background="@drawable/background_text"
         android:layout_height="match_parent">
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_favorites"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false" />
 
             <LinearLayout
-                android:layout_marginLeft="5dp"
-                android:layout_marginTop="5dp"
+                android:id="@+id/linear_onboarding_favorites"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_favorites"
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottie_favorites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    app:lottie_autoPlay="false"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/empty_favorites"/>
+
+                <TextView
+                    android:id="@+id/tv_onboarding_favorites"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="30dp"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:text="@string/favorites_onboarding_title"
+                    android:textAppearance="@style/Zibe.Text.Regular"
+                    android:textSize="@dimen/text_size_xlarge" />
             </LinearLayout>
 
             <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -35,10 +56,22 @@
                 style="@style/Widget.Zibe.CircularLoading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
+                android:layout_gravity="center"
                 android:indeterminate="true" />
 
-        </RelativeLayout>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_scroll_top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="@dimen/screen_padding"
+                android:contentDescription="@string/action_scroll_to_top"
+                android:src="@drawable/ic_baseline_keyboard_arrow_up_24"
+                android:visibility="gone"
+                app:backgroundTint="?attr/colorPrimary"
+                app:tint="?attr/colorOnPrimary" />
+
+        </FrameLayout>
 
     </com.zibete.proyecto1.SwipeRefreshLayout>
 
