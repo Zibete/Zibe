@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.databinding.RowUserBinding
-import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.ui.users.UsersRowUiModel
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
@@ -20,12 +20,12 @@ import com.zibete.proyecto1.core.utils.GlassEffect
 
 class AdapterUsers(
     private val onChatClicked: (String) -> Unit,
-    private val onProfileClicked: (Users) -> Unit,
+    private val onProfileClicked: (String) -> Unit,
     private val formatDistance: (Double) -> String
-) : ListAdapter<Users, AdapterUsers.VH>(UsersDiffCallback) {
+) : ListAdapter<UsersRowUiModel, AdapterUsers.VH>(UsersDiffCallback) {
 
     /** Para filtro sin romper submitList (fuente “completa”) */
-    private var originalList: List<Users> = emptyList()
+    private var originalList: List<UsersRowUiModel> = emptyList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val binding = RowUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -55,18 +55,9 @@ class AdapterUsers(
             formatDistance)
     }
 
-    fun submitUsers(list: List<Users>) {
+    fun submitUsers(list: List<UsersRowUiModel>) {
         originalList = list
         submitList(list)
-    }
-
-    fun filterByName(query: String?) {
-        val q = query.orEmpty().trim().lowercase()
-        if (q.isEmpty()) {
-            submitList(originalList)
-        } else {
-            submitList(originalList.filter { it.name.lowercase().contains(q) })
-        }
     }
 
     class VH(private val b: RowUserBinding) : RecyclerView.ViewHolder(b.root) {
@@ -77,10 +68,10 @@ class AdapterUsers(
         }
 
         fun bind(
-            u: Users,
+            u: UsersRowUiModel,
             formatDistance: (Double) -> String,
             onChatClicked: (String) -> Unit,
-            onProfileClicked: (Users) -> Unit
+            onProfileClicked: (String) -> Unit
         ) {
             // Imagen
             if (u.photoUrl.isNotBlank()) {
@@ -104,11 +95,11 @@ class AdapterUsers(
 
             // Clicks (cada bind, porque cambia el item)
             b.chatButton.setOnClickListener { onChatClicked(u.id) }
-            b.userCard.setOnClickListener { onProfileClicked(u) }
+            b.userCard.setOnClickListener { onProfileClicked(u.id) }
         }
 
         fun bindPayload(
-            u: Users,
+            u: UsersRowUiModel,
             payload: Bundle,
             formatDistance: (Double) -> String
         ) {
