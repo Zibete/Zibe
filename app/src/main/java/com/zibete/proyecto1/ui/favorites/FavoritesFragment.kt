@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.adapters.AdapterFavoriteUsers
 import com.zibete.proyecto1.databinding.FragmentFavoritesBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
@@ -33,6 +34,9 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
     private val mainViewModel: MainViewModel by activityViewModels()
 
     private lateinit var adapterFavoriteUsers: AdapterFavoriteUsers
+    private lateinit var layoutManager: GridLayoutManager
+    private var scrollListener: RecyclerView.OnScrollListener? = null
+    private val scrollTopThreshold = 3
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,6 +52,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
 
         setupRecyclerView()
         setupSwipeRefresh()
+        setupScrollTopFab()
         collectUiState()
         collectEvents()
 
@@ -55,8 +60,9 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
     }
 
     private fun setupRecyclerView() = with(binding) {
+        layoutManager = GridLayoutManager(requireContext(), 3)
         rvFavorites.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
+            layoutManager = this@FavoritesFragment.layoutManager
             setHasFixedSize(true)
             adapter = AdapterFavoriteUsers { favoriteUser ->
                 startActivity(
@@ -79,11 +85,7 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 favoritesViewModel.uiState.collect { state ->
-                    val b = _binding ?: return@collect
-                    b.progressIndicator.isVisible = state.isLoading
-                    b.rvFavorites.isVisible = !state.isLoading
-                    if (!state.isLoading) b.favoriteSwipeRefresh.isRefreshing = false
-                    adapterFavoriteUsers.submitOriginal(state.favorites)
+                    render(state)
                 }
             }
         }
@@ -110,10 +112,60 @@ class FavoritesFragment : BaseChatSessionFragment(), SearchHandler {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        _binding?.let { b ->
+            scrollListener?.let { b.rvFavorites.removeOnScrollListener(it) }
+            b.lottieFavorites.cancelAnimation()
+        }
+        scrollListener = null
         _binding = null
     }
 
     override fun onSearchQueryChanged(query: String?) {
-        adapterFavoriteUsers.filterByName(query)
+        favoritesViewModel.onSearchQueryChanged(query.orEmpty())
+    }
+
+    private fun render(state: FavoritesUiState) {
+        val b = _binding ?: return
+
+        b.progressIndicator.isVisible = state.isLoading
+        if (!state.isLoading) b.favoriteSwipeRefresh.isRefreshing = false
+
+        if (state.showOnboarding) showOnBoarding(b)
+        else showFavoritesList(b)
+
+        adapterFavoriteUsers.submitOriginal(state.filteredFavorites)
+        updateScrollTopFab()
+    }
+
+    private fun showOnBoarding(b: FragmentFavoritesBinding) {
+        b.rvFavorites.isVisible = false
+        b.linearOnboardingFavorites.isVisible = true
+        b.lottieFavorites.playAnimation()
+    }
+
+    private fun showFavoritesList(b: FragmentFavoritesBinding) {
+        b.rvFavorites.isVisible = true
+        b.linearOnboardingFavorites.isVisible = false
+        b.lottieFavorites.cancelAnimation()
+    }
+
+    private fun setupScrollTopFab() {
+        binding.fabScrollTop.setOnClickListener {
+            binding.rvFavorites.smoothScrollToPosition(0)
+        }
+
+        scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollTopFab()
+            }
+        }
+        scrollListener?.let { binding.rvFavorites.addOnScrollListener(it) }
+        updateScrollTopFab()
+    }
+
+    private fun updateScrollTopFab() {
+        val b = _binding ?: return
+        val firstVisible = layoutManager.findFirstVisibleItemPosition()
+        b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
     }
 }
