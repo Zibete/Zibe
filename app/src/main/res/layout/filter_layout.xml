@@ -1,134 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:fillViewport="true"
     app:cardCornerRadius="28dp"
     app:cardElevation="0dp">
 
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fillViewport="true">
+        android:orientation="vertical"
+        android:padding="24dp">
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:layout_marginBottom="24dp"
+            android:text="@string/filter_title"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="@string/filter_title"
-                android:textAppearance="?attr/textAppearanceHeadlineMedium" />
+                android:layout_centerVertical="true"
+                android:text="@string/online_upper_case"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:text="@string/online_upper_case"
-                    android:textAppearance="?attr/textAppearanceLabelLarge" />
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchOnline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true" />
-            </RelativeLayout>
-
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="match_parent"
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchOnline"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="12dp" />
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="12dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:text="@string/age"
-                    android:textAppearance="?attr/textAppearanceLabelLarge" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchAge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true" />
-            </RelativeLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/age"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchAge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/containerAgeSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical">
 
             <LinearLayout
-                android:id="@+id/containerAgeSlider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical">
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tv_min_age"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_marginBottom="12dp"
+                    android:layout_weight="1"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="18 años" />
 
-                    <TextView
-                        android:id="@+id/tv_min_age"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:layout_weight="1"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textColor="?attr/colorPrimary"
-                        tools:text="18 años" />
-
-                    <TextView
-                        android:id="@+id/tv_max_age"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textColor="?attr/colorPrimary"
-                        tools:text="99 años" />
-                </LinearLayout>
-
-                <com.google.android.material.slider.RangeSlider
-                    android:id="@+id/range_age"
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tv_max_age"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:valueFrom="18"
-                    android:valueTo="99" />
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="99 años" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_clear_filter"
-                android:layout_marginTop="32dp"
-                style="?attr/borderlessButtonStyle"
+            <com.google.android.material.slider.RangeSlider
+                android:id="@+id/range_age"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/action_filter_off"
-                android:textColor="?attr/colorError" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_cancel"
-                style="?attr/borderlessButtonStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/action_cancel" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_apply_filter"
-                style="?attr/materialButtonStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/action_filter_on"
-                app:cornerRadius="16dp" />
-
+                android:valueFrom="18"
+                android:valueTo="99" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-</com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_clear_filter"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/action_filter_off"
+            android:textColor="?attr/colorError" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_cancel"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/action_cancel" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_apply_filter"
+            style="?attr/materialButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/action_filter_on"
+            app:cornerRadius="16dp" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
