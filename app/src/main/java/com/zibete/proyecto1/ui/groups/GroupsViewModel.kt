@@ -40,18 +40,19 @@ class GroupsViewModel @Inject constructor(
     private var allGroups: List<Groups> = emptyList()
     private var searchQuery: String = ""
 
-    fun loadGroups() = fetchGroups(showLoading = true)
+    fun loadGroups() = fetchGroups(showLoading = true, isRefresh = false)
 
-    fun refreshGroups() = fetchGroups(showLoading = false)
+    fun refreshGroups() = fetchGroups(showLoading = false, isRefresh = true)
 
-    private fun fetchGroups(showLoading: Boolean) {
+    private fun fetchGroups(showLoading: Boolean, isRefresh: Boolean) {
         viewModelScope.launch {
             if (showLoading) _uiState.update { it.copy(isLoading = true) }
+            if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
 
             runCatching { groupRepository.getAllGroups() }
                 .onSuccess { groupsList ->
                     allGroups = groupsList.sortedBy { it.name.lowercase() }
-                    updateVisibleGroups(isLoading = false)
+                    updateVisibleGroups(isLoading = false, isRefreshing = false)
                 }
                 .onFailure { e ->
                     onError(
@@ -72,13 +73,7 @@ class GroupsViewModel @Inject constructor(
     }
 
     fun onError(uiText: UiText) {
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                groups = emptyList(),
-                filteredGroups = emptyList()
-            )
-        }
+        _uiState.update { it.copy(isLoading = false, isRefreshing = false) }
         viewModelScope.launch {
             _events.emit(
                 GroupsUiEvent.ShowSnack(
@@ -89,7 +84,10 @@ class GroupsViewModel @Inject constructor(
         }
     }
 
-    private fun updateVisibleGroups(isLoading: Boolean? = null) {
+    private fun updateVisibleGroups(
+        isLoading: Boolean? = null,
+        isRefreshing: Boolean? = null
+    ) {
         val query = searchQuery.trim().lowercase()
 
         val filtered =
@@ -99,6 +97,7 @@ class GroupsViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 isLoading = isLoading ?: state.isLoading,
+                isRefreshing = isRefreshing ?: state.isRefreshing,
                 groups = allGroups,
                 filteredGroups = filtered,
                 searchQuery = searchQuery
