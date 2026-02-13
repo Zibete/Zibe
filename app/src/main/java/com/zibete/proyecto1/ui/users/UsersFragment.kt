@@ -106,6 +106,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
                     adapterUsers?.submitUsers(state.users)
 
                     if (shouldStickToBottom) scrollToBottom()
+                    updateScrollTopFab()
                 }
             }
         }
@@ -290,7 +291,29 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
 
     override fun onDestroyView() {
         super.onDestroyView()
+        scrollListener?.let { binding.rv.removeOnScrollListener(it) }
+        scrollListener = null
         adapterUsers = null
         _binding = null
     }
+
+    private fun setupScrollTopFab() {
+        binding.fabScrollTop.setOnClickListener {
+            binding.rv.smoothScrollToPosition(0)
+        }
+
+        scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollTopFab()
+            }
+        }
+        scrollListener?.let { binding.rv.addOnScrollListener(it) }
+        updateScrollTopFab()
+    }
+
+    private fun updateScrollTopFab() {
+        val firstVisible = layoutManager.findFirstVisibleItemPosition()
+        binding.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
+    }
+
 }
