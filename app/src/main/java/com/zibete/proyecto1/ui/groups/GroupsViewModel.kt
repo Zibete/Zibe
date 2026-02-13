@@ -3,22 +3,25 @@ package com.zibete.proyecto1.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.ui.toUiText
+import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class GroupsViewModel @Inject constructor(
@@ -28,10 +31,10 @@ class GroupsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GroupsUiState())
-    val uiState: StateFlow<GroupsUiState> = _uiState
+    val uiState: StateFlow<GroupsUiState> = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<GroupsUiEvent>(extraBufferCapacity = 1)
-    val events: SharedFlow<GroupsUiEvent> = _events
+    val events: SharedFlow<GroupsUiEvent> = _events.asSharedFlow()
 
     fun loadGroups() = fetchGroups(showLoading = true)
 
@@ -43,19 +46,19 @@ class GroupsViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = true) }
             }
 
-            try {
-                val groupsList = groupRepository.getAllGroups()
-                val sorted = groupsList.sortedBy { it.name.lowercase() }
-
-                _uiState.update { it.copy(isLoading = false, groups = sorted) }
-            } catch (e: Exception) {
-                onError(
-                    UiText.StringRes(
-                        R.string.err_zibe_prefix,
-                        args = listOf(e.message ?: "")
+            runCatching { groupRepository.getAllGroups() }
+                .onSuccess { groupsList ->
+                    val sorted = groupsList.sortedBy { it.name.lowercase() }
+                    _uiState.update { it.copy(isLoading = false, groups = sorted) }
+                }
+                .onFailure { e ->
+                    onError(
+                        e.message.toUiText(
+                            R.string.err_zibe_prefix,
+                            R.string.err_zibe
+                        )
                     )
-                )
-            }
+                }
         }
     }
 
@@ -63,7 +66,14 @@ class GroupsViewModel @Inject constructor(
         uiText: UiText
     ) {
         _uiState.update { it.copy(isLoading = false, groups = emptyList()) }
-        viewModelScope.launch { _events.emit(GroupsUiEvent.ShowSnack(uiText, ZibeSnackType.ERROR)) }
+        viewModelScope.launch {
+            _events.emit(
+                GroupsUiEvent.ShowSnack(
+                    uiText = uiText,
+                    snackType = ZibeSnackType.ERROR
+                )
+            )
+        }
     }
 
     private suspend fun joinGroupAndNavigate(
