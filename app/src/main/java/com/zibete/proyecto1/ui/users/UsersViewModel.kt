@@ -41,8 +41,6 @@ class UsersViewModel @Inject constructor(
         val maxAge: Int = 0
     )
 
-    private val myUid: String get() = userRepository.myUid
-
     private val _uiState = MutableStateFlow(UsersUiState())
     val uiState: StateFlow<UsersUiState> = _uiState.asStateFlow()
 
@@ -55,66 +53,66 @@ class UsersViewModel @Inject constructor(
 
     fun loadUsers() {
         viewModelScope.launch {
-
             _uiState.update { it.copy(isLoading = true) }
 
             currentFilters = readFiltersFromPrefs()
+            val myUid = userRepository.myUid
 
-            try {
-                val snapshot = firebaseRefsContainer.refAccounts.get().await()
-
-                if (!snapshot.exists()) {
-                    allUsers = emptyList()
+            runCatching { fetchUsers(myUid) }
+                .onSuccess { users ->
+                    allUsers = users
                     updateVisibleUsers(isLoading = false)
-                    return@launch
                 }
-
-                val tempList = mutableListOf<UsersRowUiModel>()
-
-                for (child in snapshot.children) {
-                    val key = child.key ?: continue
-                    if (key == myUid) continue
-
-                    val user = child.getValue(Users::class.java) ?: continue
-
-                    val age = ageCalculator(user.birthDate)
-                    val distanceMeters = locationRepository.getDistanceMeters(
-                        locationRepository.latitude,
-                        locationRepository.longitude,
-                        user.latitude,
-                        user.longitude
-                    )
-
-                    tempList.add(
-                        UsersRowUiModel(
-                            id = key,
-                            name = user.name,
-                            age = age,
-                            isOnline = user.isOnline,
-                            distanceMeters = distanceMeters,
-                            photoUrl = user.photoUrl,
-                            description = user.description
+                .onFailure { e ->
+                    _events.emit(
+                        UsersUiEvent.ShowSnack(
+                            uiText = e.message.toUiText(
+                                R.string.err_zibe_prefix,
+                                R.string.err_zibe
+                            ),
+                            snackType = ZibeSnackType.ERROR
                         )
                     )
+                    _uiState.update { it.copy(isLoading = false) }
                 }
-
-                tempList.sortBy { it.distanceMeters }
-
-                allUsers = tempList
-                updateVisibleUsers(isLoading = false)
-            } catch (e: Throwable) {
-                _events.emit(
-                    UsersUiEvent.ShowSnack(
-                        uiText = e.message.toUiText(
-                            R.string.err_zibe_prefix,
-                            R.string.err_zibe
-                        ),
-                        snackType = ZibeSnackType.ERROR
-                    )
-                )
-                _uiState.update { it.copy(isLoading = false) }
-            }
         }
+    }
+
+    private suspend fun fetchUsers(myUid: String): List<UsersRowUiModel> {
+        val snapshot = firebaseRefsContainer.refAccounts.get().await()
+        if (!snapshot.exists()) return emptyList()
+
+        val lat = locationRepository.latitude
+        val lon = locationRepository.longitude
+
+        val tempList = mutableListOf<UsersRowUiModel>()
+
+        for (child in snapshot.children) {
+            val key = child.key ?: continue
+            if (key == myUid) continue
+
+            val user = child.getValue(Users::class.java) ?: continue
+
+            val age = ageCalculator(user.birthDate)
+            val distanceMeters = locationRepository.getDistanceMeters(
+                lat, lon,
+                user.latitude, user.longitude
+            )
+
+            tempList.add(
+                UsersRowUiModel(
+                    id = key,
+                    name = user.name,
+                    age = age,
+                    isOnline = user.isOnline,
+                    distanceMeters = distanceMeters,
+                    photoUrl = user.photoUrl,
+                    description = user.description
+                )
+            )
+        }
+
+        return tempList.sortedBy { it.distanceMeters }
     }
 
     fun applyFilters(
@@ -134,7 +132,7 @@ class UsersViewModel @Inject constructor(
             } else {
                 userPreferencesActions.setMinAge(0)
                 userPreferencesActions.setMaxAge(0)
-                userPreferencesActions.setFilterSwitch(applyOnlineFilter) // si online queda activo, sigue habiendo filtro
+                userPreferencesActions.setFilterSwitch(applyOnlineFilter)
             }
 
             currentFilters = UsersFilters(
