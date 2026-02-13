@@ -18,8 +18,6 @@ import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.main.MainUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +41,7 @@ class ChatListViewModel @Inject constructor(
         get() = userRepository.conversationsRootRef(nodeType = NODE_DM)
 
     private var chatListListener: ValueEventListener? = null
-    private var observing = false
+    private var allChats: List<Conversation> = emptyList()
 
     private val _uiState = MutableStateFlow(ChatListUiState())
     val uiState: StateFlow<ChatListUiState> = _uiState.asStateFlow()
@@ -51,35 +49,27 @@ class ChatListViewModel @Inject constructor(
     private val _events = MutableSharedFlow<ChatSessionUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
 
-    fun loadChatList() {
-        if (observing) return
-        observing = true
-        observeChatList()
-    }
-
-    private fun observeChatList() {
+    fun startObserving() {
+        if (chatListListener != null) return
         _uiState.update { it.copy(isLoading = true) }
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-
                 if (!snapshot.exists()) {
+                    allChats = emptyList()
                     _uiState.value = ChatListUiState(
                         isLoading = false,
                         chats = emptyList(),
                         filteredChats = emptyList(),
-                        showOnboarding = true
+                        showOnboarding = true,
+                        searchQuery = _uiState.value.searchQuery
                     )
                     return
                 }
 
-                val all = snapshot.children.mapNotNull { it.getValue(Conversation::class.java) }
-                    .toMutableList()
-
-                all.sort()
-
-                // Visible = (foto != EMPTY) y (estado == NODE_DM o estado == SILENT)
-                val visible = all.filter { chat -> chat.isVisible() }
+                val all = mapSnapshot(snapshot)
+                val visible = computeVisibleChats(all)
+                allChats = visible
 
                 val q = _uiState.value.searchQuery
                 val filtered = filterChats(visible, q)
@@ -102,10 +92,14 @@ class ChatListViewModel @Inject constructor(
         chatRef.addValueEventListener(listener)
     }
 
+    fun stopObserving() {
+        chatListListener?.let { chatRef.removeEventListener(it) }
+        chatListListener = null
+    }
+
     fun onSearchQueryChanged(query: String) {
         val normalized = query.trim()
-        val currentChats = _uiState.value.chats
-        val filtered = filterChats(currentChats, normalized)
+        val filtered = filterChats(allChats, normalized)
 
         _uiState.update {
             it.copy(
@@ -115,12 +109,13 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-//    override fun onCleared() {
-//        super.onCleared()
-//        chatListListener?.let { chatRef.removeEventListener(it) }
-//        chatListListener = null
-//        observing = false
-//    }
+    private fun mapSnapshot(snapshot: DataSnapshot): List<Conversation> =
+        snapshot.children
+            .mapNotNull { it.getValue(Conversation::class.java) }
+            .sorted()
+
+    private fun computeVisibleChats(all: List<Conversation>): List<Conversation> =
+        all.filter { chat -> chat.isVisible() }
 
     // ---------- Acciones de menú ----------
 
@@ -229,8 +224,8 @@ class ChatListViewModel @Inject constructor(
         val lower = query.trim().lowercase()
 
         return chats.filter { chat ->
-            val name = chat.otherName.orEmpty().lowercase()
-            val id = chat.otherId.orEmpty().lowercase()
+            val name = chat.otherName.lowercase()
+            val id = chat.otherId.lowercase()
             name.contains(lower) || id.contains(lower)
         }
     }
