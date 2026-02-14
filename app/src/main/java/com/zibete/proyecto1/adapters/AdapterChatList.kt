@@ -96,7 +96,7 @@ class AdapterChatList(
         if ("state" in changes) b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
         if ("name" in changes) b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
-        if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
+        if ("photo" in changes) loadAvatar(b, chat.otherPhotoUrl)
         if ("msg" in changes) {
             b.lastMessage.text = chat.lastContent.orEmpty()
             applyLastMsgStyle(b)
@@ -109,16 +109,25 @@ class AdapterChatList(
         bindClicks(holder, chat)
     }
 
+    private fun resetEphemeralViews(b: RowChatListBinding) {
+        b.offNotifications.isVisible = false
+        b.imageViewChecks.isVisible = false
+        b.badgeUnReadMessage.isVisible = false
+        b.badgeUnReadMessage.text = ""
+    }
+
     private fun bindFull(holder: ChatListViewHolder, chat: Conversation) {
         val b = holder.binding
         val ctx = b.root.context
+
+        resetEphemeralViews(b)
 
         b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
 
         b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
+        loadAvatar(b, chat.otherPhotoUrl)
 
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
@@ -159,51 +168,53 @@ class AdapterChatList(
     }
 
     private fun bindBadgeUnreadMessage(b: RowChatListBinding, chat: Conversation) {
-        val noSeen = chat.unreadCount
-        if (noSeen > 0) {
-            b.badgeUnReadMessage.isVisible = true
-            b.badgeUnReadMessage.text = noSeen.toString()
-        } else b.badgeUnReadMessage.isVisible = false
+        val unreadCount = chat.unreadCount
+        b.badgeUnReadMessage.isVisible = unreadCount > 0
+        b.badgeUnReadMessage.text = if (unreadCount > 0) unreadCount.toString() else ""
     }
 
     private fun bindChecks(b: RowChatListBinding, chat: Conversation) {
-        val myUid = userRepository.myUid
-        val senderUid = chat.userId
-        val seen = chat.seen
-
-        if (senderUid == myUid) {
+        val isMine = chat.userId == userRepository.myUid
+        if (isMine) {
             b.imageViewChecks.isVisible = true
-            val iconRes = when (seen) {
-                MSG_DELIVERED -> R.drawable.ic_check_24
-                else -> R.drawable.ic_double_check_24
-            }
-
+            val iconRes = if (chat.seen == MSG_DELIVERED) R.drawable.ic_check_24 else R.drawable.ic_double_check_24
             b.imageViewChecks.setImageResource(iconRes)
-            val tintRes = if (seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
-            val tintColor = ContextCompat.getColor(b.root.context, tintRes)
-            b.imageViewChecks.imageTintList = ColorStateList.valueOf(tintColor)
-        } else {
-            b.imageViewChecks.isVisible = false
-        }
+
+            val tintRes = if (chat.seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
+            b.imageViewChecks.imageTintList = ColorStateList.valueOf(
+                ContextCompat.getColor(b.root.context, tintRes)
+            )
+        } else b.imageViewChecks.isVisible = false
     }
 
     private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
         val ctx = b.root.context
-        val colorRes = when (status) {
+        val fillRes = when (status) {
             is UserStatus.Online,
             is UserStatus.TypingOrRecording -> R.color.status_online
 
             is UserStatus.LastSeen,
             is UserStatus.Offline -> R.color.status_offline
         }
-        val circleColor = ContextCompat.getColor(ctx, colorRes)
-        val strokeColor = ContextCompat.getColor(ctx, R.color.status_stroke)
+        val fillColor = ContextCompat.getColor(ctx, fillRes)
 
-        b.statusIndicator.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(circleColor)
-            setStroke(4, strokeColor)
-        }
+        val bg = (b.statusIndicator.background?.mutate() as? GradientDrawable)
+            ?: (ContextCompat.getDrawable(ctx, R.drawable.shape_status_circle)
+                ?.mutate() as GradientDrawable)
+
+        bg.setColor(fillColor)
+        b.statusIndicator.background = bg
+    }
+
+    private fun loadAvatar(b: RowChatListBinding, photoUrl: String) {
+        val image = b.circleImageView
+        val url = photoUrl.takeIf { it.isNotBlank() }
+
+        Glide.with(image)
+            .load(url)
+            .placeholder(R.drawable.ic_person_24)
+            .error(R.drawable.ic_person_24)
+            .into(image)
     }
 
     private fun applyLastMsgStyle(binding: RowChatListBinding) {
