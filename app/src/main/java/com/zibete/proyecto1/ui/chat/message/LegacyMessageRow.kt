@@ -382,7 +382,7 @@ private fun renderSeenChecksRight(b: RowMsgRightBinding, seen: Int) {
         MSG_SEEN -> {
             b.checked.isVisible = true
             b.checked2.isVisible = true
-            val c = ContextCompat.getColor(b.root.context, R.color.visto)
+            val c = ContextCompat.getColor(b.root.context, R.color.check_seen)
             b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
         }
