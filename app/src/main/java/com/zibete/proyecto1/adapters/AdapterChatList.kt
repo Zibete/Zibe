@@ -1,7 +1,8 @@
 package com.zibete.proyecto1.adapters
 
-import android.graphics.PorterDuff
+import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
@@ -13,15 +14,17 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.databinding.RowChatlistaBinding
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
+import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
+import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.utils.TimeUtils
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.databinding.RowChatListBinding
+import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.model.UserStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -30,23 +33,23 @@ import kotlinx.coroutines.launch
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
     private val userRepository: UserRepository,
-    private val profileRepositoryProvider : ProfileRepositoryProvider,
+    private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val onChatClicked: (Conversation) -> Unit
 ) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(
     ChatListDiffCallback
 ), OnCreateContextMenuListener {
 
     private var contextMenuPosition: Int = 0
-
     private var menuReadTitle: CharSequence? = null
     private var menuNotifTitle: CharSequence? = null
 
-    class ChatListViewHolder(val binding: RowChatlistaBinding) : RecyclerView.ViewHolder(binding.root) {
+    class ChatListViewHolder(val binding: RowChatListBinding) :
+        RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatListViewHolder {
-        val binding = RowChatlistaBinding.inflate(
+        val binding = RowChatListBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
@@ -59,7 +62,11 @@ class AdapterChatList(
         bindFull(holder, getItem(position))
     }
 
-    override fun onBindViewHolder(holder: ChatListViewHolder, position: Int, payloads: MutableList<Any>) {
+    override fun onBindViewHolder(
+        holder: ChatListViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
         val item = getItem(position)
         val payload = payloads.firstOrNull()
 
@@ -86,16 +93,16 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        if ("state" in changes) applyCardState(b, chat)
-        if ("name" in changes) b.tvUsuario1.text = chat.otherName.takeIf { it.isNotBlank() }
+        if ("state" in changes) b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
+        if ("name" in changes) b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
-        if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
+        if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
         if ("msg" in changes) {
-            b.ultMsg.text = chat.lastContent.orEmpty()
+            b.lastMessage.text = chat.lastContent.orEmpty()
             applyLastMsgStyle(b)
         }
         if ("time" in changes) setLastMsgTime(b, chat)
-        if ("unread" in changes) bindUnreadBadge(b, chat)
+        if ("unread" in changes) bindBadgeUnreadMessage(b, chat)
         if ("checks" in changes) bindChecks(b, chat)
 
         // click/longclick dependen de state/categorías → los re-aplicamos siempre
@@ -106,12 +113,12 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        applyCardState(b, chat)
+        b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
 
-        b.tvUsuario1.text = chat.otherName.takeIf { it.isNotBlank() }
+        b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        Glide.with(ctx).load(chat.otherPhotoUrl).into(b.imageUser1)
+        Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
 
         holder.statusJob?.cancel()
         holder.statusJob = lifecycleScope.launch {
@@ -121,12 +128,11 @@ class AdapterChatList(
                 }
         }
 
-        b.ultMsg.text = chat.lastContent
+        b.lastMessage.text = chat.lastContent
         applyLastMsgStyle(b)
         setLastMsgTime(b, chat)
-        bindUnreadBadge(b, chat)
+        bindBadgeUnreadMessage(b, chat)
         bindChecks(b, chat)
-
         bindClicks(holder, chat)
     }
 
@@ -134,42 +140,75 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        b.cardview.setOnClickListener {
-            onChatClicked(chat)
-        }
+        b.root.setOnClickListener { onChatClicked(chat) }
 
-        b.cardview.setOnLongClickListener {
-            contextMenuPosition = holder.bindingAdapterPosition.coerceAtLeast(0)
+        b.root.setOnLongClickListener {
+            contextMenuPosition =
+                holder.bindingAdapterPosition.coerceAtLeast(0)
 
-            menuNotifTitle = if (b.notifOff.isVisible) {
-                ctx.getString(R.string.menu_user_notifications_on)
-            } else {
-                ctx.getString(R.string.menu_user_notifications_off)
-            }
+            menuNotifTitle =
+                if (b.offNotifications.isVisible) ctx.getString(R.string.menu_user_notifications_on)
+                else ctx.getString(R.string.menu_user_notifications_off)
 
-            menuReadTitle = if (b.nuevoMsg.isVisible) {
-                ctx.getString(R.string.leido)
-            } else {
-                ctx.getString(R.string.noleido)
-            }
+            menuReadTitle =
+                if (b.badgeUnReadMessage.isVisible) ctx.getString(R.string.leido)
+                else ctx.getString(R.string.noleido)
 
             false
         }
     }
 
-    private fun bindUnreadBadge(binding: RowChatlistaBinding, chat: Conversation) {
+    private fun bindBadgeUnreadMessage(b: RowChatListBinding, chat: Conversation) {
         val noSeen = chat.unreadCount
         if (noSeen > 0) {
-            binding.nuevoMsg.isVisible = true
-            binding.nuevoMsg.text = noSeen.toString()
+            b.badgeUnReadMessage.isVisible = true
+            b.badgeUnReadMessage.text = noSeen.toString()
+        } else b.badgeUnReadMessage.isVisible = false
+    }
+
+    private fun bindChecks(b: RowChatListBinding, chat: Conversation) {
+        val myUid = userRepository.myUid
+        val senderUid = chat.userId
+        val seen = chat.seen
+
+        if (senderUid == myUid) {
+            b.imageViewChecks.isVisible = true
+            val iconRes = when (seen) {
+                MSG_DELIVERED -> R.drawable.ic_check_24
+                else -> R.drawable.ic_double_check_24
+            }
+
+            b.imageViewChecks.setImageResource(iconRes)
+            val tintRes = if (seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
+            val tintColor = ContextCompat.getColor(b.root.context, tintRes)
+            b.imageViewChecks.imageTintList = ColorStateList.valueOf(tintColor)
         } else {
-            binding.nuevoMsg.isVisible = false
+            b.imageViewChecks.isVisible = false
         }
     }
 
-    private fun applyLastMsgStyle(binding: RowChatlistaBinding) {
+    private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
+        val ctx = b.root.context
+        val colorRes = when (status) {
+            is UserStatus.Online,
+            is UserStatus.TypingOrRecording -> R.color.status_online
+
+            is UserStatus.LastSeen,
+            is UserStatus.Offline -> R.color.status_offline
+        }
+        val circleColor = ContextCompat.getColor(ctx, colorRes)
+        val strokeColor = ContextCompat.getColor(ctx, R.color.status_stroke)
+
+        b.statusIndicator.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(circleColor)
+            setStroke(4, strokeColor)
+        }
+    }
+
+    private fun applyLastMsgStyle(binding: RowChatListBinding) {
         val ctx = binding.root.context
-        val m = binding.ultMsg.text?.toString().orEmpty()
+        val m = binding.lastMessage.text?.toString().orEmpty()
 
         val isMedia =
             m == ctx.getString(R.string.photo_send) ||
@@ -177,104 +216,25 @@ class AdapterChatList(
                     m == ctx.getString(R.string.audio_send) ||
                     m == ctx.getString(R.string.audio_received)
 
-        binding.ultMsg.setTypeface(null, if (isMedia) Typeface.ITALIC else Typeface.NORMAL)
+        binding.lastMessage.setTypeface(null, if (isMedia) Typeface.ITALIC else Typeface.NORMAL)
     }
 
     private fun setLastMsgTime(
-        binding: RowChatlistaBinding,
+        binding: RowChatListBinding,
         chat: Conversation
     ) {
-        binding.horaUltMsg.text =
+        binding.hourLastMessage.text =
             TimeUtils.formatConversationTimestamp(
                 ms = chat.lastMessageAt,
                 context = binding.root.context
             )
     }
 
-
-    private fun applyCardState(binding: RowChatlistaBinding, chat: Conversation) {
-        val state = chat.state
-        binding.cardview.isVisible = chat.isVisible()
-        binding.notifOff.isVisible = state == CHAT_STATE_SILENT
-    }
-
-    private fun bindChecks(binding: RowChatlistaBinding, chat: Conversation) {
-        val myUid = userRepository.myUid
-        val senderId = chat.userId
-        val seen = chat.seen
-
-        if (senderId == myUid && seen != 0) {
-            binding.relativeLayout.isVisible = true
-
-            when (seen) {
-                1 -> {
-                    binding.checked.isVisible = true
-                    binding.checked2.isVisible = false
-                    tintCheck(binding, R.color.blanco)
-                }
-                2 -> {
-                    binding.checked.isVisible = true
-                    binding.checked2.isVisible = true
-                    tintCheck(binding, R.color.blanco)
-                }
-                3 -> {
-                    binding.checked.isVisible = true
-                    binding.checked2.isVisible = true
-                    tintCheck(binding, R.color.visto)
-                }
-                else -> {
-                    binding.checked.isVisible = false
-                    binding.checked2.isVisible = false
-                    binding.relativeLayout.isVisible = false
-                }
-            }
-        } else {
-            binding.checked.isVisible = false
-            binding.checked2.isVisible = false
-            binding.relativeLayout.isVisible = false
-        }
-    }
-
-    private fun tintCheck(binding: RowChatlistaBinding, colorRes: Int) {
-        val ctx = binding.root.context
-        val color = ContextCompat.getColor(ctx, colorRes)
-        binding.checked.setColorFilter(color, PorterDuff.Mode.SRC_IN)
-        binding.checked2.setColorFilter(color, PorterDuff.Mode.SRC_IN)
-    }
-
-    private fun bindUserStatus(binding: RowChatlistaBinding, status: UserStatus) {
-        val ctx = binding.root.context
-        when (status) {
-            is UserStatus.Online -> {
-                binding.iconConnected.isVisible = true
-                binding.iconDisconnected.isVisible = false
-                binding.tvStatus.isVisible = true
-                binding.tvStatus.text = ctx.getString(R.string.online)
-            }
-            is UserStatus.TypingOrRecording -> {
-                binding.iconConnected.isVisible = true
-                binding.iconDisconnected.isVisible = false
-                binding.tvStatus.isVisible = true
-                binding.tvStatus.text = status.text
-            }
-            is UserStatus.LastSeen -> {
-                binding.iconConnected.isVisible = false
-                binding.iconDisconnected.isVisible = true
-                binding.tvStatus.isVisible = true
-                binding.tvStatus.text = status.text
-            }
-            is UserStatus.Offline -> {
-                binding.iconConnected.isVisible = false
-                binding.iconDisconnected.isVisible = false
-                binding.tvStatus.isVisible = true
-                binding.tvStatus.text = ctx.getString(R.string.offline)
-            }
-        }
-    }
-
-    // ---------- Context menu ----------
-
-    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+    override fun onCreateContextMenu(
+        menu: ContextMenu,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
         val ctx = v?.context ?: return
         val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
         val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_user_notifications_off)
