@@ -130,7 +130,8 @@
     <dimen name="chat_list_photo_height">56dp</dimen>
     <dimen name="chat_list_check_height">16dp</dimen>
     <dimen name="chat_list_badge_height">20dp</dimen>
-
+    <dimen name="status_indicator_height">14dp</dimen>
+    <dimen name="status_indicator_stroke">1dp</dimen>
 
     <!--Toolbar-->
 
