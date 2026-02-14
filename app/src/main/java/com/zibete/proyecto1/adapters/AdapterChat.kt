@@ -370,7 +370,7 @@ class AdapterChat(
             3 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = true
-                val c = ContextCompat.getColor(context, R.color.visto)
+                val c = ContextCompat.getColor(context, R.color.check_seen)
                 b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             }
