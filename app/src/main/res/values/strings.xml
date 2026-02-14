@@ -430,6 +430,12 @@
     <!-- ============================= -->
 
     <string name="chat_list_onboarding_title">Acá verás tus conversaciones</string>
+
+
+    <string name="check_content_description">Check de visto/no visto</string>
+    <string name="off_notifications_content_description">Notificaciones silenciadas</string>
+
+
     <string name="favorites_onboarding_title">Acá verás tus favoritos</string>
     <string name="group_nick_in_use">El nick %1$s ya esta en uso</string>
     <string name="group_name_in_use">El nombre %1$s ya esta en uso</string>

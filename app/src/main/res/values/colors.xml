@@ -51,7 +51,8 @@
     <color name="zibe_hint_text">#C9C9C9</color>
     <color name="zibe_text_dark">@color/zibe_night_end</color>
     <color name="zibe_text_pink">#FF3B93</color>
-    <color name="zibe_muted_text">#848484</color>
+<!--    <color name="zibe_muted_text">#848484</color>-->
+    <color name="zibe_muted_text">#9E9E9E</color>
 
     <!-- SNACK -->
     <color name="snackbar_surface">#1E2A38</color>
@@ -66,6 +67,10 @@
 
     <!-- ESTADOS -->
     <color name="zibe_shadow">#1A000000</color>
+    <color name="status_online">#00FF1D</color>
+    <color name="status_offline">#FFFFFF</color>
+    <color name="check_seen">#00AFFF</color>
+    <color name="check_not_seen">#FFFFFF</color>
 
     <!-- CARDS -->
 
@@ -94,7 +99,7 @@
     <color name="transparent">#00000000</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="visto">#00AFFF</color>
+
     <color name="accent">#F6286D</color>
     <color name="accent_transparent">#4DFF4081</color>
 
@@ -114,7 +119,8 @@
 
     <!-- Fondo glass (modo oscuro) -->
     <color name="glass_bg_dark">#60000000</color>
-<!--    <color name="glass_stroke_dark">#33000000</color>    &lt;!&ndash; negro 20% &ndash;&gt;-->
+    <color name="status_stroke">#121212</color>
+    <!--    <color name="glass_stroke_dark">#33000000</color>    &lt;!&ndash; negro 20% &ndash;&gt;-->
 <!--    <color name="glass_indicator_dark">#26000000</color> &lt;!&ndash; negro 15% para el pill &ndash;&gt;-->
 
 
