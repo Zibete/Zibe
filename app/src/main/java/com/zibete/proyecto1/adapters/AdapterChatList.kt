@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.ChatListDiffCallback.PayloadConversation
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
@@ -35,9 +36,16 @@ class AdapterChatList(
 ) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(ChatListDiffCallback),
     OnCreateContextMenuListener {
 
-    private var contextMenuPosition: Int = 0
+
+    private var contextMenuChatId: String? = null
+    fun consumeContextMenuChatId(): String? =
+        contextMenuChatId.also { contextMenuChatId = null }
+
     private var menuReadTitle: CharSequence? = null
     private var menuNotifTitle: CharSequence? = null
+
+//    private var contextMenuPosition: Int = 0
+
 
     class ChatListViewHolder(val binding: RowChatListBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -80,6 +88,10 @@ class AdapterChatList(
     override fun onViewRecycled(holder: ChatListViewHolder) {
         holder.statusJob?.cancel()
         holder.statusJob = null
+
+        Glide.with(holder.binding.root).clear(holder.binding.chatListAvatarImage)
+        holder.binding.chatListAvatarImage.setImageDrawable(null)
+
         super.onViewRecycled(holder)
     }
 
@@ -162,8 +174,7 @@ class AdapterChatList(
         b.root.setOnClickListener { onChatClicked(chat) }
 
         b.root.setOnLongClickListener {
-            contextMenuPosition =
-                holder.bindingAdapterPosition.coerceAtLeast(0)
+            contextMenuChatId = chat.otherId.takeIf { it.isNotBlank() }
 
             menuNotifTitle =
                 if (b.offNotifications.isVisible) ctx.getString(R.string.menu_user_notifications_on)
@@ -222,19 +233,15 @@ class AdapterChatList(
             )
     }
 
-    override fun onCreateContextMenu(
-        menu: ContextMenu,
-        v: View?,
-        menuInfo: ContextMenu.ContextMenuInfo?
-    ) {
+    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
         val ctx = v?.context ?: return
         val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
         val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_user_notifications_off)
-
-        menu.add(FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, titleRead)
-        menu.add(FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, titleNotif)
-        menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_user_block)
-        menu.add(FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
-        menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.delete)
+        
+        menu.add(FRAGMENT_ID_CHATLIST, 1, 0, titleRead)
+        menu.add(FRAGMENT_ID_CHATLIST, 2, 0, titleNotif)
+        menu.add(FRAGMENT_ID_CHATLIST, 3, 0, R.string.menu_user_block)
+        menu.add(FRAGMENT_ID_CHATLIST, 4, 0, R.string.ocultar)
+        menu.add(FRAGMENT_ID_CHATLIST, 5, 0, R.string.delete)
     }
 }
