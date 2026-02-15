@@ -10,17 +10,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.UsersDiffCallback.PayloadUsers
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_BLOCKED_BY_ME
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_FAVORITE
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_HAS_BLOCKED_ME
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NOTIFICATIONS_SILENCED
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.RowUserBinding
 import com.zibete.proyecto1.model.UserStatus
@@ -168,21 +159,21 @@ class AdapterUsers(
         onProfileClicked: (String) -> Unit
     ) {
 
-        if (payload.containsKey(PAYLOAD_PHOTO_URL)) loadAvatar(b, u.photoUrl)
-        if (payload.containsKey(PAYLOAD_NAME)) b.userName.text = u.name
-        if (payload.containsKey(PAYLOAD_AGE)) b.userAge.text = u.age.toString()
-        if (payload.containsKey(PAYLOAD_ONLINE)) b.statusIndicator.isVisible = u.isOnline
+        if (payload.containsKey(PayloadUsers.PHOTO_URL)) loadAvatar(b, u.photoUrl)
+        if (payload.containsKey(PayloadUsers.NAME)) b.userName.text = u.name
+        if (payload.containsKey(PayloadUsers.AGE)) b.userAge.text = u.age.toString()
+//        if (payload.containsKey(PAYLOAD_ONLINE)) b.statusIndicator.isVisible = u.isOnline
 
-        if (payload.containsKey(PAYLOAD_FAVORITE)
-            || payload.containsKey(PAYLOAD_BLOCKED_BY_ME)
-            || payload.containsKey(PAYLOAD_HAS_BLOCKED_ME)
-            || payload.containsKey(PAYLOAD_NOTIFICATIONS_SILENCED)
+        if (payload.containsKey(PayloadUsers.FAVORITE)
+            || payload.containsKey(PayloadUsers.BLOCKED_BY_ME)
+            || payload.containsKey(PayloadUsers.HAS_BLOCKED_ME)
+            || payload.containsKey(PayloadUsers.NOTIFICATIONS_SILENCED)
         ) bindBadges(b, u)
 
-        if (payload.containsKey(PAYLOAD_DISTANCE_METERS)) b.userDistance.text =
+        if (payload.containsKey(PayloadUsers.DISTANCE_METERS)) b.userDistance.text =
             formatDistance(u.distanceMeters)
 
-        if (payload.containsKey(PAYLOAD_DESCRIPTION)) {
+        if (payload.containsKey(PayloadUsers.DESCRIPTION)) {
             val hasDesc = u.description.isNotBlank()
             b.userDescription.isVisible = hasDesc
             b.userDescription.text = u.description
