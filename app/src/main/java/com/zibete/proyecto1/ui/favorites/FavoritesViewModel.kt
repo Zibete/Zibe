@@ -1,9 +1,7 @@
 package com.zibete.proyecto1.ui.favorites
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.ui.UiText
@@ -32,10 +30,6 @@ class FavoritesViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
-    companion object {
-        private const val TAG = "FavoritesLoad"
-    }
-
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
@@ -52,21 +46,18 @@ class FavoritesViewModel @Inject constructor(
     private fun fetchFavorites(showLoading: Boolean, isRefresh: Boolean) {
         viewModelScope.launch {
             val shouldShowLoading = showLoading && allFavorites.isEmpty()
-            if (shouldShowLoading) {
-                _uiState.update { it.copy(isLoading = true) }
-            }
-            if (isRefresh) {
-                _uiState.update { it.copy(isRefreshing = true) }
-            }
+
+            if (shouldShowLoading) _uiState.update { it.copy(isLoading = true) }
+            if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
 
             runCatching { fetchFavoriteUsers() }
                 .onSuccess { result ->
                     allFavorites = result
                     updateVisibleFavorites(isLoading = false, isRefreshing = false)
                 }
-                .onFailure { t ->
+                .onFailure { e ->
                     onError(
-                        t.message.toUiText(
+                        e.message.toUiText(
                             R.string.err_zibe_prefix,
                             R.string.err_zibe
                         )
@@ -116,9 +107,6 @@ class FavoritesViewModel @Inject constructor(
             if (legacyId.isNotBlank()) favIds += legacyId
         }
 
-        if (BuildConfig.DEBUG) {
-            Log.d(TAG, "favIds size=${favIds.size}")
-        }
 
         if (favIds.isEmpty()) return emptyList()
 
@@ -157,11 +145,9 @@ class FavoritesViewModel @Inject constructor(
         isRefreshing: Boolean? = null
     ) {
         val query = searchQuery.trim()
-        val filtered = if (query.isBlank()) {
-            allFavorites
-        } else {
-            allFavorites.filter { it.name.contains(query, ignoreCase = true) }
-        }
+
+        val filtered = if (query.isBlank()) allFavorites
+        else allFavorites.filter { it.name.contains(query, ignoreCase = true) }
 
         _uiState.update { state ->
             state.copy(
