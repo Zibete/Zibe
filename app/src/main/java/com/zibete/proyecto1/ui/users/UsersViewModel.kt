@@ -1,25 +1,28 @@
 package com.zibete.proyecto1.ui.users
 
 import android.os.SystemClock
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +32,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -40,9 +45,7 @@ class UsersViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val locationRepository: LocationRepository,
     private val userRepository: UserRepository,
-    private val profileRepositoryProvider: ProfileRepositoryProvider,
-
-) : ViewModel() {
+    ) : ViewModel() {
 
     private data class UsersFilters(
         val applyAgeFilter: Boolean = false,
@@ -62,18 +65,27 @@ class UsersViewModel @Inject constructor(
     private var searchQuery: String = ""
     private var loadJob: Job? = null
     private var metaJob: Job? = null
+    private val hasBlockedMeCache = mutableMapOf<String, Boolean>()
+    private val hasBlockedMeInFlight = mutableSetOf<String>()
+    private val hasBlockedMeSemaphore = Semaphore(4)
+    private var hasBlockedMeGeneration = 0
 
     fun loadUsers() {
         loadJob?.cancel()
         metaJob?.cancel()
+        hasBlockedMeGeneration += 1
+        hasBlockedMeCache.clear()
+        hasBlockedMeInFlight.clear()
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
             currentFilters = readFiltersFromPrefs()
             val myUid = userRepository.myUid
 
+            val fetchStart = SystemClock.elapsedRealtime()
             runCatching { fetchUsersBase(myUid) }
                 .onSuccess { users ->
+                    val fetchElapsed = SystemClock.elapsedRealtime() - fetchStart
                     allUsers = users
                     updateVisibleUsers(isLoading = false)
                     if (users.isNotEmpty()) {
@@ -137,21 +149,122 @@ class UsersViewModel @Inject constructor(
     }
 
     private suspend fun enrichUsersMeta(baseUsers: List<UsersRowUiModel>) {
-        val enriched = withContext(Dispatchers.IO) {
-            baseUsers.map { user ->
-                val chatState = profileRepositoryProvider.getMyChatState(user.id)
-                val isFavorite = profileRepositoryProvider.isFavorite(user.id)
-                val blockState = profileRepositoryProvider.getBlockStateWith(user.id)
-                user.copy(
-                    isFavorite = isFavorite,
-                    isBlockedByMe = blockState.isBlockedByMe,
-                    hasBlockedMe = blockState.hasBlockedMe,
-                    isNotificationsSilenced = chatState == CHAT_STATE_SILENT
-                )
+        val myUid = userRepository.myUid
+
+        val (favorites, chatStates) = withContext(Dispatchers.IO) {
+            coroutineScope {
+                val favoritesDeferred = async { fetchFavoriteSet(myUid) }
+                val statesDeferred = async { fetchMyConversationStates(myUid) }
+                favoritesDeferred.await() to statesDeferred.await()
             }
+        }
+        val enriched = baseUsers.map { user ->
+            val chatState = chatStates[user.id].orEmpty()
+            val hasBlockedMe = hasBlockedMeCache[user.id] ?: false
+            user.copy(
+                isFavorite = favorites.contains(user.id),
+                isBlockedByMe = chatState == CHAT_STATE_BLOCKED,
+                hasBlockedMe = hasBlockedMe,
+                isNotificationsSilenced = chatState == CHAT_STATE_SILENT
+            )
         }
         allUsers = enriched
         updateVisibleUsers()
+    }
+
+    fun prefetchHasBlockedMe(userIds: List<String>) {
+        if (userIds.isEmpty()) return
+        val currentGeneration = hasBlockedMeGeneration
+        val toFetch = userIds
+            .asSequence()
+            .filter { it.isNotBlank() }
+            .distinct()
+            .filter { it !in hasBlockedMeCache && it !in hasBlockedMeInFlight }
+            .toList()
+        if (toFetch.isEmpty()) return
+
+        toFetch.forEach { otherUid ->
+            hasBlockedMeInFlight += otherUid
+            viewModelScope.launch(Dispatchers.IO) {
+                val result = runCatching {
+                    hasBlockedMeSemaphore.withPermit {
+                        fetchHasBlockedMe(otherUid)
+                    }
+                }.getOrNull()
+                withContext(Dispatchers.Main) {
+                    if (currentGeneration != hasBlockedMeGeneration) return@withContext
+                    hasBlockedMeInFlight -= otherUid
+                    if (result == null) return@withContext
+                    hasBlockedMeCache[otherUid] = result
+                    applyHasBlockedMe(otherUid, result)
+                }
+            }
+        }
+    }
+
+    private fun applyHasBlockedMe(otherUid: String, hasBlockedMe: Boolean) {
+        val index = allUsers.indexOfFirst { it.id == otherUid }
+        if (index == -1) return
+        val current = allUsers[index]
+        if (current.hasBlockedMe == hasBlockedMe) return
+        val updated = allUsers.toMutableList()
+        updated[index] = current.copy(hasBlockedMe = hasBlockedMe)
+        allUsers = updated
+        updateVisibleUsers()
+    }
+
+    private suspend fun fetchFavoriteSet(myUid: String): Set<String> {
+        val snapshot = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_FAVORITE_LIST)
+            .get()
+            .await()
+
+        if (!snapshot.exists() || snapshot.childrenCount == 0L) return emptySet()
+
+        val ids = linkedSetOf<String>()
+        snapshot.children.forEach { child ->
+            val key = child.key.orEmpty()
+            if (key.isNotBlank()) {
+                ids += key
+                return@forEach
+            }
+            val legacyId = child.getValue(String::class.java).orEmpty()
+            if (legacyId.isNotBlank()) ids += legacyId
+        }
+        return ids
+    }
+
+    private suspend fun fetchMyConversationStates(myUid: String): Map<String, String> {
+        val snapshot = firebaseRefsContainer.refData
+            .child(myUid)
+            .child(NODE_DM)
+            .get()
+            .await()
+
+        if (!snapshot.exists() || snapshot.childrenCount == 0L) return emptyMap()
+
+        val states = mutableMapOf<String, String>()
+        snapshot.children.forEach { child ->
+            val otherUid = child.key.orEmpty()
+            if (otherUid.isBlank()) return@forEach
+            val state = child.child(ConversationKeys.STATE)
+                .getValue(String::class.java)
+                .orEmpty()
+            if (state.isNotBlank()) states[otherUid] = state
+        }
+        return states
+    }
+
+    private suspend fun fetchHasBlockedMe(otherUid: String): Boolean {
+        val snapshot = firebaseRefsContainer.refData
+            .child(otherUid)
+            .child(NODE_DM)
+            .child(userRepository.myUid)
+            .child(ConversationKeys.STATE)
+            .get()
+            .await()
+        return snapshot.getValue(String::class.java) == CHAT_STATE_BLOCKED
     }
 
     fun applyFilters(
