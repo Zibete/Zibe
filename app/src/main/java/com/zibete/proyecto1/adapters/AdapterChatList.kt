@@ -10,10 +10,10 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.ChatListDiffCallback.PayloadConversation
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.Constants.PayloadRowKeys
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.RowChatListBinding
@@ -96,22 +96,22 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        if (PayloadRowKeys.NAME in changes) b.userName.text =
+        if (PayloadConversation.USER_NAME in changes) b.userName.text =
             chat.otherName.takeIf { it.isNotBlank() }
                 ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        if (PayloadRowKeys.MESSAGE in changes) {
+        if (PayloadConversation.MESSAGE in changes) {
             b.lastMessage.text = chat.lastContent
             applyLastMsgStyle(b)
         }
 
-        if (PayloadRowKeys.STATE in changes) b.offNotifications.isVisible =
+        if (PayloadConversation.STATE in changes) b.offNotifications.isVisible =
             chat.state == CHAT_STATE_SILENT
 
-        if (PayloadRowKeys.PHOTO in changes) loadAvatar(b, chat.otherPhotoUrl)
-        if (PayloadRowKeys.TIME in changes) setLastMsgTime(b, chat)
-        if (PayloadRowKeys.UNREAD in changes) bindBadgeUnreadMessage(b, chat)
-        if (PayloadRowKeys.CHECKS in changes) bindChecks(b, chat)
+        if (PayloadConversation.PHOTO_URL in changes) loadAvatar(b, chat.otherPhotoUrl)
+        if (PayloadConversation.CREATED_AT in changes) setLastMsgTime(b, chat)
+        if (PayloadConversation.UNREAD in changes) bindBadgeUnreadMessage(b, chat)
+        if (PayloadConversation.CHECKS in changes) bindChecks(b, chat)
 
         bindClicks(holder, chat)
     }

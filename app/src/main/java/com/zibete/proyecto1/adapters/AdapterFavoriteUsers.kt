@@ -7,11 +7,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.FavoritesDiffCallback.PayloadFavoriteUser
 import com.zibete.proyecto1.databinding.RowFavoritesBinding
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 import com.zibete.proyecto1.core.utils.ZibeApp
 
@@ -31,8 +28,8 @@ class AdapterFavoriteUsers(
         }
 
         fun bind(item: FavoriteUserUi) = with(binding) {
-            tvFavoriteUser.text = item.name
-            tvFavoriteAge.text = item.age.toString()
+            favoriteUserName.text = item.name
+            favoriteUserAge.text = item.age.toString()
 
             Glide.with(root)
                 .load(item.profilePhoto)
@@ -51,20 +48,15 @@ class AdapterFavoriteUsers(
                 return
             }
 
-            if (PAYLOAD_ONLINE in changes) {
-                iconConnected.isVisible = item.isOnline
-                iconDisconnected.isVisible = !item.isOnline
-            }
+//            if (PayloadFavoriteUser.IS_ONLINE in changes) {
+//                iconConnected.isVisible = item.isOnline
+//                iconDisconnected.isVisible = !item.isOnline
+//            }
 
-            if (PAYLOAD_NAME in changes) {
-                tvFavoriteUser.text = item.name
-            }
+            if (PayloadFavoriteUser.NAME in changes) favoriteUserName.text = item.name
+            if (PayloadFavoriteUser.AGE in changes) favoriteUserAge.text = item.age.toString()
 
-            if (PAYLOAD_AGE in changes) {
-                tvFavoriteAge.text = item.age.toString()
-            }
-
-            if (PAYLOAD_PHOTO_URL in changes) {
+            if (PayloadFavoriteUser.PHOTO_URL in changes) {
                 Glide.with(root)
                     .load(item.profilePhoto)
                     .placeholder(R.drawable.ic_person_24)
