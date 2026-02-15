@@ -1,7 +1,9 @@
 package com.zibete.proyecto1.ui.favorites
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.ui.UiText
@@ -12,6 +14,7 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +32,10 @@ class FavoritesViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "FavoritesLoad"
+    }
+
     private val _uiState = MutableStateFlow(FavoritesUiState())
     val uiState: StateFlow<FavoritesUiState> = _uiState.asStateFlow()
 
@@ -44,7 +51,8 @@ class FavoritesViewModel @Inject constructor(
 
     private fun fetchFavorites(showLoading: Boolean, isRefresh: Boolean) {
         viewModelScope.launch {
-            if (showLoading) {
+            val shouldShowLoading = showLoading && allFavorites.isEmpty()
+            if (shouldShowLoading) {
                 _uiState.update { it.copy(isLoading = true) }
             }
             if (isRefresh) {
@@ -81,7 +89,6 @@ class FavoritesViewModel @Inject constructor(
                 snackType = ZibeSnackType.ERROR
             )
         )
-        allFavorites = emptyList()
         updateVisibleFavorites(isLoading = false, isRefreshing = false)
     }
 
@@ -98,30 +105,51 @@ class FavoritesViewModel @Inject constructor(
             return emptyList()
         }
 
-        val favIds = favListSnap.children
-            .mapNotNull { it.getValue(String::class.java) }
-            .filter { it.isNotBlank() }
-            .distinct()
-
-        return favIds.mapNotNull { favUserId ->
-            val userRef = firebaseRefsContainer.refAccounts.child(favUserId)
-
-            val userSnap = userRef.get().await()
-            if (!userSnap.exists()) {
-                favListSnap.ref.child(favUserId).removeValue().await()
-                null
-            } else {
-                val u = userSnap.getValue(Users::class.java) ?: return@mapNotNull null
-
-                FavoriteUserUi(
-                    id = favUserId,
-                    name = u.name,
-                    age = ageCalculator(u.birthDate),
-                    profilePhoto = u.photoUrl,
-                    isOnline = u.online
-                )
+        val favIds = linkedSetOf<String>()
+        favListSnap.children.forEach { child ->
+            val key = child.key.orEmpty()
+            if (key.isNotBlank()) {
+                favIds += key
+                return@forEach
             }
-        }.sortedBy { it.name.lowercase() }
+            val legacyId = child.getValue(String::class.java).orEmpty()
+            if (legacyId.isNotBlank()) favIds += legacyId
+        }
+
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "favIds size=${favIds.size}")
+        }
+
+        if (favIds.isEmpty()) return emptyList()
+
+        val accountsSnap = firebaseRefsContainer.refAccounts.get().await()
+        if (!accountsSnap.exists()) return emptyList()
+
+        val foundIds = mutableSetOf<String>()
+        val favorites = mutableListOf<FavoriteUserUi>()
+
+        accountsSnap.children.forEach { child ->
+            val uid = child.key.orEmpty()
+            if (uid.isBlank() || uid !in favIds) return@forEach
+            val u = child.getValue(Users::class.java) ?: return@forEach
+            foundIds += uid
+            favorites += FavoriteUserUi(
+                id = uid,
+                name = u.name,
+                age = ageCalculator(u.birthDate),
+                profilePhoto = u.photoUrl,
+                isOnline = u.online
+            )
+        }
+
+        val missingIds = favIds.filterNot { it in foundIds }
+        if (missingIds.isNotEmpty()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                missingIds.forEach { favListSnap.ref.child(it).removeValue().await() }
+            }
+        }
+
+        return favorites.sortedBy { it.name.lowercase() }
     }
 
     private fun updateVisibleFavorites(
@@ -140,7 +168,7 @@ class FavoritesViewModel @Inject constructor(
                 isLoading = isLoading ?: state.isLoading,
                 isRefreshing = isRefreshing ?: state.isRefreshing,
                 favorites = allFavorites,
-                filteredFavorites = filtered,
+                filteredFavorites = filtered.toList(),
                 showOnboarding = allFavorites.isEmpty(),
                 searchQuery = searchQuery
             )
