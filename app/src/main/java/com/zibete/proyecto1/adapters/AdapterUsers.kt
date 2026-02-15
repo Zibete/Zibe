@@ -31,8 +31,43 @@ class AdapterUsers(
     private val formatDistance: (Double) -> String
 ) : ListAdapter<UsersRowUiModel, AdapterUsers.UsersListViewHolder>(UsersDiffCallback) {
 
-    class UsersListViewHolder(val binding: RowUserBinding) : RecyclerView.ViewHolder(binding.root) {
+    class UsersListViewHolder(
+        val binding: RowUserBinding,
+        onChatClicked: (String) -> Unit,
+        onProfileClicked: (String) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
+        var currentUserId: String = ""
+        private val gestureDetector =
+            GestureDetector(binding.root.context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    val userId = currentUserId
+                    if (userId.isNotBlank()) onProfileClicked(userId)
+                    return true
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    val userId = currentUserId
+                    if (userId.isNotBlank()) onChatClicked(userId)
+                    return true
+                }
+            })
+
+        init {
+            binding.glassContainer.setOnTouchListener { v, event ->
+                gestureDetector.onTouchEvent(event)
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        v.isPressed = true
+                    }
+
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        v.isPressed = false
+                    }
+                }
+                true
+            }
+        }
     }
 
     private var originalList: List<UsersRowUiModel> = emptyList()
@@ -43,16 +78,18 @@ class AdapterUsers(
             parent,
             false
         )
-        return UsersListViewHolder(b)
+        return UsersListViewHolder(
+            binding = b,
+            onChatClicked = onChatClicked,
+            onProfileClicked = onProfileClicked
+        )
     }
 
     override fun onBindViewHolder(holder: UsersListViewHolder, position: Int) {
         bindFull(
             holder = holder,
             u = getItem(position),
-            formatDistance = formatDistance,
-            onChatClicked = onChatClicked,
-            onProfileClicked = onProfileClicked
+            formatDistance = formatDistance
         )
     }
 
@@ -74,15 +111,23 @@ class AdapterUsers(
             b = b,
             u = u,
             payload = bundle,
-            formatDistance = formatDistance,
-            onChatClicked = onChatClicked,
-            onProfileClicked = onProfileClicked
+            formatDistance = formatDistance
         )
+        updateCurrentUser(holder, u.id)
+    }
+
+    override fun onViewAttachedToWindow(holder: UsersListViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        ensureStatusJob(holder)
+    }
+
+    override fun onViewDetachedFromWindow(holder: UsersListViewHolder) {
+        stopStatusJob(holder)
+        super.onViewDetachedFromWindow(holder)
     }
 
     override fun onViewRecycled(holder: UsersListViewHolder) {
-        holder.statusJob?.cancel()
-        holder.statusJob = null
+        stopStatusJob(holder)
         clearRecycled(holder.binding)
         super.onViewRecycled(holder)
     }
@@ -111,9 +156,7 @@ class AdapterUsers(
     fun bindFull(
         holder: UsersListViewHolder,
         u: UsersRowUiModel,
-        formatDistance: (Double) -> String,
-        onChatClicked: (String) -> Unit,
-        onProfileClicked: (String) -> Unit
+        formatDistance: (Double) -> String
     ) {
         val b = holder.binding
         val ctx = b.root.context
@@ -131,16 +174,8 @@ class AdapterUsers(
         b.userDescription.isVisible = u.description.isNotBlank()
         b.userDescription.text = u.description
 
-        holder.statusJob?.cancel()
-        holder.statusJob = lifecycleScope.launch {
-            profileRepositoryProvider.observeUserStatus(u.id, NODE_DM)
-                .collectLatest { status ->
-                    bindUserStatus(b, status)
-                }
-        }
-
         bindBadges(b, u)
-        bindClicks(b, u, onChatClicked, onProfileClicked)
+        updateCurrentUser(holder, u.id)
     }
 
     private fun bindBadges(b: RowUserBinding, u: UsersRowUiModel) {
@@ -154,9 +189,7 @@ class AdapterUsers(
         b: RowUserBinding,
         u: UsersRowUiModel,
         payload: Bundle,
-        formatDistance: (Double) -> String,
-        onChatClicked: (String) -> Unit,
-        onProfileClicked: (String) -> Unit
+        formatDistance: (Double) -> String
     ) {
 
         if (payload.containsKey(PayloadUsers.PHOTO_URL)) loadAvatar(b, u.photoUrl)
@@ -178,41 +211,31 @@ class AdapterUsers(
             b.userDescription.isVisible = hasDesc
             b.userDescription.text = u.description
         }
-
-        bindClicks(b, u, onChatClicked, onProfileClicked)
     }
 
-    private fun bindClicks(
-        b: RowUserBinding,
-        u: UsersRowUiModel,
-        onChatClicked: (String) -> Unit,
-        onProfileClicked: (String) -> Unit
-    ) {
-        val gestureDetector =
-            GestureDetector(b.root.context, object : GestureDetector.SimpleOnGestureListener() {
-                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                    onProfileClicked(u.id)
-                    return true
-                }
+    private fun updateCurrentUser(holder: UsersListViewHolder, userId: String) {
+        val changed = holder.currentUserId != userId
+        holder.currentUserId = userId
+        if (!holder.binding.root.isAttachedToWindow) return
+        if (changed) stopStatusJob(holder)
+        ensureStatusJob(holder)
+    }
 
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    onChatClicked(u.id)
-                    return true
+    private fun ensureStatusJob(holder: UsersListViewHolder) {
+        val userId = holder.currentUserId
+        if (userId.isBlank()) return
+        if (holder.statusJob?.isActive == true) return
+        holder.statusJob = lifecycleScope.launch {
+            profileRepositoryProvider.observeUserStatus(userId, NODE_DM)
+                .collectLatest { status ->
+                    bindUserStatus(holder.binding, status)
                 }
-            })
-        b.glassContainer.setOnTouchListener { v, event ->
-            gestureDetector.onTouchEvent(event)
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    v.isPressed = true
-                }
-
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.isPressed = false
-                }
-            }
-            true
         }
+    }
+
+    private fun stopStatusJob(holder: UsersListViewHolder) {
+        holder.statusJob?.cancel()
+        holder.statusJob = null
     }
 
     private fun bindUserStatus(b: RowUserBinding, status: UserStatus) {

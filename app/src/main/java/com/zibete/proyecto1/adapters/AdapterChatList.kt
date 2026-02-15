@@ -50,6 +50,7 @@ class AdapterChatList(
     class ChatListViewHolder(val binding: RowChatListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
+        var currentOtherId: String = ""
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatListViewHolder {
@@ -83,11 +84,21 @@ class AdapterChatList(
         }
 
         bindPayload(holder, item, payload)
+        updateCurrentChat(holder, item.otherId)
+    }
+
+    override fun onViewAttachedToWindow(holder: ChatListViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        ensureStatusJob(holder)
+    }
+
+    override fun onViewDetachedFromWindow(holder: ChatListViewHolder) {
+        stopStatusJob(holder)
+        super.onViewDetachedFromWindow(holder)
     }
 
     override fun onViewRecycled(holder: ChatListViewHolder) {
-        holder.statusJob?.cancel()
-        holder.statusJob = null
+        stopStatusJob(holder)
 
         Glide.with(holder.binding.root).clear(holder.binding.chatListAvatarImage)
         holder.binding.chatListAvatarImage.setImageDrawable(null)
@@ -151,20 +162,13 @@ class AdapterChatList(
 
         loadAvatar(b, chat.otherPhotoUrl)
 
-        holder.statusJob?.cancel()
-        holder.statusJob = lifecycleScope.launch {
-            profileRepositoryProvider.observeUserStatus(chat.otherId, NODE_DM)
-                .collectLatest { status ->
-                    bindUserStatus(b, status)
-                }
-        }
-
         b.lastMessage.text = chat.lastContent
         applyLastMsgStyle(b)
         setLastMsgTime(b, chat)
         bindBadgeUnreadMessage(b, chat)
         bindChecks(b, chat)
         bindClicks(holder, chat)
+        updateCurrentChat(holder, chat.otherId)
     }
 
     private fun bindClicks(holder: ChatListViewHolder, chat: Conversation) {
@@ -202,6 +206,31 @@ class AdapterChatList(
     private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
         val ctx = b.root.context
         b.statusIndicator.bindStatusIndicator(ctx, status)
+    }
+
+    private fun updateCurrentChat(holder: ChatListViewHolder, otherId: String) {
+        val changed = holder.currentOtherId != otherId
+        holder.currentOtherId = otherId
+        if (!holder.binding.root.isAttachedToWindow) return
+        if (changed) stopStatusJob(holder)
+        ensureStatusJob(holder)
+    }
+
+    private fun ensureStatusJob(holder: ChatListViewHolder) {
+        val otherId = holder.currentOtherId
+        if (otherId.isBlank()) return
+        if (holder.statusJob?.isActive == true) return
+        holder.statusJob = lifecycleScope.launch {
+            profileRepositoryProvider.observeUserStatus(otherId, NODE_DM)
+                .collectLatest { status ->
+                    bindUserStatus(holder.binding, status)
+                }
+        }
+    }
+
+    private fun stopStatusJob(holder: ChatListViewHolder) {
+        holder.statusJob?.cancel()
+        holder.statusJob = null
     }
 
     private fun loadAvatar(b: RowChatListBinding, photoUrl: String) {
