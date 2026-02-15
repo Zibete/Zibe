@@ -1,6 +1,8 @@
 package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
@@ -18,11 +20,12 @@ object FavoritesDiffCallback : DiffUtil.ItemCallback<FavoriteUserUi>() {
 
         if (oldItem.isOnline != newItem.isOnline) changed += PAYLOAD_ONLINE
         if (oldItem.profilePhoto != newItem.profilePhoto) changed += PAYLOAD_PHOTO_URL
+        if (oldItem.name != newItem.name) changed += PAYLOAD_NAME
+        if (oldItem.age != newItem.age) changed += PAYLOAD_AGE
 
         return changed.takeIf { it.isNotEmpty() }
     }
 }
-
 
 
 
