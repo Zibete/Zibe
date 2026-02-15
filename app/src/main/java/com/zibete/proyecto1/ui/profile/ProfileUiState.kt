@@ -26,8 +26,7 @@ data class ProfileUiState(
         get() =
             content is ProfileContent.Ready &&
                     !isActionLoading &&
-                    profile?.id?.isNotBlank() == true &&
-                    !hasBlockedMe
+                    profile?.id?.isNotBlank() == true
 }
 
 
