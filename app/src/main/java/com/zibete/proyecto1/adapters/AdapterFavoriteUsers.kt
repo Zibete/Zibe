@@ -8,6 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.databinding.RowFavoritesBinding
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
@@ -18,14 +20,17 @@ class AdapterFavoriteUsers(
 ) : ListAdapter<FavoriteUserUi, AdapterFavoriteUsers.FavoriteViewHolder>(FavoritesDiffCallback) {
 
     private var originalList: List<FavoriteUserUi> = emptyList()
+    private val itemHeight: Int = (ZibeApp.ScreenUtils.widthPx / 3).coerceAtLeast(1)
 
     inner class FavoriteViewHolder(
         private val binding: RowFavoritesBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: FavoriteUserUi) = with(binding) {
+        init {
             adjustItemHeight()
+        }
 
+        fun bind(item: FavoriteUserUi) = with(binding) {
             tvFavoriteUser.text = item.name
             tvFavoriteAge.text = item.age.toString()
 
@@ -51,6 +56,14 @@ class AdapterFavoriteUsers(
                 iconDisconnected.isVisible = !item.isOnline
             }
 
+            if (PAYLOAD_NAME in changes) {
+                tvFavoriteUser.text = item.name
+            }
+
+            if (PAYLOAD_AGE in changes) {
+                tvFavoriteAge.text = item.age.toString()
+            }
+
             if (PAYLOAD_PHOTO_URL in changes) {
                 Glide.with(root)
                     .load(item.profilePhoto)
@@ -66,16 +79,16 @@ class AdapterFavoriteUsers(
         }
 
         private fun adjustItemHeight() = with(binding) {
-            val width = ZibeApp.ScreenUtils.widthPx
             val params = linearCardFavorites.layoutParams
-            params.height = width / 3
+            params.height = itemHeight
             linearCardFavorites.layoutParams = params
         }
     }
 
     fun submitOriginal(list: List<FavoriteUserUi>) {
-        originalList = list
-        submitList(list)
+        val safeList = list.toList()
+        originalList = safeList
+        submitList(safeList)
     }
 
     fun filterByName(query: String?) {
