@@ -218,11 +218,25 @@ object Constants {
     const val PAYLOAD_AGE = "payload_age"
     const val PAYLOAD_NAME = "payload_name"
     const val PAYLOAD_PHOTO_URL = "payload_photo_url"
+    const val PAYLOAD_FAVORITE = "payload_favorite"
+    const val PAYLOAD_BLOCKED_BY_ME = "payload_blocked_by_me"
+    const val PAYLOAD_NOTIFICATIONS_SILENCED = "payload_notifications_silenced"
+    const val PAYLOAD_HAS_BLOCKED_ME = "payload_has_blocked_me"
     const val PAYLOAD_DESCRIPTION = "payload_description"
     const val PAYLOAD_ONLINE = "payload_online"
     const val PAYLOAD_GROUPS_USERS = "payload_users"
     const val PAYLOAD_GROUPS_DATA = "payload_data"
     const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
+
+    object PayloadRowKeys {
+        const val STATE = "payload_state"
+        const val NAME = "payload_name"
+        const val PHOTO = "payload_photo"
+        const val MESSAGE = "payload_message"
+        const val TIME = "payload_time"
+        const val UNREAD = "payload_unread"
+        const val CHECKS = "payload_checks"
+    }
 
     object PayloadKeys {
         const val TYPE = ChatMessageKeys.TYPE

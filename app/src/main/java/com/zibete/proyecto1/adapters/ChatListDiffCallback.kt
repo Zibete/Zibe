@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
+import com.zibete.proyecto1.core.constants.Constants.PayloadRowKeys
 import com.zibete.proyecto1.model.Conversation
 
 object ChatListDiffCallback : DiffUtil.ItemCallback<Conversation>() {
@@ -23,13 +24,13 @@ object ChatListDiffCallback : DiffUtil.ItemCallback<Conversation>() {
     override fun getChangePayload(oldItem: Conversation, newItem: Conversation): Any? {
         val changed = mutableSetOf<String>()
 
-        if (oldItem.otherName != newItem.otherName) changed += "name"
-        if (oldItem.otherPhotoUrl != newItem.otherPhotoUrl) changed += "photo"
-        if (oldItem.lastContent != newItem.lastContent) changed += "msg"
-        if (oldItem.lastMessageAt != newItem.lastMessageAt) changed += "time"
-        if (oldItem.unreadCount != newItem.unreadCount) changed += "unread"
-        if (oldItem.seen != newItem.seen || oldItem.userId != newItem.userId) changed += "checks"
-        if (oldItem.state != newItem.state) changed += "state"
+        if (oldItem.otherName != newItem.otherName) changed += PayloadRowKeys.NAME
+        if (oldItem.otherPhotoUrl != newItem.otherPhotoUrl) changed += PayloadRowKeys.PHOTO
+        if (oldItem.lastContent != newItem.lastContent) changed += PayloadRowKeys.MESSAGE
+        if (oldItem.lastMessageAt != newItem.lastMessageAt) changed += PayloadRowKeys.TIME
+        if (oldItem.unreadCount != newItem.unreadCount) changed += PayloadRowKeys.UNREAD
+        if (oldItem.seen != newItem.seen || oldItem.userId != newItem.userId) changed += PayloadRowKeys.CHECKS
+        if (oldItem.state != newItem.state) changed += PayloadRowKeys.STATE
 
         return changed.takeIf { it.isNotEmpty() }
     }

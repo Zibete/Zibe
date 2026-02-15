@@ -21,6 +21,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.FilterLayoutBinding
 import com.zibete.proyecto1.databinding.FragmentUsersBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
@@ -31,9 +32,13 @@ import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHandler {
+
+    @Inject
+    lateinit var profileRepositoryProvider: ProfileRepositoryProvider
 
     private var _binding: FragmentUsersBinding? = null
     private val binding get() = _binding!!
@@ -77,6 +82,8 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         }
 
         adapterUsers = AdapterUsers(
+            lifecycleScope = viewLifecycleOwner.lifecycleScope,
+            profileRepositoryProvider = profileRepositoryProvider,
             onChatClicked = { userId -> usersViewModel.onUserChatClick(userId) },
             onProfileClicked = { userId -> usersViewModel.onUserProfileClick(userId) },
             formatDistance = { meters -> usersViewModel.formatDistance(meters) }

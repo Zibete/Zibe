@@ -1,47 +1,77 @@
 package com.zibete.proyecto1.adapters
 
-import UsersDiffCallback
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.zibete.proyecto1.databinding.RowUserBinding
-import com.zibete.proyecto1.ui.users.UsersRowUiModel
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_AGE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_BLOCKED_BY_ME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DESCRIPTION
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_DISTANCE_METERS
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_FAVORITE
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_HAS_BLOCKED_ME
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NAME
+import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_NOTIFICATIONS_SILENCED
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_ONLINE
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_PHOTO_URL
-import com.zibete.proyecto1.core.utils.GlassEffect
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.databinding.RowUserBinding
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.extensions.bindStatusIndicator
+import com.zibete.proyecto1.ui.extensions.loadAvatar
+import com.zibete.proyecto1.ui.users.UsersRowUiModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class AdapterUsers(
+    private val lifecycleScope: CoroutineScope,
+    private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val onChatClicked: (String) -> Unit,
     private val onProfileClicked: (String) -> Unit,
     private val formatDistance: (Double) -> String
-) : ListAdapter<UsersRowUiModel, AdapterUsers.VH>(UsersDiffCallback) {
+) : ListAdapter<UsersRowUiModel, AdapterUsers.UsersListViewHolder>(UsersDiffCallback) {
 
-    /** Para filtro sin romper submitList (fuente “completa”) */
+    class UsersListViewHolder(val binding: RowUserBinding) : RecyclerView.ViewHolder(binding.root) {
+        var statusJob: Job? = null
+    }
+
     private var originalList: List<UsersRowUiModel> = emptyList()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-        val binding = RowUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return VH(binding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UsersListViewHolder {
+        val b = RowUserBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return UsersListViewHolder(b)
     }
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
+    override fun onBindViewHolder(holder: UsersListViewHolder, position: Int) {
+        bindFull(
+            holder = holder,
+            u = getItem(position),
+            formatDistance = formatDistance,
+            onChatClicked = onChatClicked,
+            onProfileClicked = onProfileClicked
+        )
+    }
+
+    override fun onBindViewHolder(
+        holder: UsersListViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
         val u = getItem(position)
-        holder.bind(u, formatDistance, onChatClicked, onProfileClicked)
-    }
-
-    override fun onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) {
-        if (payloads.isEmpty()) {
-            onBindViewHolder(holder, position)
-            return
-        }
+        val b = holder.binding
 
         val bundle = payloads.lastOrNull() as? Bundle
         if (bundle == null) {
@@ -49,10 +79,21 @@ class AdapterUsers(
             return
         }
 
-        holder.bindPayload(
-            getItem(position),
-            bundle,
-            formatDistance)
+        bindPayload(
+            b = b,
+            u = u,
+            payload = bundle,
+            formatDistance = formatDistance,
+            onChatClicked = onChatClicked,
+            onProfileClicked = onProfileClicked
+        )
+    }
+
+    override fun onViewRecycled(holder: UsersListViewHolder) {
+        holder.statusJob?.cancel()
+        holder.statusJob = null
+        clearRecycled(holder.binding)
+        super.onViewRecycled(holder)
     }
 
     fun submitUsers(list: List<UsersRowUiModel>) {
@@ -60,75 +101,136 @@ class AdapterUsers(
         submitList(list)
     }
 
-    class VH(private val b: RowUserBinding) : RecyclerView.ViewHolder(b.root) {
+    fun clearRecycled(b: RowUserBinding) {
+        Glide.with(b.root).clear(b.userListAvatarImage)
+        b.userListAvatarImage.setImageDrawable(null)
+    }
 
-        init {
-            GlassEffect.applyGlassEffect(b.blurView, b.root)
-            GlassEffect.startGlowIfAny(b.glowBorder)
+    private fun resetEphemeralViews(b: RowUserBinding) {
+        b.userDescription.isVisible = false
+        b.userDescription.text = ""
+        b.statusIndicator.isVisible = false
+        b.tagFavorite.isVisible = false
+        b.tagBlockedByMe.isVisible = false
+        b.tagHasBlockedMe.isVisible = false
+        b.tagNotificationsSilenced.isVisible = false
+    }
+
+    fun bindFull(
+        holder: UsersListViewHolder,
+        u: UsersRowUiModel,
+        formatDistance: (Double) -> String,
+        onChatClicked: (String) -> Unit,
+        onProfileClicked: (String) -> Unit
+    ) {
+        val b = holder.binding
+        val ctx = b.root.context
+
+        resetEphemeralViews(b)
+
+        b.userName.text = u.name.takeIf { it.isNotBlank() }
+            ?: ctx.getString(R.string.deleted_profile_fallback)
+
+        loadAvatar(b, u.photoUrl)
+
+        b.userAge.text = u.age.toString()
+        b.userDistance.text = formatDistance(u.distanceMeters)
+
+        b.userDescription.isVisible = u.description.isNotBlank()
+        b.userDescription.text = u.description
+
+        holder.statusJob?.cancel()
+        holder.statusJob = lifecycleScope.launch {
+            profileRepositoryProvider.observeUserStatus(u.id, NODE_DM)
+                .collectLatest { status ->
+                    bindUserStatus(b, status)
+                }
         }
 
-        fun bind(
-            u: UsersRowUiModel,
-            formatDistance: (Double) -> String,
-            onChatClicked: (String) -> Unit,
-            onProfileClicked: (String) -> Unit
-        ) {
-            // Imagen
-            if (u.photoUrl.isNotBlank()) {
-                Glide.with(b.root).load(u.photoUrl).into(b.avatarImage)
-            } else {
-                b.avatarImage.setImageDrawable(null)
-            }
+        bindBadges(b, u)
+        bindClicks(b, u, onChatClicked, onProfileClicked)
+    }
 
-            // Texto
-            b.userName.text = u.name
+    private fun bindBadges(b: RowUserBinding, u: UsersRowUiModel) {
+        b.tagFavorite.isVisible = u.isFavorite
+        b.tagBlockedByMe.isVisible = u.isBlockedByMe
+        b.tagHasBlockedMe.isVisible = u.hasBlockedMe
+        b.tagNotificationsSilenced.isVisible = u.isNotificationsSilenced
+    }
 
-            b.onlineIcon.isVisible = u.isOnline
-            b.offlineIcon.isVisible = !u.isOnline
+    fun bindPayload(
+        b: RowUserBinding,
+        u: UsersRowUiModel,
+        payload: Bundle,
+        formatDistance: (Double) -> String,
+        onChatClicked: (String) -> Unit,
+        onProfileClicked: (String) -> Unit
+    ) {
 
-            b.userAge.text = u.age.toString()
-            b.userDistance.text = formatDistance(u.distanceMeters)
+        if (payload.containsKey(PAYLOAD_PHOTO_URL)) loadAvatar(b, u.photoUrl)
+        if (payload.containsKey(PAYLOAD_NAME)) b.userName.text = u.name
+        if (payload.containsKey(PAYLOAD_AGE)) b.userAge.text = u.age.toString()
+        if (payload.containsKey(PAYLOAD_ONLINE)) b.statusIndicator.isVisible = u.isOnline
 
-            val hasDesc = u.description.isNotEmpty()
-            b.descriptionContainer.isVisible = hasDesc
+        if (payload.containsKey(PAYLOAD_FAVORITE)
+            || payload.containsKey(PAYLOAD_BLOCKED_BY_ME)
+            || payload.containsKey(PAYLOAD_HAS_BLOCKED_ME)
+            || payload.containsKey(PAYLOAD_NOTIFICATIONS_SILENCED)
+        ) bindBadges(b, u)
+
+        if (payload.containsKey(PAYLOAD_DISTANCE_METERS)) b.userDistance.text =
+            formatDistance(u.distanceMeters)
+
+        if (payload.containsKey(PAYLOAD_DESCRIPTION)) {
+            val hasDesc = u.description.isNotBlank()
+            b.userDescription.isVisible = hasDesc
             b.userDescription.text = u.description
-
-            // Clicks (cada bind, porque cambia el item)
-            b.chatButton.setOnClickListener { onChatClicked(u.id) }
-            b.userCard.setOnClickListener { onProfileClicked(u.id) }
         }
 
-        fun bindPayload(
-            u: UsersRowUiModel,
-            payload: Bundle,
-            formatDistance: (Double) -> String
-        ) {
-            if (payload.containsKey(PAYLOAD_NAME)) {
-                b.userName.text = u.name
-            }
-            if (payload.containsKey(PAYLOAD_AGE)) {
-                b.userAge.text = u.age.toString()
-            }
-            if (payload.containsKey(PAYLOAD_DISTANCE_METERS)) {
-                b.userDistance.text = formatDistance(u.distanceMeters)
-            }
-            if (payload.containsKey(PAYLOAD_DESCRIPTION)) {
-                val hasDesc = u.description.isNotEmpty()
-                b.descriptionContainer.isVisible = hasDesc
-                b.userDescription.text = u.description
-            }
-            if (payload.containsKey(PAYLOAD_PHOTO_URL)) {
-                if (u.photoUrl.isNotBlank()) {
-                    Glide.with(b.root).load(u.photoUrl).into(b.avatarImage)
-                } else {
-                    b.avatarImage.setImageDrawable(null)
+        bindClicks(b, u, onChatClicked, onProfileClicked)
+    }
+
+    private fun bindClicks(
+        b: RowUserBinding,
+        u: UsersRowUiModel,
+        onChatClicked: (String) -> Unit,
+        onProfileClicked: (String) -> Unit
+    ) {
+        val gestureDetector =
+            GestureDetector(b.root.context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    onProfileClicked(u.id)
+                    return true
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    onChatClicked(u.id)
+                    return true
+                }
+            })
+        b.glassContainer.setOnTouchListener { v, event ->
+            gestureDetector.onTouchEvent(event)
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.isPressed = true
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.isPressed = false
                 }
             }
-            if (payload.containsKey(PAYLOAD_ONLINE)) {
-                val isOnline = payload.getBoolean(PAYLOAD_ONLINE)
-                b.onlineIcon.isVisible = isOnline
-                b.offlineIcon.isVisible = !isOnline
-            }
+            true
         }
     }
+
+    private fun bindUserStatus(b: RowUserBinding, status: UserStatus) {
+        val ctx = b.root.context
+        b.statusIndicator.bindStatusIndicator(ctx, status)
+    }
+
+    private fun loadAvatar(b: RowUserBinding, photoUrl: String) {
+        val url = photoUrl.takeIf { it.isNotBlank() }
+        b.userListAvatarImage.loadAvatar(url)
+    }
+
 }

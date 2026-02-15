@@ -1,30 +1,27 @@
 package com.zibete.proyecto1.adapters
 
-import android.content.res.ColorStateList
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnCreateContextMenuListener
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
-import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.PayloadRowKeys
 import com.zibete.proyecto1.core.utils.TimeUtils
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.RowChatListBinding
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.extensions.bindChecks
+import com.zibete.proyecto1.ui.extensions.bindStatusIndicator
+import com.zibete.proyecto1.ui.extensions.loadAvatar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -32,12 +29,11 @@ import kotlinx.coroutines.launch
 
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
-    private val userRepository: UserRepository,
+    private val myUid: String,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val onChatClicked: (Conversation) -> Unit
-) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(
-    ChatListDiffCallback
-), OnCreateContextMenuListener {
+) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(ChatListDiffCallback),
+    OnCreateContextMenuListener {
 
     private var contextMenuPosition: Int = 0
     private var menuReadTitle: CharSequence? = null
@@ -59,7 +55,10 @@ class AdapterChatList(
     }
 
     override fun onBindViewHolder(holder: ChatListViewHolder, position: Int) {
-        bindFull(holder, getItem(position))
+        bindFull(
+            holder = holder,
+            chat = getItem(position)
+        )
     }
 
     override fun onBindViewHolder(
@@ -84,7 +83,11 @@ class AdapterChatList(
         super.onViewRecycled(holder)
     }
 
-    private fun bindPayload(holder: ChatListViewHolder, chat: Conversation, payload: Any) {
+    private fun bindPayload(
+        holder: ChatListViewHolder,
+        chat: Conversation,
+        payload: Any
+    ) {
         val changes = payload as? Set<*> ?: run {
             bindFull(holder, chat)
             return
@@ -93,19 +96,23 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        if ("state" in changes) b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
-        if ("name" in changes) b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
-            ?: ctx.getString(R.string.deleted_profile_fallback)
-        if ("photo" in changes) loadAvatar(b, chat.otherPhotoUrl)
-        if ("msg" in changes) {
-            b.lastMessage.text = chat.lastContent.orEmpty()
+        if (PayloadRowKeys.NAME in changes) b.userName.text =
+            chat.otherName.takeIf { it.isNotBlank() }
+                ?: ctx.getString(R.string.deleted_profile_fallback)
+
+        if (PayloadRowKeys.MESSAGE in changes) {
+            b.lastMessage.text = chat.lastContent
             applyLastMsgStyle(b)
         }
-        if ("time" in changes) setLastMsgTime(b, chat)
-        if ("unread" in changes) bindBadgeUnreadMessage(b, chat)
-        if ("checks" in changes) bindChecks(b, chat)
 
-        // click/longclick dependen de state/categorías → los re-aplicamos siempre
+        if (PayloadRowKeys.STATE in changes) b.offNotifications.isVisible =
+            chat.state == CHAT_STATE_SILENT
+
+        if (PayloadRowKeys.PHOTO in changes) loadAvatar(b, chat.otherPhotoUrl)
+        if (PayloadRowKeys.TIME in changes) setLastMsgTime(b, chat)
+        if (PayloadRowKeys.UNREAD in changes) bindBadgeUnreadMessage(b, chat)
+        if (PayloadRowKeys.CHECKS in changes) bindChecks(b, chat)
+
         bindClicks(holder, chat)
     }
 
@@ -116,7 +123,10 @@ class AdapterChatList(
         b.badgeUnReadMessage.text = ""
     }
 
-    private fun bindFull(holder: ChatListViewHolder, chat: Conversation) {
+    private fun bindFull(
+        holder: ChatListViewHolder,
+        chat: Conversation
+    ) {
         val b = holder.binding
         val ctx = b.root.context
 
@@ -174,47 +184,18 @@ class AdapterChatList(
     }
 
     private fun bindChecks(b: RowChatListBinding, chat: Conversation) {
-        val isMine = chat.userId == userRepository.myUid
-        if (isMine) {
-            b.imageViewChecks.isVisible = true
-            val iconRes = if (chat.seen == MSG_DELIVERED) R.drawable.ic_check_24 else R.drawable.ic_double_check_24
-            b.imageViewChecks.setImageResource(iconRes)
-
-            val tintRes = if (chat.seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
-            b.imageViewChecks.imageTintList = ColorStateList.valueOf(
-                ContextCompat.getColor(b.root.context, tintRes)
-            )
-        } else b.imageViewChecks.isVisible = false
+        val isMine = chat.userId == myUid
+        b.imageViewChecks.bindChecks(isMine, chat.seen)
     }
 
     private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
         val ctx = b.root.context
-        val fillRes = when (status) {
-            is UserStatus.Online,
-            is UserStatus.TypingOrRecording -> R.color.status_online
-
-            is UserStatus.LastSeen,
-            is UserStatus.Offline -> R.color.status_offline
-        }
-        val fillColor = ContextCompat.getColor(ctx, fillRes)
-
-        val bg = (b.statusIndicator.background?.mutate() as? GradientDrawable)
-            ?: (ContextCompat.getDrawable(ctx, R.drawable.shape_status_circle)
-                ?.mutate() as GradientDrawable)
-
-        bg.setColor(fillColor)
-        b.statusIndicator.background = bg
+        b.statusIndicator.bindStatusIndicator(ctx, status)
     }
 
     private fun loadAvatar(b: RowChatListBinding, photoUrl: String) {
-        val image = b.circleImageView
         val url = photoUrl.takeIf { it.isNotBlank() }
-
-        Glide.with(image)
-            .load(url)
-            .placeholder(R.drawable.ic_person_24)
-            .error(R.drawable.ic_person_24)
-            .into(image)
+        b.chatListAvatarImage.loadAvatar(url)
     }
 
     private fun applyLastMsgStyle(binding: RowChatListBinding) {

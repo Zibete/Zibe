@@ -3,12 +3,14 @@ package com.zibete.proyecto1.ui.users
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -31,7 +33,9 @@ class UsersViewModel @Inject constructor(
     private val userPreferencesActions: UserPreferencesActions,
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val locationRepository: LocationRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val profileRepositoryProvider: ProfileRepositoryProvider,
+
 ) : ViewModel() {
 
     private data class UsersFilters(

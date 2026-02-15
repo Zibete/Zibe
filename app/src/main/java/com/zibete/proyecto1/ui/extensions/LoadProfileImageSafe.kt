@@ -13,13 +13,6 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 
-/**
- * Carga segura (anti "bitmap too large") para fotos de perfil / avatars.
- *
- * - Espera a que el ImageView tenga tamaño real (doOnLayout)
- * - Fuerza override(w,h) para que Glide decodifique a ese tamaño
- * - Downsample + centerCrop/centerInside (según useCase)
- */
 fun ImageView.loadProfileImageSafe(
     model: Any?,
     @DrawableRes placeholderRes: Int? = null,
@@ -28,12 +21,10 @@ fun ImageView.loadProfileImageSafe(
     onLoading: ((Boolean) -> Unit)? = null
 ) {
     if (model == null) {
-        // Si te mandan null, deja placeholder/error (si existen) y listo
         placeholderRes?.let { setImageResource(it) } ?: run { setImageDrawable(null) }
         return
     }
 
-    // Si todavía no está medido, esperamos (clave para override correcto).
     doOnLayout {
         val w = width.coerceAtLeast(1)
         val h = height.coerceAtLeast(1)
@@ -44,7 +35,7 @@ fun ImageView.loadProfileImageSafe(
             .load(model)
             .apply(
                 RequestOptions()
-                    .override(w, h) // <- anti bitmap gigante
+                    .override(w, h)
                     .downsample(DownsampleStrategy.CENTER_INSIDE)
                     .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                     .dontAnimate()
