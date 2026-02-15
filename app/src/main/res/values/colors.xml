@@ -51,18 +51,34 @@
     <color name="zibe_hint_text">#C9C9C9</color>
     <color name="zibe_text_dark">@color/zibe_night_end</color>
     <color name="zibe_text_pink">#FF3B93</color>
-<!--    <color name="zibe_muted_text">#848484</color>-->
     <color name="zibe_muted_text">#9E9E9E</color>
 
     <!-- SNACK -->
+
     <color name="snackbar_surface">#1E2A38</color>
 
     <color name="zibe_red">#FF5A5F</color>
     <color name="zibe_yellow">#FFC247</color>
     <color name="zibe_green">#3DDC97</color>
     <color name="zibe_blue">#5C9DFF</color>
-    <color name="tag_favorite">#FFD700</color>
-    <color name="tag_blocked">#FF5252</color>
+
+    <!-- TAGS -->
+
+    <color name="tag_location_fg">#FF3B93</color>
+    <color name="tag_location_bg">#220E18</color>
+    <color name="tag_location_stroke">#66FF3B93</color>
+
+    <color name="tag_favorite_fg">#FFD700</color>
+    <color name="tag_favorite_bg">#2D2712</color>
+    <color name="tag_favorite_stroke">#66FFD700</color>
+
+    <color name="tag_blocked_fg">#FF5252</color>
+    <color name="tag_blocked_bg">#2D161B</color>
+    <color name="tag_blocked_stroke">#66FF5252</color>
+
+    <color name="tag_silenced_fg">#C9C9C9</color>
+    <color name="tag_silenced_bg">#1E1E24</color>
+    <color name="tag_silenced_stroke">#66C9C9C9</color>
 
     <color name="snack_background">#1F1F2B</color>
     <color name="snack_action">#6EA8FF</color>
@@ -73,9 +89,6 @@
     <color name="status_offline">#FFFFFF</color>
     <color name="check_seen">#00AFFF</color>
     <color name="check_not_seen">#FFFFFF</color>
-
-    <!-- CARDS -->
-
 
     <!-- NAVEGACIÓN -->
     <color name="zibe_nav_active">#F6286D</color>
@@ -106,12 +119,13 @@
     <color name="accent_transparent">#4DFF4081</color>
 
     <color name="zibe_dialog_bg">#1E1E1E</color>        <!-- Fondo más oscuro para el cuadro -->
- 
+
     <color name="zibe_pink_bright">#FF5BAA</color>
 
     <color name="zibe_night_start_10">#1AFFFFFF</color>
     <!-- Opcional para pill suave -->
-    <color name="zibe_night_start_20">#33FFFFFF</color> <!-- 20% blanco en modo oscuro, ajustá a tu paleta -->
+    <color name="zibe_night_start_20">#33FFFFFF
+    </color> <!-- 20% blanco en modo oscuro, ajustá a tu paleta -->
 
     <!-- Fondo glass (modo claro) -->
     <color name="glass_bg_light">#1AFFFFFF</color>        <!-- blanco 10% -->
@@ -125,7 +139,7 @@
     <color name="chat_list_avatar_stroke">#FFFFFF</color>
     <color name="user_list_avatar_stroke">#FFFFFF</color>
     <!--    <color name="glass_stroke_dark">#33000000</color>    &lt;!&ndash; negro 20% &ndash;&gt;-->
-<!--    <color name="glass_indicator_dark">#26000000</color> &lt;!&ndash; negro 15% para el pill &ndash;&gt;-->
+    <!--    <color name="glass_indicator_dark">#26000000</color> &lt;!&ndash; negro 15% para el pill &ndash;&gt;-->
 
 
 </resources>
