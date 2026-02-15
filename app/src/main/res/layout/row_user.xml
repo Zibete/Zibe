@@ -1,200 +1,222 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingVertical="@dimen/layout_margin_small">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/userCard"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/glassContainer"
         android:layout_width="match_parent"
-        android:layout_height="125dp"
-        android:layout_marginHorizontal="8dp"
-        android:layout_marginVertical="4dp"
-        android:foreground="@drawable/fg_card_ripple"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:strokeColor="#99FFFFFF"
-        app:strokeWidth="0dp"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.Zibe.Card.Large"
-        app:cardElevation="0dp">
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/element_spacing_xs"
+        android:background="@drawable/bg_glass_morphism"
+        android:clickable="true"
+        android:clipToOutline="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:padding="@dimen/element_spacing_small">
 
         <FrameLayout
-            android:id="@+id/glassContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/bg_glass_morphism">
+            android:id="@+id/userListAvatarContainer"
+            android:layout_width="@dimen/row_user_avatar_size"
+            android:layout_height="@dimen/row_user_avatar_size"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-            <View
-                android:id="@+id/glowBorder"
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/userListAvatarImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@drawable/bg_glow_zibe"
-                android:alpha="0.9"/>
+                android:src="@color/glass_bg_light"
+                app:civ_border_color="@color/user_list_avatar_stroke"
+                app:civ_border_width="@dimen/user_list_avatar_stroke" />
 
-            <eightbitlab.com.blurview.BlurView
-                android:id="@+id/blurView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:padding="8dp"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <LinearLayout
-                    android:layout_width="110dp"
-                    android:layout_height="match_parent"
-                    android:gravity="center">
-
-                    <com.zibete.proyecto1.ui.ResizableImageView
-                        android:id="@+id/avatarImage"
-                        android:layout_width="84dp"
-                        android:layout_height="84dp"
-                        android:scaleType="centerCrop"
-                        android:background="@drawable/bg_avatar_ring"
-                        android:contentDescription="@string/app_name" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:id="@+id/onlineIcon"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:src="@drawable/ic_circle_online"
-                            android:visibility="gone" />
-
-                        <ImageView
-                            android:id="@+id/offlineIcon"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:src="@drawable/ic_circle_offline"
-                            android:visibility="gone" />
-
-                        <TextView
-                            android:id="@+id/statusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:visibility="gone" />
-
-                        <TextView
-                            android:id="@+id/userName"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="6dp"
-                            android:textSize="@dimen/text_size_large"
-                            android:textColor="@color/zibe_text_light"
-                            android:singleLine="true"
-                            android:ellipsize="end" />
-
-                        <ImageView
-                            android:id="@+id/blockedIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_baseline_block_24"
-                            android:visibility="gone"
-                            app:tint="@color/zibe_muted_text" />
-
-                        <ImageView
-                            android:id="@+id/favoriteIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_baseline_star_24"
-                            android:visibility="gone"
-                            app:tint="@color/colorAccent" />
-
-                        <TextView
-                            android:id="@+id/userAge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:textSize="@dimen/text_size_large"
-                            android:textColor="@color/zibe_text_light"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/descriptionContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingTop="4dp"
-                        android:visibility="gone">
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#33FFFFFF"/>
-
-                        <TextView
-                            android:id="@+id/userDescription"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:paddingVertical="4dp"
-                            android:maxLines="2"
-                            android:ellipsize="end"
-                            android:textAlignment="textStart"
-                            android:textColor="@color/zibe_text_light"
-                            android:textSize="@dimen/text_size_normal"/>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#33FFFFFF"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:paddingTop="6dp">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_baseline_location_on_24"
-                            app:tint="@color/zibe_text_light" />
-
-                        <TextView
-                            android:id="@+id/userDistance"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="6dp"
-                            android:textSize="@dimen/text_size_normal"
-                            android:textColor="@color/colorAccent"/>
-
-                        <ImageView
-                            android:id="@+id/chatButton"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:src="@drawable/ic_baseline_send_24"
-                            android:padding="6dp"
-                            android:visibility="gone"
-                            app:tint="@color/zibe_text_light" />
-
-                        <ImageView
-                            android:id="@+id/blockedMeIcon"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:src="@drawable/ic_baseline_cancel_schedule_send_24"
-                            android:padding="6dp"
-                            android:visibility="gone"
-                            app:tint="@color/zibe_muted_text" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
+            <View
+                android:id="@+id/statusIndicator"
+                android:layout_width="@dimen/status_indicator_height"
+                android:layout_height="@dimen/status_indicator_height"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="@dimen/layout_margin_xs"
+                android:background="@drawable/shape_status_circle"
+                android:elevation="4dp" />
         </FrameLayout>
-    </com.google.android.material.card.MaterialCardView>
-</LinearLayout>
+
+        <TextView
+            android:id="@+id/userName"
+            style="@style/TextAppearance.Zibe.RowUser.Title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/row_list_text_margin_start"
+            android:layout_marginEnd="@dimen/element_spacing_xs"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            app:layout_constraintEnd_toStartOf="@+id/userAge"
+            app:layout_constraintStart_toEndOf="@+id/userListAvatarContainer"
+            app:layout_constraintTop_toTopOf="@+id/userListAvatarContainer"
+            tools:text="Matías Peralta" />
+
+        <TextView
+            android:id="@+id/userAge"
+            style="@style/TextAppearance.Zibe.RowUser.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            app:layout_constraintBottom_toBottomOf="@+id/userName"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/userName"
+            tools:text="28" />
+
+        <androidx.constraintlayout.helper.widget.Flow
+            android:id="@+id/statusFlow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/element_spacing_xxs"
+            app:constraint_referenced_ids="tagLocation,tagFavorite,tagBlockedByMe,tagHasBlockedMe,tagNotificationsSilenced"
+            app:flow_horizontalBias="0"
+            app:flow_horizontalGap="@dimen/element_spacing_xxs"
+            app:flow_horizontalStyle="packed"
+            app:flow_wrapMode="chain"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/userName"
+            app:layout_constraintTop_toBottomOf="@+id/userName" />
+
+        <TextView
+            android:id="@+id/userDescription"
+            style="@style/TextAppearance.Zibe.RowUser.Description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/element_spacing_xs"
+            android:alpha="0.8"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/userName"
+            app:layout_constraintTop_toBottomOf="@+id/statusFlow"
+            tools:text="Desarrollador buscando aventuras en Villa del Dique." />
+
+        <LinearLayout
+            android:id="@+id/tagLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_distance_tag"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/element_spacing_xs"
+            android:paddingVertical="@dimen/layout_margin_xs"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:layout_width="@dimen/tag_icon_size"
+                android:layout_height="@dimen/tag_icon_size"
+                android:src="@drawable/ic_baseline_location_on_24"
+                app:tint="@color/accent" />
+            <TextView
+                android:id="@+id/userDistance"
+                style="@style/TextAppearance.Zibe.Row.Tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_small"
+                android:textColor="?attr/colorOnPrimary"
+                android:alpha="0.9"
+                tools:text="a 5.2 km" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tagFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_distance_tag"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/element_spacing_xs"
+            android:paddingVertical="@dimen/layout_margin_xs"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:layout_width="@dimen/tag_icon_size"
+                android:layout_height="@dimen/tag_icon_size"
+                android:src="@drawable/ic_baseline_star_24"
+                app:tint="@color/tag_favorite" />
+            <TextView
+                style="@style/TextAppearance.Zibe.Row.Tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_small"
+                android:text="@string/tag_favorite"
+                android:textColor="@color/tag_favorite" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tagBlockedByMe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_distance_tag"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/element_spacing_xs"
+            android:paddingVertical="@dimen/layout_margin_xs"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:layout_width="@dimen/tag_icon_size"
+                android:layout_height="@dimen/tag_icon_size"
+                android:src="@drawable/ic_baseline_block_24"
+                app:tint="@color/tag_blocked" />
+            <TextView
+                style="@style/TextAppearance.Zibe.Row.Tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_small"
+                android:text="@string/tag_blocked_by_me"
+                android:textColor="@color/tag_blocked" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tagHasBlockedMe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_distance_tag"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/element_spacing_xs"
+            android:paddingVertical="@dimen/layout_margin_xs"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:layout_width="@dimen/tag_icon_size"
+                android:layout_height="@dimen/tag_icon_size"
+                android:src="@drawable/ic_baseline_block_24"
+                app:tint="@color/tag_blocked" />
+            <TextView
+                style="@style/TextAppearance.Zibe.Row.Tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_small"
+                android:text="@string/tag_has_blocked_me"
+                android:textColor="@color/tag_blocked" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tagNotificationsSilenced"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_distance_tag"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/element_spacing_xs"
+            android:paddingVertical="@dimen/layout_margin_xs"
+            tools:ignore="MissingConstraints">
+            <ImageView
+                android:layout_width="@dimen/tag_icon_size"
+                android:layout_height="@dimen/tag_icon_size"
+                android:src="@drawable/ic_baseline_notifications_off_24"
+                app:tint="@color/zibe_hint_text" />
+            <TextView
+                style="@style/TextAppearance.Zibe.Row.Tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/layout_margin_small"
+                android:text="@string/tag_silent"
+                android:textColor="@color/zibe_hint_text" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

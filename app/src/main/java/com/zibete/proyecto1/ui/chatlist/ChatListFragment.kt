@@ -111,7 +111,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         adapterChatList = AdapterChatList(
             lifecycleScope = viewLifecycleOwner.lifecycleScope,
-            userRepository = userRepository,
+            myUid = userRepository.myUid,
             profileRepositoryProvider = profileRepositoryProvider,
             onChatClicked = ::openChat
         )

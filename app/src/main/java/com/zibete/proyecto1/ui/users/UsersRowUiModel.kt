@@ -7,5 +7,9 @@ data class UsersRowUiModel(
     val isOnline: Boolean,
     val distanceMeters: Double,
     val photoUrl: String,
-    val description: String
+    val description: String,
+    val isFavorite: Boolean,
+    val isBlockedByMe: Boolean,
+    val isNotificationsSilenced: Boolean,
+    val hasBlockedMe: Boolean,
 )
