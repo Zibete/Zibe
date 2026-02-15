@@ -267,7 +267,7 @@ class UserRepository @Inject constructor(
             age = age,
             email = email,
             photoUrl = photoUrl,
-            isOnline = true,
+            online = true,
             distanceMeters = 0.0,
             description = description,
             latitude = 0.0,

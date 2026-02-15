@@ -2,6 +2,7 @@ package com.zibete.proyecto1.model
 
 import androidx.annotation.Keep
 import com.google.firebase.database.Exclude
+import com.google.firebase.database.PropertyName
 import java.io.Serializable
 import java.util.Objects
 
@@ -14,7 +15,8 @@ data class Users(
     var age: Int = 0,
     var email: String = "",
     var photoUrl: String = "",
-    var isOnline: Boolean = false,
+    @get:PropertyName("isOnline") @set:PropertyName("isOnline")
+    var online: Boolean = false,
     @get:Exclude
     var distanceMeters: Double = 0.0, // calculado localmente
     var description: String = "",

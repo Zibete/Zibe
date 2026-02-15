@@ -94,20 +94,30 @@ class UsersViewModel @Inject constructor(
             val user = child.getValue(Users::class.java) ?: continue
 
             val age = ageCalculator(user.birthDate)
+
             val distanceMeters = locationRepository.getDistanceMeters(
                 lat, lon,
                 user.latitude, user.longitude
             )
+
+            val chatState = profileRepositoryProvider.getMyChatState(key)
+            val isFavorite = profileRepositoryProvider.isFavorite(key)
+            val blockState = profileRepositoryProvider.getBlockStateWith(key)
+            val distanceLabel = locationRepository.getDistanceToUser(key)
 
             tempList.add(
                 UsersRowUiModel(
                     id = key,
                     name = user.name,
                     age = age,
-                    isOnline = user.isOnline,
+                    isOnline = user.online,
                     distanceMeters = distanceMeters,
                     photoUrl = user.photoUrl,
-                    description = user.description
+                    description = user.description,
+                    isFavorite = isFavorite,
+                    isBlockedByMe = blockState.isBlockedByMe,
+                    hasBlockedMe = blockState.hasBlockedMe,
+                    isNotificationsSilenced = chatState == CHAT_STATE_SILENT,
                 )
             )
         }
