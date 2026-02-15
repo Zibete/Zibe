@@ -52,6 +52,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
     private var adapterUsers: AdapterUsers? = null
     private var scrollListener: RecyclerView.OnScrollListener? = null
     private val scrollTopThreshold = 3
+    private val prefetchExtra = 4
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -112,6 +113,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
                         b.swipeRefresh.isRefreshing = state.isLoading
 
                         adapterUsers?.submitUsers(state.users)
+                        b.rv.post { prefetchVisibleHasBlockedMe() }
 
                         updateScrollTopFab()
                     }
@@ -293,6 +295,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         scrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 updateScrollTopFab()
+                prefetchVisibleHasBlockedMe()
             }
         }
         scrollListener?.let { binding.rv.addOnScrollListener(it) }
@@ -304,5 +307,18 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
             val firstVisible = layoutManager.findFirstVisibleItemPosition()
             b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
         }
+    }
+
+    private fun prefetchVisibleHasBlockedMe() {
+        val adapter = adapterUsers ?: return
+        if (adapter.itemCount == 0) return
+        val first = layoutManager.findFirstVisibleItemPosition()
+        val last = layoutManager.findLastVisibleItemPosition()
+        if (first == RecyclerView.NO_POSITION || last == RecyclerView.NO_POSITION) return
+        val start = (first - prefetchExtra).coerceAtLeast(0)
+        val end = (last + prefetchExtra).coerceAtMost(adapter.itemCount - 1)
+        if (start > end) return
+        val ids = (start..end).mapNotNull { adapter.currentList.getOrNull(it)?.id }
+        usersViewModel.prefetchHasBlockedMe(ids)
     }
 }
