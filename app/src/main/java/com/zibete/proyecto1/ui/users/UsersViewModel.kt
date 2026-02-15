@@ -1,7 +1,10 @@
 package com.zibete.proyecto1.ui.users
 
+import android.os.SystemClock
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.ui.toUiText
@@ -15,6 +18,8 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -25,6 +30,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,18 +60,29 @@ class UsersViewModel @Inject constructor(
     private var allUsers: List<UsersRowUiModel> = emptyList()
     private var currentFilters = UsersFilters()
     private var searchQuery: String = ""
+    private var loadJob: Job? = null
+    private var metaJob: Job? = null
 
     fun loadUsers() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        metaJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
             currentFilters = readFiltersFromPrefs()
             val myUid = userRepository.myUid
 
-            runCatching { fetchUsers(myUid) }
+
+
+            runCatching { fetchUsersBase(myUid) }
                 .onSuccess { users ->
                     allUsers = users
                     updateVisibleUsers(isLoading = false)
+                    if (users.isNotEmpty()) {
+                        metaJob = viewModelScope.launch {
+                            enrichUsersMeta(users)
+                        }
+                    }
                 }
                 .onFailure { e ->
                     _events.emit(
@@ -82,9 +99,8 @@ class UsersViewModel @Inject constructor(
         }
     }
 
-    private suspend fun fetchUsers(myUid: String): List<UsersRowUiModel> {
+    private suspend fun fetchUsersBase(myUid: String): List<UsersRowUiModel> {
         val snapshot = firebaseRefsContainer.refAccounts.get().await()
-        if (!snapshot.exists()) return emptyList()
 
         val lat = locationRepository.latitude
         val lon = locationRepository.longitude
@@ -104,11 +120,6 @@ class UsersViewModel @Inject constructor(
                 user.latitude, user.longitude
             )
 
-            val chatState = profileRepositoryProvider.getMyChatState(key)
-            val isFavorite = profileRepositoryProvider.isFavorite(key)
-            val blockState = profileRepositoryProvider.getBlockStateWith(key)
-            val distanceLabel = locationRepository.getDistanceToUser(key)
-
             tempList.add(
                 UsersRowUiModel(
                     id = key,
@@ -118,15 +129,35 @@ class UsersViewModel @Inject constructor(
                     distanceMeters = distanceMeters,
                     photoUrl = user.photoUrl,
                     description = user.description,
-                    isFavorite = isFavorite,
-                    isBlockedByMe = blockState.isBlockedByMe,
-                    hasBlockedMe = blockState.hasBlockedMe,
-                    isNotificationsSilenced = chatState == CHAT_STATE_SILENT,
+                    isFavorite = false,
+                    isBlockedByMe = false,
+                    hasBlockedMe = false,
+                    isNotificationsSilenced = false,
                 )
             )
         }
 
-        return tempList.sortedBy { it.distanceMeters }
+        val result = tempList.sortedBy { it.distanceMeters }
+
+        return result
+    }
+
+    private suspend fun enrichUsersMeta(baseUsers: List<UsersRowUiModel>) {
+        val enriched = withContext(Dispatchers.IO) {
+            baseUsers.map { user ->
+                val chatState = profileRepositoryProvider.getMyChatState(user.id)
+                val isFavorite = profileRepositoryProvider.isFavorite(user.id)
+                val blockState = profileRepositoryProvider.getBlockStateWith(user.id)
+                user.copy(
+                    isFavorite = isFavorite,
+                    isBlockedByMe = blockState.isBlockedByMe,
+                    hasBlockedMe = blockState.hasBlockedMe,
+                    isNotificationsSilenced = chatState == CHAT_STATE_SILENT
+                )
+            }
+        }
+        allUsers = enriched
+        updateVisibleUsers()
     }
 
     fun applyFilters(
@@ -237,7 +268,7 @@ class UsersViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 isLoading = isLoading ?: state.isLoading,
-                users = filtered
+                users = filtered.toList()
             )
         }
     }

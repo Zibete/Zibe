@@ -97,8 +97,9 @@ class AdapterUsers(
     }
 
     fun submitUsers(list: List<UsersRowUiModel>) {
-        originalList = list
-        submitList(list)
+        val safeList = list.toList()
+        originalList = safeList
+        submitList(safeList)
     }
 
     fun clearRecycled(b: RowUserBinding) {
@@ -225,6 +226,7 @@ class AdapterUsers(
 
     private fun bindUserStatus(b: RowUserBinding, status: UserStatus) {
         val ctx = b.root.context
+        b.statusIndicator.isVisible = true
         b.statusIndicator.bindStatusIndicator(ctx, status)
     }
 
