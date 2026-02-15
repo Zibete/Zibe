@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/element_spacing_xs"
-        android:background="@drawable/bg_glass_morphism"
+        android:background="@drawable/bg_glow_zibe_0"
         android:clickable="true"
         android:clipToOutline="true"
         android:focusable="true"
@@ -58,7 +58,7 @@
             app:layout_constraintEnd_toStartOf="@+id/userAge"
             app:layout_constraintStart_toEndOf="@+id/userListAvatarContainer"
             app:layout_constraintTop_toTopOf="@+id/userListAvatarContainer"
-            tools:text="Matías Peralta" />
+            tools:text="@string/name" />
 
         <TextView
             android:id="@+id/userAge"
@@ -91,7 +91,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/element_spacing_xs"
-            android:alpha="0.8"
+            android:alpha="0.9"
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:singleLine="true"
@@ -99,30 +99,34 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/userName"
             app:layout_constraintTop_toBottomOf="@+id/statusFlow"
-            tools:text="Desarrollador buscando aventuras en Villa del Dique." />
+            tools:text="@string/description" />
 
         <LinearLayout
             android:id="@+id/tagLocation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_distance_tag"
+            android:background="@drawable/bg_tag_location"
+            android:clipToOutline="true"
+            android:foreground="?android:attr/selectableItemBackground"
             android:gravity="center"
             android:paddingHorizontal="@dimen/element_spacing_xs"
             android:paddingVertical="@dimen/layout_margin_xs"
             tools:ignore="MissingConstraints">
+
             <ImageView
                 android:layout_width="@dimen/tag_icon_size"
                 android:layout_height="@dimen/tag_icon_size"
                 android:src="@drawable/ic_baseline_location_on_24"
-                app:tint="@color/accent" />
+                app:tint="@color/tag_location_fg" />
+
             <TextView
                 android:id="@+id/userDistance"
                 style="@style/TextAppearance.Zibe.Row.Tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/layout_margin_small"
-                android:textColor="?attr/colorOnPrimary"
                 android:alpha="0.9"
+                android:textColor="@color/tag_location_fg"
                 tools:text="a 5.2 km" />
         </LinearLayout>
 
@@ -130,92 +134,108 @@
             android:id="@+id/tagFavorite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_distance_tag"
+            android:background="@drawable/bg_tag_favorite"
+            android:clipToOutline="true"
+            android:foreground="?android:attr/selectableItemBackground"
             android:gravity="center"
             android:paddingHorizontal="@dimen/element_spacing_xs"
             android:paddingVertical="@dimen/layout_margin_xs"
             tools:ignore="MissingConstraints">
+
             <ImageView
                 android:layout_width="@dimen/tag_icon_size"
                 android:layout_height="@dimen/tag_icon_size"
                 android:src="@drawable/ic_baseline_star_24"
-                app:tint="@color/tag_favorite" />
+                app:tint="@color/tag_favorite_fg" />
+
             <TextView
                 style="@style/TextAppearance.Zibe.Row.Tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/layout_margin_small"
                 android:text="@string/tag_favorite"
-                android:textColor="@color/tag_favorite" />
+                android:textColor="@color/tag_favorite_fg" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/tagBlockedByMe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_distance_tag"
+            android:background="@drawable/bg_tag_blocked"
+            android:clipToOutline="true"
+            android:foreground="?android:attr/selectableItemBackground"
             android:gravity="center"
             android:paddingHorizontal="@dimen/element_spacing_xs"
             android:paddingVertical="@dimen/layout_margin_xs"
             tools:ignore="MissingConstraints">
+
             <ImageView
                 android:layout_width="@dimen/tag_icon_size"
                 android:layout_height="@dimen/tag_icon_size"
                 android:src="@drawable/ic_baseline_block_24"
-                app:tint="@color/tag_blocked" />
+                app:tint="@color/tag_blocked_fg" />
+
             <TextView
                 style="@style/TextAppearance.Zibe.Row.Tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/layout_margin_small"
                 android:text="@string/tag_blocked_by_me"
-                android:textColor="@color/tag_blocked" />
+                android:textColor="@color/tag_blocked_fg" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/tagHasBlockedMe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_distance_tag"
+            android:background="@drawable/bg_tag_blocked"
+            android:clipToOutline="true"
+            android:foreground="?android:attr/selectableItemBackground"
             android:gravity="center"
             android:paddingHorizontal="@dimen/element_spacing_xs"
             android:paddingVertical="@dimen/layout_margin_xs"
             tools:ignore="MissingConstraints">
+
             <ImageView
                 android:layout_width="@dimen/tag_icon_size"
                 android:layout_height="@dimen/tag_icon_size"
                 android:src="@drawable/ic_baseline_block_24"
-                app:tint="@color/tag_blocked" />
+                app:tint="@color/tag_blocked_fg" />
+
             <TextView
                 style="@style/TextAppearance.Zibe.Row.Tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/layout_margin_small"
                 android:text="@string/tag_has_blocked_me"
-                android:textColor="@color/tag_blocked" />
+                android:textColor="@color/tag_blocked_fg" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/tagNotificationsSilenced"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_distance_tag"
+            android:background="@drawable/bg_tag_silenced"
+            android:clipToOutline="true"
+            android:foreground="?android:attr/selectableItemBackground"
             android:gravity="center"
             android:paddingHorizontal="@dimen/element_spacing_xs"
             android:paddingVertical="@dimen/layout_margin_xs"
             tools:ignore="MissingConstraints">
+
             <ImageView
                 android:layout_width="@dimen/tag_icon_size"
                 android:layout_height="@dimen/tag_icon_size"
                 android:src="@drawable/ic_baseline_notifications_off_24"
-                app:tint="@color/zibe_hint_text" />
+                app:tint="@color/tag_silenced_fg" />
+
             <TextView
                 style="@style/TextAppearance.Zibe.Row.Tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/layout_margin_small"
                 android:text="@string/tag_silent"
-                android:textColor="@color/zibe_hint_text" />
+                android:textColor="@color/tag_silenced_fg" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
