@@ -2,17 +2,14 @@ package com.zibete.proyecto1.ui.extensions
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
-import com.zibete.proyecto1.databinding.RowChatListBinding
 import com.zibete.proyecto1.model.UserStatus
 
 fun View.bindStatusIndicator(ctx: Context, status: UserStatus) {

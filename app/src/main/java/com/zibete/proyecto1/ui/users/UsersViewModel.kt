@@ -72,8 +72,6 @@ class UsersViewModel @Inject constructor(
             currentFilters = readFiltersFromPrefs()
             val myUid = userRepository.myUid
 
-
-
             runCatching { fetchUsersBase(myUid) }
                 .onSuccess { users ->
                     allUsers = users
@@ -128,11 +126,7 @@ class UsersViewModel @Inject constructor(
                     isOnline = user.online,
                     distanceMeters = distanceMeters,
                     photoUrl = user.photoUrl,
-                    description = user.description,
-                    isFavorite = false,
-                    isBlockedByMe = false,
-                    hasBlockedMe = false,
-                    isNotificationsSilenced = false,
+                    description = user.description
                 )
             )
         }
