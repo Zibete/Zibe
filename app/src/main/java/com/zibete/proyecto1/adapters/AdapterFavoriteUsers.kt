@@ -37,7 +37,9 @@ class AdapterFavoriteUsers(
                 .error(R.drawable.ic_person_24)
                 .into(imageFavoriteUser)
 
-            bindOnlinePayload(item.isOnline)
+//            bindOnlinePayload(item.isOnline)
+
+            statusIndicator.isVisible = true
 
             cardviewFavorites.setOnClickListener { onUserClicked(item) }
         }
@@ -65,15 +67,15 @@ class AdapterFavoriteUsers(
             }
         }
 
-        private fun bindOnlinePayload(isOnline: Boolean) = with(binding) {
-            iconConnected.isVisible = isOnline
-            iconDisconnected.isVisible = !isOnline
-        }
+//        private fun bindOnlinePayload(isOnline: Boolean) = with(binding) {
+//            iconConnected.isVisible = isOnline
+//            iconDisconnected.isVisible = !isOnline
+//        }
 
         private fun adjustItemHeight() = with(binding) {
-            val params = linearCardFavorites.layoutParams
+            val params = cardviewFavorites.layoutParams
             params.height = itemHeight
-            linearCardFavorites.layoutParams = params
+            cardviewFavorites.layoutParams = params
         }
     }
 
@@ -83,14 +85,6 @@ class AdapterFavoriteUsers(
         submitList(safeList)
     }
 
-    fun filterByName(query: String?) {
-        val q = query.orEmpty().trim()
-        if (q.isEmpty()) {
-            submitList(originalList)
-        } else {
-            submitList(originalList.filter { it.name.contains(q, ignoreCase = true) })
-        }
-    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FavoriteViewHolder {
         val binding = RowFavoritesBinding.inflate(
@@ -105,7 +99,11 @@ class AdapterFavoriteUsers(
         holder.bind(getItem(position))
     }
 
-    override fun onBindViewHolder(holder: FavoriteViewHolder, position: Int, payloads: MutableList<Any>) {
+    override fun onBindViewHolder(
+        holder: FavoriteViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
         val item = getItem(position)
         val payload = payloads.firstOrNull()
         if (payload != null) holder.bindPayload(payload, item) else holder.bind(item)
