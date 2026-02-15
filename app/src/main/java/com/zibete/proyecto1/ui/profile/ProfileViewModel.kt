@@ -17,11 +17,15 @@ import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +36,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -67,12 +72,19 @@ class ProfileViewModel @Inject constructor(
         profileRepositoryProvider.observeUserStatus(otherUid, NODE_DM)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserStatus.Offline)
 
+    private var loadJob: Job? = null
+    private var metaJob: Job? = null
+
     fun loadProfile() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        metaJob?.cancel()
+        loadJob = viewModelScope.launch {
             if (otherUid.isBlank()) {
                 setNotProfileState(content = ProfileContent.NotFound)
                 return@launch
-            } else setNotProfileState(content = ProfileContent.Loading)
+            } else if (_uiState.value.profile?.id != otherUid) {
+                setNotProfileState(content = ProfileContent.Loading)
+            }
 
             profileRepositoryProvider.getOtherAccount(otherUid)
                 .onFailure { e ->
@@ -89,39 +101,91 @@ class ProfileViewModel @Inject constructor(
                         return@launch
                     }
 
-                    runCatching {
-                        val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
-                        val count = chatRepository.getMessageCount(chatRefs)
-                        val chatState = profileRepositoryProvider.getMyChatState(otherUid)
-                        val isFavorite = profileRepositoryProvider.isFavorite(otherUid)
-                        val blockState = profileRepositoryProvider.getBlockStateWith(otherUid)
-                        val distanceLabel = locationRepository.getDistanceToUser(otherUid)
-                        val isGroupMatch =
-                            groupRepositoryProvider.isGroupMatch(otherUid, groupName.value)
+                    _uiState.update {
+                        it.copy(
+                            content = ProfileContent.Ready(profile),
+                            profile = profile
+                        )
+                    }
 
-                        _uiState.update {
-                            it.copy(
-                                content = ProfileContent.Ready(profile),
-                                profile = profile,
-                                distanceLabel = distanceLabel,
-                                isGroupMatch = isGroupMatch,
-                                isFavorite = isFavorite,
-                                isBlockedByMe = blockState.isBlockedByMe,
-                                hasBlockedMe = blockState.hasBlockedMe,
-                                isNotificationsSilenced = chatState == CHAT_STATE_SILENT,
-                                canDeleteChat = count > 0
-                            )
-                        }
-
-                        _photoList.value =
-                            profileRepositoryProvider.getDmPhotoList(otherUid)
-
-                    }.onFailure {
-                        setNotProfileState(content = ProfileContent.Error(profileError))
-                        return@launch
+                    metaJob = viewModelScope.launch {
+                        enrichProfileMeta()
                     }
                 }
         }
+    }
+
+    private suspend fun enrichProfileMeta() {
+        var isGroupMatch = false
+        var isFavorite = false
+        var isNotificationsSilenced = false
+        var isBlockedByMe = false
+        var hasBlockedMe = false
+        var distanceLabel = ""
+        var canDeleteChat = false
+        var photoList = emptyList<String>()
+
+        withContext(Dispatchers.IO) {
+            val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
+            val count = runCatching { chatRepository.getMessageCount(chatRefs) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    0
+                }
+            val chatState = runCatching { profileRepositoryProvider.getMyChatState(otherUid) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    ""
+                }
+            val favorite = runCatching { profileRepositoryProvider.isFavorite(otherUid) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    false
+                }
+            val blockState = runCatching { profileRepositoryProvider.getBlockStateWith(otherUid) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    BlockState(isBlockedByMe = false, hasBlockedMe = false)
+                }
+            val distance = runCatching { locationRepository.getDistanceToUser(otherUid) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    ""
+                }
+            val groupMatch = runCatching {
+                groupRepositoryProvider.isGroupMatch(otherUid, groupName.value)
+            }.getOrElse { e ->
+                if (e is CancellationException) throw e
+                false
+            }
+            val photos = runCatching { profileRepositoryProvider.getDmPhotoList(otherUid) }
+                .getOrElse { e ->
+                    if (e is CancellationException) throw e
+                    emptyList()
+                }
+
+            canDeleteChat = count > 0
+            isNotificationsSilenced = chatState == CHAT_STATE_SILENT
+            isFavorite = favorite
+            isBlockedByMe = blockState.isBlockedByMe
+            hasBlockedMe = blockState.hasBlockedMe
+            distanceLabel = distance
+            isGroupMatch = groupMatch
+            photoList = photos
+        }
+
+        _uiState.update {
+            it.copy(
+                distanceLabel = distanceLabel,
+                isGroupMatch = isGroupMatch,
+                isFavorite = isFavorite,
+                isBlockedByMe = isBlockedByMe,
+                hasBlockedMe = hasBlockedMe,
+                isNotificationsSilenced = isNotificationsSilenced,
+                canDeleteChat = canDeleteChat
+            )
+        }
+        _photoList.value = photoList
     }
 
     fun setNotProfileState(content: ProfileContent) {
