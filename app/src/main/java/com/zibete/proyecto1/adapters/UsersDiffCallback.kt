@@ -51,7 +51,7 @@ object UsersDiffCallback : DiffUtil.ItemCallback<UsersRowUiModel>() {
         const val AGE = "payload_user_age"
         const val DESCRIPTION = "payload_user_description"
         const val PHOTO_URL = "payload_user_photo_url"
-        const val FAVORITE = "payload_user_photo_url"
+        const val FAVORITE = "payload_user_favorite"
         const val BLOCKED_BY_ME = "payload_user_blocked_by_me"
         const val HAS_BLOCKED_ME = "payload_user_blocked_me"
         const val NOTIFICATIONS_SILENCED = "payload_user_notifications_silenced"
