@@ -11,6 +11,9 @@ import com.zibete.proyecto1.adapters.FavoritesDiffCallback.PayloadFavoriteUser
 import com.zibete.proyecto1.databinding.RowFavoritesBinding
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
 import com.zibete.proyecto1.core.utils.ZibeApp
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.extensions.bindStatusIndicator
+import com.zibete.proyecto1.ui.extensions.loadAvatar
 
 class AdapterFavoriteUsers(
     private val onUserClicked: (FavoriteUserUi) -> Unit
@@ -20,7 +23,7 @@ class AdapterFavoriteUsers(
     private val itemHeight: Int = (ZibeApp.ScreenUtils.widthPx / 3).coerceAtLeast(1)
 
     inner class FavoriteViewHolder(
-        private val binding: RowFavoritesBinding
+        val binding: RowFavoritesBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
@@ -30,47 +33,22 @@ class AdapterFavoriteUsers(
         fun bind(item: FavoriteUserUi) = with(binding) {
             favoriteUserName.text = item.name
             favoriteUserAge.text = item.age.toString()
-
-            Glide.with(root)
-                .load(item.profilePhoto)
-                .placeholder(R.drawable.ic_person_24)
-                .error(R.drawable.ic_person_24)
-                .into(imageFavoriteUser)
-
-//            bindOnlinePayload(item.isOnline)
-
-            statusIndicator.isVisible = true
-
+            imageFavoriteUser.loadAvatar(item.profilePhoto)
+            bindOnlineIndicator(this, item.isOnline)
             cardviewFavorites.setOnClickListener { onUserClicked(item) }
         }
 
         fun bindPayload(payload: Any, item: FavoriteUserUi) = with(binding) {
-            val changes = payload as? Set<*> ?: run {
-                bind(item)
-                return
-            }
-
-//            if (PayloadFavoriteUser.IS_ONLINE in changes) {
-//                iconConnected.isVisible = item.isOnline
-//                iconDisconnected.isVisible = !item.isOnline
-//            }
+            val changes = payload as? Set<*> ?: run { bind(item); return }
 
             if (PayloadFavoriteUser.NAME in changes) favoriteUserName.text = item.name
             if (PayloadFavoriteUser.AGE in changes) favoriteUserAge.text = item.age.toString()
+            if (PayloadFavoriteUser.PHOTO_URL in changes) imageFavoriteUser.loadAvatar(item.profilePhoto)
+            if (PayloadFavoriteUser.IS_ONLINE in changes) bindOnlineIndicator(this, item.isOnline)
 
-            if (PayloadFavoriteUser.PHOTO_URL in changes) {
-                Glide.with(root)
-                    .load(item.profilePhoto)
-                    .placeholder(R.drawable.ic_person_24)
-                    .error(R.drawable.ic_person_24)
-                    .into(imageFavoriteUser)
-            }
+            // IMPORTANT: mantener listener actualizado también en payload
+            cardviewFavorites.setOnClickListener { onUserClicked(item) }
         }
-
-//        private fun bindOnlinePayload(isOnline: Boolean) = with(binding) {
-//            iconConnected.isVisible = isOnline
-//            iconDisconnected.isVisible = !isOnline
-//        }
 
         private fun adjustItemHeight() = with(binding) {
             val params = cardviewFavorites.layoutParams
@@ -107,6 +85,18 @@ class AdapterFavoriteUsers(
         val item = getItem(position)
         val payload = payloads.firstOrNull()
         if (payload != null) holder.bindPayload(payload, item) else holder.bind(item)
+    }
+
+    override fun onViewRecycled(holder: FavoriteViewHolder) {
+        Glide.with(holder.binding.root).clear(holder.binding.imageFavoriteUser)
+        holder.binding.imageFavoriteUser.setImageDrawable(null)
+        super.onViewRecycled(holder)
+    }
+
+    private fun bindOnlineIndicator(b: RowFavoritesBinding, isOnline: Boolean) {
+        b.statusIndicator.isVisible = true
+        val status = if (isOnline) UserStatus.Online else UserStatus.Offline
+        b.statusIndicator.bindStatusIndicator(b.root.context, status)
     }
 
 }

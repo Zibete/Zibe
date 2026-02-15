@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
@@ -166,33 +167,22 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
     override fun onContextItemSelected(item: MenuItem): Boolean {
         if (item.groupId != FRAGMENT_ID_CHATLIST) return false
 
-        val chat = adapterChatList.currentList.getOrNull(item.order) ?: return false
+        val otherId = adapterChatList.consumeContextMenuChatId() ?: return false
+        val chat = adapterChatList.currentList.firstOrNull { it.otherId == otherId }
+
+        val otherName =
+            chat?.otherName.orEmpty().ifBlank { getString(R.string.deleted_profile_fallback) }
 
         when (item.itemId) {
-            1 -> chatListViewModel.onMarkAsReadChatListClicked(chat.otherId, NODE_DM)
-            2 -> chatListViewModel.onToggleNotificationsClicked(
-                chat.otherId,
-                chat.otherName.orEmpty(),
-                NODE_DM
-            )
-
-            3 -> chatListViewModel.onConfirmToggleBlockAction(
-                chat.otherId,
-                chat.otherName.orEmpty()
-            )
-            4 -> chatListViewModel.onHideClicked(
-                chat.otherId,
-                chat.otherName.orEmpty(),
-                NODE_DM
-            )
-            5 -> chatListViewModel.onDeleteClicked(
-                chat.otherId,
-                chat.otherName.orEmpty(),
-                NODE_DM
-            )
+            1 -> chatListViewModel.onMarkAsReadChatListClicked(otherId, NODE_DM)
+            2 -> chatListViewModel.onToggleNotificationsClicked(otherId, otherName, NODE_DM)
+            3 -> chatListViewModel.onConfirmToggleBlockAction(otherId, otherName)
+            4 -> chatListViewModel.onHideClicked(otherId, otherName, NODE_DM)
+            5 -> chatListViewModel.onDeleteClicked(otherId, otherName, NODE_DM)
         }
         return true
     }
+
 
     override fun onSearchQueryChanged(query: String?) {
         chatListViewModel.onSearchQueryChanged(query.orEmpty())
