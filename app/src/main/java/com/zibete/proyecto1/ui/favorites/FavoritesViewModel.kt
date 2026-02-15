@@ -118,7 +118,7 @@ class FavoritesViewModel @Inject constructor(
                     name = u.name,
                     age = ageCalculator(u.birthDate),
                     profilePhoto = u.photoUrl,
-                    isOnline = u.isOnline
+                    isOnline = u.online
                 )
             }
         }.sortedBy { it.name.lowercase() }
