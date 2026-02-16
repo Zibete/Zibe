@@ -14,9 +14,11 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/material_toolbar"
-            style="@style/Zibe.Toolbar"
+            android:theme="@style/Zibe.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIconTint="@color/zibe_text_light"
+            app:popupTheme="@style/ThemeOverlay.Zibe.PopupMenu">
 
             <LinearLayout
                 android:id="@+id/users_fragment_settings"

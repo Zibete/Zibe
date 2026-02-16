@@ -5,11 +5,16 @@
          COMPONENT STYLES (Views)
          ========================================================= -->
 
+    <!-- Base ThemeOverlay.Zibe -->
+    <style name="ThemeOverlay.Zibe" parent="ThemeOverlay.Material3" />
+
     <!-- Toolbar -->
     <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="titleTextColor">?attr/colorOnSurface</item>
         <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
         <item name="titleTextAppearance">@style/TextAppearance.Zibe.Brand.Subtitle</item>
+        <item name="drawerArrowStyle">@style/Widget.Zibe.DrawerArrowOnGradient</item>
+        <item name="actionOverflowButtonStyle">@style/Widget.Zibe.OverflowButtonOnGradient</item>
         <!-- Para iconos: usar app:navigationIconTint en el XML del toolbar -->
     </style>
 
@@ -20,13 +25,18 @@
         <item name="itemRippleColor">@color/zibe_pink</item>
     </style>
 
-    <!-- BottomNavigation -->
-    <style name="Zibe.BottomNav" parent="Widget.Material3.BottomNavigationView" />
+    <!-- PopupMenu -->
+    <style name="ThemeOverlay.Zibe.PopupMenu" parent="ThemeOverlay.Material3">
+        <item name="popupMenuStyle">@style/Widget.Zibe.PopupMenu</item>
+        <item name="android:popupMenuStyle">@style/Widget.Zibe.PopupMenu</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.Zibe.PopupMenu</item>
+    </style>
 
+    <!-- BottomNavigation -->
     <style name="ThemeOverlay.Zibe.BottomNav" parent="ThemeOverlay.Material3.BottomNavigationView">
         <item name="itemIconTint">@drawable/bottom_nav_selector</item>
         <item name="itemTextColor">@drawable/bottom_nav_selector</item>
-        <item name="itemRippleColor">@color/transparent</item>
+        <item name="itemRippleColor">@color/zibe_pink</item>
         <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
 
@@ -53,6 +63,8 @@
          WIDGETS
          ========================================================= -->
 
+    <style name="Zibe.BottomNav" parent="ThemeOverlay.Zibe.BottomNav" />
+
     <style name="Widget.Zibe.CircularLoading" parent="Widget.Material3.CircularProgressIndicator">
         <item name="indicatorSize">48dp</item>
         <item name="trackThickness">4dp</item>
@@ -74,6 +86,14 @@
         <item name="searchIcon">@drawable/ic_search_rounded_24</item>
         <item name="queryBackground">@null</item>
         <item name="submitBackground">@null</item>
+    </style>
+
+    <style name="Widget.Zibe.DrawerArrowOnGradient" parent="Widget.AppCompat.DrawerArrowToggle">
+        <item name="color">?attr/colorOnPrimary</item>
+    </style>
+
+    <style name="Widget.Zibe.OverflowButtonOnGradient" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:tint">?attr/colorOnPrimary</item>
     </style>
 
 </resources>

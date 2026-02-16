@@ -35,6 +35,7 @@
         <item name="android:statusBarColor">@color/transparent</item>
         <item name="android:navigationBarColor">@color/transparent</item>
         <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
+        <item name="android:windowLightStatusBar">false</item>
 
         <!-- Widget defaults -->
         <item name="textInputStyle">@style/Zibe.Input</item>
@@ -46,12 +47,10 @@
         <!-- Menu / Search (global) -->
         <item name="popupMenuStyle">@style/Widget.Zibe.PopupMenu</item>
         <item name="android:popupMenuStyle">@style/Widget.Zibe.PopupMenu</item>
+        <item name="actionOverflowMenuStyle">@style/Widget.Zibe.PopupMenu</item>
         <item name="searchViewStyle">@style/Widget.Zibe.SearchView</item>
     </style>
 
-    <!-- Activity variants -->
-    <style name="Theme.Zibe.Chat" parent="Theme.Zibe">
-        <item name="android:windowSoftInputMode">adjustResize</item>
-    </style>
+
 
 </resources>
