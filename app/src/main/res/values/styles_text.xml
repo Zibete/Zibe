@@ -27,4 +27,43 @@
         <item name="android:textColor">@color/zibe_purple</item>
     </style>
 
+    <style name="TextAppearance.Zibe.RowUser.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textSize">@dimen/text_size_row_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.RowUser.Description" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textSize">@dimen/text_size_row_description</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Row.Tag" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">@dimen/tag_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.ChatList.Title" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textSize">@dimen/text_size_normal</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.ChatList.Message" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textSize">@dimen/body_medium_size</item>
+        <item name="android:alpha">0.8</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.ChatList.Meta" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textSize">@dimen/text_size_xs</item>
+        <item name="android:alpha">0.8</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.ChatList.Badge" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textColor">@color/zibe_text_light</item>
+        <item name="android:textSize">@dimen/text_size_xs</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
 </resources>

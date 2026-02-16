@@ -1,30 +1,28 @@
 package com.zibete.proyecto1.adapters
 
-import android.content.res.ColorStateList
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnCreateContextMenuListener
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.adapters.ChatListDiffCallback.PayloadConversation
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
-import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
-import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.utils.TimeUtils
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.RowChatListBinding
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.extensions.bindChecks
+import com.zibete.proyecto1.ui.extensions.bindStatusIndicator
+import com.zibete.proyecto1.ui.extensions.loadAvatar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -32,20 +30,23 @@ import kotlinx.coroutines.launch
 
 class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
-    private val userRepository: UserRepository,
+    private val myUid: String,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val onChatClicked: (Conversation) -> Unit
-) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(
-    ChatListDiffCallback
-), OnCreateContextMenuListener {
+) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(ChatListDiffCallback),
+    OnCreateContextMenuListener {
 
-    private var contextMenuPosition: Int = 0
+
+    private var contextMenuChatId: String? = null
+    fun consumeContextMenuChatId(): String? =
+        contextMenuChatId.also { contextMenuChatId = null }
+
     private var menuReadTitle: CharSequence? = null
     private var menuNotifTitle: CharSequence? = null
-
     class ChatListViewHolder(val binding: RowChatListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
+        var currentOtherId: String = ""
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatListViewHolder {
@@ -59,7 +60,10 @@ class AdapterChatList(
     }
 
     override fun onBindViewHolder(holder: ChatListViewHolder, position: Int) {
-        bindFull(holder, getItem(position))
+        bindFull(
+            holder = holder,
+            chat = getItem(position)
+        )
     }
 
     override fun onBindViewHolder(
@@ -76,15 +80,33 @@ class AdapterChatList(
         }
 
         bindPayload(holder, item, payload)
+        updateCurrentChat(holder, item.otherId)
+    }
+
+    override fun onViewAttachedToWindow(holder: ChatListViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        ensureStatusJob(holder)
+    }
+
+    override fun onViewDetachedFromWindow(holder: ChatListViewHolder) {
+        stopStatusJob(holder)
+        super.onViewDetachedFromWindow(holder)
     }
 
     override fun onViewRecycled(holder: ChatListViewHolder) {
-        holder.statusJob?.cancel()
-        holder.statusJob = null
+        stopStatusJob(holder)
+
+        Glide.with(holder.binding.root).clear(holder.binding.chatListAvatarImage)
+        holder.binding.chatListAvatarImage.setImageDrawable(null)
+
         super.onViewRecycled(holder)
     }
 
-    private fun bindPayload(holder: ChatListViewHolder, chat: Conversation, payload: Any) {
+    private fun bindPayload(
+        holder: ChatListViewHolder,
+        chat: Conversation,
+        payload: Any
+    ) {
         val changes = payload as? Set<*> ?: run {
             bindFull(holder, chat)
             return
@@ -93,40 +115,49 @@ class AdapterChatList(
         val b = holder.binding
         val ctx = b.root.context
 
-        if ("state" in changes) b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
-        if ("name" in changes) b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
-            ?: ctx.getString(R.string.deleted_profile_fallback)
-        if ("photo" in changes) Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
-        if ("msg" in changes) {
-            b.lastMessage.text = chat.lastContent.orEmpty()
+        if (PayloadConversation.USER_NAME in changes) b.userName.text =
+            chat.otherName.takeIf { it.isNotBlank() }
+                ?: ctx.getString(R.string.deleted_profile_fallback)
+
+        if (PayloadConversation.MESSAGE in changes) {
+            b.lastMessage.text = chat.lastContent
             applyLastMsgStyle(b)
         }
-        if ("time" in changes) setLastMsgTime(b, chat)
-        if ("unread" in changes) bindBadgeUnreadMessage(b, chat)
-        if ("checks" in changes) bindChecks(b, chat)
 
-        // click/longclick dependen de state/categorías → los re-aplicamos siempre
+        if (PayloadConversation.STATE in changes) b.offNotifications.isVisible =
+            chat.state == CHAT_STATE_SILENT
+
+        if (PayloadConversation.PHOTO_URL in changes) loadAvatar(b, chat.otherPhotoUrl)
+        if (PayloadConversation.CREATED_AT in changes) setLastMsgTime(b, chat)
+        if (PayloadConversation.UNREAD in changes) bindBadgeUnreadMessage(b, chat)
+        if (PayloadConversation.CHECKS in changes) bindChecks(b, chat)
+
         bindClicks(holder, chat)
     }
 
-    private fun bindFull(holder: ChatListViewHolder, chat: Conversation) {
+    private fun resetEphemeralViews(b: RowChatListBinding) {
+        b.offNotifications.isVisible = false
+        b.imageViewChecks.isVisible = false
+        b.badgeUnReadMessage.isVisible = false
+        b.badgeUnReadMessage.text = ""
+        b.statusIndicator.isVisible = false
+    }
+
+    private fun bindFull(
+        holder: ChatListViewHolder,
+        chat: Conversation
+    ) {
         val b = holder.binding
         val ctx = b.root.context
+
+        resetEphemeralViews(b)
 
         b.offNotifications.isVisible = chat.state == CHAT_STATE_SILENT
 
         b.userName.text = chat.otherName.takeIf { it.isNotBlank() }
             ?: ctx.getString(R.string.deleted_profile_fallback)
 
-        Glide.with(ctx).load(chat.otherPhotoUrl).into(b.circleImageView)
-
-        holder.statusJob?.cancel()
-        holder.statusJob = lifecycleScope.launch {
-            profileRepositoryProvider.observeUserStatus(chat.otherId, NODE_DM)
-                .collectLatest { status ->
-                    bindUserStatus(b, status)
-                }
-        }
+        loadAvatar(b, chat.otherPhotoUrl)
 
         b.lastMessage.text = chat.lastContent
         applyLastMsgStyle(b)
@@ -134,6 +165,7 @@ class AdapterChatList(
         bindBadgeUnreadMessage(b, chat)
         bindChecks(b, chat)
         bindClicks(holder, chat)
+        updateCurrentChat(holder, chat.otherId)
     }
 
     private fun bindClicks(holder: ChatListViewHolder, chat: Conversation) {
@@ -143,8 +175,7 @@ class AdapterChatList(
         b.root.setOnClickListener { onChatClicked(chat) }
 
         b.root.setOnLongClickListener {
-            contextMenuPosition =
-                holder.bindingAdapterPosition.coerceAtLeast(0)
+            contextMenuChatId = chat.otherId.takeIf { it.isNotBlank() }
 
             menuNotifTitle =
                 if (b.offNotifications.isVisible) ctx.getString(R.string.menu_user_notifications_on)
@@ -159,51 +190,50 @@ class AdapterChatList(
     }
 
     private fun bindBadgeUnreadMessage(b: RowChatListBinding, chat: Conversation) {
-        val noSeen = chat.unreadCount
-        if (noSeen > 0) {
-            b.badgeUnReadMessage.isVisible = true
-            b.badgeUnReadMessage.text = noSeen.toString()
-        } else b.badgeUnReadMessage.isVisible = false
+        val unreadCount = chat.unreadCount
+        b.badgeUnReadMessage.isVisible = unreadCount > 0
+        b.badgeUnReadMessage.text = if (unreadCount > 0) unreadCount.toString() else ""
     }
 
     private fun bindChecks(b: RowChatListBinding, chat: Conversation) {
-        val myUid = userRepository.myUid
-        val senderUid = chat.userId
-        val seen = chat.seen
-
-        if (senderUid == myUid) {
-            b.imageViewChecks.isVisible = true
-            val iconRes = when (seen) {
-                MSG_DELIVERED -> R.drawable.ic_check_24
-                else -> R.drawable.ic_double_check_24
-            }
-
-            b.imageViewChecks.setImageResource(iconRes)
-            val tintRes = if (seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
-            val tintColor = ContextCompat.getColor(b.root.context, tintRes)
-            b.imageViewChecks.imageTintList = ColorStateList.valueOf(tintColor)
-        } else {
-            b.imageViewChecks.isVisible = false
-        }
+        val isMine = chat.userId == myUid
+        b.imageViewChecks.bindChecks(isMine, chat.seen)
     }
 
     private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
         val ctx = b.root.context
-        val colorRes = when (status) {
-            is UserStatus.Online,
-            is UserStatus.TypingOrRecording -> R.color.status_online
+        b.statusIndicator.isVisible = true
+        b.statusIndicator.bindStatusIndicator(ctx, status)
+    }
 
-            is UserStatus.LastSeen,
-            is UserStatus.Offline -> R.color.status_offline
-        }
-        val circleColor = ContextCompat.getColor(ctx, colorRes)
-        val strokeColor = ContextCompat.getColor(ctx, R.color.status_stroke)
+    private fun updateCurrentChat(holder: ChatListViewHolder, otherId: String) {
+        val changed = holder.currentOtherId != otherId
+        holder.currentOtherId = otherId
+        if (!holder.binding.root.isAttachedToWindow) return
+        if (changed) stopStatusJob(holder)
+        ensureStatusJob(holder)
+    }
 
-        b.statusIndicator.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(circleColor)
-            setStroke(4, strokeColor)
+    private fun ensureStatusJob(holder: ChatListViewHolder) {
+        val otherId = holder.currentOtherId
+        if (otherId.isBlank()) return
+        if (holder.statusJob?.isActive == true) return
+        holder.statusJob = lifecycleScope.launch {
+            profileRepositoryProvider.observeUserStatus(otherId, NODE_DM)
+                .collectLatest { status ->
+                    bindUserStatus(holder.binding, status)
+                }
         }
+    }
+
+    private fun stopStatusJob(holder: ChatListViewHolder) {
+        holder.statusJob?.cancel()
+        holder.statusJob = null
+    }
+
+    private fun loadAvatar(b: RowChatListBinding, photoUrl: String) {
+        val url = photoUrl.takeIf { it.isNotBlank() }
+        b.chatListAvatarImage.loadAvatar(url)
     }
 
     private fun applyLastMsgStyle(binding: RowChatListBinding) {
@@ -230,19 +260,15 @@ class AdapterChatList(
             )
     }
 
-    override fun onCreateContextMenu(
-        menu: ContextMenu,
-        v: View?,
-        menuInfo: ContextMenu.ContextMenuInfo?
-    ) {
+    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
         val ctx = v?.context ?: return
         val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
         val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_user_notifications_off)
-
-        menu.add(FRAGMENT_ID_CHATLIST, 1, contextMenuPosition, titleRead)
-        menu.add(FRAGMENT_ID_CHATLIST, 2, contextMenuPosition, titleNotif)
-        menu.add(FRAGMENT_ID_CHATLIST, 3, contextMenuPosition, R.string.menu_user_block)
-        menu.add(FRAGMENT_ID_CHATLIST, 4, contextMenuPosition, R.string.ocultar)
-        menu.add(FRAGMENT_ID_CHATLIST, 5, contextMenuPosition, R.string.delete)
+        
+        menu.add(FRAGMENT_ID_CHATLIST, 1, 0, titleRead)
+        menu.add(FRAGMENT_ID_CHATLIST, 2, 0, titleNotif)
+        menu.add(FRAGMENT_ID_CHATLIST, 3, 0, R.string.menu_user_block)
+        menu.add(FRAGMENT_ID_CHATLIST, 4, 0, R.string.ocultar)
+        menu.add(FRAGMENT_ID_CHATLIST, 5, 0, R.string.delete)
     }
 }

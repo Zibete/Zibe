@@ -85,7 +85,7 @@
 
                 <!-- Nombre (expansible) -->
                 <TextView
-                    android:id="@+id/tv_favorite_user"
+                    android:id="@+id/favoriteUserName"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -98,7 +98,7 @@
 
                 <!-- Edad -->
                 <TextView
-                    android:id="@+id/tv_favorite_age"
+                    android:id="@+id/favoriteUserAge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"

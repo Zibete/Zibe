@@ -211,15 +211,7 @@ object Constants {
     const val PUBLIC_USER = 1
 
     const val EMPTY = "Empty"
-    const val CALLING = "Calling"
-    const val RINGING = "Ringing"
 
-    const val PAYLOAD_DISTANCE_METERS = "payload_distance_meters"
-    const val PAYLOAD_AGE = "payload_age"
-    const val PAYLOAD_NAME = "payload_name"
-    const val PAYLOAD_PHOTO_URL = "payload_photo_url"
-    const val PAYLOAD_DESCRIPTION = "payload_description"
-    const val PAYLOAD_ONLINE = "payload_online"
     const val PAYLOAD_GROUPS_USERS = "payload_users"
     const val PAYLOAD_GROUPS_DATA = "payload_data"
     const val PAYLOAD_GROUPS_CATEGORY = "payload_category"

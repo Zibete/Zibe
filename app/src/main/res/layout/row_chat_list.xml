@@ -18,48 +18,50 @@
         android:padding="@dimen/element_spacing_small">
 
         <FrameLayout
-            android:id="@+id/avatar_container"
-            android:layout_width="@dimen/chat_list_photo_height"
-            android:layout_height="@dimen/chat_list_photo_height"
+            android:id="@+id/chatListAvatarContainer"
+            android:layout_width="@dimen/chat_list_avatar_size"
+            android:layout_height="@dimen/chat_list_avatar_size"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/circleImageView"
+                android:id="@+id/chatListAvatarImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@color/glass_bg_light" />
+                android:src="@color/glass_stroke_light"
+                app:civ_border_color="@color/glass_stroke_light"
+                app:civ_border_width="@dimen/chat_list_avatar_stroke" />
 
             <View
                 android:id="@+id/status_indicator"
-                android:layout_width="14dp"
-                android:layout_height="14dp"
+                android:layout_width="@dimen/status_indicator_height"
+                android:layout_height="@dimen/status_indicator_height"
                 android:layout_gravity="bottom|end"
-                android:layout_margin="1dp"
-                android:elevation="4dp" />
+                android:layout_margin="@dimen/status_indicator_margin"
+                android:elevation="4dp"
+                android:src="@drawable/shape_status_circle" />
         </FrameLayout>
 
         <TextView
             android:id="@+id/userName"
+            style="@style/TextAppearance.Zibe.ChatList.Title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="@dimen/row_list_text_margin_start"
+            android:layout_marginEnd="@dimen/element_spacing_xs"
             android:ellipsize="end"
             android:maxLines="1"
             android:text="@string/name"
-            android:textColor="?attr/colorOnPrimary"
-            android:textSize="18sp"
             app:layout_constraintEnd_toStartOf="@+id/layout_meta"
-            app:layout_constraintStart_toEndOf="@+id/avatar_container"
-            app:layout_constraintTop_toTopOf="@+id/avatar_container" />
+            app:layout_constraintStart_toEndOf="@+id/chatListAvatarContainer"
+            app:layout_constraintTop_toTopOf="@+id/chatListAvatarContainer" />
 
         <LinearLayout
             android:id="@+id/linearLastMessage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="@dimen/layout_margin_xs"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintEnd_toStartOf="@+id/layout_meta"
@@ -69,20 +71,19 @@
             <ImageView
                 android:id="@+id/imageViewChecks"
                 android:layout_width="@dimen/chat_list_check_height"
-                android:layout_height="16dp"
-                android:layout_marginEnd="4dp"
+                android:layout_height="@dimen/chat_list_check_height"
+                android:layout_marginEnd="@dimen/layout_margin_small"
                 android:contentDescription="@string/check_content_description"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/lastMessage"
+                style="@style/TextAppearance.Zibe.ChatList.Message"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="@string/empty_chat"
-                android:textColor="?attr/colorOnPrimary"
-                android:textSize="14sp" />
+                android:text="@string/empty_chat" />
         </LinearLayout>
 
         <LinearLayout
@@ -97,29 +98,30 @@
 
             <TextView
                 android:id="@+id/hourLastMessage"
+                style="@style/TextAppearance.Zibe.ChatList.Meta"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/zibe_muted_text"
-                android:textSize="11sp" />
+                android:layout_height="wrap_content" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="@dimen/element_spacing_xxs"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
                     android:id="@+id/offNotifications"
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="6dp"
+                    android:layout_width="@dimen/status_indicator_height"
+                    android:layout_height="@dimen/status_indicator_height"
+                    android:layout_marginEnd="@dimen/element_spacing_xxs"
                     android:alpha="0.5"
                     android:contentDescription="@string/off_notifications_content_description"
-                    android:src="@drawable/ic_baseline_notifications_off_24" />
+                    android:src="@drawable/ic_baseline_notifications_off_24"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/badgeUnReadMessage"
+                    style="@style/TextAppearance.Zibe.ChatList.Badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/badge_round"
@@ -128,10 +130,7 @@
                     android:lineSpacingMultiplier="1"
                     android:minWidth="@dimen/chat_list_badge_height"
                     android:minHeight="@dimen/chat_list_badge_height"
-                    android:paddingHorizontal="2dp"
-                    android:textColor="@color/zibe_text_light"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="@dimen/layout_margin_xs" />
             </LinearLayout>
         </LinearLayout>
 

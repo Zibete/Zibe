@@ -297,6 +297,10 @@
     <!-- ============================= -->
 
     <string name="chip_user_blocked">Usuario bloqueado</string>
+    <string name="tag_blocked_by_me">Bloqueado</string>
+    <string name="tag_favorite">Favorito</string>
+    <string name="tag_has_blocked_me">Te bloqueó</string>
+    <string name="tag_silent">Silenciado</string>
 
     <!-- ============================= -->
     <!-- Onboarding -->

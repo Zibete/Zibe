@@ -51,6 +51,7 @@
     <dimen name="layout_margin_small">4dp</dimen>
     <dimen name="layout_margin_medium">6dp</dimen>
     <dimen name="layout_margin_xl">10dp</dimen>
+    <dimen name="row_list_text_margin_start">14dp</dimen>
 
     <!--Cards-->
 
@@ -92,6 +93,12 @@
 
     <dimen name="text_size_content">16sp</dimen>
 
+    <dimen name="text_size_row_title">18sp</dimen>
+    <dimen name="text_size_row_description">13sp</dimen>
+    <dimen name="text_size_xs">11sp</dimen>
+
+    <dimen name="tag_text_size">10sp</dimen>
+
     <!--Sheet Bottom-->
 
     <dimen name="bottom_sheet_bottom_padding">32dp</dimen>
@@ -105,6 +112,8 @@
     <dimen name="zibe_btn_corner">12dp</dimen>
     <dimen name="zibe_text_size_label">14sp</dimen>
     <dimen name="icon_size">24dp</dimen>
+
+    <dimen name="users_list_btn_size">40dp</dimen>
 
     <!--Fabs-->
 
@@ -126,11 +135,17 @@
 
     <!--ImageView-->
 
-    <dimen name="profile_photo_height">240dp</dimen>
-    <dimen name="chat_list_photo_height">56dp</dimen>
+<!--    <dimen name="profile_photo_height">240dp</dimen>-->
+    <dimen name="chat_list_avatar_size">56dp</dimen>
+    <dimen name="row_user_avatar_size">70dp</dimen>
+    <dimen name="user_list_avatar_size">84dp</dimen>
     <dimen name="chat_list_check_height">16dp</dimen>
     <dimen name="chat_list_badge_height">20dp</dimen>
-
+    <dimen name="status_indicator_height">14dp</dimen>
+    <dimen name="status_indicator_margin">1dp</dimen>
+    <dimen name="status_indicator_stroke">1dp</dimen>
+    <dimen name="chat_list_avatar_stroke">1dp</dimen>
+    <dimen name="user_list_avatar_stroke">2dp</dimen>
 
     <!--Toolbar-->
 
@@ -146,6 +161,7 @@
     <dimen name="zibe_icon_btn_size">40dp</dimen>
     <dimen name="zibe_icon_size">24dp</dimen>
     <dimen name="zibe_icon_btn_corner">12dp</dimen>
+    <dimen name="tag_icon_size">10dp</dimen>
 
 
 </resources>

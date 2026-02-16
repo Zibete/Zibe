@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.util.Log
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -14,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterUsers
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
@@ -21,6 +23,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.FilterLayoutBinding
 import com.zibete.proyecto1.databinding.FragmentUsersBinding
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
@@ -31,9 +34,13 @@ import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.search.SearchHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHandler {
+
+    @Inject
+    lateinit var profileRepositoryProvider: ProfileRepositoryProvider
 
     private var _binding: FragmentUsersBinding? = null
     private val binding get() = _binding!!
@@ -45,6 +52,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
     private var adapterUsers: AdapterUsers? = null
     private var scrollListener: RecyclerView.OnScrollListener? = null
     private val scrollTopThreshold = 3
+    private val prefetchExtra = 4
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -77,6 +85,8 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         }
 
         adapterUsers = AdapterUsers(
+            lifecycleScope = viewLifecycleOwner.lifecycleScope,
+            profileRepositoryProvider = profileRepositoryProvider,
             onChatClicked = { userId -> usersViewModel.onUserChatClick(userId) },
             onProfileClicked = { userId -> usersViewModel.onUserProfileClick(userId) },
             formatDistance = { meters -> usersViewModel.formatDistance(meters) }
@@ -103,6 +113,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
                         b.swipeRefresh.isRefreshing = state.isLoading
 
                         adapterUsers?.submitUsers(state.users)
+                        b.rv.post { prefetchVisibleHasBlockedMe() }
 
                         updateScrollTopFab()
                     }
@@ -284,6 +295,7 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
         scrollListener = object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 updateScrollTopFab()
+                prefetchVisibleHasBlockedMe()
             }
         }
         scrollListener?.let { binding.rv.addOnScrollListener(it) }
@@ -295,5 +307,18 @@ class UsersFragment : BaseChatSessionFragment(), SearchHandler, UsersToolbarHand
             val firstVisible = layoutManager.findFirstVisibleItemPosition()
             b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
         }
+    }
+
+    private fun prefetchVisibleHasBlockedMe() {
+        val adapter = adapterUsers ?: return
+        if (adapter.itemCount == 0) return
+        val first = layoutManager.findFirstVisibleItemPosition()
+        val last = layoutManager.findLastVisibleItemPosition()
+        if (first == RecyclerView.NO_POSITION || last == RecyclerView.NO_POSITION) return
+        val start = (first - prefetchExtra).coerceAtLeast(0)
+        val end = (last + prefetchExtra).coerceAtMost(adapter.itemCount - 1)
+        if (start > end) return
+        val ids = (start..end).mapNotNull { adapter.currentList.getOrNull(it)?.id }
+        usersViewModel.prefetchHasBlockedMe(ids)
     }
 }
