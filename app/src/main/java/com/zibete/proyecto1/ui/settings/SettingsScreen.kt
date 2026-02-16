@@ -324,7 +324,7 @@ fun SettingsScreen(
                 ZibeCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_notifications_black_24dp),
+                            painter = painterResource(R.drawable.ic_notifications_24dp),
                             contentDescription = null
                         )
                         Spacer(Modifier.width(spacingXs8))

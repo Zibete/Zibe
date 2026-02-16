@@ -5,28 +5,28 @@
 
     <item
         android:id="@+id/action_index"
-        android:icon="@drawable/ic_home_black_24dp"
+        android:icon="@drawable/ic_home_rounded_24"
         android:title="@string/inicio"
         android:titleCondensed="@string/inicio"
         android:contentDescription="@string/inicio" />
 
     <item
         android:id="@+id/action_edit_profile"
-        android:icon="@drawable/fui_ic_anonymous_white_24dp"
+        android:icon="@drawable/ic_users_rounded_24"
         android:title="@string/menu_edit_profile"
         android:titleCondensed="@string/menu_edit_profile"
         android:contentDescription="@string/menu_edit_profile" />
 
     <item
         android:id="@+id/action_settings"
-        android:icon="@drawable/ic_baseline_settings_24"
+        android:icon="@drawable/ic_settings_rounded_24"
         android:title="@string/menu_settings"
         android:titleCondensed="@string/menu_settings"
         android:contentDescription="@string/menu_settings"/>
 
     <item
         android:id="@+id/action_logout"
-        android:icon="@drawable/ic_baseline_exit_to_app_24"
+        android:icon="@drawable/ic_logout_rounded_24"
         android:title="@string/logout"
         android:titleCondensed="@string/logout"
         android:contentDescription="@string/logout"/>
