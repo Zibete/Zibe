@@ -40,7 +40,7 @@
         <!-- Widget defaults -->
         <item name="textInputStyle">@style/Zibe.Input</item>
         <item name="bottomNavigationStyle">@style/Zibe.BottomNav</item>
-        <item name="toolbarStyle">@style/Zibe.Toolbar</item>
+        <item name="toolbarStyle">@style/ThemeOverlay.Zibe.Toolbar</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Zibe.AlertDialog</item>
         <item name="materialCalendarTheme">@style/ThemeOverlay.Zibe.MaterialCalendar</item>
 
@@ -50,7 +50,5 @@
         <item name="actionOverflowMenuStyle">@style/Widget.Zibe.PopupMenu</item>
         <item name="searchViewStyle">@style/Widget.Zibe.SearchView</item>
     </style>
-
-
 
 </resources>

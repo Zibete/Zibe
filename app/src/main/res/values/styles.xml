@@ -9,7 +9,7 @@
     <style name="ThemeOverlay.Zibe" parent="ThemeOverlay.Material3" />
 
     <!-- Toolbar -->
-    <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
+    <style name="ThemeOverlay.Zibe.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="titleTextColor">?attr/colorOnSurface</item>
         <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
         <item name="titleTextAppearance">@style/TextAppearance.Zibe.Brand.Subtitle</item>
@@ -18,9 +18,18 @@
         <!-- Para iconos: usar app:navigationIconTint en el XML del toolbar -->
     </style>
 
+    <!-- ToolbarOnGradient -->
+    <style name="ThemeOverlay.Zibe.ToolbarOnGradient" parent="ThemeOverlay.Material3">
+        <item name="drawerArrowStyle">@style/Widget.Zibe.DrawerArrowOnGradient</item>
+        <item name="actionOverflowButtonStyle">@style/Widget.Zibe.OverflowButtonOnGradient</item>
+        <item name="colorControlNormal">@color/zibe_text_light</item>
+        <item name="android:textColorPrimary">@color/zibe_text_light</item>
+    </style>
+
     <!-- Navigation drawer -->
     <style name="Zibe.NavigationView" parent="Widget.Material3.NavigationView">
         <item name="itemIconTint">@color/zibe_nav_inactive</item>
+        <item name="android:background">@color/zibe_dark_bg</item>
         <item name="itemTextColor">@color/zibe_nav_inactive</item>
         <item name="itemRippleColor">@color/zibe_pink</item>
     </style>
@@ -74,7 +83,7 @@
 
     <style name="Widget.Zibe.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu_zibe</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:elevation">8dp</item>
         <item name="android:dropDownVerticalOffset">12dp</item>
     </style>
