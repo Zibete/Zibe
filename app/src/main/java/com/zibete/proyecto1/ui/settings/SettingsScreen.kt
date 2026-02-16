@@ -68,7 +68,6 @@ import com.zibete.proyecto1.ui.components.ZibeInputPasswordField
 import com.zibete.proyecto1.ui.components.ZibeMessageDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSwitchRow
-import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 
@@ -208,13 +207,7 @@ fun SettingsScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor = Color.Transparent,
-        topBar = {
-            ZibeToolbar(
-                title = stringResource(R.string.menu_settings),
-                onBack = onBack
-            )
-        }
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Box(
             modifier = Modifier

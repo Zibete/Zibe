@@ -118,10 +118,10 @@ class MainDestinationUiMapper {
 
         R.id.editProfileFragment -> MainDestinationUiState(
             currentScreen = CurrentScreen.EDIT_PROFILE,
-            showToolbar = false,
+            showToolbar = true,
             showBottomNav = false,
             showDrawer = false,
-            showBack = false,
+            showBack = true,
             showUsersFragmentSettings = false,
             title = CurrentScreen.EDIT_PROFILE.titleRes,
             selectedDrawerItemId = R.id.action_edit_profile,
@@ -132,11 +132,12 @@ class MainDestinationUiMapper {
 
         R.id.settingsFragment -> MainDestinationUiState(
             currentScreen = CurrentScreen.OTHER,
-            showToolbar = false,
+            showToolbar = true,
             showBottomNav = false,
             showDrawer = false,
-            showBack = false,
+            showBack = true,
             showUsersFragmentSettings = false,
+            title = CurrentScreen.SETTINGS.titleRes,
             selectedDrawerItemId = R.id.action_settings,
             menuConfig = ToolbarMenuConfig()
         )

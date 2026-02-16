@@ -11,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,10 +32,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -80,9 +77,7 @@ import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputBirthdate
 import com.zibete.proyecto1.ui.components.ZibeInputField
-import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.media.rememberZibePhotoCropper
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
@@ -262,35 +257,6 @@ fun EditProfileScreen(
         }
     }
 
-    val menuSettings = stringResource(R.string.menu_settings)
-    val menuDeletePhoto = stringResource(R.string.action_delete_photo)
-
-    val menuItems = remember(state.photoUrl, state.photoPreviewUri, state.deletePhoto) {
-        val items = mutableListOf<ZibeMenuItem>()
-        items.add(
-            ZibeMenuItem(
-                label = menuSettings,
-                onClick = {
-                    onSettingsRequest()
-                },
-                icon = Icons.Rounded.Settings
-            )
-        )
-
-        val hasPhoto =
-            state.photoPreviewUri != null || (state.photoUrl != null && !state.deletePhoto)
-        if (hasPhoto) {
-            items.add(
-                ZibeMenuItem(
-                    label = menuDeletePhoto,
-                    onClick = onPhotoDeleted,
-                    icon = Icons.Rounded.Delete
-                )
-            )
-        }
-        items
-    }
-
     val saveEnabled =
         state.hasPendingChanges &&
                 !state.isLoading &&
@@ -304,7 +270,6 @@ fun EditProfileScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(zibeColors.gradientZibe)
             .testTag(EDIT_PROFILE_SCREEN)
     ) {
         Scaffold(
@@ -312,14 +277,6 @@ fun EditProfileScreen(
                 .fillMaxSize(),
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                ZibeToolbar(
-                    title = stringResource(R.string.menu_edit_profile),
-                    onBack = onBackRequest,
-                    menuItems = menuItems,
-                    showSkipButton = state.showSkipButton
-                )
-            },
             floatingActionButton = {
                 ZibeCollapsingFabStack(
                     collapsed = isFabCollapsed,
