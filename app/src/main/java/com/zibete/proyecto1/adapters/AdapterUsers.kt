@@ -70,8 +70,6 @@ class AdapterUsers(
         }
     }
 
-    private var originalList: List<UsersRowUiModel> = emptyList()
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UsersListViewHolder {
         val b = RowUserBinding.inflate(
             LayoutInflater.from(parent.context),
@@ -134,11 +132,10 @@ class AdapterUsers(
 
     fun submitUsers(list: List<UsersRowUiModel>) {
         val safeList = list.toList()
-        originalList = safeList
         submitList(safeList)
     }
 
-    fun clearRecycled(b: RowUserBinding) {
+    private fun clearRecycled(b: RowUserBinding) {
         Glide.with(b.root).clear(b.userListAvatarImage)
         b.userListAvatarImage.setImageDrawable(null)
     }
@@ -153,7 +150,7 @@ class AdapterUsers(
         b.tagNotificationsSilenced.isVisible = false
     }
 
-    fun bindFull(
+    private fun bindFull(
         holder: UsersListViewHolder,
         u: UsersRowUiModel,
         formatDistance: (Double) -> String
@@ -185,7 +182,7 @@ class AdapterUsers(
         b.tagNotificationsSilenced.isVisible = u.isNotificationsSilenced
     }
 
-    fun bindPayload(
+    private fun bindPayload(
         b: RowUserBinding,
         u: UsersRowUiModel,
         payload: Bundle,
@@ -195,7 +192,6 @@ class AdapterUsers(
         if (payload.containsKey(PayloadUsers.PHOTO_URL)) loadAvatar(b, u.photoUrl)
         if (payload.containsKey(PayloadUsers.NAME)) b.userName.text = u.name
         if (payload.containsKey(PayloadUsers.AGE)) b.userAge.text = u.age.toString()
-//        if (payload.containsKey(PAYLOAD_ONLINE)) b.statusIndicator.isVisible = u.isOnline
 
         if (payload.containsKey(PayloadUsers.FAVORITE)
             || payload.containsKey(PayloadUsers.BLOCKED_BY_ME)
