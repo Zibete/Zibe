@@ -7,21 +7,23 @@
     tools:context=".ui.main.MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/material_toolbar"
-            android:theme="@style/Zibe.Toolbar"
+            android:id="@+id/materialToolbar"
+            style="@style/ThemeOverlay.Zibe.Toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIconTint="@color/zibe_text_light"
+            android:textAlignment="center"
+            android:theme="@style/ThemeOverlay.Zibe.ToolbarOnGradient"
             app:popupTheme="@style/ThemeOverlay.Zibe.PopupMenu">
 
             <LinearLayout
-                android:id="@+id/users_fragment_settings"
+                android:id="@+id/usersFragmentSettings"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_gravity="end"
@@ -29,7 +31,7 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:id="@+id/refresh_button"
+                    android:id="@+id/refreshButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/content_description_refresh"
@@ -38,7 +40,7 @@
                     app:tint="?attr/colorOnPrimary" />
 
                 <ImageView
-                    android:id="@+id/filter_button"
+                    android:id="@+id/filterButton"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/filter_title"

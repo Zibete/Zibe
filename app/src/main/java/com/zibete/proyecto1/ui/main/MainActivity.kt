@@ -111,7 +111,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     override fun activityRootView(): View = binding.root
     override fun appBarContainerView(): View = binding.appBarMain.materialToolbar
-    override fun bottomNavView(): View = binding.appBarMain.contentMain.navView3
+    override fun bottomNavView(): View = binding.appBarMain.contentMain.bottomNav
     override fun contentViewForInsets(): View = binding.appBarMain.contentMain.navHostFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -207,7 +207,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         setupHeader(headerView)
 
         // Bottom Nav
-        bottomNavigationView = appBarMain.contentMain.navView3
+        bottomNavigationView = appBarMain.contentMain.bottomNav
 
         setupBadges()
 
