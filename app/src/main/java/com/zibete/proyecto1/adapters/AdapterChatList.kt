@@ -43,10 +43,6 @@ class AdapterChatList(
 
     private var menuReadTitle: CharSequence? = null
     private var menuNotifTitle: CharSequence? = null
-
-//    private var contextMenuPosition: Int = 0
-
-
     class ChatListViewHolder(val binding: RowChatListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
@@ -144,6 +140,7 @@ class AdapterChatList(
         b.imageViewChecks.isVisible = false
         b.badgeUnReadMessage.isVisible = false
         b.badgeUnReadMessage.text = ""
+        b.statusIndicator.isVisible = false
     }
 
     private fun bindFull(
@@ -205,6 +202,7 @@ class AdapterChatList(
 
     private fun bindUserStatus(b: RowChatListBinding, status: UserStatus) {
         val ctx = b.root.context
+        b.statusIndicator.isVisible = true
         b.statusIndicator.bindStatusIndicator(ctx, status)
     }
 
