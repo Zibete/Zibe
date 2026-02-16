@@ -9,6 +9,7 @@
     <style name="Zibe.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="titleTextColor">?attr/colorOnSurface</item>
         <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="titleTextAppearance">@style/TextAppearance.Zibe.Brand.Subtitle</item>
         <!-- Para iconos: usar app:navigationIconTint en el XML del toolbar -->
     </style>
 
@@ -26,7 +27,7 @@
         <item name="itemIconTint">@drawable/bottom_nav_selector</item>
         <item name="itemTextColor">@drawable/bottom_nav_selector</item>
         <item name="itemRippleColor">@color/transparent</item>
-<!--        <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>-->
+        <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
 
     <!-- BottomSheet -->
@@ -49,7 +50,7 @@
     </style>
 
     <!-- =========================================================
-         WIDGETS (ZIBE reusable)
+         WIDGETS
          ========================================================= -->
 
     <style name="Widget.Zibe.CircularLoading" parent="Widget.Material3.CircularProgressIndicator">
@@ -60,16 +61,17 @@
     </style>
 
     <style name="Widget.Zibe.PopupMenu" parent="Widget.Material3.PopupMenu">
-        <item name="android:popupBackground">?attr/colorSurface</item>
+        <item name="android:popupBackground">@drawable/bg_popup_menu_zibe</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:elevation">6dp</item>
+        <item name="android:elevation">8dp</item>
+        <item name="android:dropDownVerticalOffset">12dp</item>
     </style>
 
     <style name="Widget.Zibe.SearchView" parent="Widget.AppCompat.SearchView">
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:textColorHint">?attr/colorOnSurfaceVariant</item>
-        <item name="closeIcon">@drawable/ic_baseline_close_24</item>
-        <item name="searchIcon">@drawable/ic_baseline_search_24</item>
+        <item name="android:textColorHint">?attr/colorOnSurface</item>
+        <item name="closeIcon">@drawable/ic_close_rounded_24</item>
+        <item name="searchIcon">@drawable/ic_search_rounded_24</item>
         <item name="queryBackground">@null</item>
         <item name="submitBackground">@null</item>
     </style>

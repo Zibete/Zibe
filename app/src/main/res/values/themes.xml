@@ -11,29 +11,29 @@
         <item name="fontFamily">@font/poppins</item>
 
         <!-- Material 3 Text tokens -->
-        <item name="textAppearanceHeadlineMedium">@style/Zibe.Text.Bold</item>
-        <item name="textAppearanceBodyLarge">@style/Zibe.Text.SemiBold</item>
-        <item name="textAppearanceBodyMedium">@style/Zibe.Text.Regular</item>
-        <item name="textAppearanceLabelLarge">@style/Zibe.Text.Medium</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Zibe.H2</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Zibe.Subtitle</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Zibe.Body</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Zibe.ActionLabel</item>
 
         <!-- Color scheme (M3 tokens) -->
         <item name="colorPrimary">@color/zibe_pink</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/zibe_text_light</item>
 
         <item name="colorSecondary">@color/zibe_purple</item>
-        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorOnSecondary">@color/zibe_text_light</item>
 
         <item name="colorSurface">@color/zibe_dark_bg</item>
         <item name="colorOnSurface">@color/zibe_text_light</item>
 
         <item name="colorSurfaceVariant">@color/zibe_surface</item>
-        <item name="colorOnSurfaceVariant">@color/zibe_muted_text</item>
+        <item name="colorOnSurfaceVariant">@color/zibe_text_light</item>
 
         <item name="colorOutline">@color/zibe_pink</item>
 
         <!-- System UI -->
-        <item name="android:statusBarColor">@color/zibe_night_start</item>
-        <item name="android:navigationBarColor">@color/zibe_dark_bg</item>
+        <item name="android:statusBarColor">@color/transparent</item>
+        <item name="android:navigationBarColor">@color/transparent</item>
         <item name="android:windowBackground">@drawable/bg_gradient_zibe</item>
 
         <!-- Widget defaults -->

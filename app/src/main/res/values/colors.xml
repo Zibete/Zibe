@@ -26,6 +26,7 @@
     <!-- Zibe Colors -->
 
     <color name="zibe_pink">#F6286D</color>
+    <color name="zibe_pink_22">#38F6286D</color>
     <color name="zibe_purple">#8B3CFF</color>
 
     <color name="zibe_purple_dark">#6A28C8</color>
@@ -44,6 +45,7 @@
     <color name="zibe_dark_bg">#0D1B2A</color>
     <color name="zibe_light_bg">#1E2A38</color>
     <color name="zibe_surface">#233042</color>
+    <color name="zibe_surface_96">#F5233042</color>
     <color name="zibe_overlay">#331B263B</color>
 
     <!-- Text colors -->
@@ -143,6 +145,5 @@
 
 
 </resources>
-
 
 
