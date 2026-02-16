@@ -6,7 +6,6 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.FavoritesDiffCallback.PayloadFavoriteUser
 import com.zibete.proyecto1.databinding.RowFavoritesBinding
 import com.zibete.proyecto1.ui.favorites.FavoriteUserUi
@@ -19,7 +18,6 @@ class AdapterFavoriteUsers(
     private val onUserClicked: (FavoriteUserUi) -> Unit
 ) : ListAdapter<FavoriteUserUi, AdapterFavoriteUsers.FavoriteViewHolder>(FavoritesDiffCallback) {
 
-    private var originalList: List<FavoriteUserUi> = emptyList()
     private val itemHeight: Int = (ZibeApp.ScreenUtils.widthPx / 3).coerceAtLeast(1)
 
     inner class FavoriteViewHolder(
@@ -35,7 +33,7 @@ class AdapterFavoriteUsers(
             favoriteUserAge.text = item.age.toString()
             imageFavoriteUser.loadAvatar(item.profilePhoto)
             bindOnlineIndicator(this, item.isOnline)
-            cardviewFavorites.setOnClickListener { onUserClicked(item) }
+            bindClicks(binding, item)
         }
 
         fun bindPayload(payload: Any, item: FavoriteUserUi) = with(binding) {
@@ -46,9 +44,11 @@ class AdapterFavoriteUsers(
             if (PayloadFavoriteUser.PHOTO_URL in changes) imageFavoriteUser.loadAvatar(item.profilePhoto)
             if (PayloadFavoriteUser.IS_ONLINE in changes) bindOnlineIndicator(this, item.isOnline)
 
-            // IMPORTANT: mantener listener actualizado también en payload
-            cardviewFavorites.setOnClickListener { onUserClicked(item) }
+            bindClicks(binding, item)
         }
+
+        fun bindClicks(binding: RowFavoritesBinding, item: FavoriteUserUi) =
+            binding.cardviewFavorites.setOnClickListener { onUserClicked(item) }
 
         private fun adjustItemHeight() = with(binding) {
             val params = cardviewFavorites.layoutParams
@@ -59,7 +59,6 @@ class AdapterFavoriteUsers(
 
     fun submitOriginal(list: List<FavoriteUserUi>) {
         val safeList = list.toList()
-        originalList = safeList
         submitList(safeList)
     }
 

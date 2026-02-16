@@ -28,7 +28,6 @@ object UsersDiffCallback : DiffUtil.ItemCallback<UsersRowUiModel>() {
             true
         )
         if (oldItem.photoUrl != newItem.photoUrl) diff.putBoolean(PayloadUsers.PHOTO_URL, true)
-//        if (oldItem.isOnline != newItem.isOnline) diff.putBoolean(PAYLOAD_ONLINE, newItem.isOnline)
         if (oldItem.isFavorite != newItem.isFavorite) diff.putBoolean(PayloadUsers.FAVORITE, true)
         if (oldItem.isBlockedByMe != newItem.isBlockedByMe) diff.putBoolean(
             PayloadUsers.BLOCKED_BY_ME,
