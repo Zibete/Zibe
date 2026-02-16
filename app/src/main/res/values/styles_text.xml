@@ -1,66 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Zibe.Typography" parent="TextAppearance.Material3.BodyMedium">
+    <style name="Zibe.Typography.Poppins" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:fontFamily">@font/poppins</item>
         <item name="fontFamily">@font/poppins</item>
     </style>
 
-    <style name="Zibe.Text.Base" parent="Zibe.Typography">
-        <item name="android:textColor">?attr/colorOnSurface</item>
+    <style name="Zibe.Typography.Axis" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/axis_extra_bold_800</item>
+        <item name="fontFamily">@font/axis_extra_bold_800</item>
     </style>
 
-    <style name="Zibe.Text.Bold" parent="Zibe.Text.Base">
-        <item name="android:textStyle">bold</item>
-        <item name="android:textSize">22sp</item>
-    </style>
-
-    <style name="Zibe.Text.Brand.Large" parent="Zibe.Text.Bold">
-        <item name="android:textSize">@dimen/text_size_brand_large</item>
-        <item name="android:letterSpacing">0.05</item>
-        <item name="android:textColor">@color/accent</item>
-    </style>
-
-    <style name="Zibe.Text.Brand.Medium" parent="Zibe.Text.Bold">
-        <item name="android:textSize">@dimen/text_size_brand_medium</item>
-        <item name="android:letterSpacing">0.05</item>
-        <item name="android:textColor">@color/zibe_purple</item>
-    </style>
-
-    <style name="TextAppearance.Zibe.RowUser.Title" parent="TextAppearance.Material3.TitleMedium">
+    <style name="TextAppearance.Zibe.RowUser.Title" parent="TextAppearance.Zibe.H2">
         <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:textSize">@dimen/text_size_row_title</item>
-        <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="TextAppearance.Zibe.RowUser.Description" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TextAppearance.Zibe.RowUser.Description" parent="TextAppearance.Zibe.Body">
         <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:textSize">@dimen/text_size_row_description</item>
     </style>
 
-    <style name="TextAppearance.Zibe.Row.Tag" parent="TextAppearance.Material3.LabelSmall">
+    <style name="TextAppearance.Zibe.Row.Tag" parent="TextAppearance.Zibe.Label">
         <item name="android:textSize">@dimen/tag_text_size</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="TextAppearance.Zibe.ChatList.Title" parent="TextAppearance.Material3.BodyLarge">
+    <style name="TextAppearance.Zibe.ChatList.Title" parent="TextAppearance.Zibe.Body">
         <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:textSize">@dimen/text_size_normal</item>
     </style>
 
-    <style name="TextAppearance.Zibe.ChatList.Message" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TextAppearance.Zibe.ChatList.Message" parent="TextAppearance.Zibe.Body">
         <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:textSize">@dimen/body_medium_size</item>
         <item name="android:alpha">0.8</item>
     </style>
 
-    <style name="TextAppearance.Zibe.ChatList.Meta" parent="TextAppearance.Material3.LabelSmall">
+    <style name="TextAppearance.Zibe.ChatList.Meta" parent="TextAppearance.Zibe.Label">
         <item name="android:textColor">?attr/colorOnPrimary</item>
         <item name="android:textSize">@dimen/text_size_xs</item>
         <item name="android:alpha">0.8</item>
     </style>
 
-    <style name="TextAppearance.Zibe.ChatList.Badge" parent="TextAppearance.Material3.LabelSmall">
+    <style name="TextAppearance.Zibe.ChatList.Badge" parent="TextAppearance.Zibe.Label">
         <item name="android:textColor">@color/zibe_text_light</item>
         <item name="android:textSize">@dimen/text_size_xs</item>
         <item name="android:textStyle">bold</item>

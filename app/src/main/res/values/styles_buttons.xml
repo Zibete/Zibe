@@ -3,7 +3,7 @@
     <style name="Zibe.Button.Primary" parent="Widget.Material3.Button">
         <item name="android:backgroundTint">@color/zibe_button_primary_selector</item>
         <item name="android:textColor">@color/zibe_button_text_selector</item>
-        <item name="android:textAppearance">@style/Zibe.Text.Medium</item>
+        <item name="android:textAppearance">@style/TextAppearance.Zibe.ActionLabel</item>
 
         <item name="iconSize">@dimen/icon_size</item>
         <item name="iconTint">@color/zibe_button_text_selector</item>
