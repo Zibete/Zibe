@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/edit_profile_button"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_horizontal"
     android:padding="@dimen/screen_padding">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -14,31 +11,34 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_glow_zibe_0"
         android:clickable="true"
+        android:clipToOutline="true"
         android:focusable="true"
         android:foreground="?android:attr/selectableItemBackground"
-        android:paddingVertical="@dimen/element_spacing_large"
-        android:paddingHorizontal="@dimen/element_spacing_small">
+        android:padding="@dimen/element_spacing_large">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/drawerHeaderCircleImage"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="@dimen/profile_picture_size"
+            android:layout_height="@dimen/profile_picture_size"
             android:src="@color/glass_bg_light"
-            app:civ_border_color="@color/zibe_pink"
-            app:civ_border_width="2dp"
+            app:civ_border_color="@color/user_list_avatar_stroke"
+            app:civ_border_width="@dimen/user_list_avatar_stroke"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/drawerHeaderUserName"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/element_spacing_medium"
+            android:gravity="center"
+            android:lineHeight="28sp"
+            android:lineSpacingExtra="4dp"
             android:shadowColor="@color/zibe_pink"
-            android:shadowRadius="8"
+            android:shadowRadius="12"
             android:text="@string/name"
-            android:textAppearance="@style/TextAppearance.Zibe.Brand.Title"
+            android:textAppearance="@style/TextAppearance.Zibe.H2"
             android:textColor="@color/zibe_text_light"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -46,18 +46,19 @@
 
         <TextView
             android:id="@+id/drawerHeaderEmail"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:gravity="center"
             android:shadowColor="@color/zibe_pink"
-            android:shadowRadius="4"
+            android:shadowRadius="12"
             android:text="@string/email"
             android:textAppearance="@style/TextAppearance.Zibe.Subtitle"
             android:textColor="@color/zibe_text_muted"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_user_name" />
+            app:layout_constraintTop_toBottomOf="@+id/drawerHeaderUserName" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
