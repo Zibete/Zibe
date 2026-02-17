@@ -634,6 +634,7 @@ class ChatViewModel @Inject constructor(
             }
 
             userRepository.updateChatState(otherUid, userName, nodeType, newState)
+            val isNotificationsSilenced = newState == CHAT_STATE_SILENT
             val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
 
             // Actualizar header
@@ -644,7 +645,12 @@ class ChatViewModel @Inject constructor(
             }
 
             // Emitir evento para mostrar snack
-            _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
+            _events.emit(
+                ChatSessionUiEvent.ShowToggleNotificationSuccess(
+                    name = userName,
+                    isNotificationsSilenced = isNotificationsSilenced
+                )
+            )
         }
     }
 

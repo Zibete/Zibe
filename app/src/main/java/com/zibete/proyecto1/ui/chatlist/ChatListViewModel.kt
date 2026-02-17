@@ -133,8 +133,13 @@ class ChatListViewModel @Inject constructor(
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
             userRepository.updateChatState(userId, userName, nodeType, newState)
 
-            val enabled = newState != CHAT_STATE_SILENT
-            _events.tryEmit(ChatSessionUiEvent.ShowToggleNotificationSuccess(userName, enabled))
+            val isNotificationsSilenced = newState == CHAT_STATE_SILENT
+            _events.tryEmit(
+                ChatSessionUiEvent.ShowToggleNotificationSuccess(
+                    name = userName,
+                    isNotificationsSilenced = isNotificationsSilenced
+                )
+            )
         }
     }
 
