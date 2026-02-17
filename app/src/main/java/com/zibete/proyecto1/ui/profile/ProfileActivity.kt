@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.profile
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -11,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.os.bundleOf
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.MutableCreationExtras
@@ -33,6 +36,7 @@ class ProfileActivity : BaseChatSessionActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupEdgeToEdge()
         val userIds = intent.getStringArrayListExtra(EXTRA_USER_IDS)
         val startIndex = intent.getIntExtra(EXTRA_START_INDEX, 0)
         val singleUserId = intent.getStringExtra(EXTRA_USER_ID)
@@ -62,6 +66,17 @@ class ProfileActivity : BaseChatSessionActivity() {
                     viewModelProvider = { userId -> provideProfileViewModel(userId) }
                 )
             }
+        }
+    }
+
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
         }
     }
 
@@ -118,4 +133,3 @@ private fun ProfileActivityContent(
         )
     }
 }
-

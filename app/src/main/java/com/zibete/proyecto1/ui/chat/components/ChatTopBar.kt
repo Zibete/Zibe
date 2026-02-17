@@ -31,15 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.components.ZibeMenuDefaults
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import de.hdodenhof.circleimageview.CircleImageView
@@ -145,17 +144,23 @@ fun ChatTopBar(
                         )
                     }
                     MaterialTheme(
-                        shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp))
+                        shapes = MaterialTheme.shapes.copy(
+                            extraSmall = RoundedCornerShape(ZibeMenuDefaults.Corner)
+                        )
                     ) {
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
-                            offset = DpOffset(x = 0.dp, y = 12.dp),
+                            offset = ZibeMenuDefaults.Offset,
                             modifier = Modifier
-                                .background(colorResource(R.color.zibe_surface).copy(alpha = 0.96f))
+                                .background(
+                                    colorResource(R.color.zibe_surface).copy(
+                                        alpha = ZibeMenuDefaults.BgAlpha
+                                    )
+                                )
                                 .padding(vertical = 4.dp),
                             containerColor = Color.Transparent,
-                            shadowElevation = 8.dp
+                            shadowElevation = ZibeMenuDefaults.Shadow
                         ) {
                             DropdownMenuItem(
                                 text = {

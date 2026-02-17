@@ -2,7 +2,6 @@ package com.zibete.proyecto1.ui.settings
 
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,7 +67,6 @@ import com.zibete.proyecto1.ui.components.ZibeInputPasswordField
 import com.zibete.proyecto1.ui.components.ZibeMessageDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSwitchRow
-import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.launch
 
@@ -208,18 +206,11 @@ fun SettingsScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor = Color.Transparent,
-        topBar = {
-            ZibeToolbar(
-                title = stringResource(R.string.menu_settings),
-                onBack = onBack
-            )
-        }
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(zibeColors.gradientZibe)
                 .testTag(SETTINGS_SCREEN)
         ) {
             Column(
@@ -324,7 +315,7 @@ fun SettingsScreen(
                 ZibeCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_notifications_black_24dp),
+                            painter = painterResource(R.drawable.ic_notifications_24dp),
                             contentDescription = null
                         )
                         Spacer(Modifier.width(spacingXs8))

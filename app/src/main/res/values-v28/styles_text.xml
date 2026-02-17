@@ -1,19 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Zibe.Text.Regular" parent="Zibe.Text.Base">
-        <item name="android:textFontWeight">400</item>
-        <item name="android:textSize">14sp</item>
+    <style name="TextAppearance.Zibe.H1" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/head_line_large_size</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight">700</item>
     </style>
 
-    <style name="Zibe.Text.Medium" parent="Zibe.Text.Base">
-        <item name="android:textFontWeight">500</item>
-        <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="Zibe.Text.SemiBold" parent="Zibe.Text.Base">
+    <style name="TextAppearance.Zibe.H2" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/head_line_medium_size</item>
         <item name="android:textFontWeight">600</item>
-        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Subtitle" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/head_line_small_size</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Body" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/body_large_size</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Label" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/label_large_size</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.ActionLabel" parent="Zibe.Typography.Poppins">
+        <item name="android:textSize">@dimen/label_large_size</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Brand.Large" parent="Zibe.Typography.Axis">
+        <item name="android:textSize">@dimen/text_size_brand_large</item>
+        <item name="android:textFontWeight">800</item>
+        <item name="android:textColor">@color/accent</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Brand.Title" parent="Zibe.Typography.Axis">
+        <item name="android:textSize">@dimen/text_size_brand_title</item>
+        <item name="android:textFontWeight">800</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Brand.Subtitle" parent="Zibe.Typography.Axis">
+        <item name="android:textSize">@dimen/text_size_brand_subtitle</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.Zibe.Brand.Label" parent="Zibe.Typography.Axis">
+        <item name="android:textSize">@dimen/label_large_size</item>
+        <item name="android:textFontWeight">400</item>
     </style>
 
 </resources>

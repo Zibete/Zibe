@@ -103,7 +103,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
-                        app:startIconDrawable="@drawable/ic_baseline_groups_24"
+                        app:startIconDrawable="@drawable/ic_groups_rounded_24"
                         app:boxBackgroundMode="filled">
 
                         <com.google.android.material.textfield.TextInputEditText

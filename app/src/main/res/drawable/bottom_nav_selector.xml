@@ -1,7 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Activo -->
-    <item android:color="@color/zibe_pink" android:state_checked="true"/>
-    <!-- Inactivo -->
-    <item android:color="@color/zibe_nav_inactive"/>
+    <item android:color="@color/zibe_nav_active" android:state_checked="true" />
+    <item android:color="@color/zibe_nav_inactive" />
 </selector>

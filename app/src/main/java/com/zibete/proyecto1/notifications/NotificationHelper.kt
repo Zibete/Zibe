@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.data.ChatRepository.UnreadSummary
@@ -75,7 +74,7 @@ class NotificationHelper @Inject constructor(
         val builder = NotificationCompat.Builder(context, channelId)
             .setAutoCancel(true)
             .setWhen(System.currentTimeMillis())
-            .setSmallIcon(R.drawable.ic_logo)
+            .setSmallIcon(R.drawable.ic_notifications_24dp)
             .setContentTitle(title)
             .setContentText(text)
             .setContentInfo(context.getString(R.string.app_name))

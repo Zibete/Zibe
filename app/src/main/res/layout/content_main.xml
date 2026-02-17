@@ -15,7 +15,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:defaultNavHost="true"
-        app:layout_constraintBottom_toTopOf="@id/nav_view3"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,13 +23,14 @@
 
     <!-- Bottom navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/nav_view3"
+        android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="@dimen/bottom_nav_height"
-        android:layout_marginHorizontal="@dimen/element_spacing_xs"
-        android:layout_marginBottom="@dimen/element_spacing_xs"
-        android:background="@drawable/bg_glow_zibe"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginBottom="0dp"
+        android:background="@android:color/transparent"
         android:elevation="0dp"
+        android:theme="@style/ThemeOverlay.Zibe.BottomNav"
         app:itemIconSize="28dp"
         app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"

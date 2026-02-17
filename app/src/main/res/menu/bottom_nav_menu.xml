@@ -3,30 +3,30 @@
 
     <item
         android:id="@+id/navBottomUsers"
-        android:icon="@drawable/fui_ic_anonymous_white_24dp"
+        android:contentDescription="@string/menu_users"
+        android:icon="@drawable/ic_users_rounded_24"
         android:title="@string/menu_users"
-        android:titleCondensed="@string/menu_users"
-        android:contentDescription="@string/menu_users" />
+        android:titleCondensed="@string/menu_users" />
 
     <item
         android:id="@+id/navBottomChat"
-        android:icon="@drawable/ic_logo3"
+        android:contentDescription="@string/menu_chat"
+        android:icon="@drawable/ic_chat_rounded_24"
         android:title="@string/menu_chat"
-        android:titleCondensed="@string/menu_chat"
-        android:contentDescription="@string/menu_chat" />
+        android:titleCondensed="@string/menu_chat" />
 
     <item
         android:id="@+id/navBottomGroups"
-        android:icon="@drawable/ic_baseline_groups_24"
+        android:contentDescription="@string/menu_groups"
+        android:icon="@drawable/ic_groups_rounded_24"
         android:title="@string/menu_groups"
-        android:titleCondensed="@string/menu_groups"
-        android:contentDescription="@string/menu_groups" />
+        android:titleCondensed="@string/menu_groups" />
 
     <item
         android:id="@+id/navBottomFavorites"
-        android:icon="@drawable/ic_baseline_star_24"
+        android:contentDescription="@string/menu_favorites"
+        android:icon="@drawable/ic_star_rounded_24"
         android:title="@string/menu_favorites"
         android:titleCondensed="@string/menu_favorites"
-        android:contentDescription="@string/menu_favorites"
         android:visible="true" />
 </menu>

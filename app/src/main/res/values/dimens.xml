@@ -146,6 +146,10 @@
     <dimen name="status_indicator_stroke">1dp</dimen>
     <dimen name="chat_list_avatar_stroke">1dp</dimen>
     <dimen name="user_list_avatar_stroke">2dp</dimen>
+    <dimen name="popup_menu_stroke">1dp</dimen>
+    <dimen name="drawer_panel_stroke">1dp</dimen>
+    <dimen name="drawer_width">320dp</dimen>
+
 
     <!--Toolbar-->
 
@@ -162,6 +166,6 @@
     <dimen name="zibe_icon_size">24dp</dimen>
     <dimen name="zibe_icon_btn_corner">12dp</dimen>
     <dimen name="tag_icon_size">10dp</dimen>
-
+    <dimen name="profile_picture_size">200dp</dimen>
 
 </resources>

@@ -24,11 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -89,16 +87,23 @@ fun ZibeToolbar(
                     }
 
                     MaterialTheme(
-                        shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(16.dp))
+                        shapes = MaterialTheme.shapes.copy(
+                            extraSmall = RoundedCornerShape(ZibeMenuDefaults.Corner)
+                        )
                     ) {
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             modifier = Modifier
-                                .background(colorResource(R.color.zibe_surface).copy(alpha = 0.92f))
+                                .background(
+                                    colorResource(R.color.zibe_surface).copy(
+                                        alpha = ZibeMenuDefaults.BgAlpha
+                                    )
+                                )
                                 .padding(vertical = 4.dp),
+                            offset = ZibeMenuDefaults.Offset,
                             containerColor = Color.Transparent,
-                            shadowElevation = 8.dp
+                            shadowElevation = ZibeMenuDefaults.Shadow
                         ) {
                             menuItems.forEach { item ->
                                 DropdownMenuItem(

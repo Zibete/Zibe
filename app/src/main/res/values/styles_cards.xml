@@ -43,17 +43,16 @@
     </style>
 
     <!-- =========================
-         BottomNav active indicator (pill)
+         Indicator (pill)
          ========================= -->
 
     <style name="Zibe.BottomNav.ActiveIndicator.Pill" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <!-- En M3 es "color" (sin android:) -->
-        <item name="color">@color/glass_indicator_light</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.BottomNav.Indicator</item>
+        <item name="android:color">@color/zibe_pink_50</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Zibe.Indicator</item>
     </style>
 
-    <style name="ShapeAppearance.Zibe.BottomNav.Indicator" parent="ShapeAppearance.Material3.Corner.Full">
-        <item name="cornerSize">50%</item>
+    <style name="ShapeAppearance.Zibe.Indicator" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">@dimen/corner_small</item>
     </style>
 
 

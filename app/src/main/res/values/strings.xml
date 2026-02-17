@@ -451,9 +451,6 @@
     <!-- Legacy -->
     <!-- ============================= -->
 
-    <string name="nav_header_title">Name User</string>
-    <string name="nav_header_subtitle">Email User</string>
-
     <string name="facebook_app_id">fb971156603326191</string>
     <string name="fb_login_protocol_scheme">fbfb971156603326191</string>
     <string name="facebook_client_token">52746d92bbf5fc8ac964d3e72ac07795</string>
@@ -503,5 +500,6 @@
     <string name="favorite_removed">%1$s removido de tus favoritos</string>
     <string name="empty_chat">Chat vacío</string>
     <string name="filter_title">Filtros de búsqueda</string>
+    <string name="content_description_refresh">Actualizar</string>
 
 </resources>

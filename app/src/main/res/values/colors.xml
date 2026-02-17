@@ -26,6 +26,9 @@
     <!-- Zibe Colors -->
 
     <color name="zibe_pink">#F6286D</color>
+    <color name="zibe_pink_50">#80F6286D</color>
+    <color name="zibe_pink_22">#38F6286D</color>
+    <color name="zibe_pink_12">#1FF6286D</color>
     <color name="zibe_purple">#8B3CFF</color>
 
     <color name="zibe_purple_dark">#6A28C8</color>
@@ -44,6 +47,7 @@
     <color name="zibe_dark_bg">#0D1B2A</color>
     <color name="zibe_light_bg">#1E2A38</color>
     <color name="zibe_surface">#233042</color>
+    <color name="zibe_surface_96">#F5233042</color>
     <color name="zibe_overlay">#331B263B</color>
 
     <!-- Text colors -->
@@ -52,6 +56,7 @@
     <color name="zibe_text_dark">@color/zibe_night_end</color>
     <color name="zibe_text_pink">#FF3B93</color>
     <color name="zibe_muted_text">#9E9E9E</color>
+    <color name="zibe_text_muted">#B3FFFFFF</color>
 
     <!-- SNACK -->
 
@@ -91,9 +96,8 @@
     <color name="check_not_seen">#FFFFFF</color>
 
     <!-- NAVEGACIÓN -->
-    <color name="zibe_nav_active">#F6286D</color>
+    <color name="zibe_nav_active">#FFFFFF</color>
     <color name="zibe_nav_inactive">#A3B1C6</color>
-    <color name="zibe_nav_bg">#0D1B2A</color>
 
     <!-- BOTONES -->
     <color name="zibe_btn_primary">@color/zibe_pink</color>
@@ -143,6 +147,4 @@
 
 
 </resources>
-
-
 

@@ -93,7 +93,7 @@
                     <ImageView
                         android:layout_width="22dp"
                         android:layout_height="22dp"
-                        android:src="@drawable/ic_baseline_groups_24"
+                        android:src="@drawable/ic_groups_rounded_24"
                         app:tint="@color/zibe_text_light" />
 
                     <TextView

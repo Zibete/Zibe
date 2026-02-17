@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Color
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -24,6 +25,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
@@ -68,6 +71,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupEdgeToEdge()
 
         chatViewModel.init()
         observeChatSessionEvents(chatViewModel.events)
@@ -114,6 +118,17 @@ class ChatActivity : BaseChatSessionActivity() {
         }
 
         clearNotifications()
+    }
+
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = getColor(R.color.zibe_dark_bg)
+        window.navigationBarColor = getColor(R.color.zibe_dark_bg)
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
     }
 
     override fun onStart() {

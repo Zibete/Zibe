@@ -47,7 +47,7 @@
                     android:layout_marginTop="20dp"
                     android:gravity="center"
                     android:text="@string/favorites_onboarding_title"
-                    android:textAppearance="@style/Zibe.Text.Regular"
+                    android:textAppearance="@style/TextAppearance.Zibe.Body"
                     android:textSize="@dimen/text_size_xlarge" />
             </LinearLayout>
 
