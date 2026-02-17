@@ -5,24 +5,30 @@ import android.animation.LayoutTransition
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.IntentCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.get
 import androidx.core.view.isVisible
 import androidx.core.view.size
+import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -47,7 +53,6 @@ import com.google.android.gms.location.SettingsClient
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
@@ -62,6 +67,8 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
+import com.zibete.proyecto1.databinding.NavViewBinding
+
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -74,6 +81,7 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
+import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -116,6 +124,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -135,6 +144,17 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         // Capturar extras del Splash para mostrar el snack pendiente
         handleIntentExtras()
+    }
+
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
     }
 
     private fun handleIntentExtras() {
@@ -216,24 +236,26 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private fun setupHeader(headerView: View?) {
         if (headerView == null) return
 
-        val cardUserImage = headerView.findViewById<MaterialCardView>(R.id.card_user_image)
-        val userImage = headerView.findViewById<ImageView>(R.id.user_image)
-        val tvUserName = headerView.findViewById<TextView>(R.id.tv_user_name)
-        val tvUserEmail = headerView.findViewById<TextView>(R.id.tv_mail)
-        val editProfileButton = headerView.findViewById<LinearLayout>(R.id.edit_profile_button)
+        with(NavViewBinding.bind(headerView)) {
+            drawerHeaderUserName.text = mainViewModel.myDisplayName()
+            drawerHeaderEmail.text = mainViewModel.myEmail()
 
-        cardUserImage?.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            ZibeApp.ScreenUtils.heightPx / 2
-        )
+            ViewCompat.setOnApplyWindowInsetsListener(binding.navView) { v, insets ->
+                val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.updatePadding(top = sys.top, bottom = sys.bottom)
+                insets
+            }
+            ViewCompat.requestApplyInsets(binding.navView)
 
-        tvUserName?.text = mainViewModel.myDisplayName()
-        tvUserEmail?.text = mainViewModel.myEmail()
-        Glide.with(this).load(mainViewModel.myPhotoUrl()).into(userImage)
+            Glide.with(root.context)
+                .load(mainViewModel.myPhotoUrl())
+                .into(drawerHeaderCircleImage)
 
-        editProfileButton?.setOnClickListener { editProfileNavigation() }
+            drawerHeaderContainer.setOnClickListener {
+                editProfileNavigation()
+            }
+        }
     }
-
 
     private fun setupBadges() {
         // Chat Badge

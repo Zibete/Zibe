@@ -1,82 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/edit_profile_button"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:padding="20dp">
+    android:padding="@dimen/screen_padding">
 
-    <!-- Imagen de perfil centrada -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_user_image"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginBottom="12dp"
-        app:cardElevation="6dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/zibe_surface">
-
-        <com.zibete.proyecto1.ui.ResizableImageView
-            android:id="@+id/user_image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"/>
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Datos de usuario -->
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/drawerHeaderContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="8dp">
+        android:background="@drawable/bg_glow_zibe_0"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:paddingVertical="@dimen/element_spacing_large"
+        android:paddingHorizontal="@dimen/element_spacing_small">
 
-        <!-- Nombre y correo -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/drawerHeaderCircleImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@color/glass_bg_light"
+            app:civ_border_color="@color/zibe_pink"
+            app:civ_border_width="2dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/drawerHeaderUserName"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingEnd="8dp">
+            android:layout_marginTop="12dp"
+            android:shadowColor="@color/zibe_pink"
+            android:shadowRadius="8"
+            android:text="@string/name"
+            android:textAppearance="@style/TextAppearance.Zibe.Brand.Title"
+            android:textColor="@color/zibe_text_light"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/drawerHeaderCircleImage" />
 
-            <TextView
-                android:id="@+id/tv_user_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_header_title"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                android:textSize="@dimen/text_size_xlarge"/>
+        <TextView
+            android:id="@+id/drawerHeaderEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:shadowColor="@color/zibe_pink"
+            android:shadowRadius="4"
+            android:text="@string/email"
+            android:textAppearance="@style/TextAppearance.Zibe.Subtitle"
+            android:textColor="@color/zibe_text_muted"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_user_name" />
 
-            <TextView
-                android:id="@+id/tv_mail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_header_subtitle"
-                android:textColor="@color/zibe_text_light"
-                android:textSize="@dimen/text_size_normal"/>
-        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Botón editar -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/zibe_btn_secondary"
-            android:clickable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:layout_gravity="center">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp"
-                android:src="@drawable/ic_baseline_edit_24"
-                app:tint="@color/white" />
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
-</LinearLayout>
+</FrameLayout>

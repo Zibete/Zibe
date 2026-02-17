@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -23,9 +24,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -37,8 +38,8 @@ import com.facebook.login.LoginResult
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
@@ -51,8 +52,8 @@ import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
 import com.zibete.proyecto1.ui.main.MainActivity
@@ -71,6 +72,7 @@ class SplashActivity : ComponentActivity() {
 
     @Inject
     lateinit var appNavigator: AppNavigator
+
     @Inject
     lateinit var snackBarManager: SnackBarManager
     private val splashViewModel: SplashViewModel by viewModels()
@@ -88,6 +90,7 @@ class SplashActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
 
@@ -147,7 +150,11 @@ class SplashActivity : ComponentActivity() {
                                     authViewModel.onEmailLogin(email, password)
                                 },
                                 onEmailInputChanged = { authViewModel.onEmailInputChanged(it) },
-                                onResetEmailInputChanged = { authViewModel.onResetEmailInputChanged(it) },
+                                onResetEmailInputChanged = {
+                                    authViewModel.onResetEmailInputChanged(
+                                        it
+                                    )
+                                },
                                 onPasswordInputChanged = { authViewModel.onPasswordInputChanged(it) },
                                 onNavigateToSignUp = {
                                     navController.navigate(SIGNUP_SCREEN)
@@ -317,10 +324,11 @@ class SplashActivity : ComponentActivity() {
                                 navController.navigate(PERMISSION_SCREEN)
 
                             is SplashUiEvent.NavigateMain -> {
-                                val intent = Intent(this@SplashActivity, MainActivity::class.java).apply {
-                                    putExtra(EXTRA_UI_TEXT, event.uiText)
-                                    putExtra(EXTRA_SNACK_TYPE, event.snackType)
-                                }
+                                val intent =
+                                    Intent(this@SplashActivity, MainActivity::class.java).apply {
+                                        putExtra(EXTRA_UI_TEXT, event.uiText)
+                                        putExtra(EXTRA_SNACK_TYPE, event.snackType)
+                                    }
                                 startActivity(intent)
                                 finish()
                             }

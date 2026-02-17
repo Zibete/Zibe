@@ -26,12 +26,14 @@
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
     </style>
 
-    <!-- Navigation drawer -->
+    <!-- Navigation View -->
     <style name="Zibe.NavigationView" parent="Widget.Material3.NavigationView">
-        <item name="itemIconTint">@color/zibe_nav_inactive</item>
-        <item name="android:background">@color/zibe_dark_bg</item>
-        <item name="itemTextColor">@color/zibe_nav_inactive</item>
-        <item name="itemRippleColor">@color/zibe_pink</item>
+        <item name="android:background">@drawable/bg_drawer_panel_zibe</item>
+        <item name="itemIconSize">24dp</item>
+        <item name="itemIconPadding">12dp</item>
+        <item name="itemTextAppearance">@style/TextAppearance.Zibe.ActionLabel</item>
+        <item name="itemTextColor">?attr/colorOnPrimary</item>
+        <item name="itemIconTint">?attr/colorOnPrimary</item>
     </style>
 
     <!-- PopupMenu -->
@@ -45,7 +47,6 @@
     <style name="ThemeOverlay.Zibe.BottomNav" parent="ThemeOverlay.Material3.BottomNavigationView">
         <item name="itemIconTint">@drawable/bottom_nav_selector</item>
         <item name="itemTextColor">@drawable/bottom_nav_selector</item>
-        <item name="itemRippleColor">@color/zibe_pink</item>
         <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
 
@@ -83,7 +84,7 @@
 
     <style name="Widget.Zibe.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu_zibe</item>
-        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:elevation">8dp</item>
         <item name="android:dropDownVerticalOffset">12dp</item>
     </style>
@@ -103,6 +104,13 @@
 
     <style name="Widget.Zibe.OverflowButtonOnGradient" parent="Widget.AppCompat.ActionButton.Overflow">
         <item name="android:tint">?attr/colorOnPrimary</item>
+    </style>
+
+    <style name="Zibe.WindowAnimation.Fade" parent="@android:style/Animation">
+        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
     </style>
 
 </resources>
