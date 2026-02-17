@@ -73,7 +73,8 @@ fun ProfileRoute(
     profileViewModel: ProfileViewModel = hiltViewModel(),
     isActive: Boolean = true,
     onBack: () -> Unit,
-    onOpenChat: (String) -> Unit,
+    onOpenDmChat: (String) -> Unit,
+    onOpenGroupDmChat: (String) -> Unit,
     onOpenPhoto: (String) -> Unit
 ) {
     val state by profileViewModel.uiState.collectAsStateWithLifecycle()
@@ -128,8 +129,9 @@ fun ProfileRoute(
         groupName = groupName,
         distanceLabel = state.distanceLabel,
         onBack = onBack,
-        onRefresh = { profileViewModel.loadProfile() },
-        onOpenChat = onOpenChat,
+        onRefresh = { profileViewModel.refreshProfile() },
+        onOpenDmChat = onOpenDmChat,
+        onOpenGroupDmChat = onOpenGroupDmChat,
         onOpenPhoto = onOpenPhoto,
         onToggleFavorite = profileViewModel::onToggleFavorite,
         onToggleNotifications = { profileViewModel.onToggleNotifications() },
@@ -150,7 +152,8 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onRefresh: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onOpenChat: (userId: String) -> Unit,
+    onOpenDmChat: (userId: String) -> Unit,
+    onOpenGroupDmChat: (userId: String) -> Unit,
     onOpenPhoto: (String) -> Unit,
     onToggleNotifications: () -> Unit,
     onConfirmBlockAction: () -> Unit,
@@ -252,7 +255,7 @@ fun ProfileScreen(
                     },
                     primaryEnabled = state.canOpenChat,
                     primaryLoading = state.isActionLoading,
-                    onPrimaryClick = { state.profile?.id?.let(onOpenChat) },
+                    onPrimaryClick = { state.profile?.id?.let(onOpenDmChat) },
                     secondaryText = secondaryLabel?.let { label ->
                         {
                             Text(
@@ -271,7 +274,7 @@ fun ProfileScreen(
                     },
                     secondaryEnabled = !state.isActionLoading,
                     onSecondaryClick = secondaryLabel?.let {
-                        { profile?.id?.let(onOpenChat) }
+                        { profile?.id?.let(onOpenGroupDmChat) }
                     },
                     onHeightPxChanged = { fabHeightPx = it }
                 )
@@ -321,7 +324,7 @@ fun ProfileScreen(
                     val profile = content.profile
 
                     PullToRefreshBox(
-                        isRefreshing = false,
+                        isRefreshing = state.isRefreshing,
                         onRefresh = onRefresh,
                         state = rememberPullToRefreshState(),
                         modifier = contentModifier
@@ -407,7 +410,8 @@ fun ProfileScreenPreview() {
             onBack = {},
             onRefresh = {},
             onToggleFavorite = {},
-            onOpenChat = {},
+            onOpenDmChat = {},
+            onOpenGroupDmChat = {},
             onOpenPhoto = {},
             onToggleNotifications = {},
             onConfirmBlockAction = {},

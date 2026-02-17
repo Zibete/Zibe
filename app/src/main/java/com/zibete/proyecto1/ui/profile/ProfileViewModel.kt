@@ -11,6 +11,7 @@ import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
@@ -75,30 +76,46 @@ class ProfileViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var metaJob: Job? = null
 
-    fun loadProfile() {
+    fun refreshProfile() = loadProfile(isRefresh = true)
+
+    fun loadProfile(isRefresh: Boolean = false) {
         loadJob?.cancel()
         metaJob?.cancel()
         loadJob = viewModelScope.launch {
+            val currentJob = coroutineContext[Job]
+            val hadReadyContent = _uiState.value.content is ProfileContent.Ready
+            val shouldShowLoading = !isRefresh || !hadReadyContent
+
+            if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
+
             if (otherUid.isBlank()) {
-                setNotProfileState(content = ProfileContent.NotFound)
+                if (shouldShowLoading) setNotProfileState(content = ProfileContent.NotFound)
+                else _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
+                if (isRefresh && loadJob == currentJob) _uiState.update { it.copy(isRefreshing = false) }
                 return@launch
-            } else if (_uiState.value.profile?.id != otherUid) {
+            } else if (_uiState.value.profile?.id != otherUid && shouldShowLoading)
                 setNotProfileState(content = ProfileContent.Loading)
-            }
 
             profileRepositoryProvider.getOtherAccount(otherUid)
                 .onFailure { e ->
+                    if (isRefresh && hadReadyContent) {
+                        _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
+                        return@onFailure
+                    }
                     setNotProfileState(
                         content = if (e.message == USER_NOT_FOUND_EXCEPTION) ProfileContent.NotFound
                         else ProfileContent.Error(profileError)
                     )
                     _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
-                    return@launch
                 }
                 .onSuccess { profile ->
                     if (profile == null) {
-                        setNotProfileState(content = ProfileContent.NotFound)
-                        return@launch
+                        if (isRefresh && hadReadyContent) {
+                            _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
+                        } else {
+                            setNotProfileState(content = ProfileContent.NotFound)
+                        }
+                        return@onSuccess
                     }
 
                     _uiState.update {
@@ -108,9 +125,14 @@ class ProfileViewModel @Inject constructor(
                         )
                     }
 
-                    metaJob = viewModelScope.launch {
+                    if (isRefresh) {
                         enrichProfileMeta()
+                        return@onSuccess
                     }
+                    metaJob = viewModelScope.launch { enrichProfileMeta() }
+                }
+                .onFinally {
+                    if (isRefresh && loadJob == currentJob) _uiState.update { it.copy(isRefreshing = false) }
                 }
         }
     }
@@ -192,6 +214,7 @@ class ProfileViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 content = content,
+                isRefreshing = false,
                 isActionLoading = false,
                 profile = null,
                 distanceLabel = "",
@@ -230,9 +253,9 @@ class ProfileViewModel @Inject constructor(
             setActionLoading(true)
             runCatching {
                 profileRepositoryActions.toggleNotificationsUser(otherUid, otherName)
-            }.onSuccess { silenced ->
-                _uiState.update { it.copy(isNotificationsSilenced = silenced) }
-                _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(otherName, silenced))
+            }.onSuccess { isNotificationsSilenced ->
+                _uiState.update { it.copy(isNotificationsSilenced = isNotificationsSilenced) }
+                _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(otherName, isNotificationsSilenced))
             }
             setActionLoading(false)
         }
@@ -287,10 +310,10 @@ class ProfileViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = profile.name,
                     countMessages = count,
-                    onConfirm = {
+                    onConfirm = { shouldDeleteMessages ->
                         viewModelScope.launch {
                             setActionLoading(true)
-                            deleteMessages(chatRefs)
+                            deleteMessages(chatRefs, shouldDeleteMessages, profile.name)
                             setActionLoading(false)
                         }
                     }
@@ -299,11 +322,19 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    suspend fun deleteMessages(chatRefs: ChatRefs) {
+    suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
         runCatching {
-            chatRepository.deleteMessages(chatRefs, null, true)
+            chatRepository.deleteMessages(
+                chatRefs = chatRefs,
+                selectedIds = null,
+                deleteMessages = deleteMessages
+            )
         }.onSuccess { deleteResult ->
-            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            if (deleteMessages) {
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            } else {
+                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
+            }
         }.onFailure { e ->
             _events.emit(
                 ChatSessionUiEvent.ShowErrorDialog(

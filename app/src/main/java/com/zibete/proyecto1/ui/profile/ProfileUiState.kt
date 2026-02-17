@@ -12,6 +12,7 @@ sealed interface ProfileContent {
 
 data class ProfileUiState(
     val content: ProfileContent = ProfileContent.Loading,
+    val isRefreshing: Boolean = false,
     val isActionLoading: Boolean = false,
     val profile: Users? = null,
     val distanceLabel: String = "",
@@ -28,5 +29,4 @@ data class ProfileUiState(
                     !isActionLoading &&
                     profile?.id?.isNotBlank() == true
 }
-
 
