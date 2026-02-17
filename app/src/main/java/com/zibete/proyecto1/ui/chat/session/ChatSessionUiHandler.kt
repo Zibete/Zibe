@@ -98,8 +98,8 @@ object ChatSessionUiHandler {
             is ChatSessionUiEvent.ShowToggleNotificationSuccess -> {
                 snackBarManager.show(
                     uiText = UiText.StringRes(
-                        if (event.isNotificationsSilenced) R.string.chat_notifications_enabled
-                        else R.string.chat_notifications_disabled,
+                        if (event.isNotificationsSilenced) R.string.chat_notifications_disabled
+                        else R.string.chat_notifications_enabled,
                         listOf(event.name)
                     ),
                     type = ZibeSnackType.INFO
