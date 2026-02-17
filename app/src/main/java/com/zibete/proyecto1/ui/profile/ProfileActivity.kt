@@ -23,6 +23,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
@@ -41,9 +42,14 @@ class ProfileActivity : BaseChatSessionActivity() {
         val startIndex = intent.getIntExtra(EXTRA_START_INDEX, 0)
         val singleUserId = intent.getStringExtra(EXTRA_USER_ID)
         val resolvedUserIds = when {
-            !userIds.isNullOrEmpty() -> userIds
-            !singleUserId.isNullOrBlank() -> arrayListOf(singleUserId)
-            else -> arrayListOf("")
+            !userIds.isNullOrEmpty() -> userIds.filter { it.isNotBlank() }
+            !singleUserId.isNullOrBlank() -> listOf(singleUserId)
+            else -> emptyList()
+        }
+
+        if (resolvedUserIds.isEmpty()) {
+            finish()
+            return
         }
 
         setContent {
@@ -52,11 +58,19 @@ class ProfileActivity : BaseChatSessionActivity() {
                     userIds = resolvedUserIds,
                     startIndex = startIndex,
                     onBack = { onBackPressedDispatcher.onBackPressed() },
-                    onOpenChat = { userId ->
+                    onOpenDmChat = { userId ->
                         startActivity(
                             Intent(this, ChatActivity::class.java).apply {
                                 putExtra(EXTRA_CHAT_ID, userId)
                                 putExtra(EXTRA_CHAT_NODE, NODE_DM)
+                            }
+                        )
+                    },
+                    onOpenGroupDmChat = { userId ->
+                        startActivity(
+                            Intent(this, ChatActivity::class.java).apply {
+                                putExtra(EXTRA_CHAT_ID, userId)
+                                putExtra(EXTRA_CHAT_NODE, NODE_GROUP_DM)
                             }
                         )
                     },
@@ -96,7 +110,8 @@ private fun ProfileActivityContent(
     userIds: List<String>,
     startIndex: Int,
     onBack: () -> Unit,
-    onOpenChat: (String) -> Unit,
+    onOpenDmChat: (String) -> Unit,
+    onOpenGroupDmChat: (String) -> Unit,
     onOpenPhoto: (String) -> Unit,
     viewModelProvider: (String) -> ProfileViewModel
 ) {
@@ -107,7 +122,8 @@ private fun ProfileActivityContent(
             profileViewModel = profileViewModel,
             isActive = true,
             onBack = onBack,
-            onOpenChat = onOpenChat,
+            onOpenDmChat = onOpenDmChat,
+            onOpenGroupDmChat = onOpenGroupDmChat,
             onOpenPhoto = onOpenPhoto
         )
         return
@@ -128,7 +144,8 @@ private fun ProfileActivityContent(
             profileViewModel = profileViewModel,
             isActive = pagerState.currentPage == page,
             onBack = onBack,
-            onOpenChat = onOpenChat,
+            onOpenDmChat = onOpenDmChat,
+            onOpenGroupDmChat = onOpenGroupDmChat,
             onOpenPhoto = onOpenPhoto
         )
     }
