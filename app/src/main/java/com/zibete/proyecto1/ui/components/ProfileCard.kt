@@ -1,31 +1,52 @@
 package com.zibete.proyecto1.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.LockPerson
-import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.rememberLottieAnimatable
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.model.UserStatus
@@ -47,106 +68,137 @@ fun ProfileCard(
 ) {
     val zibeColors = LocalZibeExtendedColors.current
     val zibeTypography = LocalZibeTypography.current
-    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
-    val spacingMd = dimensionResource(R.dimen.element_spacing_medium)
+    val spacing6 = dimensionResource(R.dimen.element_spacing_xxs)
+    val spacing12 = dimensionResource(R.dimen.element_spacing_small)
+    val spacing16 = dimensionResource(R.dimen.element_spacing_medium)
+    val tagLocationFg = colorResource(R.color.tag_location_fg)
+    val tagLocationBg = colorResource(R.color.tag_location_bg)
+    val tagLocationStroke = colorResource(R.color.tag_location_stroke)
+    val tagFavoriteFg = colorResource(R.color.tag_favorite_fg)
+    val tagFavoriteBg = colorResource(R.color.tag_favorite_bg)
+    val tagFavoriteStroke = colorResource(R.color.tag_favorite_stroke)
+    val tagBlockedFg = colorResource(R.color.tag_blocked_fg)
+    val tagBlockedBg = colorResource(R.color.tag_blocked_bg)
+    val tagBlockedStroke = colorResource(R.color.tag_blocked_stroke)
+    val tagSilencedFg = colorResource(R.color.tag_silenced_fg)
+    val tagSilencedBg = colorResource(R.color.tag_silenced_bg)
+    val tagSilencedStroke = colorResource(R.color.tag_silenced_stroke)
+
+    val tagGroupMatchFg = zibeColors.tagGroupMatchFg
+    val tagGroupMatchBg = zibeColors.tagGroupMatchBg
+    val tagGroupMatchStroke = zibeColors.tagGroupMatchStroke
 
     val ageText = remember(profile.birthDate) {
         ageCalculator(profile.birthDate).toString()
     }
 
-    ZibeCard(contentPadding = PaddingValues(spacingMd)) {
-        Column(verticalArrangement = Arrangement.spacedBy(spacingSm)) {
-
-            // 1) Header (edad + nombre + favorito)
+    ZibeCard(contentPadding = PaddingValues(spacing16)) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing12)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(spacingSm)
+                horizontalArrangement = Arrangement.spacedBy(spacing12)
             ) {
                 Text(
                     text = ageText,
                     style = zibeTypography.h1,
                     color = zibeColors.lightText
                 )
-
                 Text(
                     text = profile.name,
                     style = zibeTypography.h2,
                     color = zibeColors.lightText,
                     modifier = Modifier.weight(1f)
                 )
-
-                IconButton(onClick = onToggleFavorite) {
-                    Icon(
-                        imageVector = if (state.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        contentDescription = stringResource(R.string.content_description_toggle_favorite),
-                        tint = zibeColors.snackYellow
-                    )
-                }
+                FavoriteLottieStar(
+                    isFavorite = state.isFavorite,
+                    onClick = onToggleFavorite,
+                    contentDescription = stringResource(R.string.content_description_toggle_favorite)
+                )
             }
 
             HorizontalDivider(color = zibeColors.accent.copy(alpha = 0.5f))
 
-            // 2) Meta row (status + distancia + badges)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(spacingSm)
-            ) {
-                UserStatusRow(
-                    userStatus = userStatus,
-                    modifier = Modifier.weight(1f)
-                )
+            UserStatusRow(
+                userStatus = userStatus,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                Icon(
-                    imageVector = Icons.Filled.LocationOn,
-                    contentDescription = null,
-                    tint = zibeColors.accent
-                )
+            val showTags = distanceLabel.isNotBlank() ||
+                state.isFavorite ||
+                state.isBlockedByMe ||
+                state.hasBlockedMe ||
+                state.isNotificationsSilenced ||
+                state.isGroupMatch
 
-                Text(
-                    text = distanceLabel,
-                    style = zibeTypography.label,
-                    color = zibeColors.accent,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip
-                )
-            }
+            if (showTags) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(spacing6),
+                    verticalArrangement = Arrangement.spacedBy(spacing6)
+                ) {
+                    if (distanceLabel.isNotBlank()) {
+                        ProfileTag(
+                            text = distanceLabel,
+                            icon = Icons.Filled.LocationOn,
+                            foreground = tagLocationFg,
+                            background = tagLocationBg,
+                            stroke = tagLocationStroke
+                        )
+                    }
 
-
-            // Badges (en una fila aparte para que no se apelmace)
-            if (state.isBlockedByMe || state.hasBlockedMe) {
-                Row(horizontalArrangement = Arrangement.spacedBy(spacingSm)) {
+                    if (state.isFavorite) {
+                        ProfileTag(
+                            text = stringResource(R.string.tag_favorite),
+                            icon = Icons.Filled.Star,
+                            foreground = tagFavoriteFg,
+                            background = tagFavoriteBg,
+                            stroke = tagFavoriteStroke
+                        )
+                    }
 
                     if (state.isBlockedByMe) {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(stringResource(R.string.chip_user_blocked)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.PersonOff,
-                                    contentDescription = null
-                                )
-                            }
+                        ProfileTag(
+                            text = stringResource(R.string.tag_blocked_by_me),
+                            icon = Icons.Filled.Block,
+                            foreground = tagBlockedFg,
+                            background = tagBlockedBg,
+                            stroke = tagBlockedStroke
                         )
                     }
 
                     if (state.hasBlockedMe) {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(stringResource(R.string.tag_has_blocked_me)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.LockPerson,
-                                    contentDescription = null
-                                )
-                            }
+                        ProfileTag(
+                            text = stringResource(R.string.tag_has_blocked_me),
+                            icon = Icons.Filled.Block,
+                            foreground = tagBlockedFg,
+                            background = tagBlockedBg,
+                            stroke = tagBlockedStroke
+                        )
+                    }
+
+                    if (state.isNotificationsSilenced) {
+                        ProfileTag(
+                            text = stringResource(R.string.tag_silent),
+                            icon = Icons.Filled.NotificationsOff,
+                            foreground = tagSilencedFg,
+                            background = tagSilencedBg,
+                            stroke = tagSilencedStroke
+                        )
+                    }
+
+                    if (state.isGroupMatch) {
+                        ProfileTag(
+                            text = stringResource(R.string.tag_group_match),
+                            icon = Icons.Filled.Groups,
+                            foreground = tagGroupMatchFg,
+                            background = tagGroupMatchBg,
+                            stroke = tagGroupMatchStroke
                         )
                     }
                 }
             }
 
-            // Divider suave antes de fotos
             if (photoList.isNotEmpty()) {
 
                 HorizontalDivider(color = zibeColors.accent.copy(alpha = 0.5f))
@@ -168,7 +220,7 @@ fun ProfileCard(
                     )
                 }
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(spacingSm)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(spacing12)) {
                     items(photoList) { url ->
                         ChatPhotoItem(
                             url = url,
@@ -181,6 +233,92 @@ fun ProfileCard(
     }
 }
 
+@Composable
+private fun FavoriteLottieStar(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    contentDescription: String
+) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.favorite))
+    val anim = rememberLottieAnimatable()
+    var prev by remember { mutableStateOf(isFavorite) }
+    val size = 28.dp
+
+    LaunchedEffect(composition, isFavorite) {
+        val c = composition ?: return@LaunchedEffect
+
+        if (!prev && isFavorite) {
+            anim.snapTo(c, 0f)
+            anim.animate(c, iterations = 1)
+        } else {
+            anim.snapTo(c, if (isFavorite) 1f else 0f)
+        }
+        prev = isFavorite
+    }
+
+    IconButton(onClick = onClick) {
+        if (composition == null) {
+            Box(
+                Modifier
+                    .size(size)
+                    .semantics { this.contentDescription = contentDescription }
+            )
+        } else {
+            LottieAnimation(
+                composition = composition,
+                progress = { anim.progress },
+                modifier = Modifier
+                    .size(size)
+                    .semantics { this.contentDescription = contentDescription }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileTag(
+    text: String,
+    icon: ImageVector,
+    foreground: Color,
+    background: Color,
+    stroke: Color
+) {
+    val tagTextSize = dimensionResource(R.dimen.tag_text_size).value.sp
+    val iconSize = dimensionResource(R.dimen.tag_icon_size)
+    val paddingX = dimensionResource(R.dimen.element_spacing_xs)
+    val paddingY = dimensionResource(R.dimen.layout_margin_xs)
+    val iconSpacing = dimensionResource(R.dimen.layout_margin_small)
+    val strokeWidth = dimensionResource(R.dimen.popup_menu_stroke)
+    val zibeTypography = LocalZibeTypography.current
+
+    Surface(
+        shape = RoundedCornerShape(15.dp),
+        color = background,
+        contentColor = foreground,
+        border = BorderStroke(strokeWidth, stroke)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = paddingX, vertical = paddingY),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(iconSpacing)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = foreground
+            )
+            Text(
+                text = text,
+                style = zibeTypography.label.copy(fontSize = tagTextSize),
+                color = foreground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ProfileCardPreview() {
@@ -188,16 +326,16 @@ fun ProfileCardPreview() {
         ProfileCard(
             profile = Users(
                 id = "1",
-                name = "Ziberiano Peralta",
+                name = "Nombre Visible",
                 birthDate = "1990-01-01"
             ),
             state = ProfileUiState(
-                isFavorite = true,
+                isFavorite = false,
                 isBlockedByMe = false,
                 hasBlockedMe = false
             ),
             userStatus = UserStatus.LastSeen("últ. vez 12/01/2026 a las 16:55"),
-            distanceLabel = "1600.5 km",
+            distanceLabel = "A 1600.5 km",
             photoList = listOf("url1", "url2", "url3"),
             onToggleFavorite = {},
             onOpenPhoto = {}
