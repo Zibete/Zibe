@@ -11,10 +11,16 @@ inline fun <T> zibeCatching(block: () -> T): ZibeResult<T> =
         onFailure = { ZibeResult.Failure(it) }
     )
 
-inline fun <T> ZibeResult<T>.getOrThrow(): T =
+fun <T> ZibeResult<T>.getOrThrow(): T =
     when (this) {
         is ZibeResult.Success -> data as T
         is ZibeResult.Failure -> throw exception
+    }
+
+fun <T> ZibeResult<T>.getOrDefault(default: T): T =
+    when (this) {
+        is ZibeResult.Success -> data ?: default
+        is ZibeResult.Failure -> default
     }
 
 inline fun <T> ZibeResult<T>.onFailure(action: (Throwable) -> Unit): ZibeResult<T> {
@@ -24,6 +30,11 @@ inline fun <T> ZibeResult<T>.onFailure(action: (Throwable) -> Unit): ZibeResult<
 
 inline fun <T> ZibeResult<T>.onSuccess(action: (T?) -> Unit): ZibeResult<T> {
     if (this is ZibeResult.Success) action(data)
+    return this
+}
+
+inline fun <T : Any> ZibeResult<T?>.onSuccessNotNull(action: (T) -> Unit): ZibeResult<T?> {
+    if (this is ZibeResult.Success) data?.let(action)
     return this
 }
 
