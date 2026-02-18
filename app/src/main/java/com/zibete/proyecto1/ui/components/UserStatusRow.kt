@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
@@ -21,27 +22,36 @@ import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 
 data class UserStatusUi(
     val text: String,
-    val fontStyle: FontStyle
+    val fontStyle: FontStyle,
+    val statusColor: Color
 )
 
 @Composable
 fun UserStatus.toUi(): UserStatusUi {
+    val zibeColors = LocalZibeExtendedColors.current
     return when (this) {
         is UserStatus.Online -> UserStatusUi(
             text = stringResource(R.string.online),
-            fontStyle = FontStyle.Normal
+            fontStyle = FontStyle.Normal,
+            statusColor = zibeColors.statusOnline
         )
+
         is UserStatus.TypingOrRecording -> UserStatusUi(
             text = text,
-            fontStyle = FontStyle.Italic
+            fontStyle = FontStyle.Italic,
+            statusColor = zibeColors.statusOnline
         )
+
         is UserStatus.LastSeen -> UserStatusUi(
             text = text,
-            fontStyle = FontStyle.Normal
+            fontStyle = FontStyle.Normal,
+            statusColor = zibeColors.statusOffline
         )
+
         is UserStatus.Offline -> UserStatusUi(
             text = stringResource(R.string.offline),
-            fontStyle = FontStyle.Normal
+            fontStyle = FontStyle.Normal,
+            statusColor = zibeColors.statusOffline
         )
     }
 }
@@ -62,7 +72,7 @@ fun UserStatusRow(
         Icon(
             imageVector = Icons.Filled.FiberManualRecord,
             contentDescription = null,
-            tint = zibeColors.lightText,
+            tint = ui.statusColor,
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.size(6.dp))
