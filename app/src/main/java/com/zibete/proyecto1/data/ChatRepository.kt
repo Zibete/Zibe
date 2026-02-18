@@ -28,9 +28,14 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
+import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.getOrDefault
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -69,7 +74,7 @@ class ChatRepository @Inject constructor(
         nodeType: String
     ): ChatRefs {
 
-        val chatId = getChatId(myUid,otherUid)
+        val chatId = getChatId(myUid, otherUid)
 
         val refAudios =
             firebaseRefsContainer.storageChatsRef
@@ -154,6 +159,19 @@ class ChatRepository @Inject constructor(
         return snapshot.getValue(Conversation::class.java)
     }
 
+    suspend fun hasConversation(
+        otherUid: String,
+        nodeType: String
+    ): ZibeResult<Boolean> = zibeCatching {
+        firebaseRefsContainer.refData
+            .child(myUid)
+            .child(nodeType)
+            .child(otherUid)
+            .get()
+            .await()
+            .exists()
+    }
+
     suspend fun saveConversation(
         ownerUid: String,
         nodeType: String,
@@ -219,6 +237,15 @@ class ChatRepository @Inject constructor(
         }
     }
 
+    private fun DatabaseReference.relativePathFrom(root: DatabaseReference): String {
+        val rootUrl = root.toString().trimEnd('/')
+        val refUrl = toString()
+        return refUrl
+            .substringAfter(rootUrl)
+            .substringBefore('?')
+            .trimStart('/')
+    }
+
     suspend fun deleteMessages(
         chatRefs: ChatRefs,
         selectedIds: List<String>?,
@@ -235,13 +262,29 @@ class ChatRepository @Inject constructor(
             return DeleteResult(deletedCount = 0, chatRemoved = false)
         }
 
-        // 1) Determinar ids a procesar
+        // 1) Borrado definitivo del chat completo (mensajes + conversaciones)
+        if (deleteMessages && selectedIds == null) {
+            val snapshot = chatRefs.refChat.get().await()
+            val deletedCount = snapshot.childrenCount.toInt()
+
+            val root = chatRefs.refChat.root
+            val updates = mapOf(
+                chatRefs.refChat.relativePathFrom(root) to null,
+                chatRefs.refMyConversation.relativePathFrom(root) to null,
+                chatRefs.refOtherConversation.relativePathFrom(root) to null
+            )
+
+            root.updateChildren(updates).await()
+            return DeleteResult(deletedCount = deletedCount, chatRemoved = true)
+        }
+
+        // 2) Determinar ids a procesar
         val idsToProcess: List<String> = selectedIds ?: run {
             val snap = chatRefs.refChat.get().await()
             snap.children.mapNotNull { it.key }
         }
 
-        // 2) Procesar cada mensaje por id
+        // 3) Procesar cada mensaje por id
         var processed = 0
         for (id in idsToProcess) {
             val msgSnap = chatRefs.refChat.child(id).get().await()
@@ -250,10 +293,10 @@ class ChatRepository @Inject constructor(
             val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: continue
             val senderUid =
                 msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java) ?: continue
-            val content = msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java).orEmpty()
+            val content =
+                msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java).orEmpty()
 
             processSoftDeleteOrRemove(
-                chatRefs = chatRefs,
                 msgRef = msgSnap.ref,
                 type = type,
                 senderUid = senderUid,
@@ -262,7 +305,7 @@ class ChatRepository @Inject constructor(
             processed++
         }
 
-        // 3) Si quedó vacío (o all eliminado para mí), borrar conversación
+        // 4) Si quedó vacío (o all eliminado para mí), borrar conversación
         val chatRemoved = removeConversationIfEmpty(chatRefs)
 
         return DeleteResult(
@@ -271,9 +314,7 @@ class ChatRepository @Inject constructor(
         )
     }
 
-    // ✅ Reemplaza iterateDelete: ya no iteramos por query, procesamos por msgRef directo
     private suspend fun processSoftDeleteOrRemove(
-        chatRefs: ChatRefs,
         msgRef: DatabaseReference,
         type: Int,
         senderUid: String,
@@ -283,8 +324,11 @@ class ChatRepository @Inject constructor(
         if (senderUid == myUid) {
             when (type) {
                 MSG_TEXT -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_SENDER_DLT).await()
-                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_SENDER_DLT).await()
-                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT).await()
+                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_SENDER_DLT)
+                    .await()
+
+                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT)
+                    .await()
 
                 MSG_TEXT_RECEIVER_DLT -> msgRef.removeValue().await()
 
@@ -300,9 +344,14 @@ class ChatRepository @Inject constructor(
             }
         } else {
             when (type) {
-                MSG_TEXT -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_RECEIVER_DLT).await()
-                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_RECEIVER_DLT).await()
-                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT).await()
+                MSG_TEXT -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_RECEIVER_DLT)
+                    .await()
+
+                MSG_PHOTO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_RECEIVER_DLT)
+                    .await()
+
+                MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT)
+                    .await()
 
                 MSG_TEXT_SENDER_DLT -> msgRef.removeValue().await()
 
@@ -342,7 +391,8 @@ class ChatRepository @Inject constructor(
         snapshot.children.forEach { child ->
             val type = child.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: return@forEach
             val senderUid =
-                child.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java) ?: return@forEach
+                child.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
+                    ?: return@forEach
 
             if (senderUid == myUid) {
                 when (type) {
@@ -427,7 +477,7 @@ class ChatRepository @Inject constructor(
         val unSeen = unSeenDs.getValue(Int::class.java) ?: 0
         if (unSeen <= 0) return
 
-        val chatId = getChatId(myUid,otherUid)
+        val chatId = getChatId(myUid, otherUid)
 
         val messagesDs = firebaseRefsContainer.refChatsRoot
             .child(nodeType)

@@ -10,9 +10,12 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.getOrDefault
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.utils.onSuccessNotNull
+import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
@@ -24,9 +27,9 @@ import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,8 +60,10 @@ class ProfileViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
     val profileError = UiText.StringRes(R.string.msg_profile_load_error)
 
-    private val _events = MutableSharedFlow<ChatSessionUiEvent>(extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val _events = MutableSharedFlow<ChatSessionUiEvent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val events = _events.asSharedFlow()
 
     val snackEvents = snackBarManager.events
@@ -71,7 +76,7 @@ class ProfileViewModel @Inject constructor(
 
     val userStatus: StateFlow<UserStatus> =
         profileRepositoryProvider.observeUserStatus(otherUid, NODE_DM)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserStatus.Offline)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UserStatus.Offline)
 
     private var loadJob: Job? = null
     private var metaJob: Job? = null
@@ -103,18 +108,20 @@ class ProfileViewModel @Inject constructor(
                         return@onFailure
                     }
                     setNotProfileState(
-                        content = if (e.message == USER_NOT_FOUND_EXCEPTION) ProfileContent.NotFound
-                        else ProfileContent.Error(profileError)
+                        content = if (e.message == USER_NOT_FOUND_EXCEPTION)
+                            ProfileContent.NotFound
+                        else
+                            ProfileContent.Error(profileError)
                     )
                     _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
                 }
                 .onSuccess { profile ->
                     if (profile == null) {
-                        if (isRefresh && hadReadyContent) {
+                        if (isRefresh && hadReadyContent)
                             _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
-                        } else {
+                        else
                             setNotProfileState(content = ProfileContent.NotFound)
-                        }
+
                         return@onSuccess
                     }
 
@@ -132,78 +139,67 @@ class ProfileViewModel @Inject constructor(
                     metaJob = viewModelScope.launch { enrichProfileMeta() }
                 }
                 .onFinally {
-                    if (isRefresh && loadJob == currentJob) _uiState.update { it.copy(isRefreshing = false) }
+                    if (isRefresh && loadJob == currentJob)
+                        _uiState.update { it.copy(isRefreshing = false) }
                 }
         }
     }
 
-    private suspend fun enrichProfileMeta() {
-        var isGroupMatch = false
-        var isFavorite = false
-        var isNotificationsSilenced = false
-        var isBlockedByMe = false
-        var hasBlockedMe = false
-        var distanceLabel = ""
-        var canDeleteChat = false
-        var photoList = emptyList<String>()
+    private suspend fun enrichProfileMeta() = supervisorScope {
+        val groupNameValue = groupName.value
 
-        withContext(Dispatchers.IO) {
-            val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
-            val count = runCatching { chatRepository.getMessageCount(chatRefs) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    0
-                }
-            val chatState = runCatching { profileRepositoryProvider.getMyChatState(otherUid) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    ""
-                }
-            val favorite = runCatching { profileRepositoryProvider.isFavorite(otherUid) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    false
-                }
-            val blockState = runCatching { profileRepositoryProvider.getBlockStateWith(otherUid) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    BlockState(isBlockedByMe = false, hasBlockedMe = false)
-                }
-            val distance = runCatching { locationRepository.getDistanceToUser(otherUid) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    ""
-                }
-            val groupMatch = runCatching {
-                groupRepositoryProvider.isGroupMatch(otherUid, groupName.value)
-            }.getOrElse { e ->
-                if (e is CancellationException) throw e
-                false
-            }
-            val photos = runCatching { profileRepositoryProvider.getDmPhotoList(otherUid) }
-                .getOrElse { e ->
-                    if (e is CancellationException) throw e
-                    emptyList()
-                }
-
-            canDeleteChat = count > 0
-            isNotificationsSilenced = chatState == CHAT_STATE_SILENT
-            isFavorite = favorite
-            isBlockedByMe = blockState.isBlockedByMe
-            hasBlockedMe = blockState.hasBlockedMe
-            distanceLabel = distance
-            isGroupMatch = groupMatch
-            photoList = photos
+        val chatStateDeferred = async(Dispatchers.IO) {
+            profileRepositoryProvider.getMyChatState(otherUid)
+                .onFailure { onFailure(it) }
+                .getOrDefault("")
         }
+        val favoriteDeferred = async(Dispatchers.IO) {
+            profileRepositoryProvider.isFavorite(otherUid)
+                .onFailure { onFailure(it) }
+                .getOrDefault(false)
+        }
+        val blockStateDeferred = async(Dispatchers.IO) {
+            profileRepositoryProvider.getBlockStateWith(otherUid, NODE_DM)
+                .onFailure { onFailure(it) }
+                .getOrDefault(BlockState(isBlockedByMe = false, hasBlockedMe = false))
+        }
+        val distanceDeferred = async(Dispatchers.IO) {
+            locationRepository.getDistanceToUser(otherUid)
+                .onFailure { onFailure(it) }
+                .getOrDefault("")
+        }
+        val groupMatchDeferred = async(Dispatchers.IO) {
+            groupRepositoryProvider.isGroupMatch(otherUid, groupNameValue)
+                .onFailure { onFailure(it) }
+                .getOrDefault(false)
+        }
+        val photosDeferred = async(Dispatchers.IO) {
+            profileRepositoryProvider.getDmPhotoList(otherUid, NODE_DM)
+                .onFailure { onFailure(it) }
+                .getOrDefault(emptyList())
+        }
+        val canDeleteChatDeferred = async(Dispatchers.IO) {
+            chatRepository.hasConversation(otherUid, NODE_DM)
+                .onFailure { onFailure(it) }
+                .getOrDefault(false)
+        }
+
+        val chatState = chatStateDeferred.await()
+        val blockState = blockStateDeferred.await()
+        val distanceLabel = distanceDeferred.await()
+        val isGroupMatch = groupMatchDeferred.await()
+        val isFavorite = favoriteDeferred.await()
+        val canDeleteChat = canDeleteChatDeferred.await()
+        val photoList = photosDeferred.await()
 
         _uiState.update {
             it.copy(
                 distanceLabel = distanceLabel,
                 isGroupMatch = isGroupMatch,
                 isFavorite = isFavorite,
-                isBlockedByMe = isBlockedByMe,
-                hasBlockedMe = hasBlockedMe,
-                isNotificationsSilenced = isNotificationsSilenced,
+                isBlockedByMe = blockState.isBlockedByMe,
+                hasBlockedMe = blockState.hasBlockedMe,
+                isNotificationsSilenced = chatState == CHAT_STATE_SILENT,
                 canDeleteChat = canDeleteChat
             )
         }
@@ -234,13 +230,18 @@ class ProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             setActionLoading(true)
-            runCatching {
-                profileRepositoryActions.toggleFavoriteUser(otherUid)
-            }.onSuccess { newFavoriteState ->
-                _uiState.update { it.copy(isFavorite = newFavoriteState) }
-                _events.emit(ChatSessionUiEvent.ShowToggleFavoriteSuccess(profile.name, newFavoriteState))
-            }
-            setActionLoading(false)
+            profileRepositoryActions.toggleFavoriteUser(otherUid)
+                .onSuccessNotNull { newFavoriteState ->
+                    _uiState.update { it.copy(isFavorite = newFavoriteState) }
+                    _events.emit(
+                        ChatSessionUiEvent.ShowToggleFavoriteSuccess(
+                            profile.name,
+                            newFavoriteState
+                        )
+                    )
+                }
+                .onFailure { onFailure(it) }
+                .onFinally { setActionLoading(false) }
         }
     }
 
@@ -255,7 +256,12 @@ class ProfileViewModel @Inject constructor(
                 profileRepositoryActions.toggleNotificationsUser(otherUid, otherName)
             }.onSuccess { isNotificationsSilenced ->
                 _uiState.update { it.copy(isNotificationsSilenced = isNotificationsSilenced) }
-                _events.emit(ChatSessionUiEvent.ShowToggleNotificationSuccess(otherName, isNotificationsSilenced))
+                _events.emit(
+                    ChatSessionUiEvent.ShowToggleNotificationSuccess(
+                        otherName,
+                        isNotificationsSilenced
+                    )
+                )
             }
             setActionLoading(false)
         }
@@ -323,25 +329,30 @@ class ProfileViewModel @Inject constructor(
     }
 
     suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
-        runCatching {
+        zibeCatching {
             chatRepository.deleteMessages(
                 chatRefs = chatRefs,
                 selectedIds = null,
                 deleteMessages = deleteMessages
             )
-        }.onSuccess { deleteResult ->
-            if (deleteMessages) {
+        }.onSuccessNotNull { deleteResult ->
+            if (deleteMessages)
                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-            } else {
+            else
                 _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
-            }
-        }.onFailure { e ->
-            _events.emit(
-                ChatSessionUiEvent.ShowErrorDialog(
-                    UiText.StringRes(R.string.err_zibe_prefix, listOf(e.message ?: ""))
+
+        }.onFailure { onFailure(it) }
+    }
+
+    suspend fun onFailure(e: Throwable) {
+        _events.emit(
+            ChatSessionUiEvent.ShowErrorDialog(
+                UiText.StringRes(
+                    R.string.err_zibe_prefix,
+                    listOf(e.message ?: "")
                 )
             )
-        }
+        )
     }
 
     fun setActionLoading(isActionLoading: Boolean) {
