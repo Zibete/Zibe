@@ -29,7 +29,12 @@ class ZibeExtendedColors(
     val accent: Color,
     val cardBackground: Color,
     val snackBackground: Color,
-    val snackAction: Color
+    val snackAction: Color,
+    val tagGroupMatchFg: Color,
+    val tagGroupMatchBg: Color,
+    val tagGroupMatchStroke: Color,
+    val statusOnline: Color,
+    val statusOffline: Color,
 ) {
     val gradientZibe: Brush = Brush.verticalGradient(
         colors = listOf(zibeGradientStart, zibeGradientMedium, zibeGradientEnd)
@@ -72,8 +77,12 @@ fun rememberZibeExtendedColors(): ZibeExtendedColors {
         cardBackground = colorResource(R.color.zibe_dark_bg),
 
         snackBackground = Color(0xFF1F1F2B),
-        snackAction = Color(0xFF6EA8FF)
+        snackAction = Color(0xFF6EA8FF),
+        tagGroupMatchFg = colorResource(id = R.color.tag_group_match_fg),
+        tagGroupMatchBg = colorResource(id = R.color.tag_group_match_bg),
+        tagGroupMatchStroke = colorResource(id = R.color.tag_group_match_stroke),
+
+        statusOnline = colorResource(id = R.color.status_online),
+        statusOffline = colorResource(id = R.color.status_offline),
     )
 }
-
-

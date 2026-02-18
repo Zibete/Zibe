@@ -85,6 +85,10 @@
     <color name="tag_silenced_bg">#1E1E24</color>
     <color name="tag_silenced_stroke">#66C9C9C9</color>
 
+    <color name="tag_group_match_fg">#3DDC97</color>
+    <color name="tag_group_match_bg">#14291F</color>
+    <color name="tag_group_match_stroke">#663DDC97</color>
+
     <color name="snack_background">#1F1F2B</color>
     <color name="snack_action">#6EA8FF</color>
 
@@ -147,4 +151,3 @@
 
 
 </resources>
-

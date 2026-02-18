@@ -301,6 +301,7 @@
     <string name="tag_favorite">Favorito</string>
     <string name="tag_has_blocked_me">Te bloqueó</string>
     <string name="tag_silent">Silenciado</string>
+    <string name="tag_group_match">Grupo</string>
 
     <!-- ============================= -->
     <!-- Onboarding -->
@@ -496,8 +497,8 @@
 
     <string name="escribe_un_mensaje">escribí tu mensaje</string>
     <string name="espere">espere</string>
-    <string name="favorite_added">%1$s agregado a tus favoritos</string>
-    <string name="favorite_removed">%1$s removido de tus favoritos</string>
+    <string name="favorite_added">%1$s ahora está en tus favoritos</string>
+    <string name="favorite_removed">%1$s ya no está en tus favoritos</string>
     <string name="empty_chat">Chat vacío</string>
     <string name="filter_title">Filtros de búsqueda</string>
     <string name="content_description_refresh">Actualizar</string>
