@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.components
 
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 
 data class UserStatusUi(
