@@ -29,6 +29,7 @@ import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
@@ -222,7 +223,7 @@ class ChatViewModel @Inject constructor(
     // Aplica notificaciones / bloqueo solo para chats 1 a 1
     private suspend fun applyChatStateForOneToOne() {
 
-        val state = profileRepositoryProvider.getMyChatState(otherUid)
+        val state = profileRepositoryProvider.getMyChatState(otherUid).getOrThrow()
         val notificationsEnabled = (state != CHAT_STATE_SILENT)
         val isBlocked = (state == CHAT_STATE_BLOCKED)
 
