@@ -103,8 +103,6 @@ class FavoritesViewModel @Inject constructor(
                 favIds += key
                 return@forEach
             }
-            val legacyId = child.getValue(String::class.java).orEmpty()
-            if (legacyId.isNotBlank()) favIds += legacyId
         }
 
 
