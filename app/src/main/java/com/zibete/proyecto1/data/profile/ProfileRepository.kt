@@ -28,6 +28,8 @@ import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.getOrDefault
+import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -57,7 +59,7 @@ data class BlockedUser(
 )
 
 interface ProfileRepositoryActions {
-    suspend fun toggleFavoriteUser(otherUid: String): Boolean
+    suspend fun toggleFavoriteUser(otherUid: String): ZibeResult<Boolean>
     suspend fun toggleNotificationsUser(
         otherUid: String,
         otherName: String,
@@ -72,11 +74,19 @@ interface ProfileRepositoryActions {
 }
 
 interface ProfileRepositoryProvider {
-    suspend fun isFavorite(otherUid: String): Boolean
-    suspend fun getMyChatState(otherUid: String): String
+    suspend fun isFavorite(otherUid: String): ZibeResult<Boolean>
+    suspend fun getMyChatState(otherUid: String): ZibeResult<String>
     suspend fun getOtherAccount(uid: String): ZibeResult<Users>
-    suspend fun getBlockStateWith(otherUid: String, nodeType: String = NODE_DM): BlockState
-    suspend fun getDmPhotoList(otherUid: String, nodeType: String = NODE_DM): List<String>
+    suspend fun getBlockStateWith(
+        otherUid: String,
+        nodeType: String = NODE_DM
+    ): ZibeResult<BlockState>
+
+    suspend fun getDmPhotoList(
+        otherUid: String,
+        nodeType: String = NODE_DM
+    ): ZibeResult<List<String>>
+
     suspend fun getBlockedUsers(nodeType: String = NODE_DM): List<BlockedUser>
     fun observeUserStatus(userId: String, node: String): Flow<UserStatus>
 }
@@ -141,23 +151,20 @@ class ProfileRepository @Inject constructor(
         getAccount(uid) ?: throw Exception(USER_NOT_FOUND_EXCEPTION)
     }
 
-    override suspend fun isFavorite(otherUid: String): Boolean =
+    override suspend fun isFavorite(otherUid: String): ZibeResult<Boolean> = zibeCatching {
         favoriteListRef()
             .child(otherUid)
             .get()
             .await()
             .exists()
+    }
 
-    override suspend fun toggleFavoriteUser(otherUid: String): Boolean {
+    override suspend fun toggleFavoriteUser(otherUid: String): ZibeResult<Boolean> = zibeCatching {
         val favoriteListRef = favoriteListRef().child(otherUid)
-        val isFavorite = isFavorite(otherUid)
-        if (isFavorite) {
-            favoriteListRef.removeValue().await()
-            return false
-        } else {
-            favoriteListRef.setValue(true).await()
-            return true
-        }
+        val isFavorite = isFavorite(otherUid).getOrThrow()
+        if (isFavorite) favoriteListRef.removeValue().await()
+        else favoriteListRef.setValue(true).await()
+        !isFavorite
     }
 
     override suspend fun toggleNotificationsUser(
@@ -190,17 +197,23 @@ class ProfileRepository @Inject constructor(
         return newState == CHAT_STATE_BLOCKED
     }
 
-    override suspend fun getBlockStateWith(otherUid: String, nodeType: String): BlockState {
+    override suspend fun getBlockStateWith(
+        otherUid: String,
+        nodeType: String
+    ): ZibeResult<BlockState> = zibeCatching {
         val meState = getChatState(ownerUid = myUid, otherUid = otherUid, nodeType = nodeType)
         val otherState = getChatState(ownerUid = otherUid, otherUid = myUid, nodeType = nodeType)
 
-        return BlockState(
+        BlockState(
             isBlockedByMe = meState == CHAT_STATE_BLOCKED,
             hasBlockedMe = otherState == CHAT_STATE_BLOCKED
         )
     }
 
-    override suspend fun getDmPhotoList(otherUid: String, nodeType: String): List<String> {
+    override suspend fun getDmPhotoList(
+        otherUid: String,
+        nodeType: String
+    ): ZibeResult<List<String>> = zibeCatching {
         val chatId = getChatId(myUid, otherUid)
         val refChat = firebaseRefsContainer.refChatsRoot
             .child(nodeType)
@@ -220,7 +233,7 @@ class ProfileRepository @Inject constructor(
         val snap = refChat.get().await()
         if (snap.exists()) collectFrom(snap)
 
-        return photos.distinct()
+        photos.distinct()
     }
 
     override suspend fun getBlockedUsers(nodeType: String): List<BlockedUser> {
@@ -240,8 +253,9 @@ class ProfileRepository @Inject constructor(
         }.sortedBy { it.name.lowercase() }
     }
 
-    override suspend fun getMyChatState(otherUid: String): String =
+    override suspend fun getMyChatState(otherUid: String): ZibeResult<String> = zibeCatching {
         getChatState(ownerUid = myUid, otherUid = otherUid)
+    }
 
     suspend fun getChatState(
         ownerUid: String,

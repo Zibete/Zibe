@@ -12,6 +12,9 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
+import com.zibete.proyecto1.core.utils.getOrDefault
+import com.zibete.proyecto1.core.utils.getOrThrow
+import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
@@ -163,7 +166,7 @@ class ChatListViewModel @Inject constructor(
     fun onConfirmToggleBlockAction(otherUid: String, otherName: String) {
         viewModelScope.launch {
             val isBlockedByMe =
-                profileRepositoryProvider.getMyChatState(otherUid) == CHAT_STATE_BLOCKED
+                profileRepositoryProvider.getMyChatState(otherUid).getOrThrow() == CHAT_STATE_BLOCKED
             _events.emit(
                 ChatSessionUiEvent.ConfirmToggleBlockAction(
                     name = otherName,
