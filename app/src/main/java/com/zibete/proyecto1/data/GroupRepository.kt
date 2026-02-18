@@ -53,7 +53,7 @@ interface GroupRepositoryProvider {
 
     suspend fun findUserGroup(userId: String, groupName: String): UserGroup?
 
-    suspend fun isGroupMatch(otherUid: String, groupName: String): Boolean
+    suspend fun isGroupMatch(otherUid: String, groupName: String): ZibeResult<Boolean>
 }
 
 @ApplicationScope
@@ -211,11 +211,11 @@ class GroupRepository @Inject constructor(
             .takeIf { it.exists() }
             ?.getValue(UserGroup::class.java)
 
-    override suspend fun isGroupMatch(otherUid: String, groupName: String): Boolean {
-        if (groupName.isBlank()) return false
-        val userGroup = findUserGroup(otherUid, groupName) ?: return false
-        return userGroup.type == PUBLIC_USER
-    }
+    override suspend fun isGroupMatch(otherUid: String, groupName: String): ZibeResult<Boolean> =
+        zibeCatching {
+            val userGroup = findUserGroup(otherUid, groupName)
+            userGroup != null && userGroup.type == PUBLIC_USER
+        }
 
     suspend fun getGroup(groupName: String): Groups? =
         groupMetaRef(groupName)

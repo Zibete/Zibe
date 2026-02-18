@@ -8,6 +8,8 @@ import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LONGITUDE
 import com.zibete.proyecto1.core.constants.UID_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
+import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
@@ -70,15 +72,14 @@ class LocationRepository @Inject constructor(
         return user.latitude to user.longitude
     }
 
-    suspend fun getDistanceToUser(otherUid: String): String {
-        val currentUid = myUid ?: return ""
-        val (myLat, myLng) = getLocation(currentUid)
+    suspend fun getDistanceToUser(otherUid: String): ZibeResult<String> = zibeCatching {
+        val (myLat, myLng) = getLocation(myUid)
         val (otherLat, otherLng) = getLocation(otherUid)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
-        return formatDistance(distance)
+        formatDistance(distance)
     }
 
-    fun getDistanceMeters(lat1: Double, lon1: Double,lat2: Double, lon2: Double): Double {
+    fun getDistanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadius = 6371.0 // km
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
@@ -96,11 +97,13 @@ class LocationRepository @Inject constructor(
                 val metros = distanceMeters.roundToInt()
                 "A $metros metros"
             }
+
             distanceMeters < 10000 -> {
                 val km = distanceMeters / 1000
                 val rounded = BigDecimal(km).setScale(1, RoundingMode.HALF_UP)
                 "A $rounded km"
             }
+
             else -> {
                 val km = distanceMeters / 1000
                 val rounded = BigDecimal(km).setScale(0, RoundingMode.HALF_UP)
