@@ -53,7 +53,7 @@ object ChatSessionUiHandler {
 
             is ChatSessionUiEvent.ShowChatHiddenSuccess -> {
                 snackBarManager.show(
-                    uiText = UiText.StringRes(R.string.chat_hidden_success),
+                    uiText = UiText.StringRes(R.string.chat_hidden_success, listOf(event.name)),
                     type = ZibeSnackType.SUCCESS
                 )
             }

@@ -89,7 +89,7 @@
     <string name="chat_confirm_hide_title">Ocultar chat</string>
     <string name="chat_confirm_hide_message">¿Ocultar chat con %1$s?</string>
 
-    <string name="chat_hidden_success">Se ha ocultado el chat</string>
+    <string name="chat_hidden_success">Se ha ocultado el chat con %1$s</string>
 
     <string name="chat_confirm_unblock_title">Desbloquear usuario</string>
     <string name="chat_confirm_unblock_message">¿Desbloquear a %1$s? Podrá volver a enviarte mensajes.</string>
