@@ -14,6 +14,7 @@ import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID

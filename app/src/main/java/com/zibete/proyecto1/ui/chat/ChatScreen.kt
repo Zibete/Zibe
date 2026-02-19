@@ -209,7 +209,8 @@ fun ChatScreen(
                     onBackClick = callbacks.onBackClick,
                     onProfileClick = callbacks.onProfileClick,
                     onToggleNotifications = callbacks.onToggleNotifications,
-                    onDeleteChat = callbacks.onDeleteChat,
+                    onDeleteChat = callbacks.onDeleteChoiceMode,
+                    onHideChat = callbacks.onConfirmHide,
                     onDeleteSelected = callbacks.onDeleteSelected,
                     onClearSelection = callbacks.onClearSelection
                 )
@@ -362,7 +363,8 @@ private fun previewCallbacks(): ChatCallbacks = ChatCallbacks(
     onProfileClick = {},
     onToggleNotifications = {},
     onToggleBlock = {},
-    onDeleteChat = {},
+    onDeleteChoiceMode = {},
+    onConfirmHide = {},
     onDeleteSelected = {},
     onClearSelection = {},
     onPhotoSourceClick = {},

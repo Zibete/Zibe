@@ -54,6 +54,7 @@ fun ChatTopBar(
     onProfileClick: () -> Unit,
     onToggleNotifications: () -> Unit,
     onDeleteChat: () -> Unit,
+    onHideChat: () -> Unit,
     onDeleteSelected: () -> Unit,
     onClearSelection: () -> Unit
 ) {
@@ -183,6 +184,13 @@ fun ChatTopBar(
                                     onDeleteChat()
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.menu_hide_chat)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onHideChat()
+                                }
+                            )
                         }
                     }
                 }
@@ -206,7 +214,8 @@ private fun ChatTopBarPreviewNormal() {
             onToggleNotifications = {},
             onDeleteChat = {},
             onDeleteSelected = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onHideChat = {}
         )
     }
 }
@@ -226,7 +235,8 @@ private fun ChatTopBarPreviewNotificationsOff() {
             onToggleNotifications = {},
             onDeleteChat = {},
             onDeleteSelected = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onHideChat = {}
         )
     }
 }
@@ -246,7 +256,8 @@ private fun ChatTopBarPreviewSelectionMode() {
             onToggleNotifications = {},
             onDeleteChat = {},
             onDeleteSelected = {},
-            onClearSelection = {}
+            onClearSelection = {},
+            onHideChat = {}
         )
     }
 }
