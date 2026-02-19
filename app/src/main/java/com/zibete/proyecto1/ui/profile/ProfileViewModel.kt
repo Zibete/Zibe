@@ -83,6 +83,13 @@ class ProfileViewModel @Inject constructor(
 
     fun refreshProfile() = loadProfile(isRefresh = true)
 
+    fun refreshProfileMeta() {
+        if (otherUid.isBlank()) return
+        if (_uiState.value.content !is ProfileContent.Ready) return
+        metaJob?.cancel()
+        metaJob = viewModelScope.launch { enrichProfileMeta() }
+    }
+
     fun loadProfile(isRefresh: Boolean = false) {
         loadJob?.cancel()
         metaJob?.cancel()
@@ -329,18 +336,16 @@ class ProfileViewModel @Inject constructor(
     }
 
     suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
-        zibeCatching {
-            chatRepository.deleteMessages(
-                chatRefs = chatRefs,
-                selectedIds = null,
-                deleteMessages = deleteMessages
-            )
-        }.onSuccessNotNull { deleteResult ->
+        chatRepository.deleteMessages(
+            chatRefs = chatRefs,
+            selectedIds = null,
+            deleteMessages = deleteMessages
+        ).onSuccess { deleteResult ->
+            val deleteResult = deleteResult ?: return@onSuccess
             if (deleteMessages)
                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
             else
                 _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
-
         }.onFailure { onFailure(it) }
     }
 

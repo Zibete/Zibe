@@ -101,6 +101,7 @@ fun ProfileRoute(
     LaunchedEffect(lifecycleOwner, isActive) {
         if (!isActive) return@LaunchedEffect
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            profileViewModel.refreshProfileMeta()
             profileViewModel.snackEvents.collectLatest { snackEvent ->
                 snackbarHostState.showZibeMessage(
                     message = snackEvent.uiText.asString(context),
