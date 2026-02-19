@@ -5,6 +5,7 @@ build/
 
 # === Local configs ===
 local.properties
+app/google-services.json
 
 # === IntelliJ / Android Studio ===
 .idea/
