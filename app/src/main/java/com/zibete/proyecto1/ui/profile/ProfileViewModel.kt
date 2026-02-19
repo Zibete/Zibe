@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
@@ -15,7 +16,6 @@ import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.onSuccessNotNull
-import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
@@ -185,7 +185,7 @@ class ProfileViewModel @Inject constructor(
                 .onFailure { onFailure(it) }
                 .getOrDefault(emptyList())
         }
-        val canDeleteChatDeferred = async(Dispatchers.IO) {
+        val hasConversationDeferred = async(Dispatchers.IO) {
             chatRepository.hasConversation(otherUid, NODE_DM)
                 .onFailure { onFailure(it) }
                 .getOrDefault(false)
@@ -196,7 +196,7 @@ class ProfileViewModel @Inject constructor(
         val distanceLabel = distanceDeferred.await()
         val isGroupMatch = groupMatchDeferred.await()
         val isFavorite = favoriteDeferred.await()
-        val canDeleteChat = canDeleteChatDeferred.await()
+        val hasConversation = hasConversationDeferred.await()
         val photoList = photosDeferred.await()
 
         _uiState.update {
@@ -306,27 +306,55 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onConfirmDeleteAction() {
+    fun onConfirmHide() {
         if (isActionLoading()) return
         val profile = _uiState.value.profile ?: return
+        val userName = profile.name
         viewModelScope.launch {
+            _events.emit(
+                ChatSessionUiEvent.ConfirmHideChat(
+                    name = userName,
+                    onConfirm = {
+                        setActionLoading(true)
+                        hideConversation(otherUid, userName, NODE_DM)
+                        setActionLoading(false)
+                    }
+                )
+            )
+        }
+    }
 
+    fun onDeleteChoiceMode() {
+        if (isActionLoading()) return
+        val profile = _uiState.value.profile ?: return
+        val userName = profile.name
+        viewModelScope.launch {
             val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
             val count = chatRepository.getMessageCount(chatRefs)
+            if (_uiState.value.isHide) onConfirmDelete(chatRefs, userName)
+            else
+                _events.emit(
+                    ChatSessionUiEvent.DeleteClickedChoiceMode(
+                        name = userName,
+                        countMessages = count,
+                        onConfirm = { shouldDeleteMessages ->
+                            if (shouldDeleteMessages) onConfirmDelete(chatRefs, userName)
+                            else onConfirmHide()
+                        }
+                    )
+                )
+        }
+    }
 
-            if (count == 0) {
-                _events.emit(ChatSessionUiEvent.ShowErrorDialog(UiText.StringRes(R.string.empty_chat)))
-                return@launch
-            }
-
+    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+        viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
-                    name = profile.name,
-                    countMessages = count,
-                    onConfirm = { shouldDeleteMessages ->
+                    name = userName,
+                    onConfirm = {
                         viewModelScope.launch {
                             setActionLoading(true)
-                            deleteMessages(chatRefs, shouldDeleteMessages, profile.name)
+                            deleteMessages(chatRefs)
                             setActionLoading(false)
                         }
                     }
@@ -335,21 +363,36 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
-        chatRepository.deleteMessages(
-            chatRefs = chatRefs,
-            selectedIds = null,
-            deleteMessages = deleteMessages
-        ).onSuccess { deleteResult ->
-            val deleteResult = deleteResult ?: return@onSuccess
-            if (deleteMessages)
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-            else
-                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
+    private suspend fun hideConversation(userId: String, userName: String, nodeType: String) {
+        profileRepositoryActions.updateChatState(
+            userId,
+            userName,
+            nodeType,
+            CHAT_STATE_HIDE
+        ).onSuccess {
+            _uiState.update { it.copy(isHide = true) }
+            _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
         }.onFailure { onFailure(it) }
     }
 
-    suspend fun onFailure(e: Throwable) {
+    private suspend fun deleteMessages(chatRefs: ChatRefs) {
+        chatRepository.deleteMessages(
+            chatRefs = chatRefs,
+            selectedIds = null
+        ).onSuccess { deleteResult ->
+            val deleteResult = deleteResult ?: return@onSuccess
+            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+        }.onFailure { onFailure(it) }
+    }
+
+    // ---------- UI ----------
+
+    private fun setActionLoading(isActionLoading: Boolean) =
+        _uiState.update { it.copy(isActionLoading = isActionLoading) }
+
+    private fun isActionLoading() = _uiState.value.isActionLoading
+
+    private suspend fun onFailure(e: Throwable) {
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
                 UiText.StringRes(
@@ -359,10 +402,4 @@ class ProfileViewModel @Inject constructor(
             )
         )
     }
-
-    fun setActionLoading(isActionLoading: Boolean) {
-        _uiState.update { it.copy(isActionLoading = isActionLoading) }
-    }
-
-    fun isActionLoading() = _uiState.value.isActionLoading
 }

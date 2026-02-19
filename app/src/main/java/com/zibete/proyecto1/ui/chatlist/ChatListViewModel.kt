@@ -120,6 +120,18 @@ class ChatListViewModel @Inject constructor(
     private fun computeVisibleChats(all: List<Conversation>): List<Conversation> =
         all.filter { chat -> chat.isVisible() }
 
+
+    private fun filterChats(chats: List<Conversation>, query: String): List<Conversation> {
+        if (query.isBlank()) return chats
+        val lower = query.trim().lowercase()
+
+        return chats.filter { chat ->
+            val name = chat.otherName.lowercase()
+            val id = chat.otherId.lowercase()
+            name.contains(lower) || id.contains(lower)
+        }
+    }
+
     // ---------- Acciones de menú ----------
 
     fun onMarkAsReadChatListClicked(userId: String, nodeType: String) {
@@ -146,14 +158,6 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    suspend fun toggleBlock(otherUid: String, otherName: String) {
-        runCatching {
-            profileRepositoryActions.toggleBlock(otherUid, otherName)
-        }.onSuccess { isBlockedByMe ->
-            _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))
-        }.onFailure { onFailure(it) }
-    }
-
     fun onConfirmToggleBlockAction(otherUid: String, otherName: String) {
         viewModelScope.launch {
             val isBlockedByMe =
@@ -169,39 +173,55 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun onHideClicked(userId: String, userName: String, nodeType: String) {
+    fun onConfirmHide(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmHideChat(
                     name = userName,
                     onConfirm = {
-                        userRepository.updateChatState(
-                            userId,
-                            userName,
-                            nodeType,
-                            CHAT_STATE_HIDE
-                        )
-                        _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
+                        setIsLoading(true)
+                        hideConversation(userId, userName, nodeType)
+                        setIsLoading(false)
                     }
                 )
             )
         }
     }
 
-    fun setIsLoading(isLoading: Boolean) = _uiState.update { it.copy(isLoading = isLoading) }
-
-    fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
+    fun onDeleteChoiceMode(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             val chatRefs = chatRepository.buildChatRefs(userId, nodeType)
             val count = chatRepository.getMessageCount(chatRefs)
             _events.emit(
-                ChatSessionUiEvent.ConfirmDeleteChat(
+                ChatSessionUiEvent.DeleteClickedChoiceMode(
                     name = userName,
                     countMessages = count,
                     onConfirm = { shouldDeleteMessages ->
+                        if (shouldDeleteMessages) onConfirmDelete(chatRefs, userName)
+                        else onConfirmHide(userId, userName, nodeType)
+                    }
+                )
+            )
+        }
+    }
+
+    private suspend fun toggleBlock(otherUid: String, otherName: String) {
+        runCatching {
+            profileRepositoryActions.toggleBlock(otherUid, otherName)
+        }.onSuccess { isBlockedByMe ->
+            _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))
+        }.onFailure { onFailure(it) }
+    }
+
+    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+        viewModelScope.launch {
+            _events.emit(
+                ChatSessionUiEvent.ConfirmDeleteChat(
+                    name = userName,
+                    onConfirm = {
                         viewModelScope.launch {
                             setIsLoading(true)
-                            deleteMessages(chatRefs, shouldDeleteMessages, userName)
+                            deleteMessages(chatRefs)
                             setIsLoading(false)
                         }
                     }
@@ -210,21 +230,33 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
-        chatRepository.deleteMessages(
-            chatRefs = chatRefs,
-            selectedIds = null,
-            deleteMessages = deleteMessages
-        ).onSuccess { deleteResult ->
-            val deleteResult = deleteResult ?: return@onSuccess
-            if (deleteMessages)
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-            else
-                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
+    private suspend fun hideConversation(userId: String, userName: String, nodeType: String) {
+        userRepository.updateChatState(
+            userId,
+            userName,
+            nodeType,
+            CHAT_STATE_HIDE
+        ).onSuccess {
+            _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
         }.onFailure { onFailure(it) }
     }
 
-    suspend fun onFailure(e: Throwable) {
+    private suspend fun deleteMessages(chatRefs: ChatRefs) {
+        chatRepository.deleteMessages(
+            chatRefs = chatRefs,
+            selectedIds = null
+        ).onSuccess { deleteResult ->
+            val deleteResult = deleteResult ?: return@onSuccess
+            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+        }.onFailure { onFailure(it) }
+    }
+
+    // ---------- UI ----------
+
+    private fun setIsLoading(isLoading: Boolean) =
+        _uiState.update { it.copy(isLoading = isLoading) }
+
+    private suspend fun onFailure(e: Throwable) {
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
                 UiText.StringRes(
@@ -233,16 +265,5 @@ class ChatListViewModel @Inject constructor(
                 )
             )
         )
-    }
-
-    private fun filterChats(chats: List<Conversation>, query: String): List<Conversation> {
-        if (query.isBlank()) return chats
-        val lower = query.trim().lowercase()
-
-        return chats.filter { chat ->
-            val name = chat.otherName.lowercase()
-            val id = chat.otherId.lowercase()
-            name.contains(lower) || id.contains(lower)
-        }
     }
 }

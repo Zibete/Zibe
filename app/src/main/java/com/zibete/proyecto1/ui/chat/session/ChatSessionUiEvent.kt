@@ -15,10 +15,15 @@ sealed class ChatSessionUiEvent {
     ) : ChatSessionUiEvent()
 
     // ------- DELETE -------
-    data class ConfirmDeleteChat(
+    data class DeleteClickedChoiceMode(
         val name: String,
         val countMessages: Int,
-        val onConfirm: (deleteMessages: Boolean) -> Unit
+        val onConfirm: (shouldDeleteMessages: Boolean) -> Unit
+    ) : ChatSessionUiEvent()
+
+    data class ConfirmDeleteChat(
+        val name: String,
+        val onConfirm: () -> Unit
     ) : ChatSessionUiEvent()
 
     data class ShowDeleteMessagesSuccess(

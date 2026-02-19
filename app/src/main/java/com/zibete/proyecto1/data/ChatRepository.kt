@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -9,12 +8,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.ChatChildEvent
-import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.model.ChatMessageItem
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
@@ -28,15 +21,17 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
-import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.core.utils.getOrDefault
-import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.zibete.proyecto1.model.ChatChildEvent
+import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.model.Conversation
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -248,22 +243,11 @@ class ChatRepository @Inject constructor(
 
     suspend fun deleteMessages(
         chatRefs: ChatRefs,
-        selectedIds: List<String>?,
-        deleteMessages: Boolean = true
+        selectedIds: List<String>?
     ): ZibeResult<DeleteResult> = zibeCatching {
 
-        // 0) Si es "ocultar chat" y no hay selección: solo ocultar conversación (no toca mensajes)
-        if (!deleteMessages && selectedIds == null) {
-            chatRefs.refMyConversation
-                .child(ConversationKeys.STATE)
-                .setValue(CHAT_STATE_HIDE)
-                .await()
-
-            DeleteResult(deletedCount = 0, chatRemoved = false)
-        }
-
         // 1) Borrado definitivo del chat completo (mensajes + conversaciones)
-        if (deleteMessages && selectedIds == null) {
+        if (selectedIds == null) {
             val snapshot = chatRefs.refChat.get().await()
             val deletedCount = snapshot.childrenCount.toInt()
 
@@ -275,43 +259,46 @@ class ChatRepository @Inject constructor(
             )
 
             root.updateChildren(updates).await()
-            DeleteResult(deletedCount = deletedCount, chatRemoved = true)
-        }
 
-        // 2) Determinar ids a procesar
-        val idsToProcess: List<String> = selectedIds ?: run {
-            val snap = chatRefs.refChat.get().await()
-            snap.children.mapNotNull { it.key }
-        }
-
-        // 3) Procesar cada mensaje por id
-        var processed = 0
-        for (id in idsToProcess) {
-            val msgSnap = chatRefs.refChat.child(id).get().await()
-            if (!msgSnap.exists()) continue
-
-            val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: continue
-            val senderUid =
-                msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java) ?: continue
-            val content =
-                msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java).orEmpty()
-
-            processSoftDeleteOrRemove(
-                msgRef = msgSnap.ref,
-                type = type,
-                senderUid = senderUid,
-                content = content
+            DeleteResult(
+                deletedCount = deletedCount,
+                chatRemoved = true
             )
-            processed++
+        } else {
+
+            // 2) Determinar ids a procesar
+            val idsToProcess: List<String> = selectedIds
+
+            // 3) Procesar cada mensaje por id
+            var processed = 0
+            for (id in idsToProcess) {
+                val msgSnap = chatRefs.refChat.child(id).get().await()
+                if (!msgSnap.exists()) continue
+
+                val type = msgSnap.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: continue
+                val senderUid =
+                    msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
+                        ?: continue
+                val content =
+                    msgSnap.child(ChatMessageKeys.CONTENT).getValue(String::class.java).orEmpty()
+
+                processSoftDeleteOrRemove(
+                    msgRef = msgSnap.ref,
+                    type = type,
+                    senderUid = senderUid,
+                    content = content
+                )
+                processed++
+            }
+
+            // 4) Si quedó vacío (o all eliminado para mí), borrar conversación
+            val chatRemoved = removeConversationIfEmpty(chatRefs)
+
+            DeleteResult(
+                deletedCount = processed,
+                chatRemoved = chatRemoved
+            )
         }
-
-        // 4) Si quedó vacío (o all eliminado para mí), borrar conversación
-        val chatRemoved = removeConversationIfEmpty(chatRefs)
-
-        DeleteResult(
-            deletedCount = processed,
-            chatRemoved = chatRemoved
-        )
     }
 
     private suspend fun processSoftDeleteOrRemove(
