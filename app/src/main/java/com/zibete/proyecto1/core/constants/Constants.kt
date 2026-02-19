@@ -3,8 +3,7 @@ package com.zibete.proyecto1.core.constants
 object Constants {
 
     const val APP_NAME = "Zibe"
-    const val DEFAULT_PROFILE_PHOTO_URL =
-        "https://firebasestorage.googleapis.com/v0/b/zproyecto1.appspot.com/o/Users%2FimgPerfil%2Fuser%403x.png?alt=media&token=7a04b75f-abea-4670-928f-bc897524e8e8"
+    const val DEFAULT_PROFILE_PHOTO_PATH = "Users/imgPerfil/user@3x.png"
 
 
     // ==============================

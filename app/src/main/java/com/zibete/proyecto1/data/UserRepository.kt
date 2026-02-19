@@ -15,7 +15,7 @@ import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_PATH
 import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
@@ -28,6 +28,7 @@ import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -58,6 +59,7 @@ interface UserRepositoryProvider {
     suspend fun getMyAccount(): ZibeResult<Users>
     suspend fun accountExists(uid: String): Boolean
     suspend fun hasBirthDate(uid: String): Boolean
+    suspend fun getDefaultProfilePhotoUrl(): ZibeResult<String>
     suspend fun getProfilePhotoUrl(): String?
     suspend fun getAccount(uid: String): Users?
 }
@@ -68,7 +70,7 @@ interface UserRepositoryActions {
         name: String,
         birthDate: String,
         description: String
-    )
+    ): ZibeResult<Unit>
 
     suspend fun setUserLastSeen()
     suspend fun setUserActivityStatus(status: String)
@@ -165,12 +167,18 @@ class UserRepository @Inject constructor(
     // Refs helpers (STORAGE)
     // ============================================================
 
+    private fun defaultProfilePhotoRef() =
+        firebaseRefsContainer.storageReference.child(DEFAULT_PROFILE_PHOTO_PATH)
+
     fun getProfilePhotoStoragePath(
         fileName: String = PROFILE_PHOTO
     ) = firebaseRefsContainer.storageUsersRef
         .child(myUid)
         .child(PATH_PROFILE_PHOTOS)
         .child(fileName)
+
+    override suspend fun getDefaultProfilePhotoUrl(): ZibeResult<String> =
+        zibeCatching { defaultProfilePhotoRef().downloadUrl.await().toString() }
 
     override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
         zibeCatching { getProfilePhotoStoragePath().putFile(localUri).await() }
@@ -245,13 +253,14 @@ class UserRepository @Inject constructor(
         name: String,
         birthDate: String,
         description: String
-    ) {
+    ): ZibeResult<Unit> = zibeCatching {
         val id = firebaseUser.uid
         val userName = name
         val createdAt = now()
         val age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate)
         val email: String = firebaseUser.email ?: ""
-        val photoUrl: String = firebaseUser.photoUrl?.toString() ?: DEFAULT_PROFILE_PHOTO_URL
+        val photoUrl: String = firebaseUser.photoUrl?.toString()
+            ?: getDefaultProfilePhotoUrl().getOrThrow()
 
         val newUser = Users(
             id = id,
@@ -379,12 +388,12 @@ class UserRepository @Inject constructor(
         chatRef.child(ConversationKeys.STATE).setValue(newState).await()
     }
 
-    private fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
+    private suspend fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
         Conversation(
             userId = myUid,
             otherId = otherUid,
             otherName = otherName,
-            otherPhotoUrl = DEFAULT_PROFILE_PHOTO_URL,
+            otherPhotoUrl = getDefaultProfilePhotoUrl().getOrThrow(),
             state = state
         )
 

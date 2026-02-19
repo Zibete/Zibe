@@ -14,7 +14,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_DEFAULT_DM
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
+import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_PATH
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
@@ -130,6 +130,9 @@ class ProfileRepository @Inject constructor(
         nodeType: String,
         otherUid: String
     ) = conversationsRootRef(ownerUid, nodeType).child(otherUid)
+
+    private fun defaultProfilePhotoRef() =
+        firebaseRefsContainer.storageReference.child(DEFAULT_PROFILE_PHOTO_PATH)
 
     private fun statusRef(uid: String = myUid) =
         firebaseRefsContainer.refData.child(uid)
@@ -292,12 +295,12 @@ class ProfileRepository @Inject constructor(
         chatRef.child(ConversationKeys.STATE).setValue(newState).await()
     }
 
-    private fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
+    private suspend fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
         Conversation(
             userId = myUid,
             otherId = otherUid,
             otherName = otherName,
-            otherPhotoUrl = DEFAULT_PROFILE_PHOTO_URL,
+            otherPhotoUrl = defaultProfilePhotoRef().downloadUrl.await().toString(),
             state = state
         )
 
