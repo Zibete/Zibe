@@ -69,6 +69,13 @@ interface ProfileRepositoryActions {
         otherName: String,
         nodeType: String = NODE_DM
     ): Boolean
+
+    suspend fun updateChatState(
+        otherUid: String,
+        otherName: String,
+        nodeType: String,
+        newState: String
+    ): ZibeResult<Unit>
 }
 
 interface ProfileRepositoryProvider {
@@ -267,7 +274,7 @@ class ProfileRepository @Inject constructor(
             .getValue(String::class.java)
             .orEmpty()
 
-    private suspend fun updateChatState(
+    override suspend fun updateChatState(
         otherUid: String,
         otherName: String,
         nodeType: String,

@@ -366,7 +366,7 @@ class UserRepository @Inject constructor(
         otherName: String,
         nodeType: String,
         newState: String
-    ) : ZibeResult<Unit> = zibeCatching {
+    ): ZibeResult<Unit> = zibeCatching {
         val chatRef = conversationRef(nodeType = nodeType, otherUid = otherUid)
         val snapshot = chatRef.get().await()
 

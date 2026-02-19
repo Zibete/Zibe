@@ -21,12 +21,10 @@ data class Conversation(
         return other.lastMessageAt.compareTo(this.lastMessageAt)
     }
 
-    fun isEmptyThread(): Boolean = lastMessageAt == 0L && lastContent.isBlank()
-
     fun isVisible(): Boolean {
         if (state == Constants.CHAT_STATE_BLOCKED) return false
         if (state == Constants.CHAT_STATE_HIDE) return false
-        if (isEmptyThread()) return false
+        if (lastMessageAt == 0L && lastContent.isBlank()) return false
         return state == NODE_DM || state == CHAT_STATE_SILENT
     }
 }
