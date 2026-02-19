@@ -137,7 +137,8 @@ fun ProfileRoute(
         onToggleFavorite = profileViewModel::onToggleFavorite,
         onToggleNotifications = { profileViewModel.onToggleNotifications() },
         onConfirmBlockAction = { profileViewModel.onConfirmBlockAction() },
-        onConfirmDeleteAction = { profileViewModel.onConfirmDeleteAction() }
+        onDeleteChoiceMode = { profileViewModel.onDeleteChoiceMode() },
+        onConfirmHide = { profileViewModel.onConfirmHide() }
     )
 }
 
@@ -158,7 +159,8 @@ fun ProfileScreen(
     onOpenPhoto: (String) -> Unit,
     onToggleNotifications: () -> Unit,
     onConfirmBlockAction: () -> Unit,
-    onConfirmDeleteAction: () -> Unit,
+    onDeleteChoiceMode: () -> Unit,
+    onConfirmHide: () -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
     val zibeTypography = LocalZibeTypography.current
@@ -199,11 +201,19 @@ fun ProfileScreen(
                 onClick = onConfirmBlockAction
             )
         )
-        if (state.canDeleteChat) {
+        if (state.hasConversation && !state.isHide) {
+            add(
+                ZibeMenuItem(
+                    label = stringResource(R.string.menu_hide_chat),
+                    onClick = onConfirmHide
+                )
+            )
+        }
+        if (state.hasConversation) {
             add(
                 ZibeMenuItem(
                     label = stringResource(R.string.menu_delete_chat),
-                    onClick = onConfirmDeleteAction
+                    onClick = onDeleteChoiceMode
                 )
             )
         }
@@ -416,7 +426,8 @@ fun ProfileScreenPreview() {
             onOpenPhoto = {},
             onToggleNotifications = {},
             onConfirmBlockAction = {},
-            onConfirmDeleteAction = {}
+            onDeleteChoiceMode = {},
+            onConfirmHide = {}
         )
     }
 }

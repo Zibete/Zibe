@@ -19,9 +19,10 @@ data class ProfileUiState(
     val isGroupMatch: Boolean = false,
     val isFavorite: Boolean = false,
     val isBlockedByMe: Boolean = false,
-    val isNotificationsSilenced: Boolean = false,
     val hasBlockedMe: Boolean = false,
-    val canDeleteChat: Boolean = false
+    val isNotificationsSilenced: Boolean = false,
+    val isHide: Boolean = false,
+    val hasConversation: Boolean = false
 ) {
     val canOpenChat: Boolean
         get() =

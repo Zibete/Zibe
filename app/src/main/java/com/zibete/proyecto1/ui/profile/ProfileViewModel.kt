@@ -207,7 +207,8 @@ class ProfileViewModel @Inject constructor(
                 isBlockedByMe = blockState.isBlockedByMe,
                 hasBlockedMe = blockState.hasBlockedMe,
                 isNotificationsSilenced = chatState == CHAT_STATE_SILENT,
-                canDeleteChat = canDeleteChat
+                isHide = chatState == CHAT_STATE_HIDE,
+                hasConversation = hasConversation
             )
         }
         _photoList.value = photoList
@@ -226,7 +227,8 @@ class ProfileViewModel @Inject constructor(
                 isBlockedByMe = false,
                 isNotificationsSilenced = false,
                 hasBlockedMe = false,
-                canDeleteChat = false
+                isHide = false,
+                hasConversation = false
             )
         }
     }
