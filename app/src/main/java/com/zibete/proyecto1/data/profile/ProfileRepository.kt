@@ -26,9 +26,7 @@ import com.zibete.proyecto1.core.constants.Constants.StatusKeys
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
-import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.core.utils.getOrDefault
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
@@ -274,36 +272,27 @@ class ProfileRepository @Inject constructor(
         otherName: String,
         nodeType: String,
         newState: String
-    ) {
+    ): ZibeResult<Unit> = zibeCatching {
         val chatRef = conversationRef(nodeType = nodeType, otherUid = otherUid)
         val snapshot = chatRef.get().await()
 
         if (!snapshot.exists()) {
             val newConversation = createDefaultConversation(otherUid, otherName, newState)
             chatRef.setValue(newConversation).await()
-            return
+            return@zibeCatching
         }
 
         chatRef.child(ConversationKeys.STATE).setValue(newState).await()
     }
 
-    private fun createDefaultConversation(
-        otherUid: String,
-        otherName: String,
-        state: String
-    ): Conversation {
-        return Conversation(
-            lastContent = "Chat vacío",
-            lastMessageAt = now(),
+    private fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
+        Conversation(
             userId = myUid,
             otherId = otherUid,
             otherName = otherName,
             otherPhotoUrl = DEFAULT_PROFILE_PHOTO_URL,
-            state = state,
-            unreadCount = 0,
-            seen = 1
+            state = state
         )
-    }
 
     private fun DataSnapshot.toUserStatus(
         lastSeenFormatter: (Long) -> String
