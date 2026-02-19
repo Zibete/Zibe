@@ -698,8 +698,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             chatRepository.deleteMessages(
                 chatRefs = requireChatRefs(),
-                selectedIds = selectedIds,
-                deleteMessages = true
+                selectedIds = selectedIds
             ).onSuccess { deleteResult ->
                 val deleteResult = deleteResult ?: return@onSuccess
                 _chatState.update { it.copy(selectedIds = emptySet()) }
@@ -710,16 +709,66 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onDeleteChatClicked() {
+    fun onConfirmHide() {
+        if (isActionLoading()) return
+        val userName = currentOtherName()
         viewModelScope.launch {
-            val count = chatRepository.getMessageCount(requireChatRefs())
+            if (_chatState.value.messages.isEmpty())
+                _events.emit(
+                    ChatSessionUiEvent.ShowErrorDialog(
+                        UiText.StringRes(R.string.msg_no_messages_to_hide)
+                    )
+                )
+            else
+                _events.emit(
+                    ChatSessionUiEvent.ConfirmHideChat(
+                        name = userName,
+                        onConfirm = {
+                            setActionLoading(true)
+                            hideConversation(otherUid, userName, NODE_DM)
+                            setActionLoading(false)
+                        }
+                    )
+                )
+        }
+    }
+
+    fun onDeleteChoiceMode() {
+        if (isActionLoading()) return
+        val userName = currentOtherName()
+        viewModelScope.launch {
+            val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
+            val count = chatRepository.getMessageCount(chatRefs)
+            if (_chatState.value.messages.isEmpty())
+                _events.emit(
+                    ChatSessionUiEvent.ShowErrorDialog(
+                        UiText.StringRes(R.string.msg_no_messages_to_delete)
+                    )
+                )
+            else
+                _events.emit(
+                    ChatSessionUiEvent.DeleteClickedChoiceMode(
+                        name = userName,
+                        countMessages = count,
+                        onConfirm = { shouldDeleteMessages ->
+                            if (shouldDeleteMessages) onConfirmDelete(chatRefs, userName)
+                            else onConfirmHide()
+                        }
+                    )
+                )
+        }
+    }
+
+    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+        viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
-                    name = currentOtherName(),
-                    countMessages = count,
-                    onConfirm = { shouldDeleteMessages ->
+                    name = userName,
+                    onConfirm = {
                         viewModelScope.launch {
-                            deleteMessages(shouldDeleteMessages)
+                            setActionLoading(true)
+                            deleteMessages(chatRefs)
+                            setActionLoading(false)
                         }
                     }
                 )
@@ -727,17 +776,24 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    suspend fun deleteMessages(deleteMessages: Boolean) {
+    private suspend fun hideConversation(userId: String, userName: String, nodeType: String) {
+        userRepository.updateChatState(
+            userId,
+            userName,
+            nodeType,
+            CHAT_STATE_HIDE
+        ).onSuccess {
+            _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
+        }.onFailure { onFailure(it) }
+    }
+
+    private suspend fun deleteMessages(chatRefs: ChatRefs) {
         chatRepository.deleteMessages(
-            chatRefs = requireChatRefs(),
-            selectedIds = null,
-            deleteMessages = deleteMessages
+            chatRefs = chatRefs,
+            selectedIds = null
         ).onSuccess { deleteResult ->
             val deleteResult = deleteResult ?: return@onSuccess
-            if (deleteMessages)
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-            else
-                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(otherIdentity.userName))
+            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
         }.onFailure { onFailure(it) }
     }
 
