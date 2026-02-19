@@ -454,9 +454,6 @@
     <!-- Legacy -->
     <!-- ============================= -->
 
-    <string name="facebook_app_id">fb971156603326191</string>
-    <string name="fb_login_protocol_scheme">fbfb971156603326191</string>
-    <string name="facebook_client_token">52746d92bbf5fc8ac964d3e72ac07795</string>
 
     <string name="channel_name">APP Zibe</string>
 

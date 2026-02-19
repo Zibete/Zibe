@@ -1,11 +1,14 @@
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
+val facebookAppId = localProperties.getProperty("FACEBOOK_APP_ID")?.trim().orEmpty()
+val facebookClientToken = localProperties.getProperty("FACEBOOK_CLIENT_TOKEN")?.trim().orEmpty()
+val fbLoginProtocolScheme = "fb$facebookAppId"
 
 plugins {
     id("com.android.application")
@@ -36,6 +39,9 @@ android {
             ?: "").trim()
 
         buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
+        resValue("string", "facebook_app_id", facebookAppId)
+        resValue("string", "facebook_client_token", facebookClientToken)
+        resValue("string", "fb_login_protocol_scheme", fbLoginProtocolScheme)
     }
 
     testOptions {
@@ -72,6 +78,18 @@ android {
             "CoroutineCreationDuringComposition",
             "StateFlowValueCalledInComposition"
         )
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val hasReleaseTask = allTasks.any { it.name.contains("release", ignoreCase = true) }
+    if (!hasReleaseTask) return@whenReady
+
+    if (facebookAppId.isBlank() || facebookAppId.equals("CHANGE_ME", ignoreCase = true)) {
+        throw GradleException("FACEBOOK_APP_ID must be set for release builds.")
+    }
+    if (facebookClientToken.isBlank() || facebookClientToken.equals("CHANGE_ME", ignoreCase = true)) {
+        throw GradleException("FACEBOOK_CLIENT_TOKEN must be set for release builds.")
     }
 }
 
