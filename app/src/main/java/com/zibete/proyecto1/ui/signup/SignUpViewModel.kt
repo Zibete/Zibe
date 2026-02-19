@@ -3,7 +3,6 @@ package com.zibete.proyecto1.ui.signup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.SIGNUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
@@ -12,11 +11,13 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
+import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -34,6 +35,7 @@ class SignUpViewModel @Inject constructor(
     private val authSessionActions: AuthSessionActions,
     private val sessionBootstrapper: SessionBootstrapper,
     private val updateProfileUseCase: UpdateProfileUseCase,
+    private val userRepositoryProvider: UserRepositoryProvider,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
     private val config: SettingsConfig,
@@ -165,9 +167,20 @@ class SignUpViewModel @Inject constructor(
             }
 
             // 4. Guardar Perfil de Auth
+            val defaultPhotoUrl = userRepositoryProvider.getDefaultProfilePhotoUrl()
+                .onFailure { e ->
+                    handleRegisterError(e)
+                    return@launch
+                }.getOrThrow()
+
+            if (defaultPhotoUrl.isBlank()) {
+                handleRegisterError(IllegalStateException(SIGNUP_ERR_EXCEPTION))
+                return@launch
+            }
+
             authSessionActions.updateAuthProfile(
                 userName = name,
-                photoUrl = DEFAULT_PROFILE_PHOTO_URL
+                photoUrl = defaultPhotoUrl
             ).onFailure { e ->
                 handleRegisterError(e)
                 return@launch

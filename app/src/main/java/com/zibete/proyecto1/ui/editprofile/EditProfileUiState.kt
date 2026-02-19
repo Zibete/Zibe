@@ -19,6 +19,7 @@ data class EditProfileUiState(
     val originalDescription: String = "",
     val originalBirthDate: String = "",
     val originalPhotoUrl: String? = null,
+    val defaultPhotoUrl: String? = null,
 
     val photoUrl: String? = null,      // foto actual (remota)
     val photoPreviewUri: Uri? = null,  // foto seleccionada local (sin subir todavía)

@@ -4,11 +4,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
 import com.zibete.proyecto1.core.utils.TimeUtils.isAdult
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
@@ -54,6 +54,19 @@ class EditProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
+            val defaultPhotoUrl = when (val result = userRepositoryProvider.getDefaultProfilePhotoUrl()) {
+                is ZibeResult.Success -> result.data
+                is ZibeResult.Failure -> {
+                    showSnack(
+                        result.exception.message.toUiText(
+                            R.string.err_zibe_prefix,
+                            R.string.err_zibe
+                        )
+                    )
+                    null
+                }
+            }
+
             userRepositoryProvider.getMyAccount()
                 .onFailure { e ->
                     showSnack(
@@ -80,6 +93,7 @@ class EditProfileViewModel @Inject constructor(
                             description = u.description,
                             birthDate = birthDate,
                             age = birthDate.takeIf { it.isNotBlank() }?.let { ageCalculator(it) },
+                            defaultPhotoUrl = defaultPhotoUrl,
                             photoUrl = u.photoUrl,
                             photoPreviewUri = null,
                             deletePhoto = false,
@@ -199,9 +213,9 @@ class EditProfileViewModel @Inject constructor(
     fun resolveProfilePhotoToLoad(): Any? =
         when {
             _uiState.value.photoPreviewUri != null -> _uiState.value.photoPreviewUri
-            _uiState.value.deletePhoto -> DEFAULT_PROFILE_PHOTO_URL
+            _uiState.value.deletePhoto -> _uiState.value.defaultPhotoUrl
             !_uiState.value.photoUrl.isNullOrBlank() -> _uiState.value.photoUrl
-            else -> DEFAULT_PROFILE_PHOTO_URL
+            else -> _uiState.value.defaultPhotoUrl
         }
 
     fun onWelcomeSheetDismissed() {

@@ -2,7 +2,6 @@ package com.zibete.proyecto1.domain.profile
 
 import android.net.Uri
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
@@ -44,7 +43,7 @@ class DefaultUpdateProfileUseCase @Inject constructor(
             val finalPhotoUrl = when {
                 shouldDeletePhoto -> {
                     userRepositoryActions.deleteProfilePhoto()
-                    DEFAULT_PROFILE_PHOTO_URL
+                    userRepositoryProvider.getDefaultProfilePhotoUrl().getOrThrow()
                 }
 
                 photoPreviewUri != null -> {

@@ -2,6 +2,7 @@ package com.zibete.proyecto1.domain.session
 
 import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -77,7 +78,12 @@ class DefaultSessionBootstrapper @Inject constructor(
         if (!accountExists) {
             authSessionProvider.currentUser?.let { user: FirebaseUser ->
                 val resolvedName = name.ifBlank { user.displayName.orEmpty() }
-                userRepositoryActions.createUserNode(user, resolvedName, birthDate, description)
+                userRepositoryActions.createUserNode(
+                    user,
+                    resolvedName,
+                    birthDate,
+                    description
+                ).getOrThrow()
             }
             userPreferencesActions.setFirstLoginDone(false)
             return

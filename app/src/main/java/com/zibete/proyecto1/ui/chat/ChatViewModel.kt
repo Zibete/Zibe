@@ -16,7 +16,6 @@ import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
@@ -30,6 +29,7 @@ import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.now
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
@@ -270,6 +270,14 @@ class ChatViewModel @Inject constructor(
 
         val otherFcmToken = sessionRepositoryProvider.getFcmToken(profile.id) ?: return
 
+        val defaultPhotoUrl = when (val result = userRepositoryProvider.getDefaultProfilePhotoUrl()) {
+            is ZibeResult.Success -> result.data.orEmpty()
+            is ZibeResult.Failure -> {
+                onFailure(result.exception)
+                ""
+            }
+        }
+
         val myUserGroup = groupRepositoryProvider.findUserGroup(myUid, groupName)
 
         val otherUserGroup = groupRepositoryProvider.findUserGroup(otherUid, groupName)
@@ -278,7 +286,7 @@ class ChatViewModel @Inject constructor(
             ChatIdentity(
                 userName = myUserGroup.userName,
                 userType = ANONYMOUS_USER,
-                userPhotoUrl = DEFAULT_PROFILE_PHOTO_URL
+                userPhotoUrl = defaultPhotoUrl
             )
         } else {
             ChatIdentity(
@@ -291,7 +299,7 @@ class ChatViewModel @Inject constructor(
             ChatIdentity(
                 userName = otherUserGroup.userName,
                 userType = ANONYMOUS_USER,
-                userPhotoUrl = DEFAULT_PROFILE_PHOTO_URL
+                userPhotoUrl = defaultPhotoUrl
             )
         } else {
             ChatIdentity(
