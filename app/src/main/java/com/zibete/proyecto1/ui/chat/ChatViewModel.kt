@@ -775,4 +775,9 @@ class ChatViewModel @Inject constructor(
             userRepository.clearActiveThread()
         }
     }
+
+    private fun setActionLoading(isActionLoading: Boolean) =
+        _chatState.update { it.copy(isActionLoading = isActionLoading) }
+
+    private fun isActionLoading() = _chatState.value.isActionLoading
 }

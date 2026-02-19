@@ -4,6 +4,7 @@ import android.net.Uri
 import com.zibete.proyecto1.model.ChatMessageItem
 
 data class ChatState(
+    val isActionLoading: Boolean = false,
     val showPhotoPicker: Boolean = false,
     val photoReady: Boolean = false,
     val textReady: Boolean = false,
