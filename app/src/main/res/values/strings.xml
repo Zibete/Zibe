@@ -86,8 +86,8 @@
 
     <string name="chat_block_success">Se ha bloqueado a %1$s</string>
 
-    <string name="chat_confirm_hide_title">Ocultar chat</string>
-    <string name="chat_confirm_hide_message">¿Ocultar chat con %1$s?</string>
+    <string name="chat_confirm_hide_title">Ocultar chat con %1$s</string>
+    <string name="chat_confirm_hide_message">No te preocupes, podés traerlo de vuelta cuando quieras desde el menú de chats 😊.</string>
 
     <string name="chat_hidden_success">Se ha ocultado el chat con %1$s</string>
 
@@ -97,6 +97,8 @@
     <string name="chat_unblock_success">Se ha desbloqueado a %1$s</string>
 
     <string name="msg_no_blocked_users">No hay usuarios bloqueados</string>
+    <string name="msg_no_messages_to_hide">No hay mensajes para ocultar 😕</string>
+    <string name="msg_no_messages_to_delete">No hay mensajes para eliminar 😕</string>
     <string name="msg_no_hidden_chats">No hay chats ocultos</string>
     <string name="chat_unhide_success">Chat con %1$s visible</string>
 

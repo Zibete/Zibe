@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
-import android.graphics.Color
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -32,8 +31,8 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
+import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,7 +92,8 @@ class ChatActivity : BaseChatSessionActivity() {
                     onProfileClick = { openProfile() },
                     onToggleNotifications = chatViewModel::onToggleNotificationsClicked,
                     onToggleBlock = chatViewModel::onToggleBlockClicked,
-                    onDeleteChat = chatViewModel::onDeleteChatClicked,
+                    onDeleteChoiceMode = chatViewModel::onDeleteChoiceMode,
+                    onConfirmHide = chatViewModel::onConfirmHide,
                     onDeleteSelected = chatViewModel::onDeleteSelectedMessages,
                     onClearSelection = chatViewModel::clearSelection,
                     onPhotoSourceClick = chatViewModel::onSendPhotoClicked,
@@ -446,7 +446,10 @@ class ChatActivity : BaseChatSessionActivity() {
         onDenied: () -> Unit
     ) {
         val missing = permissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                this,
+                it
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
         }
 
         if (missing.isEmpty()) {

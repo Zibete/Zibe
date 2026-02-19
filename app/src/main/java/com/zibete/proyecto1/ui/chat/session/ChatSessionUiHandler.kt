@@ -45,8 +45,8 @@ object ChatSessionUiHandler {
             is ChatSessionUiEvent.ConfirmHideChat -> {
                 UserMessageUtils.confirm(
                     context = context,
-                    title = context.getString(R.string.chat_confirm_hide_title),
-                    message = context.getString(R.string.chat_confirm_hide_message, event.name),
+                    title = context.getString(R.string.chat_confirm_hide_title, event.name),
+                    message = context.getString(R.string.chat_confirm_hide_message),
                     onConfirm = { scope.launch { event.onConfirm() } }
                 )
             }
@@ -58,8 +58,8 @@ object ChatSessionUiHandler {
                 )
             }
 
-            is ChatSessionUiEvent.ConfirmDeleteChat -> {
-                var deleteMessages = false
+            is ChatSessionUiEvent.DeleteClickedChoiceMode -> {
+                var shouldDeleteMessages = false
 
                 val choices = arrayOf(
                     context.getString(R.string.chat_choice_hide_chat),
@@ -73,11 +73,19 @@ object ChatSessionUiHandler {
                 UserMessageUtils.confirm(
                     context = context,
                     title = context.getString(R.string.chat_confirm_delete_title),
-                    message = context.getString(R.string.chat_confirm_delete_message, event.name),
                     choices = choices,
                     selectedIndex = 0,
-                    onChoiceSelected = { index -> deleteMessages = (index == 1) },
-                    onConfirm = { scope.launch { event.onConfirm(deleteMessages) } }
+                    onChoiceSelected = { index -> shouldDeleteMessages = (index == 1) },
+                    onConfirm = { scope.launch { event.onConfirm(shouldDeleteMessages) } }
+                )
+            }
+
+            is ChatSessionUiEvent.ConfirmDeleteChat -> {
+                UserMessageUtils.confirm(
+                    context = context,
+                    title = context.getString(R.string.chat_confirm_delete_title),
+                    message = context.getString(R.string.chat_confirm_delete_message, event.name),
+                    onConfirm = { scope.launch { event.onConfirm() } }
                 )
             }
 
