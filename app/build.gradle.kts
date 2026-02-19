@@ -8,7 +8,7 @@ if (localPropertiesFile.exists()) {
 }
 val facebookAppId = localProperties.getProperty("FACEBOOK_APP_ID")?.trim().orEmpty()
 val facebookClientToken = localProperties.getProperty("FACEBOOK_CLIENT_TOKEN")?.trim().orEmpty()
-val fbLoginProtocolScheme = "fb$facebookAppId"
+val fbLoginProtocolScheme = "fb${facebookAppId.lowercase()}"
 
 plugins {
     id("com.android.application")
