@@ -250,7 +250,7 @@ class ChatRepository @Inject constructor(
         chatRefs: ChatRefs,
         selectedIds: List<String>?,
         deleteMessages: Boolean = true
-    ): DeleteResult {
+    ): ZibeResult<DeleteResult> = zibeCatching {
 
         // 0) Si es "ocultar chat" y no hay selección: solo ocultar conversación (no toca mensajes)
         if (!deleteMessages && selectedIds == null) {
@@ -259,7 +259,7 @@ class ChatRepository @Inject constructor(
                 .setValue(CHAT_STATE_HIDE)
                 .await()
 
-            return DeleteResult(deletedCount = 0, chatRemoved = false)
+            DeleteResult(deletedCount = 0, chatRemoved = false)
         }
 
         // 1) Borrado definitivo del chat completo (mensajes + conversaciones)
@@ -275,7 +275,7 @@ class ChatRepository @Inject constructor(
             )
 
             root.updateChildren(updates).await()
-            return DeleteResult(deletedCount = deletedCount, chatRemoved = true)
+            DeleteResult(deletedCount = deletedCount, chatRemoved = true)
         }
 
         // 2) Determinar ids a procesar
@@ -308,7 +308,7 @@ class ChatRepository @Inject constructor(
         // 4) Si quedó vacío (o all eliminado para mí), borrar conversación
         val chatRemoved = removeConversationIfEmpty(chatRefs)
 
-        return DeleteResult(
+        DeleteResult(
             deletedCount = processed,
             chatRemoved = chatRemoved
         )

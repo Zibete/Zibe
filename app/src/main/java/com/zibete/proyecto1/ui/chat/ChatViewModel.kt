@@ -30,6 +30,8 @@ import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.getOrThrow
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepository
@@ -694,27 +696,17 @@ class ChatViewModel @Inject constructor(
         if (selectedIds.isEmpty()) return
 
         viewModelScope.launch {
-            try {
-                val result = chatRepository.deleteMessages(
-                    chatRefs = requireChatRefs(),
-                    selectedIds = selectedIds,
-                    deleteMessages = true
-                )
-
+            chatRepository.deleteMessages(
+                chatRefs = requireChatRefs(),
+                selectedIds = selectedIds,
+                deleteMessages = true
+            ).onSuccess { deleteResult ->
+                val deleteResult = deleteResult ?: return@onSuccess
                 _chatState.update { it.copy(selectedIds = emptySet()) }
-
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
-
-                if (result.chatRemoved) {
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+                if (deleteResult.chatRemoved)
                     _events.emit(ChatSessionUiEvent.CloseChat)
-                }
-            } catch (e: Exception) {
-                _events.emit(
-                    ChatSessionUiEvent.ShowErrorDialog(
-                        UiText.StringRes(R.string.chat_error_delete_messages)
-                    )
-                )
-            }
+            }.onFailure { onFailure(it) }
         }
     }
 
@@ -725,27 +717,39 @@ class ChatViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = currentOtherName(),
                     countMessages = count,
-                    onConfirm = { deleteMessages ->
+                    onConfirm = { shouldDeleteMessages ->
                         viewModelScope.launch {
-                            try {
-                                val result = chatRepository.deleteMessages(
-                                    requireChatRefs(),
-                                    null,
-                                    deleteMessages
-                                )
-                                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
-                            } catch (_: Exception) {
-                                _events.emit(
-                                    ChatSessionUiEvent.ShowErrorDialog(
-                                        UiText.StringRes(R.string.chat_error_delete_messages)
-                                    )
-                                )
-                            }
+                            deleteMessages(shouldDeleteMessages)
                         }
                     }
                 )
             )
         }
+    }
+
+    suspend fun deleteMessages(deleteMessages: Boolean) {
+        chatRepository.deleteMessages(
+            chatRefs = requireChatRefs(),
+            selectedIds = null,
+            deleteMessages = deleteMessages
+        ).onSuccess { deleteResult ->
+            val deleteResult = deleteResult ?: return@onSuccess
+            if (deleteMessages)
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            else
+                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(otherIdentity.userName))
+        }.onFailure { onFailure(it) }
+    }
+
+    suspend fun onFailure(e: Throwable) {
+        _events.emit(
+            ChatSessionUiEvent.ShowErrorDialog(
+                UiText.StringRes(
+                    R.string.err_zibe_prefix,
+                    listOf(e.message ?: "")
+                )
+            )
+        )
     }
 
     private fun currentOtherName(): String {
@@ -771,5 +775,4 @@ class ChatViewModel @Inject constructor(
             userRepository.clearActiveThread()
         }
     }
-
 }
