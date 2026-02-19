@@ -16,16 +16,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.databinding.FragmentChatListBinding
-import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
-import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.databinding.FragmentChatListBinding
+import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.search.SearchHandler
@@ -177,8 +177,8 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
             1 -> chatListViewModel.onMarkAsReadChatListClicked(otherId, NODE_DM)
             2 -> chatListViewModel.onToggleNotificationsClicked(otherId, otherName, NODE_DM)
             3 -> chatListViewModel.onConfirmToggleBlockAction(otherId, otherName)
-            4 -> chatListViewModel.onHideClicked(otherId, otherName, NODE_DM)
-            5 -> chatListViewModel.onDeleteClicked(otherId, otherName, NODE_DM)
+            4 -> chatListViewModel.onConfirmHide(otherId, otherName, NODE_DM)
+            5 -> chatListViewModel.onDeleteChoiceMode(otherId, otherName, NODE_DM)
         }
         return true
     }
