@@ -185,8 +185,8 @@ fun ProfileScreen(
         add(
             ZibeMenuItem(
                 label = if (state.isNotificationsSilenced) {
-                    stringResource(R.string.menu_user_notifications_off)
-                } else stringResource(R.string.menu_user_notifications_on),
+                    stringResource(R.string.menu_user_notifications_on)
+                } else stringResource(R.string.menu_user_notifications_off),
                 onClick = onToggleNotifications
             )
         )
