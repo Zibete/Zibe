@@ -5,7 +5,7 @@ import com.zibete.proyecto1.model.ChatMessageItem
 data class ChatMediaUiState(
     val recordingElapsedMs: Long,
     val isRecordingCanceled: Boolean,
-    val isAudioUploading : Boolean
+    val isAudioUploading: Boolean
 )
 
 data class ChatCallbacks(
