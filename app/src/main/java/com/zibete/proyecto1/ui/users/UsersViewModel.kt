@@ -45,7 +45,7 @@ class UsersViewModel @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val locationRepository: LocationRepository,
     private val userRepository: UserRepository,
-    ) : ViewModel() {
+) : ViewModel() {
 
     private data class UsersFilters(
         val applyAgeFilter: Boolean = false,
@@ -85,7 +85,7 @@ class UsersViewModel @Inject constructor(
             val fetchStart = SystemClock.elapsedRealtime()
             runCatching { fetchUsersBase(myUid) }
                 .onSuccess { users ->
-                    val fetchElapsed = SystemClock.elapsedRealtime() - fetchStart
+                    SystemClock.elapsedRealtime() - fetchStart
                     allUsers = users
                     updateVisibleUsers(isLoading = false)
                     if (users.isNotEmpty()) {

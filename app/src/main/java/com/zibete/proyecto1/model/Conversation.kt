@@ -4,7 +4,6 @@ import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import java.io.Serializable
-import java.util.Date
 
 data class Conversation(
     var lastContent: String = "",
@@ -22,9 +21,12 @@ data class Conversation(
         return other.lastMessageAt.compareTo(this.lastMessageAt)
     }
 
-    fun isVisible(): Boolean {
-        return otherPhotoUrl != Constants.EMPTY && (state == NODE_DM || state == CHAT_STATE_SILENT)
-    }
+    fun isEmptyThread(): Boolean = lastMessageAt == 0L && lastContent.isBlank()
 
-    fun clone(): Conversation = this.copy()
+    fun isVisible(): Boolean {
+        if (state == Constants.CHAT_STATE_BLOCKED) return false
+        if (state == Constants.CHAT_STATE_HIDE) return false
+        if (isEmptyThread()) return false
+        return state == NODE_DM || state == CHAT_STATE_SILENT
+    }
 }

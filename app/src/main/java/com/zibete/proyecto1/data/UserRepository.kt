@@ -12,39 +12,33 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
-import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_URL
 import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
-import com.zibete.proyecto1.core.constants.Constants.StatusKeys
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
 import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Conversation
-import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -385,23 +379,14 @@ class UserRepository @Inject constructor(
         chatRef.child(ConversationKeys.STATE).setValue(newState).await()
     }
 
-    private fun createDefaultConversation(
-        otherUid: String,
-        otherName: String,
-        state: String
-    ): Conversation {
-        return Conversation(
-            lastContent = "Chat vacío",
-            lastMessageAt = now(),
+    private fun createDefaultConversation(otherUid: String, otherName: String, state: String) =
+        Conversation(
             userId = myUid,
             otherId = otherUid,
             otherName = otherName,
             otherPhotoUrl = DEFAULT_PROFILE_PHOTO_URL,
-            state = state,
-            unreadCount = 0,
-            seen = 1
+            state = state
         )
-    }
 
     // ============================================================
     // PRESENCE / STATUS (nuevo)
