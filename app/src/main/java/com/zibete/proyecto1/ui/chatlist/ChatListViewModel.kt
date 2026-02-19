@@ -11,10 +11,10 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.ui.toUiText
-import com.zibete.proyecto1.core.utils.getOrDefault
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
@@ -54,7 +54,7 @@ class ChatListViewModel @Inject constructor(
 
     fun startObserving() {
         if (chatListListener != null) return
-        _uiState.update { it.copy(isLoading = true) }
+        setIsLoading(true)
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -87,7 +87,7 @@ class ChatListViewModel @Inject constructor(
             }
 
             override fun onCancelled(error: DatabaseError) {
-                _uiState.update { it.copy(isLoading = false) }
+                setIsLoading(false)
             }
         }
 
@@ -151,22 +151,14 @@ class ChatListViewModel @Inject constructor(
             profileRepositoryActions.toggleBlock(otherUid, otherName)
         }.onSuccess { isBlockedByMe ->
             _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))
-        }.onFailure { e ->
-            _events.emit(
-                ChatSessionUiEvent.ShowErrorDialog(
-                    e.message.toUiText(
-                        R.string.err_zibe_prefix,
-                        R.string.err_zibe
-                    )
-                )
-            )
-        }
+        }.onFailure { onFailure(it) }
     }
 
     fun onConfirmToggleBlockAction(otherUid: String, otherName: String) {
         viewModelScope.launch {
             val isBlockedByMe =
-                profileRepositoryProvider.getMyChatState(otherUid).getOrThrow() == CHAT_STATE_BLOCKED
+                profileRepositoryProvider.getMyChatState(otherUid)
+                    .getOrThrow() == CHAT_STATE_BLOCKED
             _events.emit(
                 ChatSessionUiEvent.ConfirmToggleBlockAction(
                     name = otherName,
@@ -196,6 +188,8 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
+    fun setIsLoading(isLoading: Boolean) = _uiState.update { it.copy(isLoading = isLoading) }
+
     fun onDeleteClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
             val chatRefs = chatRepository.buildChatRefs(userId, nodeType)
@@ -204,27 +198,41 @@ class ChatListViewModel @Inject constructor(
                 ChatSessionUiEvent.ConfirmDeleteChat(
                     name = userName,
                     countMessages = count,
-                    onConfirm = { deleteMessages ->
+                    onConfirm = { shouldDeleteMessages ->
                         viewModelScope.launch {
-                            try {
-                                val result = chatRepository.deleteMessages(
-                                    chatRefs = chatRefs,
-                                    selectedIds = null,
-                                    deleteMessages = deleteMessages
-                                )
-                                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
-                            } catch (_: Exception) {
-                                _events.emit(
-                                    ChatSessionUiEvent.ShowErrorDialog(
-                                        UiText.StringRes(R.string.chat_error_delete_messages)
-                                    )
-                                )
-                            }
+                            setIsLoading(true)
+                            deleteMessages(chatRefs, shouldDeleteMessages, userName)
+                            setIsLoading(false)
                         }
                     }
                 )
             )
         }
+    }
+
+    suspend fun deleteMessages(chatRefs: ChatRefs, deleteMessages: Boolean, profileName: String) {
+        chatRepository.deleteMessages(
+            chatRefs = chatRefs,
+            selectedIds = null,
+            deleteMessages = deleteMessages
+        ).onSuccess { deleteResult ->
+            val deleteResult = deleteResult ?: return@onSuccess
+            if (deleteMessages)
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            else
+                _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(profileName))
+        }.onFailure { onFailure(it) }
+    }
+
+    suspend fun onFailure(e: Throwable) {
+        _events.emit(
+            ChatSessionUiEvent.ShowErrorDialog(
+                UiText.StringRes(
+                    R.string.err_zibe_prefix,
+                    listOf(e.message ?: "")
+                )
+            )
+        )
     }
 
     private fun filterChats(chats: List<Conversation>, query: String): List<Conversation> {
