@@ -19,11 +19,10 @@ import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Status
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class PresenceRepository @Inject constructor(
+class PresenceRepository constructor(
     @ApplicationContext private val context: Context,
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider

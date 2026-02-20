@@ -14,7 +14,6 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import kotlinx.coroutines.tasks.await
 import java.math.BigDecimal
 import java.math.RoundingMode
-import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -24,7 +23,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 @Singleton
-class LocationRepository @Inject constructor(
+class LocationRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider
 ) {

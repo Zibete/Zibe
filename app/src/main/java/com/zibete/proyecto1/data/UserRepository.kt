@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
 import javax.inject.Singleton
 
 data class HiddenChat(
@@ -88,7 +87,7 @@ interface UserRepositoryActions {
 }
 
 @Singleton
-class UserRepository @Inject constructor(
+class UserRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
     private val presenceRepository: PresenceRepository,
