@@ -38,7 +38,6 @@ import java.time.format.DateTimeFormatter
 @HiltAndroidTest
 class SignUpValidationAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     val actionRegister = context.getString(R.string.action_register)
     val underAge = context.getString(R.string.err_under_age)
 
@@ -119,7 +118,6 @@ class SignUpValidationAndroidTest :
 @HiltAndroidTest
 class SignUpFailureAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     val navigateToSignUpButton = context.getString(R.string.action_register)
     val errPrefixOnly = context.getString(R.string.err_zibe_prefix).substringBefore("%1")
 
@@ -176,7 +174,6 @@ class SignUpFailureAndroidTest :
 @HiltAndroidTest
 class SignUpSuccessAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     private lateinit var scenario: TestScenario
     val navigateToSignUpButton = context.getString(R.string.action_register)
     val signupSuccess = context.getString(R.string.signup_msg_success)

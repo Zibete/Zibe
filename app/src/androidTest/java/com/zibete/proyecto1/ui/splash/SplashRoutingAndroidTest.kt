@@ -27,7 +27,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 class SplashSessionConflictAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     val logout = context.getString(R.string.logout)
     val keepHere = context.getString(R.string.session_conflict_keep_here)
     val attentionTitle = context.getString(R.string.attention_title)
@@ -88,7 +87,6 @@ class SplashSessionConflictAndroidTest :
 @HiltAndroidTest
 class SplashOnboardingAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     val next = context.getString(R.string.onboarding_next)
     val start = context.getString(R.string.onboarding_start)
 
@@ -131,7 +129,6 @@ class SplashOnboardingAndroidTest :
 @HiltAndroidTest
 class SplashToMainAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     @Before
     fun setup() {
         Intents.init()
@@ -170,7 +167,6 @@ class SplashToMainAndroidTest :
 @HiltAndroidTest
 class SplashToAuthAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     @Before
     fun setup() {
         launchWithScenario(
