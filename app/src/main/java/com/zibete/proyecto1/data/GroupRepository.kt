@@ -44,7 +44,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -58,7 +57,7 @@ interface GroupRepositoryProvider {
 
 @ApplicationScope
 @Singleton
-class GroupRepository @Inject constructor(
+class GroupRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
 ) : GroupRepositoryProvider {
