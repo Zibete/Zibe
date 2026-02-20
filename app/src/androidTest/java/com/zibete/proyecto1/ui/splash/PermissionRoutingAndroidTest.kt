@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
 @HiltAndroidTest
 class PermissionRoutingAndroidTest :
     BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
-
     val actionStart = context.getString(R.string.action_start)
     val actionAccept = context.getString(R.string.action_accept)
     val actionCancel = context.getString(R.string.action_cancel)
