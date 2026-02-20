@@ -1,4 +1,7 @@
 # Copy this file to local.properties and fill real values.
 # Do NOT commit local.properties.
+# Google
+WEB_CLIENT_ID=CHANGE_ME
+# Facebook
 FACEBOOK_APP_ID=CHANGE_ME
 FACEBOOK_CLIENT_TOKEN=CHANGE_ME
