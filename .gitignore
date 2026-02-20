@@ -24,3 +24,13 @@ Thumbs.db
 # Local agent instructions (do not commit)
 AGENTS.md
 **/AGENTS.md
+
+# === Node / Firebase rules tests ===
+node_modules/
+.firebase/
+firebase-debug.log
+
+# Firebase emulator logs
+database-debug.log
+# npm logs
+npm-debug.log*

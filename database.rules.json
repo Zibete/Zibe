@@ -1,0 +1,206 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "Users": {
+      "Accounts": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.uid == $uid",
+          "id": { ".validate": "newData.isString() && newData.val() == $uid" },
+          "name": { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "birthDate": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "age": { ".validate": "newData.isNumber()" },
+          "email": { ".validate": "newData.isString() && newData.val().length <= 254" },
+          "photoUrl": { ".validate": "newData.isString()" },
+          "isOnline": { ".validate": "newData.isBoolean()" },
+          "description": { ".validate": "newData.isString() && newData.val().length <= 280" },
+          "latitude": { ".validate": "newData.isNumber()" },
+          "longitude": { ".validate": "newData.isNumber()" }
+        }
+      },
+
+      "Data": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+
+          "ClientData": {
+            "Status": {
+              ".read": "auth != null",
+              ".write": "auth != null && auth.uid == $uid",
+              "status": { ".validate": "newData.isString() && newData.val().length <= 40" },
+              "lastSeenMs": { ".validate": "newData.isNumber()" }
+            },
+            "ActiveView": {
+              "activeThread": {
+                ".read": "auth != null",
+                ".write": "auth != null && auth.uid == $uid",
+                "nodeType": { ".validate": "newData.isString() && newData.val().length <= 20" },
+                "otherUid": { ".validate": "newData.isString()" }
+              }
+            },
+            "ChatList": {
+              "readGroupMessages": {
+                ".read": "auth != null && auth.uid == $uid",
+                ".write": "auth != null && auth.uid == $uid",
+                ".validate": "newData.isNumber()"
+              }
+            }
+          },
+
+          "ChatList": {
+            "readGroupMessages": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid",
+              ".validate": "newData.isNumber()"
+            }
+          },
+
+          "FavoriteList": {
+            "$otherUid": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid",
+              ".validate": "!newData.exists() || newData.isBoolean()"
+            }
+          },
+
+          "dm": {
+            ".indexOn": ["unreadCount"],
+            "$otherUid": {
+              ".read": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
+              ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
+              "lastContent": { ".validate": "newData.isString()" },
+              "lastMessageAt": { ".validate": "newData.isNumber()" },
+              "userId": { ".validate": "newData.isString()" },
+              "otherId": { ".validate": "newData.isString()" },
+              "otherName": { ".validate": "newData.isString()" },
+              "otherPhotoUrl": { ".validate": "newData.isString()" },
+              "state": { ".validate": "newData.isString() && newData.val().length <= 20" },
+              "unreadCount": { ".validate": "newData.isNumber()" },
+              "seen": { ".validate": "newData.isNumber()" }
+            }
+          },
+
+          "group_dm": {
+            ".indexOn": ["unreadCount"],
+            "$otherUid": {
+              ".read": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
+              ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
+              "lastContent": { ".validate": "newData.isString()" },
+              "lastMessageAt": { ".validate": "newData.isNumber()" },
+              "userId": { ".validate": "newData.isString()" },
+              "otherId": { ".validate": "newData.isString()" },
+              "otherName": { ".validate": "newData.isString()" },
+              "otherPhotoUrl": { ".validate": "newData.isString()" },
+              "state": { ".validate": "newData.isString() && newData.val().length <= 20" },
+              "unreadCount": { ".validate": "newData.isNumber()" },
+              "seen": { ".validate": "newData.isNumber()" }
+            }
+          }
+        }
+      }
+    },
+
+    "Chats": {
+      "dm": {
+        "$chatId": {
+          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".indexOn": ["createdAt"],
+          "$messageId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['content','createdAt','senderUid','type','seen']) && newData.child('content').isString() && newData.child('createdAt').isNumber() && newData.child('senderUid').isString() && newData.child('type').isNumber() && newData.child('seen').isNumber() && (!newData.hasChild('audioDurationMs') || newData.child('audioDurationMs').isNumber()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val())))"
+          }
+        }
+      },
+
+      "group_dm": {
+        ".read": "auth != null",
+        "$chatId": {
+          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".indexOn": ["createdAt"],
+          "$messageId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['content','createdAt','senderUid','type','seen']) && newData.child('content').isString() && newData.child('createdAt').isNumber() && newData.child('senderUid').isString() && newData.child('type').isNumber() && newData.child('seen').isNumber() && (!newData.hasChild('audioDurationMs') || newData.child('audioDurationMs').isNumber()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val())))"
+          }
+        }
+      }
+    },
+
+    "Groups": {
+      "Meta": {
+        ".read": "auth != null",
+        "$groupName": {
+          ".write": "auth != null && ((!data.exists() && newData.child('creatorUid').val() == auth.uid) || (data.exists() && data.child('creatorUid').val() == auth.uid))",
+          "name": { ".validate": "newData.isString()" },
+          "description": { ".validate": "newData.isString()" },
+          "creatorUid": { ".validate": "newData.isString()" },
+          "type": { ".validate": "newData.isNumber()" },
+          "users": { ".validate": "newData.isNumber()" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "totalMessages": {
+            ".write": "auth != null && root.child('Groups').child('Users').child($groupName).child(auth.uid).exists()",
+            ".validate": "newData.isNumber()"
+          }
+        }
+      },
+
+      "Users": {
+        "$groupName": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid == $uid",
+            "userId": { ".validate": "newData.isString() && newData.val() == $uid" },
+            "userName": { ".validate": "newData.isString()" },
+            "type": { ".validate": "newData.isNumber()" },
+            "joinedAtMs": { ".validate": "newData.isNumber()" }
+          }
+        }
+      },
+
+      "Chat": {
+        "$groupName": {
+          ".read": "auth != null && root.child('Groups').child('Users').child($groupName).child(auth.uid).exists()",
+          ".write": "auth != null && root.child('Groups').child('Users').child($groupName).child(auth.uid).exists()",
+          "$messageId": {
+            ".validate": "!newData.exists() || (newData.hasChildren(['content','timestamp','senderUid','chatType','userType']) && newData.child('content').isString() && newData.child('timestamp').isNumber() && newData.child('senderUid').isString() && newData.child('chatType').isNumber() && newData.child('userType').isNumber() && (newData.child('userName').isString() || newData.child('nameUser').isString()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('timestamp').val() == data.child('timestamp').val())))"
+          }
+        }
+      }
+    },
+
+    "Sessions": {
+      ".indexOn": ["fcmToken"],
+      "$uid": {
+        "activeInstallId": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          ".validate": "newData.isString()"
+        },
+        "fcmToken": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid == $uid",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+
+    "Feedback": {
+      "$screen": {
+        "$feedbackId": {
+          ".read": false,
+          ".write": "auth != null",
+          "id": { ".validate": "newData.isString() && newData.val() == auth.uid" },
+          "name": { ".validate": "newData.isString()" },
+          "email": { ".validate": "newData.isString()" },
+          "feedback": { ".validate": "newData.isString()" },
+          "device": { ".validate": "newData.isString()" },
+          "appVersion": { ".validate": "newData.isString()" },
+          "createdAt": { ".validate": "newData.isNumber()" }
+        }
+      }
+    }
+  }
+}
