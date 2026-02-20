@@ -28,6 +28,13 @@ class FakeUserRepositoryProvider(
     override suspend fun getProfilePhotoUrl(): String? =
         if (shouldFail) throw runtimeException else TestData.PHOTO_URL
 
+    override suspend fun getDefaultProfilePhotoUrl(): ZibeResult<String> =
+        if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else {
+            ZibeResult.Success(TestData.PHOTO_URL)
+        }
+
     override suspend fun getAccount(uid: String): Users? {
         if (shouldFail) throw runtimeException
         return if (scenarioProvider().accountExists) TestData.USER.copy(id = uid) else null

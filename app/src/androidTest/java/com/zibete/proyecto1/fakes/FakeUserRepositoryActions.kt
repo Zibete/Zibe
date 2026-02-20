@@ -18,9 +18,12 @@ class FakeUserRepositoryActions(
         name: String,
         birthDate: String,
         description: String
-    ) {
-        if (shouldFail) throw runtimeException
-    }
+    ): ZibeResult<Unit> =
+        if (shouldFail) {
+            ZibeResult.Failure(runtimeException)
+        } else {
+            ZibeResult.Success(Unit)
+        }
 
     override suspend fun setUserLastSeen() {
         if (shouldFail) throw runtimeException

@@ -49,6 +49,13 @@ class FakeUserRepositoryProvider(
         return TestData.PHOTO_URL
     }
 
+    override suspend fun getDefaultProfilePhotoUrl(): ZibeResult<String> =
+        if (scenarioProvider().shouldFail) {
+            ZibeResult.Failure(scenarioProvider().runtimeException)
+        } else {
+            ZibeResult.Success(TestData.PHOTO_URL)
+        }
+
     override suspend fun getAccount(uid: String): Users? {
         failIfNeeded()
         return if (scenarioProvider().accountExists) {
@@ -83,10 +90,14 @@ class FakeUserRepositoryActions(
         name: String,
         birthDate: String,
         description: String
-    ) {
+    ): ZibeResult<Unit> {
         val s = scenarioProvider()
-        if (s.shouldFail) throw s.runtimeException
-        else lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, name, birthDate, description)
+        return if (s.shouldFail) {
+            ZibeResult.Failure(s.runtimeException)
+        } else {
+            lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, name, birthDate, description)
+            ZibeResult.Success(Unit)
+        }
     }
 
     override suspend fun setUserLastSeen() {
