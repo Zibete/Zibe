@@ -6,12 +6,14 @@ import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeEmailValidator
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
+import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -39,6 +41,7 @@ class SignUpViewModelTest {
     private lateinit var snackBarManager: SnackBarManager
     private lateinit var updateProfileUseCase: UpdateProfileUseCase
     private lateinit var appNavigator: AppNavigator
+    private lateinit var userRepositoryProvider: UserRepositoryProvider
     private val config = SettingsConfig(validationDebounce = 0L)
     private val emailValidator = FakeEmailValidator()
 
@@ -49,6 +52,7 @@ class SignUpViewModelTest {
         snackBarManager = mockk<SnackBarManager>(relaxed = true)
         updateProfileUseCase = mockk<UpdateProfileUseCase>(relaxed = true)
         appNavigator = mockk<AppNavigator>(relaxed = true)
+        userRepositoryProvider = FakeUserRepositoryProvider { TestScenario() }
         emailValidator.result = true
     }
 
@@ -59,6 +63,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -96,6 +101,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -129,6 +135,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -165,6 +172,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -201,6 +209,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -234,6 +243,7 @@ class SignUpViewModelTest {
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
@@ -328,12 +338,14 @@ class SignUpViewModelTest {
         scenario: TestScenario = TestScenario(),
         authSessionActions: AuthSessionActions = FakeAuthSessionActions { scenario },
         sessionBootstrapper: SessionBootstrapper = FakeSessionBootstrapper { scenario },
-        snackBarManager: SnackBarManager
+        snackBarManager: SnackBarManager,
+        userRepositoryProvider: UserRepositoryProvider = FakeUserRepositoryProvider { scenario }
     ): SignUpViewModel =
         SignUpViewModel(
             authSessionActions = authSessionActions,
             sessionBootstrapper = sessionBootstrapper,
             updateProfileUseCase = updateProfileUseCase,
+            userRepositoryProvider = userRepositoryProvider,
             snackBarManager = snackBarManager,
             appNavigator = appNavigator,
             config = config,
