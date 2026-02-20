@@ -193,6 +193,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-messaging")
+    releaseImplementation("com.google.firebase:firebase-appcheck-playintegrity")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
 
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.facebook.android:facebook-login:17.0.0")
