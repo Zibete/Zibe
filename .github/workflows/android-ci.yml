@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
@@ -18,11 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore google-services.json
-        shell: bash
-        run: |
-          mkdir -p app
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v2
 
       - name: Set up JDK 17 (Temurin)
         uses: actions/setup-java@v4
@@ -30,6 +27,18 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+
+      - name: Restore google-services.json
+        shell: bash
+        run: |
+          mkdir -p app
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Gradle Info
+        run: ./gradlew -version
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -43,15 +52,6 @@ jobs:
       - name: Firebase RTDB rules tests (emulator)
         run: npm run test:rules
 
-      - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v2
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Gradle Info
-        run: ./gradlew -version
-
       # 1) Unit tests (JVM)
       - name: Unit tests
         run: ./gradlew testDebugUnitTest
@@ -60,9 +60,13 @@ jobs:
       - name: Android Lint
         run: ./gradlew lintDebug
 
-      # 3) Build
+      # 3) Build debug
       - name: Assemble Debug
-        run: ./gradlew assembleDebug
+        run: ./gradlew :app:assembleDebug
+
+      # 4) Release compile check (sin signing)
+      - name: Compile release (source set check)
+        run: ./gradlew :app:compileReleaseKotlin
 
       # Upload reports (always, even if failing)
       - name: Upload test reports
