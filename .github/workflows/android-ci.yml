@@ -15,61 +15,64 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      - name: 🏗️ Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Gradle Wrapper
+      - name: ✅ Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v2
 
-      - name: Set up JDK 17 (Temurin)
+      - name: 🔧 Create local.properties (CI dummy)
+        shell: bash
+        run: |
+          cat > local.properties <<'EOF'
+          FACEBOOK_APP_ID=123456789012345
+          FACEBOOK_CLIENT_TOKEN=00000000000000000000000000000000
+          EOF
+
+      - name: ☕ Set up JDK 17 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
           cache: gradle
 
-      - name: Restore google-services.json
+      - name: 🔑 Restore google-services.json
         shell: bash
         run: |
           mkdir -p app
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
 
-      - name: Make gradlew executable
+      - name: 🔧 Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Gradle Info
+      - name: ℹ️ Gradle Info
         run: ./gradlew -version
 
-      - name: Set up Node.js 20
+      - name: 🧰 Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
 
-      - name: Install rules test deps
+      - name: 📦 Install rules test deps
         run: npm ci
 
-      - name: Firebase RTDB rules tests (emulator)
+      - name: 🧪 Firebase RTDB rules tests (emulator)
         run: npm run test:rules
 
-      # 1) Unit tests (JVM)
-      - name: Unit tests
+      - name: ✅ Unit tests (JVM)
         run: ./gradlew testDebugUnitTest
 
-      # 2) Android Lint
-      - name: Android Lint
+      - name: 🧼 Android Lint
         run: ./gradlew lintDebug
 
-      # 3) Build debug
-      - name: Assemble Debug
+      - name: 🔨 Assemble Debug
         run: ./gradlew :app:assembleDebug
 
-      # 4) Release compile check (sin signing)
-      - name: Compile release (source set check)
+      - name: 🛡️ Compile release (source set check)
         run: ./gradlew :app:compileReleaseKotlin
 
-      # Upload reports (always, even if failing)
-      - name: Upload test reports
+      - name: 📦 Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -79,7 +82,7 @@ jobs:
             app/build/test-results/
           if-no-files-found: ignore
 
-      - name: Upload lint reports
+      - name: 📦 Upload lint reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -88,3 +91,16 @@ jobs:
             app/build/reports/lint-results-*
             app/build/reports/lint-results-*/**
           if-no-files-found: ignore
+
+      - name: 📊 Job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Android CI"
+            echo ""
+            echo "**Comandos (local):**"
+            echo "\`npm ci && npm run test:rules && ./gradlew testDebugUnitTest lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
+            echo ""
+            echo "**Artifacts:** unit-test-reports / lint-reports"
+          } >> "$GITHUB_STEP_SUMMARY"
