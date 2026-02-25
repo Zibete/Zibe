@@ -48,7 +48,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Zibe"
-        android:usesCleartextTraffic="true"
         android:name=".core.utils.ZibeApp"
         tools:targetApi="tiramisu">
 
