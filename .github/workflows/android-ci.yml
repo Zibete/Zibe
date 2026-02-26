@@ -25,6 +25,7 @@ jobs:
         shell: bash
         run: |
           cat > local.properties <<'EOF'
+          WEB_CLIENT_ID=CHANGE_ME
           FACEBOOK_APP_ID=123456789012345
           FACEBOOK_CLIENT_TOKEN=00000000000000000000000000000000
           EOF
@@ -36,11 +37,11 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: 🔑 Restore google-services.json
+      - name: 🔑 Create google-services.json (CI dummy)
         shell: bash
         run: |
           mkdir -p app
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+          cp app/google-services.example.json app/google-services.json
 
       - name: 🔧 Make gradlew executable
         run: chmod +x ./gradlew
