@@ -6,6 +6,15 @@ build/
 # === Local configs ===
 local.properties
 app/google-services.json
+google-services.json
+**/google-services.json
+
+# === Keys / Certificates ===
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
 
 # === IntelliJ / Android Studio ===
 .idea/
@@ -16,6 +25,10 @@ app/google-services.json
 
 # === Logs ===
 *.log
+
+# === Local outputs ===
+captures/
+tmp/
 
 # === OS ===
 .DS_Store
