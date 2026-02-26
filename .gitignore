@@ -47,3 +47,8 @@ firebase-debug.log
 database-debug.log
 # npm logs
 npm-debug.log*
+
+# Build artifacts
+/deps.txt
+/app/release/
+*.aab
