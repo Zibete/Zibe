@@ -239,7 +239,7 @@ private fun FavoriteLottieStar(
     onClick: () -> Unit,
     contentDescription: String
 ) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.favorite))
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lottie_favorite))
     val anim = rememberLottieAnimatable()
     var prev by remember { mutableStateOf(isFavorite) }
     val size = 28.dp

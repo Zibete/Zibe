@@ -39,7 +39,7 @@
                     android:layout_gravity="start"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/chat_left" />
+                    app:lottie_rawRes="@raw/lottie_chat_left" />
 
                 <com.airbnb.lottie.LottieAnimationView
                     android:id="@+id/lottieChatRight"
@@ -48,7 +48,7 @@
                     android:layout_gravity="end"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/onboarding1" />
+                    app:lottie_rawRes="@raw/lottie_chat_right" />
             </LinearLayout>
 
             <TextView

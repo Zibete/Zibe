@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="4dp"
         android:layout_marginVertical="4dp"
-        android:foreground="@drawable/fg_card_ripple"
+        android:foreground="@drawable/shape_card_ripple"
         app:cardBackgroundColor="@android:color/transparent"
         app:cardElevation="0dp"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.Zibe.Card.Large"

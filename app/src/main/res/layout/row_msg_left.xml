@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:background="@drawable/chat_left"
+            android:background="@drawable/shape_chat_left"
             android:paddingVertical="8dp"
             android:paddingHorizontal="16dp">
 
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:background="@drawable/chat_left"
+            android:background="@drawable/shape_chat_left"
             android:padding="2dp"
             android:visibility="gone">
 
@@ -83,7 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="horizontal"
-            android:background="@drawable/chat_left"
+            android:background="@drawable/shape_chat_left"
             android:padding="4dp"
             android:visibility="gone">
 

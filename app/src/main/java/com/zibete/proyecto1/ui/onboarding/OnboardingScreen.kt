@@ -81,9 +81,9 @@ fun OnboardingScreen(
     val onboardingPage3Body = stringResource(R.string.onboarding_page_3_body)
 
     val pages = listOf(
-        OnboardingPage(R.raw.onboarding1, onboardingPage1Title, onboardingPage1Body),
-        OnboardingPage(R.raw.onboarding2, onboardingPage2Title, onboardingPage2Body),
-        OnboardingPage(R.raw.onboarding3, onboardingPage3Title, onboardingPage3Body)
+        OnboardingPage(R.raw.lottie_onboarding1, onboardingPage1Title, onboardingPage1Body),
+        OnboardingPage(R.raw.lottie_onboarding2, onboardingPage2Title, onboardingPage2Body),
+        OnboardingPage(R.raw.lottie_onboarding3, onboardingPage3Title, onboardingPage3Body)
     )
 
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { pages.size })
