@@ -5,7 +5,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R
 
 class ZibeExtendedColors(
     val snackRed: Color,

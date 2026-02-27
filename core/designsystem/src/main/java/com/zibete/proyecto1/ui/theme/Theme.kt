@@ -8,7 +8,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.res.dimensionResource
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R
 
 @Composable
 fun ZibeTheme(content: @Composable () -> Unit) {

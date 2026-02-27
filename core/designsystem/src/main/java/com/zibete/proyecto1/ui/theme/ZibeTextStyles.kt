@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R
 
 val Poppins = FontFamily(
     Font(R.font.poppins_regular, FontWeight.Normal),
