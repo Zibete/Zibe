@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Zibe"
 include(":app")
+include(":core:common")
+include(":core:designsystem")
