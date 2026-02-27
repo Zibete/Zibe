@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.main
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.Manifest
 import android.animation.LayoutTransition
 import android.content.Intent
@@ -260,14 +261,14 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private fun setupBadges() {
         // Chat Badge
         badgeDrawableChat = bottomNavigationView.getOrCreateBadge(R.id.navBottomChat).apply {
-            backgroundColor = getColorCompat(R.color.accent)
-            badgeTextColor = getColorCompat(R.color.white)
+            backgroundColor = getColorCompat(DsR.color.accent)
+            badgeTextColor = getColorCompat(DsR.color.white)
             isVisible = false
         }
         // Group Badge
         badgeDrawableGroup = bottomNavigationView.getOrCreateBadge(R.id.navBottomGroups).apply {
-            backgroundColor = getColorCompat(R.color.accent)
-            badgeTextColor = getColorCompat(R.color.white)
+            backgroundColor = getColorCompat(DsR.color.accent)
+            badgeTextColor = getColorCompat(DsR.color.white)
             isVisible = false
         }
     }
@@ -363,7 +364,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mainViewModel.hasActiveFilter.collect { hasActiveFilter ->
-                    val colorRes = if (hasActiveFilter) R.color.accent else R.color.blanco
+                    val colorRes = if (hasActiveFilter) DsR.color.accent else DsR.color.blanco
                     filterButton?.setColorFilter(
                         this@MainActivity.getColorCompat(colorRes),
                         PorterDuff.Mode.SRC_IN
@@ -819,3 +820,5 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
+
+

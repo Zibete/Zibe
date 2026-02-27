@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.base
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -332,9 +333,11 @@ private fun ZibeGlobalSnackHost(
             .fillMaxSize()
             .systemBarsPadding()
             .padding(
-                top = extraTop + dimensionResource(R.dimen.element_spacing_medium),
-                bottom = dimensionResource(R.dimen.element_spacing_medium) + extraBottom
+                top = extraTop + dimensionResource(DsR.dimen.element_spacing_medium),
+                bottom = dimensionResource(DsR.dimen.element_spacing_medium) + extraBottom
             )
     )
 }
+
+
 

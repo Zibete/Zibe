@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.signup
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,7 +94,7 @@ fun SignUpScreen(
 
     val context = LocalContext.current
 
-    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+    val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
 
     val registerEnabled by remember(state) {
         derivedStateOf {
@@ -141,8 +142,8 @@ fun SignUpScreen(
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize()
                     .padding(
-                        horizontal = dimensionResource(R.dimen.screen_padding),
-                        vertical = dimensionResource(R.dimen.screen_padding)
+                        horizontal = dimensionResource(DsR.dimen.screen_padding),
+                        vertical = dimensionResource(DsR.dimen.screen_padding)
                     ),
                 verticalArrangement = Arrangement.spacedBy(inputPadding)
             ) {
@@ -277,3 +278,5 @@ fun SignUpScreenPreview() {
         )
     }
 }
+
+

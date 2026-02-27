@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,15 +43,15 @@ fun ChatMessageTextField(
     val hintColor = zibeColors.hintText
     val textColor = zibeColors.lightText
     val containerColor = zibeColors.contentDarkBg
-    val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
-    val chatComponentsHeight = dimensionResource(R.dimen.zibe_btn_height)
+    val inputElevation = dimensionResource(DsR.dimen.zibe_input_elevation)
+    val chatComponentsHeight = dimensionResource(DsR.dimen.zibe_btn_height)
     val horizontalPadding = 12.dp
 
     val shape = RoundedCornerShape(
-        topStart = dimensionResource(R.dimen.zibe_input_corner_top),
-        topEnd = dimensionResource(R.dimen.zibe_input_corner_top),
-        bottomStart = dimensionResource(R.dimen.zibe_input_corner_top),
-        bottomEnd = dimensionResource(R.dimen.zibe_input_corner_top)
+        topStart = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        topEnd = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        bottomStart = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        bottomEnd = dimensionResource(DsR.dimen.zibe_input_corner_top)
     )
 
     BasicTextField(
@@ -111,3 +112,5 @@ fun ChatMessageTextFieldWithValuePreview() {
         )
     }
 }
+
+

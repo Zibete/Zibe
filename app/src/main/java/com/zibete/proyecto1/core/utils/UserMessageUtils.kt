@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.core.utils
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
@@ -37,10 +38,10 @@ object UserMessageUtils {
         action: ((View) -> Unit)? = null
     ) {
         val (iconColorRes, iconRes) = when (type) {
-            ZibeSnackType.SUCCESS -> R.color.zibe_green to R.drawable.ic_check_24
-            ZibeSnackType.ERROR -> R.color.zibe_red to R.drawable.ic_baseline_cancel_24
-            ZibeSnackType.WARNING -> R.color.zibe_yellow to R.drawable.ic_warning_24
-            ZibeSnackType.INFO -> R.color.zibe_blue to R.drawable.ic_info_24
+            ZibeSnackType.SUCCESS -> DsR.color.zibe_green to R.drawable.ic_check_24
+            ZibeSnackType.ERROR -> DsR.color.zibe_red to R.drawable.ic_baseline_cancel_24
+            ZibeSnackType.WARNING -> DsR.color.zibe_yellow to R.drawable.ic_warning_24
+            ZibeSnackType.INFO -> DsR.color.zibe_blue to R.drawable.ic_info_24
             null -> null to 0
         }
 
@@ -59,7 +60,7 @@ object UserMessageUtils {
         // Texto
         customView.findViewById<TextView>(R.id.snack_text).apply {
             text = message.trim()
-            setTextColor(ContextCompat.getColor(root.context, R.color.zibe_hint_text))
+            setTextColor(ContextCompat.getColor(root.context, DsR.color.zibe_hint_text))
         }
 
         // Icono
@@ -248,3 +249,5 @@ object UserMessageUtils {
             .show()
     }
 }
+
+

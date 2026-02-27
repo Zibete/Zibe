@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -155,7 +156,7 @@ fun ChatTopBar(
                             offset = ZibeMenuDefaults.Offset,
                             modifier = Modifier
                                 .background(
-                                    colorResource(R.color.zibe_surface).copy(
+                                    colorResource(DsR.color.zibe_surface).copy(
                                         alpha = ZibeMenuDefaults.BgAlpha
                                     )
                                 )
@@ -261,3 +262,5 @@ private fun ChatTopBarPreviewSelectionMode() {
         )
     }
 }
+
+

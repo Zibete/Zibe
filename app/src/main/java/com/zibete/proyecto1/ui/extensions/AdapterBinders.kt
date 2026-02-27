@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.extensions
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
@@ -15,10 +16,10 @@ import com.zibete.proyecto1.model.UserStatus
 fun View.bindStatusIndicator(ctx: Context, status: UserStatus) {
     val fillRes = when (status) {
         is UserStatus.Online,
-        is UserStatus.TypingOrRecording -> R.color.status_online
+        is UserStatus.TypingOrRecording -> DsR.color.status_online
 
         is UserStatus.LastSeen,
-        is UserStatus.Offline -> R.color.status_offline
+        is UserStatus.Offline -> DsR.color.status_offline
     }
     val fillColor = ContextCompat.getColor(ctx, fillRes)
     val bg = (background?.mutate() as? GradientDrawable)
@@ -43,7 +44,7 @@ fun ImageView.bindChecks(isMine: Boolean, seen: Int) {
     }
     setImageResource(iconRes)
 
-    val tintRes = if (seen == MSG_SEEN) R.color.check_seen else R.color.check_not_seen
+    val tintRes = if (seen == MSG_SEEN) DsR.color.check_seen else DsR.color.check_not_seen
     val tintColor = ContextCompat.getColor(context, tintRes)
     imageTintList = ColorStateList.valueOf(tintColor)
 }
@@ -56,4 +57,6 @@ fun ImageView.loadAvatar(url: String?) {
         errorRes = R.drawable.ic_person_24
     )
 }
+
+
 

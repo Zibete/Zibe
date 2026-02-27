@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.editprofile
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -84,7 +85,7 @@ fun EditProfileWelcomeBottomSheet(
                 ),
                 color = zibeColors.lightText,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = dimensionResource(R.dimen.element_spacing_medium))
+                modifier = Modifier.padding(bottom = dimensionResource(DsR.dimen.element_spacing_medium))
             )
 
             // Pager
@@ -92,7 +93,7 @@ fun EditProfileWelcomeBottomSheet(
                 state = pagerState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(dimensionResource(R.dimen.bottom_padding))
+                    .height(dimensionResource(DsR.dimen.bottom_padding))
             ) { index ->
                 val page = pages[index]
                 Column(
@@ -109,7 +110,7 @@ fun EditProfileWelcomeBottomSheet(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_xxs)))
+                    Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_xxs)))
                     Text(
                         text = stringResource(id = page.bodyRes),
                         style = MaterialTheme.typography.bodyMedium,
@@ -119,7 +120,7 @@ fun EditProfileWelcomeBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_xxs)))
+            Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_xxs)))
 
             // Dots Indicator
             DotsIndicator(
@@ -127,12 +128,12 @@ fun EditProfileWelcomeBottomSheet(
                 selectedIndex = pagerState.currentPage
             )
 
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
+            Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
 
             // Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_small))
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_small))
             ) {
                 ZibeButtonSecondary(
                     text = stringResource(R.string.action_previous),
@@ -205,3 +206,5 @@ fun EditProfileWelcomeBottomSheetPreview() {
         )
     }
 }
+
+

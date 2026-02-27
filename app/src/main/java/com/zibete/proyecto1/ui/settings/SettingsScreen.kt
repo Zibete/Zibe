@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.settings
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -142,8 +143,8 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
 
     // ---- Dimens ----
-    val spacingXs8 = dimensionResource(R.dimen.element_spacing_xs)
-    val spacingMd16 = dimensionResource(R.dimen.element_spacing_medium)
+    val spacingXs8 = dimensionResource(DsR.dimen.element_spacing_xs)
+    val spacingMd16 = dimensionResource(DsR.dimen.element_spacing_medium)
 
     // ---- Flags ----
     val isBusy = state.loadingAction != null
@@ -218,8 +219,8 @@ fun SettingsScreen(
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
                     .padding(
-                        horizontal = dimensionResource(R.dimen.screen_padding),
-                        vertical = dimensionResource(R.dimen.screen_padding)
+                        horizontal = dimensionResource(DsR.dimen.screen_padding),
+                        vertical = dimensionResource(DsR.dimen.screen_padding)
                     )
                     .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(spacingMd16)
@@ -238,7 +239,7 @@ fun SettingsScreen(
                         Text(text = stringResource(R.string.account))
                     }
 
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_xxs)))
+                    Spacer(Modifier.height(dimensionResource(DsR.dimen.element_spacing_xxs)))
 
                     Text(
                         text = state.currentEmail.orEmpty(),
@@ -322,7 +323,7 @@ fun SettingsScreen(
                         Text(text = stringResource(R.string.notifications))
                     }
 
-                    Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_small)))
+                    Spacer(Modifier.height(dimensionResource(DsR.dimen.element_spacing_small)))
 
                     ZibeSwitchRow(
                         title = stringResource(R.string.individual_notifications),
@@ -720,3 +721,5 @@ fun SettingsScreenPreview() {
         ) {}
     }
 }
+
+

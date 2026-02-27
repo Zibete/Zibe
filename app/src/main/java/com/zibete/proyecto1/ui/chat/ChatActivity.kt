@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.Manifest
 import android.app.NotificationManager
 import android.content.ContentValues
@@ -122,8 +123,8 @@ class ChatActivity : BaseChatSessionActivity() {
 
     private fun setupEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = getColor(R.color.zibe_dark_bg)
-        window.navigationBarColor = getColor(R.color.zibe_dark_bg)
+        window.statusBarColor = getColor(DsR.color.zibe_dark_bg)
+        window.navigationBarColor = getColor(DsR.color.zibe_dark_bg)
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = false
@@ -467,3 +468,5 @@ class ChatActivity : BaseChatSessionActivity() {
         nm.cancelAll()
     }
 }
+
+

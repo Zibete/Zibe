@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.auth
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -102,9 +103,9 @@ fun AuthScreen(
     val lightText = zibeColors.lightText.copy(alpha = 0.8f)
 
     // Dimens
-    val spacingXs = dimensionResource(R.dimen.element_spacing_xs)
-    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
-    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+    val spacingXs = dimensionResource(DsR.dimen.element_spacing_xs)
+    val spacingSm = dimensionResource(DsR.dimen.element_spacing_small)
+    val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
 
     val loginEnabled by remember(email, password, state.isLoadingLogin) {
         derivedStateOf {
@@ -171,8 +172,8 @@ fun AuthScreen(
                     .imePadding()
                     .navigationBarsPadding()
                     .padding(
-                        horizontal = dimensionResource(R.dimen.screen_padding),
-                        vertical = dimensionResource(R.dimen.screen_padding)
+                        horizontal = dimensionResource(DsR.dimen.screen_padding),
+                        vertical = dimensionResource(DsR.dimen.screen_padding)
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -182,8 +183,8 @@ fun AuthScreen(
                     painter = painterResource(id = R.mipmap.logo_zibe),
                     contentDescription = stringResource(R.string.logo_content_desc),
                     modifier = Modifier.padding(
-                        start = dimensionResource(R.dimen.element_spacing_xl),
-                        end = dimensionResource(R.dimen.element_spacing_xl),
+                        start = dimensionResource(DsR.dimen.element_spacing_xl),
+                        end = dimensionResource(DsR.dimen.element_spacing_xl),
                         bottom = spacingXs,
                         top = 0.dp
                     )
@@ -216,7 +217,7 @@ fun AuthScreen(
                         color = lightText
                     )
 
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
+                    Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
 
                     // EMAIL
                     ZibeInputFieldDark(
@@ -269,7 +270,7 @@ fun AuthScreen(
                         color = lightText
                     )
 
-                    Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
+                    Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
 
                     ZibeButtonPrimary(
                         text = stringResource(id = R.string.action_login),
@@ -426,3 +427,5 @@ fun AuthScreenDeleteAccountPreview() {
         )
     }
 }
+
+

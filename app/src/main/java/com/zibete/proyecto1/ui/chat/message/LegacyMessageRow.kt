@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.message
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
 import android.media.MediaPlayer
@@ -142,8 +143,8 @@ private fun PreviewMessageRow(
     isSelected: Boolean,
     text: String
 ) {
-    val bubbleColor = if (isMe) R.color.colorB else R.color.colorC
-    val backgroundColor = if (isSelected) R.color.accent_transparent else bubbleColor
+    val bubbleColor = if (isMe) DsR.color.colorB else DsR.color.colorC
+    val backgroundColor = if (isSelected) DsR.color.accent_transparent else bubbleColor
     androidx.compose.foundation.layout.Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,7 +158,7 @@ private fun PreviewMessageRow(
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
-                color = colorResource(R.color.blanco),
+                color = colorResource(DsR.color.blanco),
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
             )
         }
@@ -185,7 +186,7 @@ private fun bindRight(
     binding.selectedItem.setBackgroundColor(
         ContextCompat.getColor(
             binding.root.context,
-            if (isSelected) R.color.accent_transparent else R.color.transparent
+            if (isSelected) DsR.color.accent_transparent else DsR.color.transparent
         )
     )
 
@@ -248,7 +249,7 @@ private fun bindLeft(
     binding.selectedItem.setBackgroundColor(
         ContextCompat.getColor(
             binding.root.context,
-            if (isSelected) R.color.accent_transparent else R.color.transparent
+            if (isSelected) DsR.color.accent_transparent else DsR.color.transparent
         )
     )
 
@@ -368,21 +369,21 @@ private fun renderSeenChecksRight(b: RowMsgRightBinding, seen: Int) {
             b.checked.isVisible = true
             b.checked2.isVisible = false
             b.checked.setColorFilter(
-                ContextCompat.getColor(b.root.context, R.color.blanco),
+                ContextCompat.getColor(b.root.context, DsR.color.blanco),
                 PorterDuff.Mode.SRC_IN
             )
         }
         MSG_RECEIVED -> {
             b.checked.isVisible = true
             b.checked2.isVisible = true
-            val c = ContextCompat.getColor(b.root.context, R.color.blanco)
+            val c = ContextCompat.getColor(b.root.context, DsR.color.blanco)
             b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
         }
         MSG_SEEN -> {
             b.checked.isVisible = true
             b.checked2.isVisible = true
-            val c = ContextCompat.getColor(b.root.context, R.color.check_seen)
+            val c = ContextCompat.getColor(b.root.context, DsR.color.check_seen)
             b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
         }
@@ -613,3 +614,5 @@ fun Int?.isAudio(): Boolean = when (this) {
     MSG_AUDIO, MSG_AUDIO_RECEIVER_DLT, MSG_AUDIO_SENDER_DLT -> true
     else -> false
 }
+
+

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -89,13 +90,13 @@ fun ZibeInputField(
     val textColor = zibeColors.lightText
     val errorColor = zibeColors.snackRed
 
-    val inputElevation = dimensionResource(R.dimen.zibe_input_elevation)
+    val inputElevation = dimensionResource(DsR.dimen.zibe_input_elevation)
 
     val shape = RoundedCornerShape(
-        topStart = dimensionResource(R.dimen.zibe_input_corner_top),
-        topEnd = dimensionResource(R.dimen.zibe_input_corner_top),
-        bottomStart = dimensionResource(R.dimen.zibe_input_corner_top),
-        bottomEnd = dimensionResource(R.dimen.zibe_input_corner_top)
+        topStart = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        topEnd = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        bottomStart = dimensionResource(DsR.dimen.zibe_input_corner_top),
+        bottomEnd = dimensionResource(DsR.dimen.zibe_input_corner_top)
     )
     Column(modifier = modifier) {
         TextField(
@@ -272,7 +273,7 @@ fun ZibeInputBirthdate(
 ) {
     val zibeColors = LocalZibeExtendedColors.current
     val errorColor = zibeColors.snackRed
-    val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+    val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -310,7 +311,7 @@ fun ZibeInputBirthdate(
                         tint = zibeColors.hintText,
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
-                            .padding(end = dimensionResource(R.dimen.element_spacing_small))
+                            .padding(end = dimensionResource(DsR.dimen.element_spacing_small))
                     )
                 }
             }
@@ -531,7 +532,7 @@ fun ZibeAboutField(
 fun ZibeInputsDarkOnGradientPreview() {
     ZibeTheme {
         val zibeColors = LocalZibeExtendedColors.current
-        val inputSpacing = dimensionResource(R.dimen.zibe_input_padding)
+        val inputSpacing = dimensionResource(DsR.dimen.zibe_input_padding)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -579,7 +580,7 @@ fun ZibeInputsDarkOnGradientPreview() {
 @Composable
 fun ZibeInputsLightOnSurfacePreview() {
     ZibeTheme {
-        val inputSpacing = dimensionResource(R.dimen.zibe_input_padding)
+        val inputSpacing = dimensionResource(DsR.dimen.zibe_input_padding)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -660,3 +661,4 @@ fun ZibeAboutFieldPreview() {
         }
     }
 }
+
