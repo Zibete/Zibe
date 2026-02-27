@@ -124,7 +124,7 @@
                     style="@style/TextAppearance.Zibe.ChatList.Badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/badge_round"
+                    android:background="@drawable/shape_badge_round"
                     android:gravity="center"
                     android:includeFontPadding="false"
                     android:lineSpacingMultiplier="1"

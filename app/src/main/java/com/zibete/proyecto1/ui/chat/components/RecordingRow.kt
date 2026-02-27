@@ -74,7 +74,7 @@ fun RecordingRow(
                         modifier = Modifier.size(24.dp),
                         factory = { context ->
                             LottieAnimationView(context).apply {
-                                setAnimation(R.raw.trash)
+                                setAnimation(R.raw.lottie_trash)
                                 repeatCount = 0
                                 playAnimation()
                                 addAnimatorListener(object : AnimatorListenerAdapter() {

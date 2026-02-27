@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Zibe.Button.Primary" parent="Widget.Material3.Button">
-        <item name="android:backgroundTint">@color/zibe_button_primary_selector</item>
-        <item name="android:textColor">@color/zibe_button_text_selector</item>
+        <item name="android:backgroundTint">@color/selector_zibe_button_primary</item>
+        <item name="android:textColor">@color/selector_zibe_button_text</item>
         <item name="android:textAppearance">@style/TextAppearance.Zibe.ActionLabel</item>
 
         <item name="iconSize">@dimen/icon_size</item>
-        <item name="iconTint">@color/zibe_button_text_selector</item>
+        <item name="iconTint">@color/selector_zibe_button_text</item>
 
         <item name="android:minHeight">@dimen/zibe_btn_height</item>
         <item name="android:insetTop">0dp</item>
@@ -21,13 +21,13 @@
     </style>
 
     <style name="Zibe.Button.Secondary" parent="Zibe.Button.Primary">
-        <item name="android:backgroundTint">@color/zibe_button_secondary_selector</item>
+        <item name="android:backgroundTint">@color/selector_zibe_button_secondary</item>
     </style>
 
     <style name="Zibe.ExtendedFab" parent="Widget.Material3.ExtendedFloatingActionButton.Primary">
-        <item name="backgroundTint">@color/zibe_extfab_bg_selector</item>
-        <item name="iconTint">@color/zibe_extfab_content_selector</item>
-        <item name="android:textColor">@color/zibe_extfab_content_selector</item>
+        <item name="backgroundTint">@color/selector_zibe_extfab_bg</item>
+        <item name="iconTint">@color/selector_zibe_extfab_content</item>
+        <item name="android:textColor">@color/selector_zibe_extfab_content</item>
 
         <item name="cornerRadius">@dimen/zibe_btn_corner</item>
         <item name="android:minHeight">@dimen/zibe_btn_height</item>

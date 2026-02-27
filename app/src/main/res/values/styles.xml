@@ -45,8 +45,8 @@
 
     <!-- BottomNavigation -->
     <style name="ThemeOverlay.Zibe.BottomNav" parent="ThemeOverlay.Material3.BottomNavigationView">
-        <item name="itemIconTint">@drawable/bottom_nav_selector</item>
-        <item name="itemTextColor">@drawable/bottom_nav_selector</item>
+        <item name="itemIconTint">@drawable/selector_bottom_nav</item>
+        <item name="itemTextColor">@drawable/selector_bottom_nav</item>
         <item name="itemActiveIndicatorStyle">@style/Zibe.BottomNav.ActiveIndicator.Pill</item>
     </style>
 

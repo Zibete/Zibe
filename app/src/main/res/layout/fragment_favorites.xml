@@ -37,7 +37,7 @@
                     android:layout_gravity="center"
                     app:lottie_autoPlay="false"
                     app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/empty_favorites"/>
+                    app:lottie_rawRes="@raw/lottie_empty_favorites"/>
 
                 <TextView
                     android:id="@+id/tv_onboarding_favorites"

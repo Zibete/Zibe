@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.airbnb.lottie.LottieAnimationView
-import com.airbnb.lottie.LottieDrawable
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
@@ -62,7 +61,7 @@ fun TrashLottie(
                 .fillMaxSize(),
             factory = { context ->
                 LottieAnimationView(context).apply {
-                    setAnimation(R.raw.trash)
+                    setAnimation(R.raw.lottie_trash)
                     repeatCount = 0
                     progress = 0f
                     addAnimatorListener(object : AnimatorListenerAdapter() {
