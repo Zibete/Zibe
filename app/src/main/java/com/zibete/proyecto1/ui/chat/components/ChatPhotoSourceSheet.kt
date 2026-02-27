@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +35,7 @@ fun ChatPhotoSourceSheet(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_xs))
         ) {
             PhotoSourceItem(
                 modifier = Modifier.weight(1f),
@@ -71,3 +72,5 @@ private fun ChatPhotoSourceSheetPreview() {
         )
     }
 }
+
+

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -104,7 +105,7 @@ private fun ZibeBaseFAB(
     val finalContentColor = if (isEffectivelyEnabled) contentColor else extendedColors.hintText
 
     val minWidth = if (expanded) {
-        dimensionResource(R.dimen.fab_min_width)
+        dimensionResource(DsR.dimen.fab_min_width)
     } else {
         0.dp
     }
@@ -112,14 +113,14 @@ private fun ZibeBaseFAB(
     ExtendedFloatingActionButton(
         onClick = { if (isEffectivelyEnabled) onClick() },
         modifier = modifier
-            .heightIn(min = dimensionResource(R.dimen.zibe_btn_height))
+            .heightIn(min = dimensionResource(DsR.dimen.zibe_btn_height))
             .widthIn(min = minWidth),
-        shape = RoundedCornerShape(dimensionResource(R.dimen.zibe_btn_corner)),
+        shape = RoundedCornerShape(dimensionResource(DsR.dimen.zibe_btn_corner)),
         containerColor = finalContainerColor,
         contentColor = finalContentColor,
         elevation = FloatingActionButtonDefaults.elevation(
-            defaultElevation = if (isEffectivelyEnabled) dimensionResource(R.dimen.zibe_btn_elevation) else 0.dp,
-            pressedElevation = if (isEffectivelyEnabled) dimensionResource(R.dimen.zibe_btn_elevation_pressed) else 0.dp
+            defaultElevation = if (isEffectivelyEnabled) dimensionResource(DsR.dimen.zibe_btn_elevation) else 0.dp,
+            pressedElevation = if (isEffectivelyEnabled) dimensionResource(DsR.dimen.zibe_btn_elevation_pressed) else 0.dp
         ),
         expanded = expanded,
         icon = {
@@ -176,3 +177,5 @@ fun ZibeFABsPreview() {
         }
     }
 }
+
+

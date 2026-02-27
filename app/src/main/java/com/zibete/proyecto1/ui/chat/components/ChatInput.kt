@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +57,7 @@ fun ChatInput(
     onMicPointerInWindowChanged: (Offset) -> Unit = {}
 ) {
     var isMicPressed by remember { mutableStateOf(false) }
-    val chatComponentsHeight = dimensionResource(R.dimen.zibe_btn_height)
+    val chatComponentsHeight = dimensionResource(DsR.dimen.zibe_btn_height)
 
     Box(
         modifier = Modifier
@@ -292,3 +293,5 @@ private fun ChatInputPreviewRecordingCanceled() {
         )
     }
 }
+
+

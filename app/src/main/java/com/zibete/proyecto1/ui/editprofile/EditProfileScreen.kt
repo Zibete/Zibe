@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.editprofile
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import android.Manifest
 import android.content.Context
@@ -177,7 +178,7 @@ fun EditProfileScreen(
 
     var fabHeightPx by remember { mutableIntStateOf(0) }
     val fabHeightDp = with(density) { fabHeightPx.toDp() }
-    val bottomSpacerTarget = fabHeightDp + dimensionResource(R.dimen.element_spacing_medium)
+    val bottomSpacerTarget = fabHeightDp + dimensionResource(DsR.dimen.element_spacing_medium)
     val bottomSpacer by animateDpAsState(bottomSpacerTarget, label = "fabSpacer")
 
     val photoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -308,14 +309,14 @@ fun EditProfileScreen(
                     .padding(innerPadding)
                     .verticalScroll(scrollState)
                     .padding(
-                        horizontal = dimensionResource(R.dimen.screen_padding),
-                        vertical = dimensionResource(R.dimen.screen_padding)
+                        horizontal = dimensionResource(DsR.dimen.screen_padding),
+                        vertical = dimensionResource(DsR.dimen.screen_padding)
                     )
                     .windowInsetsPadding(
                         WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
                     )
                     .imePadding(),
-                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_medium))
+                verticalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_medium))
             ) {
                 PhotoHeader(
                     photoUrl = resolvedPhoto,
@@ -334,7 +335,7 @@ fun EditProfileScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
+                        verticalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_xs))
                     ) {
                         ZibeInputField(
                             value = state.name,
@@ -462,3 +463,5 @@ fun EditProfileScreenPreview() {
         )
     }
 }
+
+

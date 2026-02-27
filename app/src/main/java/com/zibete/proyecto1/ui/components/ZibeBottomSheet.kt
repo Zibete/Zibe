@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -60,15 +61,15 @@ fun ZibeBottomSheet(
             },
             modifier = Modifier,
             content = {
-                val inputPadding = dimensionResource(R.dimen.zibe_input_padding)
+                val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                         .navigationBarsPadding()
                         .imePadding()
-                        .padding(horizontal = dimensionResource(R.dimen.screen_padding))
-                        .padding(bottom = dimensionResource(R.dimen.element_spacing_xl)),
+                        .padding(horizontal = dimensionResource(DsR.dimen.screen_padding))
+                        .padding(bottom = dimensionResource(DsR.dimen.element_spacing_xl)),
                     verticalArrangement = Arrangement.spacedBy(inputPadding),
                     content = content
                 )
@@ -95,7 +96,7 @@ fun SheetHeader(
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_xs)))
+        Spacer(Modifier.height(dimensionResource(DsR.dimen.element_spacing_xs)))
 
         subtitle?.let {
             Text(
@@ -105,7 +106,7 @@ fun SheetHeader(
             )
         }
 
-        Spacer(Modifier.height(dimensionResource(R.dimen.element_spacing_medium)))
+        Spacer(Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
     }
 }
 
@@ -122,9 +123,9 @@ fun SheetActions(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
-            .padding(top = dimensionResource(R.dimen.element_spacing_small)),
+            .padding(top = dimensionResource(DsR.dimen.element_spacing_small)),
         horizontalArrangement = Arrangement
-            .spacedBy(dimensionResource(R.dimen.element_spacing_small))
+            .spacedBy(dimensionResource(DsR.dimen.element_spacing_small))
     ) {
         // Botón Cancelar
         ZibeButtonSecondary(
@@ -199,3 +200,5 @@ fun ZibeBottomSheetPreviewField() {
         )
     }
 }
+
+

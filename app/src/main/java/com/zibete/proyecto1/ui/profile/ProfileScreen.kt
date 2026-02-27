@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.profile
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -166,8 +167,8 @@ fun ProfileScreen(
     val zibeTypography = LocalZibeTypography.current
 
     val scrollState = rememberScrollState()
-    val spacingMd = dimensionResource(R.dimen.element_spacing_medium)
-    val spacingSm = dimensionResource(R.dimen.element_spacing_small)
+    val spacingMd = dimensionResource(DsR.dimen.element_spacing_medium)
+    val spacingSm = dimensionResource(DsR.dimen.element_spacing_small)
 
     var fabHeightPx by remember { mutableIntStateOf(0) }
     val fabHeightDp = with(LocalDensity.current) { fabHeightPx.toDp() }
@@ -247,7 +248,7 @@ fun ProfileScreen(
                 } else null
 
                 val collapseThresholdPx = with(LocalDensity.current) {
-                    dimensionResource(R.dimen.fab_collapse_scroll_threshold).toPx()
+                    dimensionResource(DsR.dimen.fab_collapse_scroll_threshold).toPx()
                 }
 
                 ZibeCollapsingFabStack(
@@ -345,8 +346,8 @@ fun ProfileScreen(
                                 .fillMaxSize()
                                 .verticalScroll(scrollState)
                                 .padding(
-                                    horizontal = dimensionResource(R.dimen.screen_padding),
-                                    vertical = dimensionResource(R.dimen.screen_padding)
+                                    horizontal = dimensionResource(DsR.dimen.screen_padding),
+                                    vertical = dimensionResource(DsR.dimen.screen_padding)
                                 )
                                 .windowInsetsPadding(
                                     WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
@@ -431,3 +432,5 @@ fun ProfileScreenPreview() {
         )
     }
 }
+
+

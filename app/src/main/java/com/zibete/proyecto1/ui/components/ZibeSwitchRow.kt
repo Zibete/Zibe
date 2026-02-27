@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,9 +37,9 @@ fun ZibeSwitchRow(
     supportingText: String? = null
 ) {
     val zibeExtendedColors = LocalZibeExtendedColors.current
-    val corner = dimensionResource(R.dimen.corner_medium)
-    val horizontal = dimensionResource(R.dimen.element_spacing_medium)
-    val vertical = dimensionResource(R.dimen.element_spacing_small)
+    val corner = dimensionResource(DsR.dimen.corner_medium)
+    val horizontal = dimensionResource(DsR.dimen.element_spacing_medium)
+    val vertical = dimensionResource(DsR.dimen.element_spacing_small)
 
     val interaction = remember { MutableInteractionSource() }
 
@@ -117,3 +118,5 @@ fun ZibeSwitchRowPreview() {
         }
     }
 }
+
+

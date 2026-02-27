@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,7 +38,7 @@ fun ZibeCollapsingFabStack(
     onSecondaryClick: (() -> Unit)? = null,
     onHeightPxChanged: (Int) -> Unit = {}
 ) {
-    val spacing = dimensionResource(R.dimen.element_spacing_medium)
+    val spacing = dimensionResource(DsR.dimen.element_spacing_medium)
 
     val secondaryAvailable =
         secondaryText != null && secondaryIcon != null && onSecondaryClick != null
@@ -93,3 +94,5 @@ fun ZibeCollapsingFabStackPreview() {
         )
     }
 }
+
+

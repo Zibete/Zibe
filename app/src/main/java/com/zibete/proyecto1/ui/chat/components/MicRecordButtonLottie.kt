@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -55,7 +56,7 @@ fun MicRecordButton(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
-    val buttonSizePx = with(density) { dimensionResource(R.dimen.zibe_btn_height).toPx() }
+    val buttonSizePx = with(density) { dimensionResource(DsR.dimen.zibe_btn_height).toPx() }
     val marginPx = with(density) { 8.dp.toPx() }
     val maxLeftOffset = -(screenWidthPx - buttonSizePx - marginPx).coerceAtLeast(0f)
 
@@ -197,3 +198,4 @@ fun MicRecordButtonPreview() {
         )
     }
 }
+

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -63,7 +64,7 @@ fun ZibeDialogPreview() {
         ZibeDialog(
             title = stringResource(R.string.reset_password_title),
             content = {
-                Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_medium))) {
+                Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_medium))) {
                     Text(
                         text = stringResource(R.string.reset_password_content)
                     )
@@ -79,3 +80,5 @@ fun ZibeDialogPreview() {
         )
     }
 }
+
+

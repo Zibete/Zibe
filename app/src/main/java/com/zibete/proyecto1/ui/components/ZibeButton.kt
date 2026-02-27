@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -47,14 +48,14 @@ fun ZibeButtonPrimary(
     enabled: Boolean = true,
     isLoading: Boolean = false,
     buttonColors: ButtonColors = ButtonDefaults.buttonColors(
-        containerColor = colorResource(R.color.zibe_btn_primary),
-        contentColor = colorResource(R.color.white)
+        containerColor = colorResource(DsR.color.zibe_btn_primary),
+        contentColor = colorResource(DsR.color.white)
     )
 ) {
-    val buttonHeight = dimensionResource(R.dimen.zibe_btn_height)
-    val buttonElevation = dimensionResource(R.dimen.zibe_btn_elevation)
-    val pressedElevation = dimensionResource(R.dimen.zibe_btn_elevation_pressed)
-    val spacingSmall = dimensionResource(R.dimen.element_spacing_small)
+    val buttonHeight = dimensionResource(DsR.dimen.zibe_btn_height)
+    val buttonElevation = dimensionResource(DsR.dimen.zibe_btn_elevation)
+    val pressedElevation = dimensionResource(DsR.dimen.zibe_btn_elevation_pressed)
+    val spacingSmall = dimensionResource(DsR.dimen.element_spacing_small)
 
     Button(
         onClick = onClick,
@@ -142,8 +143,8 @@ fun ZibeButtonOutlined(
         contentColor = MaterialTheme.colorScheme.onSurface
     )
 ) {
-    val spacingSmall = dimensionResource(R.dimen.element_spacing_small)
-    val buttonHeight = dimensionResource(R.dimen.zibe_btn_height)
+    val spacingSmall = dimensionResource(DsR.dimen.element_spacing_small)
+    val buttonHeight = dimensionResource(DsR.dimen.zibe_btn_height)
 
     OutlinedButton(
         onClick = onClick,
@@ -262,3 +263,5 @@ fun ZibeButtonOutlinedPreview() {
         )
     }
 }
+
+

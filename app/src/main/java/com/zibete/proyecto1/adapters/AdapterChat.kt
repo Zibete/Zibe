@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.adapters
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
@@ -161,7 +162,7 @@ class AdapterChat(
             b.selectedItem.setBackgroundColor(
                 ContextCompat.getColor(
                     context,
-                    if (isSelected(item)) R.color.accent_transparent else R.color.transparent
+                    if (isSelected(item)) DsR.color.accent_transparent else DsR.color.transparent
                 )
             )
 
@@ -224,7 +225,7 @@ class AdapterChat(
             b.selectedItem.setBackgroundColor(
                 ContextCompat.getColor(
                     context,
-                    if (isSelected(item)) R.color.accent_transparent else R.color.transparent
+                    if (isSelected(item)) DsR.color.accent_transparent else DsR.color.transparent
                 )
             )
 
@@ -354,7 +355,7 @@ class AdapterChat(
                 b.checked.isVisible = true
                 b.checked2.isVisible = false
                 b.checked.setColorFilter(
-                    ContextCompat.getColor(context, R.color.blanco),
+                    ContextCompat.getColor(context, DsR.color.blanco),
                     PorterDuff.Mode.SRC_IN
                 )
             }
@@ -362,7 +363,7 @@ class AdapterChat(
             2 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = true
-                val c = ContextCompat.getColor(context, R.color.blanco)
+                val c = ContextCompat.getColor(context, DsR.color.blanco)
                 b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             }
@@ -370,7 +371,7 @@ class AdapterChat(
             3 -> {
                 b.checked.isVisible = true
                 b.checked2.isVisible = true
-                val c = ContextCompat.getColor(context, R.color.check_seen)
+                val c = ContextCompat.getColor(context, DsR.color.check_seen)
                 b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
                 b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
             }
@@ -655,3 +656,6 @@ class AdapterChat(
         }
     }
 }
+
+
+

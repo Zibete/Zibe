@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +35,7 @@ fun PhotoSourceItem(
     Surface(
         modifier = modifier.clickable { onClick() },
         shape = MaterialTheme.shapes.medium,
-        color = colorResource(R.color.zibe_night_start)
+        color = colorResource(DsR.color.zibe_night_start)
     ) {
         Column(
             modifier = Modifier
@@ -46,13 +47,13 @@ fun PhotoSourceItem(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp),
-                tint = colorResource(R.color.blanco)
+                tint = colorResource(DsR.color.blanco)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = colorResource(R.color.blanco)
+                color = colorResource(DsR.color.blanco)
             )
         }
     }
@@ -83,3 +84,5 @@ private fun PhotoSourceItemPreviewGallery() {
         )
     }
 }
+
+

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -58,7 +59,7 @@ fun PhotoSourceBottomSheet(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.element_spacing_xs))
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(DsR.dimen.element_spacing_xs))
             ) {
                 PhotoSourceMainItem(
                     modifier = Modifier.weight(1f),
@@ -81,7 +82,7 @@ fun PhotoSourceBottomSheet(
             }
 
             onDeleteClick?.let {
-                Spacer(modifier = Modifier.height(dimensionResource(R.dimen.element_spacing_xs)))
+                Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_xs)))
                 DeletePhotoAction(
                     onClick = {
                         it()
@@ -181,3 +182,5 @@ fun PhotoSourceBottomSheetPreview() {
         )
     }
 }
+
+

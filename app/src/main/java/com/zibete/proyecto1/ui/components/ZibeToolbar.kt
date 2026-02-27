@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -96,7 +97,7 @@ fun ZibeToolbar(
                             onDismissRequest = { showMenu = false },
                             modifier = Modifier
                                 .background(
-                                    colorResource(R.color.zibe_surface).copy(
+                                    colorResource(DsR.color.zibe_surface).copy(
                                         alpha = ZibeMenuDefaults.BgAlpha
                                     )
                                 )
@@ -180,3 +181,5 @@ fun ZibeToolbarMenuPreview() {
         )
     }
 }
+
+

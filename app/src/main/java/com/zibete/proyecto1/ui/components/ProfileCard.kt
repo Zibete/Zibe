@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,21 +69,21 @@ fun ProfileCard(
 ) {
     val zibeColors = LocalZibeExtendedColors.current
     val zibeTypography = LocalZibeTypography.current
-    val spacing6 = dimensionResource(R.dimen.element_spacing_xxs)
-    val spacing12 = dimensionResource(R.dimen.element_spacing_small)
-    val spacing16 = dimensionResource(R.dimen.element_spacing_medium)
-    val tagLocationFg = colorResource(R.color.tag_location_fg)
-    val tagLocationBg = colorResource(R.color.tag_location_bg)
-    val tagLocationStroke = colorResource(R.color.tag_location_stroke)
-    val tagFavoriteFg = colorResource(R.color.tag_favorite_fg)
-    val tagFavoriteBg = colorResource(R.color.tag_favorite_bg)
-    val tagFavoriteStroke = colorResource(R.color.tag_favorite_stroke)
-    val tagBlockedFg = colorResource(R.color.tag_blocked_fg)
-    val tagBlockedBg = colorResource(R.color.tag_blocked_bg)
-    val tagBlockedStroke = colorResource(R.color.tag_blocked_stroke)
-    val tagSilencedFg = colorResource(R.color.tag_silenced_fg)
-    val tagSilencedBg = colorResource(R.color.tag_silenced_bg)
-    val tagSilencedStroke = colorResource(R.color.tag_silenced_stroke)
+    val spacing6 = dimensionResource(DsR.dimen.element_spacing_xxs)
+    val spacing12 = dimensionResource(DsR.dimen.element_spacing_small)
+    val spacing16 = dimensionResource(DsR.dimen.element_spacing_medium)
+    val tagLocationFg = colorResource(DsR.color.tag_location_fg)
+    val tagLocationBg = colorResource(DsR.color.tag_location_bg)
+    val tagLocationStroke = colorResource(DsR.color.tag_location_stroke)
+    val tagFavoriteFg = colorResource(DsR.color.tag_favorite_fg)
+    val tagFavoriteBg = colorResource(DsR.color.tag_favorite_bg)
+    val tagFavoriteStroke = colorResource(DsR.color.tag_favorite_stroke)
+    val tagBlockedFg = colorResource(DsR.color.tag_blocked_fg)
+    val tagBlockedBg = colorResource(DsR.color.tag_blocked_bg)
+    val tagBlockedStroke = colorResource(DsR.color.tag_blocked_stroke)
+    val tagSilencedFg = colorResource(DsR.color.tag_silenced_fg)
+    val tagSilencedBg = colorResource(DsR.color.tag_silenced_bg)
+    val tagSilencedStroke = colorResource(DsR.color.tag_silenced_stroke)
 
     val tagGroupMatchFg = zibeColors.tagGroupMatchFg
     val tagGroupMatchBg = zibeColors.tagGroupMatchBg
@@ -283,12 +284,12 @@ private fun ProfileTag(
     background: Color,
     stroke: Color
 ) {
-    val tagTextSize = dimensionResource(R.dimen.tag_text_size).value.sp
-    val iconSize = dimensionResource(R.dimen.tag_icon_size)
-    val paddingX = dimensionResource(R.dimen.element_spacing_xs)
-    val paddingY = dimensionResource(R.dimen.layout_margin_xs)
-    val iconSpacing = dimensionResource(R.dimen.layout_margin_small)
-    val strokeWidth = dimensionResource(R.dimen.popup_menu_stroke)
+    val tagTextSize = dimensionResource(DsR.dimen.tag_text_size).value.sp
+    val iconSize = dimensionResource(DsR.dimen.tag_icon_size)
+    val paddingX = dimensionResource(DsR.dimen.element_spacing_xs)
+    val paddingY = dimensionResource(DsR.dimen.layout_margin_xs)
+    val iconSpacing = dimensionResource(DsR.dimen.layout_margin_small)
+    val strokeWidth = dimensionResource(DsR.dimen.popup_menu_stroke)
     val zibeTypography = LocalZibeTypography.current
 
     Surface(
@@ -342,3 +343,5 @@ fun ProfileCardPreview() {
         )
     }
 }
+
+

@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +30,7 @@ fun ActionRow(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val arrowDown = painterResource(R.drawable.ic_baseline_keyboard_arrow_down_24)
-    val zibeBtnCorner = dimensionResource(R.dimen.zibe_btn_corner)
+    val zibeBtnCorner = dimensionResource(DsR.dimen.zibe_btn_corner)
 
     val zibeExtendedColors = LocalZibeExtendedColors.current
 
@@ -84,3 +85,5 @@ fun ActionRowWithoutSubtitlePreview() {
         )
     }
 }
+
+

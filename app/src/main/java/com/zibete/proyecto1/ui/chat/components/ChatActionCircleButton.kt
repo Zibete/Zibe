@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.chat.components
 
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -33,7 +34,7 @@ fun ChatActionCircleButton(
     val zibeExtendedColors = LocalZibeExtendedColors.current
     val containerColor = containerColorOverride ?: zibeExtendedColors.contentDarkBg
     val contentColor = zibeExtendedColors.lightText
-    val chatComponentsHeight = dimensionResource(R.dimen.zibe_btn_height)
+    val chatComponentsHeight = dimensionResource(DsR.dimen.zibe_btn_height)
 
     Button(
         onClick = onClick,
@@ -93,3 +94,5 @@ fun ChatActionCircleButtonDisabledPreview() {
         )
     }
 }
+
+
