@@ -1,28 +1,27 @@
 package com.zibete.proyecto1.ui.components
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R as DsR
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 /**
@@ -177,5 +176,6 @@ fun ZibeFABsPreview() {
         }
     }
 }
+
 
 

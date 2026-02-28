@@ -1,67 +1,67 @@
 package com.zibete.proyecto1.ui.profile
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.SnackBarManagerEntryPoint
-import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.ProfileCard
+import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
 import com.zibete.proyecto1.ui.components.ZibeMenuItem
 import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
@@ -432,5 +432,7 @@ fun ProfileScreenPreview() {
         )
     }
 }
+
+
 
 

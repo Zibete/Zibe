@@ -1,22 +1,21 @@
 package com.zibete.proyecto1.ui.chat.components
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
@@ -94,5 +93,6 @@ fun ChatActionCircleButtonDisabledPreview() {
         )
     }
 }
+
 
 

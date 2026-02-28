@@ -1,27 +1,24 @@
 package com.zibete.proyecto1.ui.components
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-
 
 @Composable
 fun ZibeCollapsingFabStack(
@@ -94,5 +91,6 @@ fun ZibeCollapsingFabStackPreview() {
         )
     }
 }
+
 
 

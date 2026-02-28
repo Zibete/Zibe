@@ -1,10 +1,9 @@
 package com.zibete.proyecto1.ui.chat
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import android.Manifest
 import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
+import android.Manifest
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -15,12 +14,13 @@ import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.MediaStore
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
@@ -28,19 +28,20 @@ import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
@@ -468,5 +469,7 @@ class ChatActivity : BaseChatSessionActivity() {
         nm.cancelAll()
     }
 }
+
+
 
 

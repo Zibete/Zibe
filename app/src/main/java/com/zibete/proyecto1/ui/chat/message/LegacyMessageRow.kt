@@ -1,8 +1,7 @@
 package com.zibete.proyecto1.ui.chat.message
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
+import android.graphics.PorterDuff
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.SystemClock
@@ -36,7 +35,6 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_SENDER_DLT
@@ -49,6 +47,7 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.core.utils.TimeUtils.formatHour
 import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils.widthPx
@@ -56,6 +55,7 @@ import com.zibete.proyecto1.databinding.RowMsgLeftBinding
 import com.zibete.proyecto1.databinding.RowMsgRightBinding
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.chat.media.MediaState
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
@@ -614,5 +614,6 @@ fun Int?.isAudio(): Boolean = when (this) {
     MSG_AUDIO, MSG_AUDIO_RECEIVER_DLT, MSG_AUDIO_SENDER_DLT -> true
     else -> false
 }
+
 
 

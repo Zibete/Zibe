@@ -1,9 +1,8 @@
 package com.zibete.proyecto1.adapters
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.content.Context
-import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
+import android.graphics.PorterDuff
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.SystemClock
@@ -26,12 +25,6 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.zibete.proyecto1.R
-import com.zibete.proyecto1.databinding.RowDateChatBinding
-import com.zibete.proyecto1.databinding.RowMsgLeftBinding
-import com.zibete.proyecto1.databinding.RowMsgRightBinding
-import com.zibete.proyecto1.model.ChatMessage
-import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
@@ -46,10 +39,17 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_LEFT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_MID
 import com.zibete.proyecto1.core.constants.Constants.MSG_TYPE_RIGHT
-import com.zibete.proyecto1.ui.media.PhotoViewerActivity
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.core.utils.TimeUtils.formatHour
 import com.zibete.proyecto1.core.utils.ZibeApp.ScreenUtils.widthPx
+import com.zibete.proyecto1.databinding.RowDateChatBinding
+import com.zibete.proyecto1.databinding.RowMsgLeftBinding
+import com.zibete.proyecto1.databinding.RowMsgRightBinding
+import com.zibete.proyecto1.model.ChatMessage
+import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import de.hdodenhof.circleimageview.CircleImageView
 import java.io.IOException
 
@@ -656,6 +656,7 @@ class AdapterChat(
         }
     }
 }
+
 
 
 
