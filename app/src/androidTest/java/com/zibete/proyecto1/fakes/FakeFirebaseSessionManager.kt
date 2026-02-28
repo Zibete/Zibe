@@ -6,7 +6,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
-import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
+import com.zibete.proyecto1.data.auth.AuthProvider
 import com.zibete.proyecto1.testing.TestScenario
 import io.mockk.mockk
 import org.mockito.kotlin.doReturn

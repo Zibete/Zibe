@@ -20,3 +20,10 @@ android {
         jvmTarget = "11"
     }
 }
+
+dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-database")
+    implementation("androidx.annotation:annotation:1.9.1")
+    implementation("javax.inject:javax.inject:1")
+}

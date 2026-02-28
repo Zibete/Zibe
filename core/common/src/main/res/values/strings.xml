@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="deleted_profile_fallback">Perfil eliminado</string>
+    <string name="ultVez">últ. vez</string>
+    <string name="online">en línea</string>
+    <string name="typing">escribiendo…</string>
+    <string name="recording">grabando audio…</string>
+    <string name="today">hoy</string>
+    <string name="yesterday">ayer</string>
+    <string name="last_seen_format">últ. vez %1$s a las %2$s</string>
+</resources>
+

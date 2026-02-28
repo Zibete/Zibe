@@ -20,7 +20,7 @@ import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
-import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
+import com.zibete.proyecto1.data.auth.AuthProvider
 import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
