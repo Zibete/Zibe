@@ -14,7 +14,7 @@ interface GroupRepositoryProvider {
         userType: Int,
         chatType: Int,
         content: String,
-        senderName: String = ""
+        senderUid: String = ""
     ): ZibeResult<Unit>
 
     suspend fun removeUserFromGroup(groupName: String, userId: String = ""): ZibeResult<Unit>

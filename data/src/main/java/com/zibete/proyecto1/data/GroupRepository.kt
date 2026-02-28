@@ -409,14 +409,14 @@ class GroupRepository constructor(
         userType: Int,
         chatType: Int,
         content: String,
-        senderName: String
+        senderUid: String
     ): ZibeResult<Unit> = zibeCatching {
-        val resolvedSenderName = senderName.ifBlank { myUid }
+        val resolvedSenderUid = senderUid.ifBlank { myUid }
         val chatMap = mutableMapOf(
             ChatGroupKeys.CONTENT to content,
             ChatGroupKeys.TIMESTAMP to ServerValue.TIMESTAMP,
             ChatGroupKeys.USER_NAME to userName,
-            ChatGroupKeys.SENDER_UID to resolvedSenderName,
+            ChatGroupKeys.SENDER_UID to resolvedSenderUid,
             ChatGroupKeys.CHAT_TYPE to chatType,
             ChatGroupKeys.USER_TYPE to userType,
         )
