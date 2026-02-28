@@ -103,6 +103,8 @@ configurations.all {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
+    implementation(project(":domain"))
+    implementation(project(":data"))
 
     // -------------------------------
     // ANDROIDX BASE
