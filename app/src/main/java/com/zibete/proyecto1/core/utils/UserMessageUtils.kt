@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.core.utils
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
@@ -16,6 +15,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.behavior.SwipeDismissBehavior
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import kotlin.math.abs
@@ -249,5 +249,6 @@ object UserMessageUtils {
             .show()
     }
 }
+
 
 

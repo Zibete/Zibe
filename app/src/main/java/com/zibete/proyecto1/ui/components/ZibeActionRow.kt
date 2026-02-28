@@ -1,7 +1,5 @@
 package com.zibete.proyecto1.ui.components
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,13 +10,15 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 
 @Composable
@@ -85,5 +85,6 @@ fun ActionRowWithoutSubtitlePreview() {
         )
     }
 }
+
 
 

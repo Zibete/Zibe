@@ -1,24 +1,19 @@
 package com.zibete.proyecto1.ui.editprofile
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
-import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.Manifest
 import android.net.Uri
 import android.os.Environment
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,7 +22,10 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,19 +35,19 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -62,12 +60,13 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.EDIT_PROFILE_SCREEN
-import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.toUiText
-import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.copyToTempFile
+import com.zibete.proyecto1.core.utils.TimeUtils.isoToUiDate
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.PhotoSourceBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeAboutField
@@ -81,10 +80,11 @@ import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import com.zibete.proyecto1.ui.media.rememberZibePhotoCropper
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import kotlinx.coroutines.flow.collectLatest
 import java.io.File
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun EditProfileRoute(
@@ -463,5 +463,7 @@ fun EditProfileScreenPreview() {
         )
     }
 }
+
+
 
 

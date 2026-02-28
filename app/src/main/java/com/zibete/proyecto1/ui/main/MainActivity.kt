@@ -1,43 +1,40 @@
 package com.zibete.proyecto1.ui.main
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import android.Manifest
 import android.animation.LayoutTransition
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PorterDuff
+import android.Manifest
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.IntentCompat
+import androidx.core.view.get
 import androidx.core.view.GravityCompat
+import androidx.core.view.isVisible
+import androidx.core.view.size
+import androidx.core.view.updatePadding
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.get
-import androidx.core.view.isVisible
-import androidx.core.view.size
-import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavController
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -55,12 +52,12 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.ui.SnackBarManager
@@ -69,7 +66,7 @@ import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.databinding.NavViewBinding
-
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -82,9 +79,8 @@ import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
-import de.hdodenhof.circleimageview.CircleImageView
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
@@ -820,5 +816,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
+
+
 
 

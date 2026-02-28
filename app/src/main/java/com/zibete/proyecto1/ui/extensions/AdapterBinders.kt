@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.extensions
 
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
@@ -8,10 +7,11 @@ import android.view.View
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.R
 
 fun View.bindStatusIndicator(ctx: Context, status: UserStatus) {
     val fillRes = when (status) {
@@ -57,6 +57,7 @@ fun ImageView.loadAvatar(url: String?) {
         errorRes = R.drawable.ic_person_24
     )
 }
+
 
 
 
