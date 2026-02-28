@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.core.utils
 
 import android.content.Context
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.common.R as CoreR
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
@@ -49,7 +49,7 @@ object TimeUtils {
 
         return when {
             isToday(ms) -> formatHour(ms)
-            isYesterday(ms) -> context.getString(R.string.yesterday)
+            isYesterday(ms) -> context.getString(CoreR.string.yesterday)
             else -> formatUiDate(ms)
         }
     }
@@ -58,8 +58,8 @@ object TimeUtils {
         if (ms <= 0L) return ""
 
         return when {
-            isToday(ms) -> context.getString(R.string.today)
-            isYesterday(ms) -> context.getString(R.string.yesterday)
+            isToday(ms) -> context.getString(CoreR.string.today)
+            isYesterday(ms) -> context.getString(CoreR.string.yesterday)
             else -> formatUiDate(ms)
         }
     }
@@ -106,7 +106,7 @@ object TimeUtils {
         val date = formatUiDate(ms)
         val time = formatHour(ms)
 
-        return context.getString(R.string.last_seen_format, date, time)
+        return context.getString(CoreR.string.last_seen_format, date, time)
     }
 
     fun isoToMillis(isoDate: String): Long? =

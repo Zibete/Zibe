@@ -2,6 +2,7 @@ package com.zibete.proyecto1.di
 
 import com.zibete.proyecto1.core.device.DefaultDeviceInfoProvider
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
+import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
 import com.zibete.proyecto1.data.GroupRepository
@@ -41,6 +42,7 @@ import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
+import com.zibete.proyecto1.domain.session.SessionConflictNavigator
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import dagger.Binds
 import dagger.Module
@@ -188,4 +190,10 @@ abstract class AppBindingsModule {
     abstract fun bindSessionConflictMonitor(
         impl: DefaultSessionConflictMonitor
     ): SessionConflictMonitor
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionConflictNavigator(
+        impl: AppNavigator
+    ): SessionConflictNavigator
 }
