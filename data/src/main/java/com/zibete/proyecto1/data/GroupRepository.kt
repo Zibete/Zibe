@@ -48,13 +48,6 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-interface GroupRepositoryProvider {
-
-    suspend fun findUserGroup(userId: String, groupName: String): UserGroup?
-
-    suspend fun isGroupMatch(otherUid: String, groupName: String): ZibeResult<Boolean>
-}
-
 @ApplicationScope
 @Singleton
 class GroupRepository constructor(
@@ -410,19 +403,20 @@ class GroupRepository constructor(
 
 
     // Join / Leave / Membership
-    suspend fun sendGroupMessage(
+    override suspend fun sendGroupMessage(
         groupName: String,
         userName: String,
         userType: Int,
         chatType: Int,
         content: String,
-        senderName: String = myUid
+        senderName: String
     ): ZibeResult<Unit> = zibeCatching {
+        val resolvedSenderName = senderName.ifBlank { myUid }
         val chatMap = mutableMapOf(
             ChatGroupKeys.CONTENT to content,
             ChatGroupKeys.TIMESTAMP to ServerValue.TIMESTAMP,
             ChatGroupKeys.USER_NAME to userName,
-            ChatGroupKeys.SENDER_UID to senderName,
+            ChatGroupKeys.SENDER_UID to resolvedSenderName,
             ChatGroupKeys.CHAT_TYPE to chatType,
             ChatGroupKeys.USER_TYPE to userType,
         )
@@ -448,12 +442,13 @@ class GroupRepository constructor(
         groupUserRef.setValue(userMap).await()
     }
 
-    suspend fun removeUserFromGroup(
+    override suspend fun removeUserFromGroup(
         groupName: String,
-        userId: String = myUid
+        userId: String
     ): ZibeResult<Unit> = zibeCatching {
+        val resolvedUserId = userId.ifBlank { myUid }
         groupUsersRef(groupName)
-            .child(userId)
+            .child(resolvedUserId)
             .removeValue()
             .await()
     }
@@ -509,7 +504,7 @@ class GroupRepository constructor(
     /**
      * Borra la lista local de conversaciones privadas (group_dm) del user en Users/Data.
      */
-    suspend fun removeMyGroupChatList(): ZibeResult<Unit> = zibeCatching {
+    override suspend fun removeMyGroupChatList(): ZibeResult<Unit> = zibeCatching {
         groupPrivateConversationsRef().removeValue().await()
     }
 
@@ -517,11 +512,14 @@ class GroupRepository constructor(
      * Borra chats privados dentro de /Chats/group_dm cuyo key contenga userId.
      * (Como venías haciendo; es “global”, no por groupName)
      */
-    suspend fun removeMyPrivateGroupChats(userId: String = myUid): ZibeResult<Unit> = zibeCatching {
+    override suspend fun removeMyPrivateGroupChats(
+        userId: String
+    ): ZibeResult<Unit> = zibeCatching {
+        val resolvedUserId = userId.ifBlank { myUid }
         val snapshot = firebaseRefsContainer.refChatsGroupDm.get().await()
         for (child in snapshot.children) {
             val key = child.key ?: continue
-            if (key.contains(userId)) {
+            if (key.contains(resolvedUserId)) {
                 child.ref.removeValue().await()
             }
         }

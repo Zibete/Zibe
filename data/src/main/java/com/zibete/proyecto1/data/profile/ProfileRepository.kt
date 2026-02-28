@@ -5,7 +5,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.common.R as CoreR
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
 import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
@@ -45,56 +45,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-
-data class BlockState(
-    val isBlockedByMe: Boolean,
-    val hasBlockedMe: Boolean
-)
-
-data class BlockedUser(
-    val id: String,
-    val name: String
-)
-
-interface ProfileRepositoryActions {
-    suspend fun toggleFavoriteUser(otherUid: String): ZibeResult<Boolean>
-    suspend fun toggleNotificationsUser(
-        otherUid: String,
-        otherName: String,
-        nodeType: String = NODE_DM
-    ): Boolean
-
-    suspend fun toggleBlock(
-        otherUid: String,
-        otherName: String,
-        nodeType: String = NODE_DM
-    ): Boolean
-
-    suspend fun updateChatState(
-        otherUid: String,
-        otherName: String,
-        nodeType: String,
-        newState: String
-    ): ZibeResult<Unit>
-}
-
-interface ProfileRepositoryProvider {
-    suspend fun isFavorite(otherUid: String): ZibeResult<Boolean>
-    suspend fun getMyChatState(otherUid: String): ZibeResult<String>
-    suspend fun getOtherAccount(uid: String): ZibeResult<Users>
-    suspend fun getBlockStateWith(
-        otherUid: String,
-        nodeType: String = NODE_DM
-    ): ZibeResult<BlockState>
-
-    suspend fun getDmPhotoList(
-        otherUid: String,
-        nodeType: String = NODE_DM
-    ): ZibeResult<List<String>>
-
-    suspend fun getBlockedUsers(nodeType: String = NODE_DM): List<BlockedUser>
-    fun observeUserStatus(userId: String, node: String): Flow<UserStatus>
-}
 
 @Singleton
 class ProfileRepository @Inject constructor(
@@ -255,7 +205,7 @@ class ProfileRepository @Inject constructor(
             if (otherId.isBlank()) return@mapNotNull null
 
             val name = conversation.otherName.takeIf { it.isNotBlank() }
-                ?: context.getString(R.string.deleted_profile_fallback)
+                ?: context.getString(CoreR.string.deleted_profile_fallback)
 
             BlockedUser(id = otherId, name = name)
         }.sortedBy { it.name.lowercase() }
@@ -312,10 +262,10 @@ class ProfileRepository @Inject constructor(
         val status = child(StatusKeys.STATUS).getValue(String::class.java).orEmpty()
         val lastSeenMs = child(StatusKeys.LAST_SEEN_MS).getValue(Long::class.java) ?: 0L
 
-        if (status == context.getString(R.string.online)) return UserStatus.Online
+        if (status == context.getString(CoreR.string.online)) return UserStatus.Online
 
-        if (status == context.getString(R.string.typing) ||
-            status == context.getString(R.string.recording)
+        if (status == context.getString(CoreR.string.typing) ||
+            status == context.getString(CoreR.string.recording)
         ) {
             return UserStatus.TypingOrRecording(status)
         }

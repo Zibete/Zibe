@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.data.auth
 
 import android.content.Context
-import androidx.core.net.toUri
+import android.net.Uri
 import com.facebook.AccessToken
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.AuthCredential
@@ -15,29 +15,9 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
-import com.zibete.proyecto1.data.auth.FirebaseSessionManager.AuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-
-interface AuthSessionProvider {
-    val currentUser: FirebaseUser?
-    fun authProvider(): AuthProvider
-    fun authProviderLabel(): String?
-}
-
-interface AuthSessionActions {
-    suspend fun signInWithEmail(email: String, password: String): ZibeResult<AuthResult>
-    suspend fun signInWithCredential(credential: AuthCredential): ZibeResult<Unit>
-    suspend fun sendPasswordResetEmail(email: String): ZibeResult<Unit>
-    suspend fun deleteFirebaseUser(): ZibeResult<Unit>
-    suspend fun signOutFirebaseUser(): ZibeResult<Unit>
-    suspend fun createUser(email: String, password: String): ZibeResult<AuthResult>
-    suspend fun updateAuthProfile(userName: String, photoUrl: String?): ZibeResult<Unit>
-    suspend fun updateEmail(newEmail: String): ZibeResult<Unit>
-    suspend fun updatePassword(newPassword: String): ZibeResult<Unit>
-    suspend fun reauthenticate(credentials: String?): Boolean
-}
 
 class FirebaseSessionManager @Inject constructor(
     @ApplicationContext private val appContext: Context,
@@ -78,7 +58,7 @@ class FirebaseSessionManager @Inject constructor(
             currentUser?.updateProfile(
                 UserProfileChangeRequest.Builder()
                 .setDisplayName(userName)
-                .apply { photoUrl?.let { photoUri = it.toUri() } }
+                .apply { photoUrl?.let { photoUri = Uri.parse(it) } }
                 .build())?.await()
         }
 
@@ -91,8 +71,6 @@ class FirebaseSessionManager @Inject constructor(
     // ---------------------------------------------------------------------------------------------
     // PROVIDER TYPE
     // ---------------------------------------------------------------------------------------------
-
-    enum class AuthProvider { PASSWORD, GOOGLE, FACEBOOK, OTHER, NONE }
 
     override fun authProvider(): AuthProvider {
         val user = currentUser ?: return AuthProvider.NONE

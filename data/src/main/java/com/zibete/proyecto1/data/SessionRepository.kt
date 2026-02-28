@@ -10,25 +10,6 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface SessionRepositoryActions {
-    suspend fun setActiveSession(uid: String, installId: String, fcmToken: String?)
-    suspend fun clearSession(uid: String)
-}
-
-interface SessionRepositoryProvider {
-    suspend fun getLocalInstallId(): String
-    suspend fun getLocalFcmToken(): String?
-    suspend fun getInstallId(uid: String): String?
-    suspend fun getFcmToken(uid: String): String?
-    suspend fun getSessionsByFcmToken(token: String): DataSnapshot
-    fun observeSessionConflict(
-        uid: String,
-        myInstallId: String,
-        onConflict: () -> Unit
-    ): ValueEventListener
-    fun removeSessionListener(uid: String, listener: ValueEventListener)
-}
-
 @Singleton
 class SessionRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer

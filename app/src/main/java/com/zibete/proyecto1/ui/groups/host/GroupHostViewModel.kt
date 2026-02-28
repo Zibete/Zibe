@@ -174,7 +174,8 @@ class GroupHostViewModel @Inject constructor(
                     userName = groupContext.userName,
                     userType = groupContext.userType,
                     chatType = MSG_TEXT,
-                    content = content.trim()
+                    content = content.trim(),
+                    senderName = groupRepository.myUid
                 )
                 _uiState.update { it.copy(isSending = false) }
             } catch (e: Exception) {
