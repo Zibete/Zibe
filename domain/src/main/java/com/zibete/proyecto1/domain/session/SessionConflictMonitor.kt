@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.domain.session
 
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,10 +10,14 @@ interface SessionConflictMonitor {
     fun stop()
 }
 
+interface SessionConflictNavigator {
+    fun onSessionConflict()
+}
+
 @Singleton
 class DefaultSessionConflictMonitor @Inject constructor(
     private val sessionRepositoryProvider: SessionRepositoryProvider,
-    private val appNavigator: AppNavigator
+    private val sessionConflictNavigator: SessionConflictNavigator
 ) : SessionConflictMonitor {
 
     private var sessionListener: ValueEventListener? = null
@@ -27,7 +30,7 @@ class DefaultSessionConflictMonitor @Inject constructor(
             myInstallId = installId
         ) {
             stop()
-            appNavigator.finishFlowNavigateToSplash(sessionConflict = true)
+            sessionConflictNavigator.onSessionConflict()
         }
         currentUid = uid
     }

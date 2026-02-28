@@ -5,7 +5,7 @@ import com.zibete.proyecto1.core.constants.EXIT_GROUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
-import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import kotlinx.coroutines.flow.first
@@ -18,7 +18,7 @@ interface ExitGroupUseCase {
 }
 
 class DefaultExitGroupUseCase @Inject constructor(
-    private val groupRepository: GroupRepository,
+    private val groupRepository: GroupRepositoryProvider,
     private val userPreferencesActions: UserPreferencesActions,
     private val userPreferencesProvider: UserPreferencesProvider
 ) : ExitGroupUseCase {
