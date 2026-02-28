@@ -7,7 +7,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.common.R as CoreR
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
@@ -60,7 +60,7 @@ class PresenceRepository constructor(
 
         statusRef.onDisconnect().setValue(
             mapOf(
-                StatusKeys.STATUS to context.getString(R.string.ultVez),
+                StatusKeys.STATUS to context.getString(CoreR.string.ultVez),
                 StatusKeys.LAST_SEEN_MS to ServerValue.TIMESTAMP
             )
         ).await()
@@ -76,7 +76,7 @@ class PresenceRepository constructor(
 
                 statusRef.setValue(
                     Status(
-                        status = context.getString(R.string.online),
+                        status = context.getString(CoreR.string.online),
                         lastSeenMs = 0L
                     )
                 )
@@ -106,7 +106,7 @@ class PresenceRepository constructor(
     suspend fun setLastSeenNow() {
         statusRef().setValue(
             mapOf(
-                StatusKeys.STATUS to context.getString(R.string.ultVez),
+                StatusKeys.STATUS to context.getString(CoreR.string.ultVez),
                 StatusKeys.LAST_SEEN_MS to ServerValue.TIMESTAMP
             )
         ).await()

@@ -115,7 +115,14 @@ class GroupsViewModel @Inject constructor(
 
         viewModelScope.launch {
             groupRepository.saveUserInGroup(groupName, userName, userType)
-            groupRepository.sendGroupMessage(groupName, userName, userType, MSG_INFO, message)
+            groupRepository.sendGroupMessage(
+                groupName,
+                userName,
+                userType,
+                MSG_INFO,
+                message,
+                groupRepository.myUid
+            )
             _events.emit(GroupsUiEvent.NavigateToGroupHost)
         }
     }
