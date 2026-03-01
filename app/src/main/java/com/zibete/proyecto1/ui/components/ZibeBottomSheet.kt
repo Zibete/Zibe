@@ -18,6 +18,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
@@ -59,6 +60,10 @@ fun ZibeBottomSheet(
             dragHandle = {
                 BottomSheetDefaults.DragHandle(color = zibeColors.accent.copy(alpha = 0.4f))
             },
+            properties = ModalBottomSheetProperties(
+                isAppearanceLightStatusBars = false,
+                isAppearanceLightNavigationBars = false
+            ),
             modifier = Modifier,
             content = {
                 val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
