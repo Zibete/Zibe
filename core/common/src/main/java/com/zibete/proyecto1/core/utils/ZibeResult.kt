@@ -1,5 +1,7 @@
 package com.zibete.proyecto1.core.utils
 
+import kotlin.coroutines.cancellation.CancellationException
+
 sealed interface ZibeResult<out T> {
     data class Success<out T>(val data: T? = null) : ZibeResult<T>
     data class Failure(val exception: Throwable) : ZibeResult<Nothing>
@@ -8,7 +10,10 @@ sealed interface ZibeResult<out T> {
 inline fun <T> zibeCatching(block: () -> T): ZibeResult<T> =
     runCatching(block).fold(
         onSuccess = { ZibeResult.Success(it) },
-        onFailure = { ZibeResult.Failure(it) }
+        onFailure = { t ->
+            if (t is CancellationException) throw t
+            ZibeResult.Failure(t)
+        }
     )
 
 fun <T> ZibeResult<T>.getOrThrow(): T =
@@ -42,4 +47,3 @@ inline fun <T> ZibeResult<T>.onFinally(action: () -> Unit): ZibeResult<T> {
     action()
     return this
 }
-
