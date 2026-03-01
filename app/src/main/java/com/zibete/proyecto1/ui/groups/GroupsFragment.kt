@@ -137,8 +137,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         rvGroups.apply {
             layoutManager = this@GroupsFragment.layoutManager
             setHasFixedSize(true)
-            adapter = AdapterGroups { groupSelected ->
-                showJoinGroupDialog(groupSelected)
+            adapter = AdapterGroups { _ ->
+                showRoomsComingSoonDialog()
             }.also { adapterGroups = it }
         }
     }
@@ -151,8 +151,15 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
     }
 
     private fun setupFab() = with(binding) {
-        fabNewGroup.setOnClickListener { showCreateGroupDialog() }
+        fabNewGroup.setOnClickListener { showRoomsComingSoonDialog() }
     }
+
+    private fun showRoomsComingSoonDialog() =
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.rooms_coming_soon_title)
+            .setMessage(R.string.rooms_coming_soon_message)
+            .setPositiveButton(R.string.action_understood, null)
+            .show()
 
     private fun showJoinGroupDialog(group: Groups) {
         val dialogBinding = DialogGoGroupBinding.inflate(layoutInflater)

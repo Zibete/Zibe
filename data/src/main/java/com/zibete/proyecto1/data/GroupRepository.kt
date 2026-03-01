@@ -215,6 +215,7 @@ class GroupRepository constructor(
             .await()
             .takeIf { it.exists() }
             ?.getValue(Groups::class.java)
+            ?.also { if (it.name.isBlank()) it.name = groupName }
 
     suspend fun isNickInUse(groupName: String, nick: String): Boolean {
         val snapshot = groupUsersRef(groupName)
@@ -401,7 +402,6 @@ class GroupRepository constructor(
         return ref.downloadUrl.await().toString()
     }
 
-
     // Join / Leave / Membership
     override suspend fun sendGroupMessage(
         groupName: String,
@@ -453,7 +453,6 @@ class GroupRepository constructor(
             .await()
     }
 
-
     // Groups list / create (mantenemos tu Data actual)
     suspend fun isGroupNameInUse(groupName: String): Boolean {
         return groupMetaRef(groupName).get().await().exists()
@@ -488,8 +487,10 @@ class GroupRepository constructor(
         val groupsList = mutableListOf<Groups>()
 
         for (groupSnap in snapshot.children) {
+            val groupKey = groupSnap.key ?: continue
             val group = groupSnap.getValue(Groups::class.java) ?: continue
-            val usersSnap = groupUsersRef(group.name).get().await()
+            if (group.name.isBlank()) group.name = groupKey
+            val usersSnap = groupUsersRef(groupKey).get().await()
             group.users = usersSnap.childrenCount.toInt()
             groupsList.add(group)
         }
@@ -497,9 +498,7 @@ class GroupRepository constructor(
         return groupsList
     }
 
-
     // Cleanup al salir del grupo
-
 
     /**
      * Borra la lista local de conversaciones privadas (group_dm) del user en Users/Data.

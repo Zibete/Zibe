@@ -283,6 +283,7 @@
     <string name="action_skip">Saltar</string>
     <string name="action_back">Atrás</string>
     <string name="action_accept">Aceptar</string>
+    <string name="action_understood">Entendido</string>
     <string name="action_cancel">Cancelar</string>
     <string name="action_save">Listo</string>
 
@@ -447,6 +448,8 @@
     <string name="group_nick_in_use">El nick %1$s ya esta en uso</string>
     <string name="group_name_in_use">El nombre %1$s ya esta en uso</string>
     <string name="group_not_exists">Grupo %1$s ya no existe</string>
+    <string name="rooms_coming_soon_title">¡Próximamente: Salas en ZIBE!</string>
+    <string name="rooms_coming_soon_message">Todavía no están listas en esta versión. Estamos trabajando para incorporarlas pronto.</string>
 
     <string name="not_implemented">No implemented</string>
 
