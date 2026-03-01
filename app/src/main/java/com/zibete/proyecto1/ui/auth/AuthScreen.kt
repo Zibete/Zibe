@@ -196,6 +196,7 @@ fun AuthScreen(
                         text = stringResource(R.string.continue_with_google),
                         iconRes = R.drawable.ic_google,
                         iconTint = Color.Unspecified,
+                        iconSize = 40.dp,
                         onClick = onGoogleClick
                     )
 
@@ -206,6 +207,7 @@ fun AuthScreen(
                         text = stringResource(R.string.continue_with_facebook),
                         iconRes = R.drawable.ic_facebook,
                         iconTint = Color.Unspecified,
+                        iconSize = 40.dp,
                         onClick = onFacebookClick
                     )
 

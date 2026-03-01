@@ -28,6 +28,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.R
@@ -41,6 +42,7 @@ fun ZibeButtonPrimary(
     iconRes: Int? = null,
     iconVector: ImageVector? = null,
     iconTint: Color? = null,
+    iconSize: Dp = 24.dp,
     enabled: Boolean = true,
     isLoading: Boolean = false,
     buttonColors: ButtonColors = ButtonDefaults.buttonColors(
@@ -80,7 +82,7 @@ fun ZibeButtonPrimary(
                     imageVector = iconVector,
                     contentDescription = null,
                     tint = iconTint ?: Color.Unspecified,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(iconSize)
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             } else if (iconRes != null) {
@@ -88,7 +90,7 @@ fun ZibeButtonPrimary(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
                     tint = iconTint ?: Color.Unspecified,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(iconSize)
                 )
                 Spacer(modifier = Modifier.width(spacingSmall))
             }
