@@ -1,5 +1,5 @@
-﻿[![CI](https://img.shields.io/github/actions/workflow/status/Zibete/Zibe/android-ci.yml?branch=main)](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml)
-[![Licencia](https://img.shields.io/github/license/Zibete/Zibe)](LICENSE)
+﻿![CI](https://img.shields.io/badge/CI-private%20repo-lightgrey)
+![Licencia](https://img.shields.io/badge/Licencia-MIT-lightgrey)
 [![Último commit](https://img.shields.io/github/last-commit/Zibete/Zibe)](https://github.com/Zibete/Zibe/commits/main)
 [![Issues](https://img.shields.io/github/issues/Zibete/Zibe)](https://github.com/Zibete/Zibe/issues)
 ![Kotlin](https://img.shields.io/badge/Kotlin-%E2%9C%94-7F52FF?logo=kotlin&logoColor=white)
