@@ -164,7 +164,6 @@ class UserPreferencesRepository @Inject constructor(
             prefs[Keys.MAX_AGE] = 0
 
             prefs[Keys.FIRST_LOGIN_DONE] = false
-            prefs[Keys.EDIT_PROFILE_WELCOME_SHOWN] = false
         }
     }
 }
