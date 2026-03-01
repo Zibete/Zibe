@@ -1,10 +1,8 @@
 package com.zibete.proyecto1.adapters
 
 import android.graphics.Typeface
-import android.view.ContextMenu
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OnCreateContextMenuListener
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
@@ -13,7 +11,6 @@ import com.bumptech.glide.Glide
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.ChatListDiffCallback.PayloadConversation
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
@@ -32,17 +29,9 @@ class AdapterChatList(
     private val lifecycleScope: CoroutineScope,
     private val myUid: String,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
-    private val onChatClicked: (Conversation) -> Unit
-) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(ChatListDiffCallback),
-    OnCreateContextMenuListener {
-
-
-    private var contextMenuChatId: String? = null
-    fun consumeContextMenuChatId(): String? =
-        contextMenuChatId.also { contextMenuChatId = null }
-
-    private var menuReadTitle: CharSequence? = null
-    private var menuNotifTitle: CharSequence? = null
+    private val onChatClicked: (Conversation) -> Unit,
+    private val onChatLongPressed: (View, Conversation) -> Unit
+) : ListAdapter<Conversation, AdapterChatList.ChatListViewHolder>(ChatListDiffCallback) {
     class ChatListViewHolder(val binding: RowChatListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         var statusJob: Job? = null
@@ -55,7 +44,6 @@ class AdapterChatList(
             parent,
             false
         )
-        binding.root.setOnCreateContextMenuListener(this)
         return ChatListViewHolder(binding)
     }
 
@@ -170,22 +158,12 @@ class AdapterChatList(
 
     private fun bindClicks(holder: ChatListViewHolder, chat: Conversation) {
         val b = holder.binding
-        val ctx = b.root.context
 
         b.root.setOnClickListener { onChatClicked(chat) }
 
         b.root.setOnLongClickListener {
-            contextMenuChatId = chat.otherId.takeIf { it.isNotBlank() }
-
-            menuNotifTitle =
-                if (b.offNotifications.isVisible) ctx.getString(R.string.menu_user_notifications_on)
-                else ctx.getString(R.string.menu_user_notifications_off)
-
-            menuReadTitle =
-                if (b.badgeUnReadMessage.isVisible) ctx.getString(R.string.leido)
-                else ctx.getString(R.string.noleido)
-
-            false
+            onChatLongPressed(b.root, chat)
+            true
         }
     }
 
@@ -260,15 +238,4 @@ class AdapterChatList(
             )
     }
 
-    override fun onCreateContextMenu(menu: ContextMenu, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
-        val ctx = v?.context ?: return
-        val titleRead = menuReadTitle ?: ctx.getString(R.string.leido)
-        val titleNotif = menuNotifTitle ?: ctx.getString(R.string.menu_user_notifications_off)
-        
-        menu.add(FRAGMENT_ID_CHATLIST, 1, 0, titleRead)
-        menu.add(FRAGMENT_ID_CHATLIST, 2, 0, titleNotif)
-        menu.add(FRAGMENT_ID_CHATLIST, 3, 0, R.string.menu_user_block)
-        menu.add(FRAGMENT_ID_CHATLIST, 4, 0, R.string.ocultar)
-        menu.add(FRAGMENT_ID_CHATLIST, 5, 0, R.string.delete)
-    }
 }

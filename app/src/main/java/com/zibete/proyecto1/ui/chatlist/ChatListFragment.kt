@@ -3,9 +3,9 @@ package com.zibete.proyecto1.ui.chatlist
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -16,9 +16,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterChatList
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.core.constants.Constants.FRAGMENT_ID_CHATLIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
@@ -114,7 +114,8 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
             lifecycleScope = viewLifecycleOwner.lifecycleScope,
             myUid = userRepository.myUid,
             profileRepositoryProvider = profileRepositoryProvider,
-            onChatClicked = ::openChat
+            onChatClicked = ::openChat,
+            onChatLongPressed = ::showChatMenu
         )
 
         binding.rv.apply {
@@ -122,8 +123,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
             adapter = adapterChatList
             setHasFixedSize(true)
         }
-
-        registerForContextMenu(binding.rv)
     }
 
     private fun render(state: ChatListUiState) {
@@ -164,26 +163,6 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         b.lottieChatRight.cancelAnimation()
     }
 
-    override fun onContextItemSelected(item: MenuItem): Boolean {
-        if (item.groupId != FRAGMENT_ID_CHATLIST) return false
-
-        val otherId = adapterChatList.consumeContextMenuChatId() ?: return false
-        val chat = adapterChatList.currentList.firstOrNull { it.otherId == otherId }
-
-        val otherName =
-            chat?.otherName.orEmpty().ifBlank { getString(R.string.deleted_profile_fallback) }
-
-        when (item.itemId) {
-            1 -> chatListViewModel.onMarkAsReadChatListClicked(otherId, NODE_DM)
-            2 -> chatListViewModel.onToggleNotificationsClicked(otherId, otherName, NODE_DM)
-            3 -> chatListViewModel.onConfirmToggleBlockAction(otherId, otherName)
-            4 -> chatListViewModel.onConfirmHide(otherId, otherName, NODE_DM)
-            5 -> chatListViewModel.onDeleteChoiceMode(otherId, otherName, NODE_DM)
-        }
-        return true
-    }
-
-
     override fun onSearchQueryChanged(query: String?) {
         chatListViewModel.onSearchQueryChanged(query.orEmpty())
     }
@@ -217,5 +196,51 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
         val b = _binding ?: return
         val firstVisible = layoutManager.findFirstVisibleItemPosition()
         b.fabScrollTop.isVisible = firstVisible > scrollTopThreshold
+    }
+
+    private fun showChatMenu(anchorView: View, chat: Conversation) {
+        val otherId = chat.otherId
+        if (otherId.isBlank()) return
+
+        val otherName =
+            chat.otherName.ifBlank { getString(R.string.deleted_profile_fallback) }
+
+        val popupMenu = PopupMenu(requireContext(), anchorView)
+        popupMenu.menuInflater.inflate(R.menu.menu_chat_list_item, popupMenu.menu)
+
+        val readTitle =
+            if (chat.unreadCount > 0) getString(R.string.menu_mark_seen) else getString(R.string.menu_mark_not_seen)
+        val notificationsTitle =
+            if (chat.state == CHAT_STATE_SILENT) {
+                getString(R.string.menu_user_notifications_on)
+            } else {
+                getString(R.string.menu_user_notifications_off)
+            }
+
+        popupMenu.menu.findItem(R.id.action_mark_read)?.title = readTitle
+        popupMenu.menu.findItem(R.id.action_toggle_notifications)?.title = notificationsTitle
+
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_mark_read ->
+                    chatListViewModel.onMarkAsReadChatListClicked(otherId, NODE_DM)
+
+                R.id.action_toggle_notifications ->
+                    chatListViewModel.onToggleNotificationsClicked(otherId, otherName, NODE_DM)
+
+                R.id.action_block_user ->
+                    chatListViewModel.onConfirmToggleBlockAction(otherId, otherName)
+
+                R.id.action_hide_chat ->
+                    chatListViewModel.onConfirmHide(otherId, otherName, NODE_DM)
+
+                R.id.action_delete_chat ->
+                    chatListViewModel.onDeleteChoiceMode(otherId, otherName, NODE_DM)
+
+                else -> return@setOnMenuItemClickListener false
+            }
+            true
+        }
+        popupMenu.show()
     }
 }
