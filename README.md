@@ -1,7 +1,8 @@
-﻿![CI](https://img.shields.io/badge/CI-private%20repo-lightgrey)
-![Licencia](https://img.shields.io/badge/Licencia-MIT-lightgrey)
+﻿[![CI](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml/badge.svg?branch=main)](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml)
+[![Licencia](https://img.shields.io/github/license/Zibete/Zibe?v=1)](LICENSE)
 [![Último commit](https://img.shields.io/github/last-commit/Zibete/Zibe)](https://github.com/Zibete/Zibe/commits/main)
 [![Issues](https://img.shields.io/github/issues/Zibete/Zibe)](https://github.com/Zibete/Zibe/issues)
+
 ![Kotlin](https://img.shields.io/badge/Kotlin-%E2%9C%94-7F52FF?logo=kotlin&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-%E2%9C%94-3DDC84?logo=android&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-%E2%9C%94-4285F4?logo=jetpackcompose&logoColor=white)
