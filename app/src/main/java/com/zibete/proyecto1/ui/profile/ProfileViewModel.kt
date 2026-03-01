@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -395,6 +396,7 @@ class ProfileViewModel @Inject constructor(
     private fun isActionLoading() = _uiState.value.isActionLoading
 
     private suspend fun onFailure(e: Throwable) {
+        if (e is CancellationException) return
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
                 UiText.StringRes(
