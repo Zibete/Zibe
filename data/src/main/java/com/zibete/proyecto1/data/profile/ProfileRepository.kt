@@ -279,7 +279,8 @@ class ProfileRepository @Inject constructor(
         userId: String,
         node: String
     ): Flow<UserStatus> {
-        if (userId.isBlank()) return flowOf(UserStatus.Offline)
+        val myUidSnapshot = authSessionProvider.currentUser?.uid.orEmpty()
+        if (userId.isBlank() || myUidSnapshot.isBlank()) return flowOf(UserStatus.Offline)
         return callbackFlow {
             val statusRef = statusRef(userId)
             val listener = object : ValueEventListener {
@@ -290,7 +291,12 @@ class ProfileRepository @Inject constructor(
                         return
                     }
                     launch {
-                        val otherAt = activeThreadRef(userId).get().await()
+                        val otherAt = runCatching { activeThreadRef(userId).get().await() }
+                            .getOrNull()
+                            ?: run {
+                                trySend(UserStatus.Online)
+                                return@launch
+                            }
                         val otherNode =
                             otherAt.child(ActiveThreadKeys.NODE_TYPE).getValue(String::class.java)
                                 .orEmpty()
@@ -299,10 +305,10 @@ class ProfileRepository @Inject constructor(
                                 .orEmpty()
                         val matches = when (node) {
                             NODE_DM ->
-                                otherNode == NODE_DM && other == myUid
+                                otherNode == NODE_DM && other == myUidSnapshot
 
                             NODE_GROUP_DM ->
-                                otherNode == NODE_GROUP_DM && other == myUid
+                                otherNode == NODE_GROUP_DM && other == myUidSnapshot
 
                             else -> false
                         }
@@ -311,7 +317,8 @@ class ProfileRepository @Inject constructor(
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    close(error.toException())
+                    trySend(UserStatus.Offline)
+                    close()
                 }
             }
             statusRef.addValueEventListener(listener)

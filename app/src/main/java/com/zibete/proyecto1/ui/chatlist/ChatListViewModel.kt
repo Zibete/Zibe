@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
@@ -40,8 +41,10 @@ class ChatListViewModel @Inject constructor(
     private val chatRepository: ChatRepository
 ) : ViewModel() {
 
-    private val chatRef
-        get() = userRepository.conversationsRootRef(nodeType = NODE_DM)
+//    private val chatRef
+//        get() = userRepository.conversationsRootRef(nodeType = NODE_DM)
+
+    private var chatRootRef: DatabaseReference? = null
 
     private var chatListListener: ValueEventListener? = null
     private var allChats: List<Conversation> = emptyList()
@@ -55,6 +58,8 @@ class ChatListViewModel @Inject constructor(
     fun startObserving() {
         if (chatListListener != null) return
         setIsLoading(true)
+
+        val chatRef = chatRootRef ?: userRepository.conversationsRootRef(nodeType = NODE_DM).also { chatRootRef = it }
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -96,7 +101,7 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun stopObserving() {
-        chatListListener?.let { chatRef.removeEventListener(it) }
+        chatRootRef?.let { ref -> chatListListener?.let(ref::removeEventListener) }
         chatListListener = null
     }
 
