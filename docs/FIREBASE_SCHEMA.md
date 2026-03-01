@@ -22,6 +22,125 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 
 ## 🗄️ Realtime Database (RTDB)
 
+## 🌳 Árbol completo actual (RTDB)
+
+```text
+/
+├─ Users
+│  ├─ Accounts
+│  │  └─ {uid}
+│  │     ├─ id
+│  │     ├─ name
+│  │     ├─ birthDate
+│  │     ├─ createdAt
+│  │     ├─ age
+│  │     ├─ email
+│  │     ├─ photoUrl
+│  │     ├─ isOnline
+│  │     ├─ description
+│  │     ├─ latitude
+│  │     └─ longitude
+│  └─ Data
+│     └─ {uid}
+│        ├─ ClientData
+│        │  ├─ Status
+│        │  │  ├─ status
+│        │  │  └─ lastSeenMs
+│        │  ├─ ActiveView
+│        │  │  └─ activeThread
+│        │  │     ├─ nodeType
+│        │  │     └─ otherUid
+│        │  └─ ChatList
+│        │     └─ readGroupMessages
+│        ├─ ChatList
+│        │  └─ readGroupMessages
+│        ├─ FavoriteList
+│        │  └─ {otherUid}: true
+│        ├─ dm
+│        │  └─ {otherUid}
+│        │     ├─ lastContent
+│        │     ├─ lastMessageAt
+│        │     ├─ userId
+│        │     ├─ otherId
+│        │     ├─ otherName
+│        │     ├─ otherPhotoUrl
+│        │     ├─ state
+│        │     ├─ unreadCount
+│        │     └─ seen
+│        └─ group_dm
+│           └─ {otherUid}
+│              ├─ lastContent
+│              ├─ lastMessageAt
+│              ├─ userId
+│              ├─ otherId
+│              ├─ otherName
+│              ├─ otherPhotoUrl
+│              ├─ state
+│              ├─ unreadCount
+│              └─ seen
+├─ Chats
+│  ├─ dm
+│  │  └─ {chatId}
+│  │     └─ {messageId}
+│  │        ├─ content
+│  │        ├─ createdAt
+│  │        ├─ senderUid
+│  │        ├─ type
+│  │        ├─ seen
+│  │        └─ audioDurationMs? (opcional)
+│  └─ group_dm
+│     └─ {chatId}
+│        └─ {messageId}
+│           ├─ content
+│           ├─ createdAt
+│           ├─ senderUid
+│           ├─ type
+│           ├─ seen
+│           └─ audioDurationMs? (opcional)
+├─ Groups
+│  ├─ Meta
+│  │  └─ {groupName}
+│  │     ├─ name
+│  │     ├─ description
+│  │     ├─ creatorUid
+│  │     ├─ type
+│  │     ├─ users
+│  │     ├─ createdAt
+│  │     └─ totalMessages
+│  ├─ Users
+│  │  └─ {groupName}
+│  │     └─ {uid}
+│  │        ├─ userId
+│  │        ├─ userName
+│  │        ├─ type
+│  │        └─ joinedAtMs
+│  └─ Chat
+│     └─ {groupName}
+│        └─ {messageId}
+│           ├─ content
+│           ├─ timestamp
+│           ├─ senderUid
+│           ├─ chatType
+│           ├─ userType
+│           └─ userName | nameUser
+├─ Sessions
+│  └─ {uid}
+│     ├─ activeInstallId
+│     └─ fcmToken
+└─ Feedback
+   └─ {screen}
+      └─ {feedbackId}
+         ├─ id
+         ├─ name
+         ├─ email
+         ├─ feedback
+         ├─ device
+         ├─ appVersion
+         └─ createdAt
+```
+
+> Fuente de verdad del árbol y validaciones: `database.rules.json`.
+
 ### 👤 Usuarios
 
 **Perfil público**
