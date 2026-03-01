@@ -424,7 +424,8 @@
     <string name="menu_hide_chat">Ocultar chat</string>
     <string name="menu_unhide_chat">Mostrar chat</string>
     <string name="menu_unhide_chats">Chats ocultos</string>
-
+    <string name="menu_mark_not_seen">Marcar no leído</string>
+    <string name="menu_mark_seen">Marcar leído</string>
 
     <plurals name="unblock_users_title">
         <item quantity="one">%1$d usuario bloqueado.</item>
@@ -457,11 +458,7 @@
     <!-- Legacy -->
     <!-- ============================= -->
 
-
     <string name="channel_name">APP Zibe</string>
-
-    <string name="noleido">Marcar no leído</string>
-    <string name="leido">Marcar leído</string>
 
     <string name="tab_group_users">Personas</string>
     <string name="tab_group_chat">Chat</string>
