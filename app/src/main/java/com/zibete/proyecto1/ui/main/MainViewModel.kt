@@ -158,11 +158,13 @@ class MainViewModel @Inject constructor(
 
     fun onLogoutRequested() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isGlobalLoading = true) }
             logoutUseCase.execute()
                 .onSuccess {
                     delay(config.navigationDelay)
                     appNavigator.finishFlowNavigateToSplash()
                 }.onFailure { e ->
+                    _uiState.update { it.copy(isGlobalLoading = false) }
                     showErrorSnack(e)
                 }
         }

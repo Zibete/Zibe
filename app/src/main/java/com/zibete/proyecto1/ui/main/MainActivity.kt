@@ -332,6 +332,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     badgeDrawableChat?.number = state.chatListBadgeCount
                     badgeDrawableGroup?.isVisible = state.groupBadgeCount > 0
                     badgeDrawableGroup?.number = state.groupBadgeCount
+                    binding.appBarMain.globalLoadingOverlay.isVisible = state.isGlobalLoading
                 }
             }
         }
@@ -816,7 +817,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
-
 
 
 
