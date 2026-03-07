@@ -156,13 +156,13 @@ dependencies {
     // -------------------------------
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 
-    implementation("com.google.dagger:hilt-android:2.58")
+    implementation("com.google.dagger:hilt-android:2.59.2")
     ksp("com.google.dagger:hilt-android-compiler:2.58")
 
-    androidTestImplementation("com.google.dagger:hilt-android-testing:2.52")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.59.2")
     androidTestImplementation("io.mockk:mockk-android:1.14.7")
 
-    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.52")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.59.2")
 
     // -------------------------------
     // IMAGES / UI
