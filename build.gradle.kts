@@ -1,8 +1,8 @@
 // Top-level build file
 plugins {
     // 1. Android Gradle Plugin
-    id("com.android.application") version "9.0.0" apply false
-    id("com.android.library") version "9.0.0" apply false
+    id("com.android.application") version "9.0.1" apply false
+    id("com.android.library") version "9.0.1" apply false
 
     // 2. Kotlin
     id("org.jetbrains.kotlin.android") version "2.2.10" apply false
