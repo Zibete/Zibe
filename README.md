@@ -1,4 +1,4 @@
-﻿[![CI](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml/badge.svg?branch=main)](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml)
+﻿﻿[![CI](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml/badge.svg?branch=main)](https://github.com/Zibete/Zibe/actions/workflows/android-ci.yml)
 [![Licencia](https://img.shields.io/github/license/Zibete/Zibe?v=1)](LICENSE)
 [![Último commit](https://img.shields.io/github/last-commit/Zibete/Zibe)](https://github.com/Zibete/Zibe/commits/main)
 [![Issues](https://img.shields.io/github/issues/Zibete/Zibe)](https://github.com/Zibete/Zibe/issues)
@@ -66,7 +66,7 @@
 
 ---
 
-## 🧠 Qué demuestra este repo (para recruiters)
+## 🧠 Qué demuestra
 
 - **Arquitectura aplicada:** separación por capas (UI → ViewModel → Repositorio → Data), estado con Flow.
 - **UI moderna:** Compose + Material 3 con convivencia controlada con UI clásica cuando aplica.
@@ -82,7 +82,7 @@
 - 💬 Chat 1:1 y grupos en tiempo real (Realtime Database).
 - 🔔 Notificaciones push (FCM) con tokens por sesión.
 - 👤 Perfiles, favoritos y estados de usuario.
-- 🖼️ Multimedia en chats (imágenes) y soporte para audio (según implementación actual).
+- 🖼️ Multimedia en chats (imágenes y audio).
 - ⚙️ Onboarding, búsqueda y ajustes.
 
 ---
@@ -139,28 +139,33 @@ Este repo está listo para ser público: **no incluye `google-services.json` rea
 ## 🗂️ Estructura del proyecto
 
 ```
-📦 app/
- ├─ 📂 src/
- │  ├─ 📂 main/
- │  │  ├─ 📂 java/com/zibete/proyecto1/   ← código de producción (features + core)
- │  │  └─ 📂 res/
- │  ├─ 🐞 📂 debug/
- │  │  └─ AppCheckProviderFactoryProvider.kt   ← solo debug (App Check)
- │  ├─ 🧪 📂 test/                             ← unit tests (JVM)
- │  └─ 📱 📂 androidTest/                      ← instrumented tests
- └─ ⚙️  build.gradle(.kts)
+📦 app/ ← módulo Android (entrypoints + UI + wiring)
+├─ 📂 src/
+│ ├─ 📂 main/
+│ │ ├─ 📂 java/com/zibete/proyecto1/ ← UI/screens + navegación + DI (Hilt) + impls app-only
+│ │ └─ 📂 res/ ← recursos propios de app (legacy XML, drawables específicos)
+│ ├─ 🐞 📂 debug/ ← solo debug (App Check, etc.)
+│ ├─ 🧪 📂 test/ ← unit tests (JVM)
+│ └─ 📱 📂 androidTest/ ← instrumented tests
+└─ ⚙️ build.gradle(.kts)
+📦 core/
+├─ 📦 common/ ← utilidades + modelos + strings compartidos (sin UI)
+└─ 📦 designsystem/ ← Theme Compose + tokens (colors/dimens) + fonts
 
-📦 docs/    ← documentación (setup, arquitectura, firebase, CI)
+📦 domain/ ← casos de uso + contratos (interfaces) para data
+📦 data/ ← implementaciones (repositorios, Firebase/DataStore, etc.)
+
+📦 docs/ ← documentación (setup, arquitectura, firebase, CI)
 📦 .github/ ← workflows + templates (Issues / PR)
 ```
 
 ---
 
-## 🗺️ Próximos pasos
-
-- 🧪 Mejorar cobertura de tests (especialmente instrumented).
-- 🧭 Documentar flujos clave (onboarding, permisos, media) con capturas.
-- 🎨 Unificar consistencia visual entre pantallas Compose y UI clásica.
+### 🔗 Dependencias entre módulos (resumen)
+- `app` → `domain`, `data`, `core:common`, `core:designsystem`
+- `data` → `domain`, `core:common`
+- `domain` → `core:common`
+- `core:designsystem` → *(sin dependencias de app/domain/data; solo UI tokens/theme)*
 
 ---
 
