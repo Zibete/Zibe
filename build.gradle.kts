@@ -14,7 +14,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.10" apply false
 
     // 5. HILT
-    id("com.google.dagger.hilt.android") version "2.58" apply false
+    id("com.google.dagger.hilt.android") version "2.59.2" apply false
 
     // 6. KSP
     id("com.google.devtools.ksp") version "2.3.2" apply false
