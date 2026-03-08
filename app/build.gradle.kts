@@ -236,9 +236,6 @@ dependencies {
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.01.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
-    androidTestImplementation("com.google.dagger:hilt-android-testing:2.48")
-    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.48")
-
     // Local libs
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
