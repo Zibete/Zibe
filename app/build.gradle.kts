@@ -132,7 +132,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.test.espresso:espresso-intents:3.7.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -160,8 +159,6 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.59.2")
 
     androidTestImplementation("com.google.dagger:hilt-android-testing:2.59.2")
-    androidTestImplementation("io.mockk:mockk-android:1.14.7")
-
     kspAndroidTest("com.google.dagger:hilt-android-compiler:2.59.2")
 
     // -------------------------------
@@ -228,25 +225,21 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("io.mockk:mockk:1.14.7")
+    testImplementation("org.mockito:mockito-core:5.12.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation(kotlin("test"))
 
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")
     androidTestImplementation("androidx.test:runner:1.7.0")
-
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.01.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("io.mockk:mockk-android:1.14.7")
+    androidTestImplementation("org.mockito:mockito-android:5.12.0")
+    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
     // Local libs
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
-    // Unit tests (src/test)
-    testImplementation("org.mockito:mockito-core:5.12.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
-    testImplementation(kotlin("test"))
-
-    // Android tests (src/androidTest)
-    androidTestImplementation("org.mockito:mockito-android:5.12.0")
-    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
 }
