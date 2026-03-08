@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("androidx.credentials:credentials:1.5.0")
     implementation("com.facebook.android:facebook-login:17.0.0")
-    implementation("com.google.dagger:hilt-android:2.58")
+    implementation("com.google.dagger:hilt-android:2.59.2")
     implementation("javax.inject:javax.inject:1")
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 }

@@ -35,7 +35,7 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.facebook.android:facebook-login:17.0.0")
-    implementation("com.google.dagger:hilt-android:2.58")
+    implementation("com.google.dagger:hilt-android:2.59.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
     implementation("javax.inject:javax.inject:1")
