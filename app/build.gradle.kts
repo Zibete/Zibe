@@ -116,6 +116,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.4.0")
 //    implementation("com.google.android.material:material:1.13.0")
     implementation("androidx.annotation:annotation:1.9.1")
+    implementation("androidx.concurrent:concurrent-futures:1.2.0")
 
     // Navigation
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
