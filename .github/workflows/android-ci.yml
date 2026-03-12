@@ -66,6 +66,9 @@ jobs:
       - name: ✅ Unit tests (JVM)
         run: ./gradlew testDebugUnitTest
 
+      - name: 🧪 AndroidTest lint model
+        run: ./gradlew :app:generateDebugAndroidTestLintModel
+
       - name: 🧼 Android Lint
         run: ./gradlew lintDebug
 
@@ -103,7 +106,7 @@ jobs:
             echo "## Android CI"
             echo ""
             echo "**Comandos (local):**"
-            echo "\`npm ci && npm run test:rules && ./gradlew testDebugUnitTest lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
+            echo "\`npm ci && npm run test:rules && ./gradlew testDebugUnitTest :app:generateDebugAndroidTestLintModel lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
             echo ""
             echo "**Artifacts:** unit-test-reports / lint-reports"
           } >> "$GITHUB_STEP_SUMMARY"
