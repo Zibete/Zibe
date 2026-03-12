@@ -52,6 +52,7 @@ android {
         viewBinding = true
         compose = true
         buildConfig = true
+        resValues = true
     }
 
     compileOptions {
