@@ -35,6 +35,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,6 +46,10 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
+
+    private companion object {
+        const val MIN_AUDIO_DURATION_MS = 1_000L
+    }
 
     private val chatViewModel: ChatViewModel by viewModels()
     private var imageUriCamera: Uri? = null
@@ -336,6 +341,15 @@ class ChatActivity : BaseChatSessionActivity() {
             return
         }
 
+        if (elapsed < MIN_AUDIO_DURATION_MS) {
+            deleteAudioOutput(audioUri, audioFile)
+            snackBarManager.show(
+                uiText = UiText.StringRes(R.string.chat_recording_too_short),
+                type = ZibeSnackType.WARNING
+            )
+            return
+        }
+
         if (audioUri == null || audioName == null) return
 
         isAudioUploading.value = true
@@ -469,7 +483,6 @@ class ChatActivity : BaseChatSessionActivity() {
         nm.cancelAll()
     }
 }
-
 
 
 
