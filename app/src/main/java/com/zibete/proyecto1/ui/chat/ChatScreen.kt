@@ -48,7 +48,6 @@ import com.zibete.proyecto1.ui.chat.components.ChatPhotoSourceSheet
 import com.zibete.proyecto1.ui.chat.components.ChatTopBar
 import com.zibete.proyecto1.ui.chat.components.DateOverlay
 import com.zibete.proyecto1.ui.chat.components.MicRecordOverlay
-import com.zibete.proyecto1.ui.chat.components.TrashLottie
 import com.zibete.proyecto1.ui.chat.message.LegacyMessageRow
 import com.zibete.proyecto1.ui.chat.message.isPhoto
 import com.zibete.proyecto1.ui.chat.preview.sampleBlockedHeader
@@ -158,7 +157,6 @@ fun ChatScreen(
         else -> false
     }
     val showMicOverlay = micPressed || chatState.isRecording
-    val showTrashTarget = showMicOverlay || playTrashDrop
 
     var dateOverlayText by remember { mutableStateOf("") }
     var showDateOverlay by remember { mutableStateOf(false) }
@@ -336,16 +334,6 @@ fun ChatScreen(
             isVisible = showMicOverlay,
             pointerInWindow = micPointerInWindow ?: micCenterInWindow,
             rootPositionInWindow = rootPositionInWindow
-        )
-
-        TrashLottie(
-            isVisible = showTrashTarget,
-            isHighlighted = mediaUiState.isRecordingCanceled,
-            playDrop = playTrashDrop,
-            onDropFinished = { playTrashDrop = false },
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(all = 1.dp)
         )
 
         ChatPhotoSourceSheet(
