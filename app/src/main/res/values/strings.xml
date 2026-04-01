@@ -144,6 +144,7 @@
     <string name="chat_error_no_music_dir">No hay directorio de música disponible</string>
     <string name="chat_error_upload_audio">No se pudo subir el audio</string>
     <string name="chat_cancel_recording_hint">Deslice para cancelar</string>
+    <string name="chat_recording_too_short">Mantené presionado al menos 1 segundo para grabar un audio</string>
 
     <!-- ============================= -->
     <!-- Reset password -->
