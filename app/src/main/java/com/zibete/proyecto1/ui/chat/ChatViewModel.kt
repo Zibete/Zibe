@@ -51,6 +51,7 @@ import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
+import com.zibete.proyecto1.ui.media.buildZibeUcropIntent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -65,7 +66,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -331,15 +331,7 @@ class ChatViewModel @Inject constructor(
         activity: AppCompatActivity,
         uCropLauncher: ActivityResultLauncher<Intent>
     ) {
-        val destinationUri = Uri.fromFile(
-            File(context.cacheDir, "${System.currentTimeMillis()}_cropped.jpg")
-        )
-
-        val uCropIntent = UCrop.of(sourceUri, destinationUri)
-            .withAspectRatio(1f, 1f)
-            .getIntent(activity)
-
-        uCropLauncher.launch(uCropIntent)
+        uCropLauncher.launch(buildZibeUcropIntent(activity, sourceUri))
     }
 
     fun handleCroppedImageResult(
@@ -351,6 +343,7 @@ class ChatViewModel @Inject constructor(
             val resultUri = UCrop.getOutput(data)
 
             if (resultUri == null || fileName == null) {
+                clearPendingPhotoState()
                 viewModelScope.launch {
                     _events.emit(
                         ChatSessionUiEvent.ShowErrorDialog(
@@ -362,7 +355,7 @@ class ChatViewModel @Inject constructor(
             }
 
             viewModelScope.launch {
-                _chatState.update { it.copy(pendingPhotoUri = resultUri) }
+                onPhotoSelected(resultUri)
                 val url = uploadMedia(
                     fileName = fileName,
                     uri = resultUri,
@@ -370,6 +363,7 @@ class ChatViewModel @Inject constructor(
                 )
 
                 if (url == null) {
+                    clearPendingPhotoState()
                     _events.emit(
                         ChatSessionUiEvent.ShowErrorDialog(
                             uiText = UiText.StringRes(R.string.chat_error_upload_image)
@@ -380,6 +374,7 @@ class ChatViewModel @Inject constructor(
                 }
             }
         } else if (resultCode == UCrop.RESULT_ERROR && data != null) {
+            clearPendingPhotoState()
             val error = UCrop.getError(data)
             Log.e("UCrop", "Error al recortar: $error")
             viewModelScope.launch {
@@ -389,6 +384,8 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
+        } else {
+            clearPendingPhotoState()
         }
     }
 
@@ -428,11 +425,17 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onPhotoSelected(uri: Uri) {
-        _chatState.update { it.copy(pendingPhotoUri = uri, photoReady = true) }
+        _chatState.update {
+            it.copy(
+                pendingPhotoUri = uri,
+                photoReady = true,
+                pendingFileUrl = null
+            )
+        }
     }
 
     fun onRemovePendingPhoto() {
-        _chatState.update { it.copy(pendingPhotoUri = null, photoReady = false) }
+        clearPendingPhotoState()
     }
 
     fun onMicPressed() {
@@ -487,6 +490,16 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 photoReady = state,
                 pendingFileUrl = url
+            )
+        }
+    }
+
+    private fun clearPendingPhotoState() {
+        _chatState.update {
+            it.copy(
+                pendingPhotoUri = null,
+                photoReady = false,
+                pendingFileUrl = null
             )
         }
     }
