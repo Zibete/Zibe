@@ -51,6 +51,8 @@ class ChatActivity : BaseChatSessionActivity() {
         const val MIN_AUDIO_DURATION_MS = 1_000L
     }
 
+    override val enableComposeSnackHost: Boolean = false
+
     private val chatViewModel: ChatViewModel by viewModels()
     private var imageUriCamera: Uri? = null
     private var mediaRecorder: MediaRecorder? = null
@@ -119,7 +121,8 @@ class ChatActivity : BaseChatSessionActivity() {
                 ChatRoute(
                     viewModel = chatViewModel,
                     mediaUiState = mediaUiState,
-                    callbacks = callbacks
+                    callbacks = callbacks,
+                    snackBarManager = snackBarManager
                 )
             }
         }
@@ -181,8 +184,10 @@ class ChatActivity : BaseChatSessionActivity() {
         pickImageLauncher =
             registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
                 if (uri != null) {
-                    chatViewModel.onPhotoSelected(uri)
+                    chatViewModel.onRemovePendingPhoto()
                     chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
+                } else {
+                    pendingImageName = null
                 }
             }
 
@@ -190,10 +195,14 @@ class ChatActivity : BaseChatSessionActivity() {
             registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
                 if (success) {
                     imageUriCamera?.let { uri ->
-                        chatViewModel.onPhotoSelected(uri)
+                        chatViewModel.onRemovePendingPhoto()
                         chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
                     }
+                } else {
+                    imageUriCamera?.let { contentResolver.delete(it, null, null) }
+                    pendingImageName = null
                 }
+                imageUriCamera = null
             }
 
         requestPermissionsLauncher =
@@ -483,6 +492,5 @@ class ChatActivity : BaseChatSessionActivity() {
         nm.cancelAll()
     }
 }
-
 
 
