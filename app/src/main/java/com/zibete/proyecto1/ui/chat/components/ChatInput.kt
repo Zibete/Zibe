@@ -58,6 +58,7 @@ fun ChatInput(
 ) {
     var isMicPressed by remember { mutableStateOf(false) }
     val chatComponentsHeight = dimensionResource(DsR.dimen.zibe_btn_height)
+    val showRecordingTrash = isRecording || showTrashDrop
 
     Box(
         modifier = Modifier
@@ -70,14 +71,13 @@ fun ChatInput(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom,
         ) {
-            if (showTrashDrop) {
+            if (showRecordingTrash) {
                 TrashLottie(
                     isVisible = true,
-                    isHighlighted = false,
-                    playDrop = true,
+                    isHighlighted = isRecordingCanceled,
+                    playDrop = showTrashDrop,
                     onDropFinished = onTrashDropFinished,
-                    modifier = Modifier
-                        .padding(bottom = 2.dp)
+                    size = chatComponentsHeight
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
@@ -293,7 +293,6 @@ private fun ChatInputPreviewRecordingCanceled() {
         )
     }
 }
-
 
 
 
