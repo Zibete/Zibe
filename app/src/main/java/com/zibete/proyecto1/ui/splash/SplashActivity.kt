@@ -37,6 +37,8 @@ import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_MESSAGE_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_OTHER_UID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
@@ -326,8 +328,12 @@ class SplashActivity : ComponentActivity() {
                             is SplashUiEvent.NavigateMain -> {
                                 val intent =
                                     Intent(this@SplashActivity, MainActivity::class.java).apply {
+                                        flags =
+                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                                Intent.FLAG_ACTIVITY_SINGLE_TOP
                                         putExtra(EXTRA_UI_TEXT, event.uiText)
                                         putExtra(EXTRA_SNACK_TYPE, event.snackType)
+                                        copyPendingDmExtras(from = this@SplashActivity.intent, to = this)
                                     }
                                 startActivity(intent)
                                 finish()
@@ -337,6 +343,16 @@ class SplashActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun copyPendingDmExtras(from: Intent, to: Intent) {
+        from.getStringExtra(EXTRA_PENDING_DM_OTHER_UID)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { to.putExtra(EXTRA_PENDING_DM_OTHER_UID, it) }
+
+        from.getStringExtra(EXTRA_PENDING_DM_MESSAGE_ID)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { to.putExtra(EXTRA_PENDING_DM_MESSAGE_ID, it) }
     }
 
     // ======================================
