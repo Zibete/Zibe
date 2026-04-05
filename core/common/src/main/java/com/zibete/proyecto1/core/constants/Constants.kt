@@ -54,6 +54,8 @@ object Constants {
     const val EXTRA_START_INDEX = "EXTRA_START_INDEX"
     const val EXTRA_CHAT_ID = "otherUid"
     const val EXTRA_CHAT_NODE = "nodeType"
+    const val EXTRA_PENDING_DM_OTHER_UID = "extra_pending_dm_other_uid"
+    const val EXTRA_PENDING_DM_MESSAGE_ID = "extra_pending_dm_message_id"
 
     const val EXTRA_GROUP_NAME = "groupName"
 
@@ -216,11 +218,13 @@ object Constants {
     const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
 
     object PayloadKeys {
-        const val TYPE = ChatMessageKeys.TYPE
-        const val OTHER_ID = ConversationKeys.OTHER_ID
-        const val OTHER_NAME = ConversationKeys.OTHER_NAME
-        const val CONTENT = ChatMessageKeys.CONTENT
-        const val UNREAD_COUNT = ConversationKeys.UNREAD_COUNT
+        const val TYPE = "type"
+        const val CHAT_ID = "chatId"
+        const val MESSAGE_ID = "messageId"
+        const val OTHER_ID = "otherId"
+        const val OTHER_NAME = "otherName"
+        const val CONTENT = "content"
+        const val UNREAD_COUNT = "unreadCount"
     }
 
     // ==============================

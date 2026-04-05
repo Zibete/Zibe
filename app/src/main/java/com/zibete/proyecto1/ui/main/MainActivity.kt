@@ -53,9 +53,14 @@ import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_MESSAGE_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_OTHER_UID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.navigation.AppNavigator
@@ -68,6 +73,7 @@ import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.databinding.NavViewBinding
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
+import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
@@ -140,7 +146,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         setupOnBackPressedDispatcher()
 
         // Capturar extras del Splash para mostrar el snack pendiente
-        handleIntentExtras()
+        handleLaunchIntent()
     }
 
     private fun setupEdgeToEdge() {
@@ -154,10 +160,19 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
     }
 
-    private fun handleIntentExtras() {
-        val uiText = IntentCompat.getParcelableExtra(intent, EXTRA_UI_TEXT, UiText::class.java)
+    private fun handleLaunchIntent(sourceIntent: Intent = intent) {
+        handleIntentExtras(sourceIntent)
+        handlePendingDmOpen(sourceIntent)
+    }
+
+    private fun handleIntentExtras(sourceIntent: Intent) {
+        val uiText = IntentCompat.getParcelableExtra(sourceIntent, EXTRA_UI_TEXT, UiText::class.java)
         val snackType =
-            IntentCompat.getParcelableExtra(intent, EXTRA_SNACK_TYPE, ZibeSnackType::class.java)
+            IntentCompat.getParcelableExtra(
+                sourceIntent,
+                EXTRA_SNACK_TYPE,
+                ZibeSnackType::class.java
+            )
 
         if (uiText != null) {
             mainViewModel.showSnack(
@@ -166,8 +181,30 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                 snackType = snackType ?: ZibeSnackType.SUCCESS
             )
         }
-        intent.removeExtra(EXTRA_UI_TEXT)
-        intent.removeExtra(EXTRA_SNACK_TYPE)
+        sourceIntent.removeExtra(EXTRA_UI_TEXT)
+        sourceIntent.removeExtra(EXTRA_SNACK_TYPE)
+    }
+
+    private fun handlePendingDmOpen(sourceIntent: Intent) {
+        val otherUid = sourceIntent.getStringExtra(EXTRA_PENDING_DM_OTHER_UID)
+            ?.takeIf { it.isNotBlank() }
+            ?: return
+
+        sourceIntent.removeExtra(EXTRA_PENDING_DM_OTHER_UID)
+        sourceIntent.removeExtra(EXTRA_PENDING_DM_MESSAGE_ID)
+
+        startActivity(
+            Intent(this, ChatActivity::class.java).apply {
+                putExtra(EXTRA_CHAT_ID, otherUid)
+                putExtra(EXTRA_CHAT_NODE, NODE_DM)
+            }
+        )
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLaunchIntent(intent)
     }
 
     // ==========================================
@@ -817,6 +854,5 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
-
 
 

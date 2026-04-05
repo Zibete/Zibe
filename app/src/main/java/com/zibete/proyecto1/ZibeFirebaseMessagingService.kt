@@ -4,22 +4,21 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
-import com.zibete.proyecto1.data.ChatRepository
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.notifications.NotificationHelper
+import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
+import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.notifications.NotificationHelper
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
@@ -27,7 +26,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var authSessionProvider: AuthSessionProvider
     @Inject lateinit var userPreferencesProvider: UserPreferencesProvider
     @Inject lateinit var chatRepository: ChatRepository
-    @Inject lateinit var groupRepository: GroupRepository
     @Inject lateinit var notificationHelper: NotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -57,42 +55,44 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         data: Map<String, String>,
         myUid: String
     ) {
-        val unreadCount = data[PayloadKeys.UNREAD_COUNT].orEmpty()
-        val otherName = data[PayloadKeys.OTHER_NAME] ?: return
-        val content = data[PayloadKeys.CONTENT].orEmpty()
-        val otherId = data[PayloadKeys.OTHER_ID] ?: return
         val nodeType = data[PayloadKeys.TYPE] ?: return
 
         // =========================
-        // 1) CHAT 1-1 (NODE_CURRENT_CHAT)
+        // 1) CHAT 1-1 (NODE_DM)
         // =========================
         if (nodeType == NODE_DM) {
+            val chatId = data[PayloadKeys.CHAT_ID] ?: return
+            val messageId = data[PayloadKeys.MESSAGE_ID] ?: return
+            val otherUid = getOtherUid(chatId, myUid) ?: return
 
             val enabled = userPreferencesProvider.individualNotificationsFlow.first()
             if (!enabled) {
-                // Si el usuario desactivó notificaciones individuales:
-                // igual aplicamos doble-check si corresponde, pero NO notificamos.
-                chatRepository.applyDoubleCheckForLatestUnread(myUid, otherId, nodeType)
+                chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
                 return
             }
 
-            // Resumen real (fuente de verdad: Firebase)
-
             val summary = chatRepository.getUnreadSummaryForChats(myUid, nodeType)
-
-            // Si tu chatId es uid1_uid2 ordenado:
-            val chatId = getChatId(myUid,otherId)
+            val conversation = chatRepository.getConversation(
+                firstUid = myUid,
+                secondUid = otherUid,
+                nodeType = nodeType
+            )
+            val otherName = conversation?.otherName?.takeIf { it.isNotBlank() } ?: otherUid
+            val lastMessage = conversation?.lastContent
+                ?.takeIf { it.isNotBlank() }
+                ?: "Abrí ZIBE para ver el mensaje"
 
             notificationHelper.showChatSummaryNotification(
                 summary = summary,
                 lastSenderName = otherName,
-                lastMessage = content,
-                conversationId = chatId
+                lastMessage = lastMessage,
+                conversationId = chatId,
+                otherUid = otherUid,
+                messageId = messageId
             )
 
-            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherId, nodeType)
+            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
             return
-
         }
 
         // =========================
@@ -103,7 +103,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         val groupEnabled = userPreferencesProvider.groupNotificationsFlow.first()
         if (!groupEnabled) return
 
-        // Si el user está actualmente dentro de ese mismo grupo, NO notificamos (como antes)
         val ctx = userPreferencesProvider.groupContextFlow.first()
         val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
 
@@ -111,10 +110,9 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
 //        notificationHelper.showGroupNotification(
 //            groupName = groupName,
-//            unreadCount = payloadUnreadCount, // viene del push
-//            lastSenderName = otherName,
-//            lastMessage = content
+//            unreadCount = data[PayloadKeys.UNREAD_COUNT].orEmpty().toInt(), // viene del push
+//            lastSenderName = data[PayloadKeys.OTHER_NAME] ?: return,
+//            lastMessage = data[PayloadKeys.CONTENT].orEmpty()
 //        )
-
     }
 }
