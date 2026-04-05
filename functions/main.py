@@ -75,22 +75,32 @@ def _is_user_in_active_dm(uid: str, other_uid: str) -> bool:
     )
 
 
-def _send_push(token: str, title: str, body: str, data_payload: dict) -> None:
+def _send_push(
+    token: str,
+    title: str,
+    body: str,
+    data_payload: dict,
+    include_notification: bool = True,
+) -> None:
     """
     Envía notificación:
-    - notification.title/body para UI del sistema
+    - notification.title/body para UI del sistema cuando aplica
     - data payload para tu lógica en app (siempre string-string)
     """
     safe_data = {k: str(v) for k, v in data_payload.items() if v is not None}
 
-    msg = messaging.Message(
-        token=token,
-        notification=messaging.Notification(
+    message_kwargs = {
+        "token": token,
+        "data": safe_data,
+    }
+
+    if include_notification:
+        message_kwargs["notification"] = messaging.Notification(
             title=title,
             body=body
-        ),
-        data=safe_data
-    )
+        )
+
+    msg = messaging.Message(**message_kwargs)
     messaging.send(msg)
 
 
@@ -160,9 +170,10 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
 
     _send_push(
         token=token,
-        title="Nuevo mensaje",
-        body=_read_str(data, DM_MSG_KEY_CONTENT) or "Abrí ZIBE para ver el mensaje",
-        data_payload=payload
+        title="",
+        body="",
+        data_payload=payload,
+        include_notification=False,
     )
 
 
