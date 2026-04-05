@@ -9,6 +9,8 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.SessionRepositoryActions
+import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.notifications.NotificationHelper
@@ -26,6 +28,8 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var authSessionProvider: AuthSessionProvider
     @Inject lateinit var userPreferencesProvider: UserPreferencesProvider
     @Inject lateinit var chatRepository: ChatRepository
+    @Inject lateinit var sessionRepositoryActions: SessionRepositoryActions
+    @Inject lateinit var sessionRepositoryProvider: SessionRepositoryProvider
     @Inject lateinit var notificationHelper: NotificationHelper
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -47,6 +51,26 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                 handleDataMessage(data, myUid)
             } catch (t: Throwable) {
                 Log.e("ZibeFCM", "Error handling FCM", t)
+            }
+        }
+    }
+
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        if (token.isBlank()) return
+
+        serviceScope.launch {
+            try {
+                val uid = authSessionProvider.currentUser?.uid ?: return@launch
+                val installId = sessionRepositoryProvider.getLocalInstallId()
+
+                sessionRepositoryActions.setActiveSession(
+                    uid = uid,
+                    installId = installId,
+                    fcmToken = token
+                )
+            } catch (t: Throwable) {
+                Log.e("ZibeFCM", "Error syncing refreshed FCM token", t)
             }
         }
     }
