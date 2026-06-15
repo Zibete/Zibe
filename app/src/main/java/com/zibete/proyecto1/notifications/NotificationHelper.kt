@@ -8,8 +8,9 @@ import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_MESSAGE_ID
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_OTHER_UID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.data.ChatRepository.UnreadSummary
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,9 +27,7 @@ class NotificationHelper @Inject constructor(
         summary: UnreadSummary,
         lastSenderName: String,
         lastMessage: String,
-        conversationId: String, // chatId o groupName para id estable
-        otherUid: String,
-        messageId: String
+        conversationId: String // chatId o groupName para id estable
     ) {
         val title = when {
             summary.totalChats > 1 ->
@@ -43,7 +42,7 @@ class NotificationHelper @Inject constructor(
             notificationId = conversationId.hashCode(),
             title = title,
             text = "$lastSenderName: $lastMessage",
-            openIntent = buildOpenPendingDmIntent(otherUid, messageId)
+            openIntent = buildOpenPendingDmIntent(conversationId)
         )
     }
 
@@ -106,10 +105,10 @@ class NotificationHelper @Inject constructor(
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
-    private fun buildOpenPendingDmIntent(otherUid: String, messageId: String): Intent =
+    private fun buildOpenPendingDmIntent(chatId: String): Intent =
         buildOpenMainIntent().apply {
-            putExtra(EXTRA_PENDING_DM_OTHER_UID, otherUid)
-            putExtra(EXTRA_PENDING_DM_MESSAGE_ID, messageId)
+            putExtra(EXTRA_PENDING_DM_TYPE, NODE_DM)
+            putExtra(EXTRA_PENDING_DM_CHAT_ID, chatId)
         }
 
     private fun pendingIntent(intent: Intent): PendingIntent {

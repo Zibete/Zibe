@@ -54,8 +54,8 @@ object Constants {
     const val EXTRA_START_INDEX = "EXTRA_START_INDEX"
     const val EXTRA_CHAT_ID = "otherUid"
     const val EXTRA_CHAT_NODE = "nodeType"
-    const val EXTRA_PENDING_DM_OTHER_UID = "extra_pending_dm_other_uid"
-    const val EXTRA_PENDING_DM_MESSAGE_ID = "extra_pending_dm_message_id"
+    const val EXTRA_PENDING_DM_TYPE = "extra_pending_dm_type"
+    const val EXTRA_PENDING_DM_CHAT_ID = "extra_pending_dm_chat_id"
 
     const val EXTRA_GROUP_NAME = "groupName"
 

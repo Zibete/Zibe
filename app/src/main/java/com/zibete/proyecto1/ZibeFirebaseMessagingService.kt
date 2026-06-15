@@ -123,9 +123,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                 summary = summary,
                 lastSenderName = otherName,
                 lastMessage = lastMessage,
-                conversationId = chatId,
-                otherUid = otherUid,
-                messageId = messageId
+                conversationId = chatId
             )
 
             chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
