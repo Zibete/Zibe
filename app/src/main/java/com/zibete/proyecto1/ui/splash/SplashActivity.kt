@@ -5,13 +5,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
@@ -95,7 +95,6 @@ class SplashActivity : ComponentActivity() {
 
     // ===============================
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -368,7 +367,13 @@ class SplashActivity : ComponentActivity() {
             this,
             permission
         ) == PackageManager.PERMISSION_GRANTED
-        if (isGranted || shouldShowRequestPermissionRationale(permission)) return
+        if (isGranted) return
+
+        if (shouldShowRequestPermissionRationale(permission)) {
+            notificationPermissionRequested = true
+            Log.i("ZibeFCM", "Notification permission rationale available; continuing without blocking")
+            return
+        }
 
         notificationPermissionRequested = true
         notificationPermissionLauncher.launch(permission)
