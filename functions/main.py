@@ -6,44 +6,37 @@ from firebase_functions import db_fn
 from firebase_admin import initialize_app, messaging, db
 
 # ============================================================
-# CONFIG / CONSTANTES (EDITÁ TODO ACÁ)
+# CONFIG / CONSTANTS
 # ============================================================
 
-# --- Sesiones (tokens) ---
+# --- Sessions ---
 NODE_SESSIONS = "Sessions"
 KEY_FCM_TOKEN = "fcmToken"
 
-# --- Active view ---
-NODE_USERS = "Users"
-NODE_USERS_DATA = "Data"
-NODE_CLIENT_DATA = "ClientData"
-NODE_ACTIVE_VIEW = "ActiveView"
-KEY_ACTIVE_THREAD = "activeThread"
-KEY_NODE_TYPE = "nodeType"
-KEY_OTHER_UID = "otherUid"
-
-# --- Triggers RTDB ---
-# 1) Mensaje creado en DM 1:1 bajo /Chats/dm/<chatId>/<messageId>
+# --- Chats / Groups ---
 NODE_DM = "dm"
 PATH_DM_CHAT = "/Chats/dm/{chatId}/{messageId}"
-
-# 2) Mensaje creado en chat de grupo bajo /Groups/Chat/<groupName>/<messageId>
-# (esto se mantiene igual en esta tanda; grupos quedan fuera de alcance)
 PATH_GROUP_CHAT = "/Groups/Chat/{groupName}/{messageId}"
 
-# --- Payload contract vigente para DM ---
+# --- Active thread contract ---
+ACTIVE_THREAD_NODE_TYPE = "nodeType"
+ACTIVE_THREAD_OTHER_UID = "otherUid"
+
+# --- DM payload contract ---
 PAYLOAD_KEY_TYPE = "type"
 PAYLOAD_KEY_CHAT_ID = "chatId"
 PAYLOAD_KEY_MESSAGE_ID = "messageId"
 
-# --- Campos esperados en mensajes DM ---
-DM_MSG_KEY_CONTENT = "content"
-DM_MSG_KEY_SENDER_UID = "senderUid"
+# --- Current RTDB message keys used by app models ---
+MSG_KEY_SENDER_UID = "senderUid"
+GROUP_MSG_KEY_SENDER_NAME = "nameUser"
+GROUP_MSG_KEY_CONTENT = "content"
 
-# --- Campos legacy del flujo de grupo actual (fuera de esta tanda) ---
-GROUP_MSG_KEY_TEXT = "msg"
-GROUP_MSG_KEY_SENDER_UID = "envia"
-GROUP_MSG_KEY_SENDER_NAME = "user"
+# --- Legacy group payload keys (kept intact on purpose) ---
+LEGACY_PAYLOAD_KEY_OTHER_ID = "id_user"
+LEGACY_PAYLOAD_KEY_OTHER_NAME = "user"
+LEGACY_PAYLOAD_KEY_CONTENT = "msg"
+LEGACY_PAYLOAD_KEY_UNREAD = "novistos"
 
 # ============================================================
 # INIT ADMIN SDK
@@ -55,77 +48,106 @@ initialize_app()
 # HELPERS
 # ============================================================
 
+def _read_str(data: dict | None, key: str) -> str:
+    if not isinstance(data, dict):
+        return ""
+    value = data.get(key)
+    return str(value).strip() if value is not None else ""
+
+
 def _get_user_token(uid: str) -> str | None:
-    """Lee /Sessions/<uid>/fcmToken. Devuelve None si no existe."""
+    """Reads /Sessions/<uid>/fcmToken."""
+    if not uid:
+        return None
+
     value = db.reference(f"{NODE_SESSIONS}/{uid}/{KEY_FCM_TOKEN}").get()
-    return value if isinstance(value, str) and value.strip() else None
+    token = str(value).strip() if value is not None else ""
+    return token or None
 
 
-def _is_user_in_active_dm(uid: str, other_uid: str) -> bool:
-    active_thread = db.reference(
-        f"{NODE_USERS}/{NODE_USERS_DATA}/{uid}/{NODE_CLIENT_DATA}/{NODE_ACTIVE_VIEW}/{KEY_ACTIVE_THREAD}"
+def _parse_other_uid_from_chat_id(chat_id: str, sender_uid: str) -> str | None:
+    """
+    chatId contract in app:
+      ChatIdGenerator.getChatId(uidA, uidB) -> "<sortedUidA>_<sortedUidB>"
+    """
+    if not chat_id or not sender_uid or "_" not in chat_id:
+        return None
+
+    parts = [part.strip() for part in chat_id.split("_") if part and part.strip()]
+    if len(parts) != 2:
+        return None
+
+    uid_a, uid_b = parts
+    if sender_uid == uid_a:
+        return uid_b
+    if sender_uid == uid_b:
+        return uid_a
+    return None
+
+
+def _get_active_thread(uid: str) -> dict | None:
+    """
+    Reads:
+      /Users/Data/{uid}/ClientData/ActiveView/activeThread
+    """
+    if not uid:
+        return None
+
+    value = db.reference(
+        f"Users/Data/{uid}/ClientData/ActiveView/activeThread"
     ).get()
 
+    return value if isinstance(value, dict) else None
+
+
+def _is_receiver_in_active_dm(receiver_uid: str, other_uid: str) -> bool:
+    """
+    Skip push if receiver is already viewing this same DM:
+      activeThread.nodeType == "dm"
+      activeThread.otherUid == <other participant uid>
+    """
+    active_thread = _get_active_thread(receiver_uid)
     if not isinstance(active_thread, dict):
         return False
 
-    return (
-        _read_str(active_thread, KEY_NODE_TYPE) == NODE_DM
-        and _read_str(active_thread, KEY_OTHER_UID) == other_uid
-    )
+    node_type = _read_str(active_thread, ACTIVE_THREAD_NODE_TYPE)
+    active_other_uid = _read_str(active_thread, ACTIVE_THREAD_OTHER_UID)
+
+    return node_type == NODE_DM and active_other_uid == other_uid
 
 
 def _send_push(
+    *,
     token: str,
-    title: str,
-    body: str,
     data_payload: dict,
-    include_notification: bool = True,
+    include_notification: bool,
+    title: str | None = None,
+    body: str | None = None,
 ) -> None:
     """
-    Envía notificación:
-    - notification.title/body para UI del sistema cuando aplica
-    - data payload para tu lógica en app (siempre string-string)
+    Sends FCM.
+    - DM uses data-only (include_notification=False)
+    - Group keeps current legacy behavior
     """
-    safe_data = {k: str(v) for k, v in data_payload.items() if v is not None}
+    if not token:
+        return
+
+    safe_data = {str(k): str(v) for k, v in data_payload.items() if v is not None}
 
     message_kwargs = {
         "token": token,
         "data": safe_data,
+        "android": messaging.AndroidConfig(priority="high"),
     }
 
     if include_notification:
         message_kwargs["notification"] = messaging.Notification(
-            title=title,
-            body=body
+            title=title or "",
+            body=body or "",
         )
 
     msg = messaging.Message(**message_kwargs)
     messaging.send(msg)
-
-
-def _parse_receiver_from_chat_id(chat_id: str, sender_uid: str) -> str | None:
-    """
-    chatId en el repo se construye como "uidA_uidB" con ambos uid ordenados.
-    A partir de eso inferimos el otro participante del DM.
-    """
-    if not chat_id or "_" not in chat_id:
-        return None
-    parts = [p for p in chat_id.split("_") if p]
-    if len(parts) != 2:
-        return None
-    a, b = parts[0], parts[1]
-    if sender_uid == a:
-        return b
-    if sender_uid == b:
-        return a
-    return None
-
-
-def _read_str(data: dict, key: str) -> str:
-    v = data.get(key, "")
-    return str(v).strip() if v is not None else ""
-
 
 # ============================================================
 # TRIGGER 1: /Chats/dm/{chatId}/{messageId}
@@ -134,12 +156,16 @@ def _read_str(data: dict, key: str) -> str:
 @db_fn.on_value_created(reference=PATH_DM_CHAT)
 def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     """
-    Se dispara para cada mensaje nuevo en /Chats/dm/<chatId>/<messageId>.
-    El payload de datos queda alineado al contrato vigente del repo:
-    type / chatId / messageId.
+    Current DM contract:
+    - trigger path: /Chats/dm/{chatId}/{messageId}
+    - receiver token: /Sessions/{uid}/fcmToken
+    - skip push if receiver is already in the same activeThread
+    - payload: { type, chatId, messageId }
+    - FCM mode: data-only
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
+
     if not chat_id or not message_id:
         return
 
@@ -147,15 +173,15 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     if not isinstance(data, dict):
         return
 
-    sender_uid = _read_str(data, DM_MSG_KEY_SENDER_UID)
+    sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
     if not sender_uid:
         return
 
-    receiver_uid = _parse_receiver_from_chat_id(chat_id, sender_uid) or ""
-    if not receiver_uid:
+    receiver_uid = _parse_other_uid_from_chat_id(chat_id, sender_uid)
+    if not receiver_uid or receiver_uid == sender_uid:
         return
 
-    if _is_user_in_active_dm(receiver_uid, sender_uid):
+    if _is_receiver_in_active_dm(receiver_uid, sender_uid):
         return
 
     token = _get_user_token(receiver_uid)
@@ -170,27 +196,18 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
 
     _send_push(
         token=token,
-        title="",
-        body="",
         data_payload=payload,
         include_notification=False,
     )
 
-
 # ============================================================
 # TRIGGER 2: /Groups/Chat/{groupName}/{messageId}
 # ============================================================
+# Left intentionally close to current legacy behavior.
+# Out of scope for this iteration.
 
 @db_fn.on_value_created(reference=PATH_GROUP_CHAT)
 def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
-    """
-    Mensaje nuevo en un grupo.
-    Regla de tu app:
-      payload.type != "ChatWith" => se interpreta como groupName.
-    Este trigger debe:
-      - leer miembros del grupo
-      - mandar push a todos menos al sender
-    """
     group_name = (event.params.get("groupName") or "").strip()
     if not group_name:
         return
@@ -199,17 +216,11 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     if not isinstance(data, dict):
         return
 
-    sender_uid = _read_str(data, GROUP_MSG_KEY_SENDER_UID)
-    msg_text = _read_str(data, GROUP_MSG_KEY_TEXT)
-    if not msg_text:
-        return
-
+    sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
     sender_name = _read_str(data, GROUP_MSG_KEY_SENDER_NAME) or group_name
+    msg_text = _read_str(data, GROUP_MSG_KEY_CONTENT)
 
-    # === IMPORTANTE: ajustá este path si tu DB difiere ===
-    # Asumimos: /Groups/Users/<groupName>/<uid> = userGroup
     members = db.reference(f"Groups/Users/{group_name}").get()
-
     if not isinstance(members, dict):
         return
 
@@ -225,16 +236,17 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             continue
 
         payload = {
-            "type": group_name,     # <= clave para tu app: "si no es ChatWith => es group"
-            "id_user": sender_uid,  # sender uid
-            "user": sender_name,
-            "msg": msg_text,
-            "novistos": data.get("novistos", "")
+            PAYLOAD_KEY_TYPE: group_name,
+            LEGACY_PAYLOAD_KEY_OTHER_ID: sender_uid,
+            LEGACY_PAYLOAD_KEY_OTHER_NAME: sender_name,
+            LEGACY_PAYLOAD_KEY_CONTENT: msg_text,
+            LEGACY_PAYLOAD_KEY_UNREAD: data.get(LEGACY_PAYLOAD_KEY_UNREAD, ""),
         }
 
         _send_push(
             token=token,
+            data_payload=payload,
+            include_notification=True,
             title=f"Nuevo mensaje de {group_name}",
-            body=msg_text,
-            data_payload=payload
+            body=msg_text or sender_name,
         )
