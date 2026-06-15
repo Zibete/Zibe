@@ -52,11 +52,12 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
+import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_MESSAGE_ID
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_OTHER_UID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
@@ -69,6 +70,7 @@ import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
+import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.databinding.ActivityMainBinding
 import com.zibete.proyecto1.databinding.NavViewBinding
 import com.zibete.proyecto1.R
@@ -96,6 +98,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     @Inject
     lateinit var appNavigator: AppNavigator
+    @Inject
+    lateinit var authSessionProvider: AuthSessionProvider
     val mainViewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -186,12 +190,19 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     }
 
     private fun handlePendingDmOpen(sourceIntent: Intent) {
-        val otherUid = sourceIntent.getStringExtra(EXTRA_PENDING_DM_OTHER_UID)
+        val pendingType = sourceIntent.getStringExtra(EXTRA_PENDING_DM_TYPE)
+        val chatId = sourceIntent.getStringExtra(EXTRA_PENDING_DM_CHAT_ID)
+        if (pendingType.isNullOrBlank() && chatId.isNullOrBlank()) return
+
+        sourceIntent.removeExtra(EXTRA_PENDING_DM_TYPE)
+        sourceIntent.removeExtra(EXTRA_PENDING_DM_CHAT_ID)
+
+        if (pendingType != NODE_DM || chatId.isNullOrBlank()) return
+
+        val myUid = authSessionProvider.currentUser?.uid ?: return
+        val otherUid = getOtherUid(chatId, myUid)
             ?.takeIf { it.isNotBlank() }
             ?: return
-
-        sourceIntent.removeExtra(EXTRA_PENDING_DM_OTHER_UID)
-        sourceIntent.removeExtra(EXTRA_PENDING_DM_MESSAGE_ID)
 
         startActivity(
             Intent(this, ChatActivity::class.java).apply {
@@ -854,5 +865,4 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
-
 
