@@ -59,10 +59,21 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         if (token.isBlank()) return
 
+        Log.d("ZibeFCM", "Refreshed FCM token received")
+
         serviceScope.launch {
             try {
-                val uid = authSessionProvider.currentUser?.uid ?: return@launch
+                val uid = authSessionProvider.currentUser?.uid
+                if (uid == null) {
+                    Log.w("ZibeFCM", "Skipping FCM token sync: no authenticated user")
+                    return@launch
+                }
+
                 val installId = sessionRepositoryProvider.getLocalInstallId()
+                if (installId.isBlank()) {
+                    Log.w("ZibeFCM", "Skipping FCM token sync: installId unavailable")
+                    return@launch
+                }
 
                 sessionRepositoryActions.setActiveSession(
                     uid = uid,
