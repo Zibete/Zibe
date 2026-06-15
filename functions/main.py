@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from firebase_functions import db_fn
 from firebase_admin import initialize_app, messaging, db
 
@@ -43,6 +45,7 @@ LEGACY_PAYLOAD_KEY_UNREAD = "novistos"
 # ============================================================
 
 initialize_app()
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # HELPERS
@@ -123,14 +126,14 @@ def _send_push(
     include_notification: bool,
     title: str | None = None,
     body: str | None = None,
-) -> None:
+) -> str | None:
     """
     Sends FCM.
     - DM uses data-only (include_notification=False)
     - Group keeps current legacy behavior
     """
     if not token:
-        return
+        return None
 
     safe_data = {str(k): str(v) for k, v in data_payload.items() if v is not None}
 
@@ -147,7 +150,7 @@ def _send_push(
         )
 
     msg = messaging.Message(**message_kwargs)
-    messaging.send(msg)
+    return messaging.send(msg)
 
 # ============================================================
 # TRIGGER 1: /Chats/dm/{chatId}/{messageId}
@@ -165,27 +168,58 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
+    logger.info("DM trigger started chatId=%s messageId=%s", chat_id, message_id)
 
     if not chat_id or not message_id:
+        logger.warning("DM trigger missing params chatId=%s messageId=%s", chat_id, message_id)
         return
 
     data = event.data.val()
     if not isinstance(data, dict):
+        logger.warning("DM trigger invalid data chatId=%s messageId=%s", chat_id, message_id)
         return
 
     sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
     if not sender_uid:
+        logger.warning("DM trigger missing senderUid chatId=%s messageId=%s", chat_id, message_id)
         return
 
     receiver_uid = _parse_other_uid_from_chat_id(chat_id, sender_uid)
-    if not receiver_uid or receiver_uid == sender_uid:
+    if not receiver_uid:
+        logger.warning(
+            "DM trigger receiver not resolved chatId=%s messageId=%s senderUid=%s",
+            chat_id,
+            message_id,
+            sender_uid,
+        )
+        return
+
+    if receiver_uid == sender_uid:
+        logger.warning(
+            "DM trigger skipped receiver equals sender chatId=%s messageId=%s senderUid=%s",
+            chat_id,
+            message_id,
+            sender_uid,
+        )
         return
 
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
+        logger.info(
+            "DM trigger skipped active DM chatId=%s messageId=%s receiverUid=%s",
+            chat_id,
+            message_id,
+            receiver_uid,
+        )
         return
 
     token = _get_user_token(receiver_uid)
     if not token:
+        logger.warning(
+            "DM trigger missing receiver token chatId=%s messageId=%s receiverUid=%s hasToken=False",
+            chat_id,
+            message_id,
+            receiver_uid,
+        )
         return
 
     payload = {
@@ -194,11 +228,33 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         PAYLOAD_KEY_MESSAGE_ID: message_id,
     }
 
-    _send_push(
-        token=token,
-        data_payload=payload,
-        include_notification=False,
+    logger.info(
+        "DM trigger sending FCM chatId=%s messageId=%s receiverUid=%s hasToken=True",
+        chat_id,
+        message_id,
+        receiver_uid,
     )
+
+    try:
+        fcm_message_id = _send_push(
+            token=token,
+            data_payload=payload,
+            include_notification=False,
+        )
+        logger.info(
+            "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
+            chat_id,
+            message_id,
+            fcm_message_id,
+        )
+    except Exception:
+        logger.exception(
+            "DM trigger FCM send failed chatId=%s messageId=%s receiverUid=%s",
+            chat_id,
+            message_id,
+            receiver_uid,
+        )
+        raise
 
 # ============================================================
 # TRIGGER 2: /Groups/Chat/{groupName}/{messageId}
