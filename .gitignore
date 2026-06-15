@@ -52,3 +52,13 @@ npm-debug.log*
 /deps.txt
 /app/release/
 *.aab
+
+# Python / Firebase Functions local env
+functions/venv/
+functions/.venv/
+functions/__pycache__/
+functions/**/*.pyc
+functions/.pytest_cache/
+
+# Firebase local deploy/debug output
+firebase-deploy-debug.txt
