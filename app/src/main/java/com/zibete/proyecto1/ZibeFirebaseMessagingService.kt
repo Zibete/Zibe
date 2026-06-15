@@ -79,15 +79,28 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         data: Map<String, String>,
         myUid: String
     ) {
-        val nodeType = data[PayloadKeys.TYPE] ?: return
+        val nodeType = data[PayloadKeys.TYPE]
+        if (nodeType.isNullOrBlank()) {
+            Log.w("ZibeFCM", "Invalid FCM payload: missing type")
+            return
+        }
 
         // =========================
         // 1) CHAT 1-1 (NODE_DM)
         // =========================
         if (nodeType == NODE_DM) {
-            val chatId = data[PayloadKeys.CHAT_ID] ?: return
-            val messageId = data[PayloadKeys.MESSAGE_ID] ?: return
-            val otherUid = getOtherUid(chatId, myUid) ?: return
+            val chatId = data[PayloadKeys.CHAT_ID]
+            val messageId = data[PayloadKeys.MESSAGE_ID]
+            if (chatId.isNullOrBlank() || messageId.isNullOrBlank()) {
+                Log.w("ZibeFCM", "Invalid DM FCM payload: missing chatId or messageId")
+                return
+            }
+
+            val otherUid = getOtherUid(chatId, myUid)
+            if (otherUid.isNullOrBlank()) {
+                Log.w("ZibeFCM", "Invalid DM FCM payload: could not resolve otherUid")
+                return
+            }
 
             val enabled = userPreferencesProvider.individualNotificationsFlow.first()
             if (!enabled) {
