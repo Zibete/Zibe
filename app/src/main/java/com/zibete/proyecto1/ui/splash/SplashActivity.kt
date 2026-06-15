@@ -1,12 +1,15 @@
 package com.zibete.proyecto1.ui.splash
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -23,9 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -86,6 +90,8 @@ class SplashActivity : ComponentActivity() {
     private lateinit var callbackManager: CallbackManager
     private lateinit var loginManager: LoginManager
     private lateinit var facebookLauncher: ActivityResultLauncher<Collection<String>>
+    private lateinit var notificationPermissionLauncher: ActivityResultLauncher<String>
+    private var notificationPermissionRequested = false
 
     // ===============================
 
@@ -105,6 +111,7 @@ class SplashActivity : ComponentActivity() {
 
         // Configurar Facebook
         setupFacebookSignIn(authViewModel)
+        setupNotificationPermissionRequest()
 
         setContent {
             ZibeTheme {
@@ -124,6 +131,7 @@ class SplashActivity : ComponentActivity() {
                         composable(SPLASH_SCREEN) {
                             SplashScreen()
                             LaunchedEffect(Unit) {
+                                requestNotificationPermissionIfNeeded()
                                 splashViewModel.start(this@SplashActivity)
                             }
                         }
@@ -343,6 +351,27 @@ class SplashActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun setupNotificationPermissionRequest() {
+        notificationPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) {}
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (notificationPermissionRequested) return
+
+        val permission = Manifest.permission.POST_NOTIFICATIONS
+        val isGranted = ContextCompat.checkSelfPermission(
+            this,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
+        if (isGranted || shouldShowRequestPermissionRationale(permission)) return
+
+        notificationPermissionRequested = true
+        notificationPermissionLauncher.launch(permission)
     }
 
     private fun copyPendingDmExtras(from: Intent, to: Intent) {
