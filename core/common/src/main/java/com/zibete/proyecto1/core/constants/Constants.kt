@@ -221,6 +221,8 @@ object Constants {
         const val TYPE = "type"
         const val CHAT_ID = "chatId"
         const val MESSAGE_ID = "messageId"
+        const val SENDER_UID = "senderUid"
+        const val SENDER_NAME = "senderName"
         const val OTHER_ID = "otherId"
         const val OTHER_NAME = "otherName"
         const val CONTENT = "content"
