@@ -46,6 +46,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
+import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
@@ -380,14 +381,30 @@ class SplashActivity : ComponentActivity() {
     }
 
     private fun copyPendingDmExtras(from: Intent, to: Intent) {
-        from.getStringExtra(EXTRA_PENDING_DM_TYPE)
-            ?.takeIf { it.isNotBlank() }
-            ?.let { to.putExtra(EXTRA_PENDING_DM_TYPE, it) }
+        val pendingType = from.getRequiredStringExtra(EXTRA_PENDING_DM_TYPE)
+            ?: from.getRequiredStringExtra(PayloadKeys.TYPE)
+        val pendingChatId = from.getRequiredStringExtra(EXTRA_PENDING_DM_CHAT_ID)
+            ?: from.getRequiredStringExtra(PayloadKeys.CHAT_ID)
 
-        from.getStringExtra(EXTRA_PENDING_DM_CHAT_ID)
-            ?.takeIf { it.isNotBlank() }
-            ?.let { to.putExtra(EXTRA_PENDING_DM_CHAT_ID, it) }
+        pendingType?.let {
+            to.putExtra(EXTRA_PENDING_DM_TYPE, it)
+            to.putExtra(PayloadKeys.TYPE, it)
+        }
+        pendingChatId?.let {
+            to.putExtra(EXTRA_PENDING_DM_CHAT_ID, it)
+            to.putExtra(PayloadKeys.CHAT_ID, it)
+        }
+
+        copyPayloadExtra(from, to, PayloadKeys.MESSAGE_ID)
+        copyPayloadExtra(from, to, PayloadKeys.SENDER_UID)
     }
+
+    private fun copyPayloadExtra(from: Intent, to: Intent, key: String) {
+        from.getRequiredStringExtra(key)?.let { to.putExtra(key, it) }
+    }
+
+    private fun Intent.getRequiredStringExtra(key: String): String? =
+        getStringExtra(key)?.takeIf { it.isNotBlank() }
 
     // ======================================
     // FACEBOOK

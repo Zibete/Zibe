@@ -1,13 +1,11 @@
 package com.zibete.proyecto1
 
 import android.util.Log
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
-import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -34,23 +32,29 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    val firebaseUser: FirebaseUser
-        get() = checkNotNull(authSessionProvider.currentUser) {
-            USER_PROVIDER_ERR_EXCEPTION
-        }
-
-    val myUid: String
-        get() = firebaseUser.uid
-
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
-        if (data.isEmpty()) return
+        if (data.isEmpty()) {
+            Log.w(TAG, "FCM received without data payload")
+            return
+        }
+
+        Log.d(
+            TAG,
+            "FCM received type=${data[PayloadKeys.TYPE]} chatId=${data[PayloadKeys.CHAT_ID]} messageId=${data[PayloadKeys.MESSAGE_ID]}"
+        )
 
         serviceScope.launch {
             try {
-                handleDataMessage(data, myUid)
+                val uid = authSessionProvider.currentUser?.uid
+                if (uid.isNullOrBlank()) {
+                    Log.w(TAG, "Skipping FCM: no authenticated user")
+                    return@launch
+                }
+
+                handleDataMessage(data, uid)
             } catch (t: Throwable) {
-                Log.e("ZibeFCM", "Error handling FCM", t)
+                Log.e(TAG, "Error handling FCM", t)
             }
         }
     }
@@ -59,19 +63,19 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         if (token.isBlank()) return
 
-        Log.d("ZibeFCM", "Refreshed FCM token received")
+        Log.d(TAG, "Refreshed FCM token received")
 
         serviceScope.launch {
             try {
                 val uid = authSessionProvider.currentUser?.uid
                 if (uid == null) {
-                    Log.w("ZibeFCM", "Skipping FCM token sync: no authenticated user")
+                    Log.w(TAG, "Skipping FCM token sync: no authenticated user")
                     return@launch
                 }
 
                 val installId = sessionRepositoryProvider.getLocalInstallId()
                 if (installId.isBlank()) {
-                    Log.w("ZibeFCM", "Skipping FCM token sync: installId unavailable")
+                    Log.w(TAG, "Skipping FCM token sync: installId unavailable")
                     return@launch
                 }
 
@@ -81,7 +85,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                     fcmToken = token
                 )
             } catch (t: Throwable) {
-                Log.e("ZibeFCM", "Error syncing refreshed FCM token", t)
+                Log.e(TAG, "Error syncing refreshed FCM token", t)
             }
         }
     }
@@ -92,7 +96,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     ) {
         val nodeType = data[PayloadKeys.TYPE]
         if (nodeType.isNullOrBlank()) {
-            Log.w("ZibeFCM", "Invalid FCM payload: missing type")
+            Log.w(TAG, "Invalid FCM payload: missing type")
             return
         }
 
@@ -100,44 +104,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         // 1) CHAT 1-1 (NODE_DM)
         // =========================
         if (nodeType == NODE_DM) {
-            val chatId = data[PayloadKeys.CHAT_ID]
-            val messageId = data[PayloadKeys.MESSAGE_ID]
-            if (chatId.isNullOrBlank() || messageId.isNullOrBlank()) {
-                Log.w("ZibeFCM", "Invalid DM FCM payload: missing chatId or messageId")
-                return
-            }
-
-            val otherUid = getOtherUid(chatId, myUid)
-            if (otherUid.isNullOrBlank()) {
-                Log.w("ZibeFCM", "Invalid DM FCM payload: could not resolve otherUid")
-                return
-            }
-
-            val enabled = userPreferencesProvider.individualNotificationsFlow.first()
-            if (!enabled) {
-                chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
-                return
-            }
-
-            val summary = chatRepository.getUnreadSummaryForChats(myUid, nodeType)
-            val conversation = chatRepository.getConversation(
-                firstUid = myUid,
-                secondUid = otherUid,
-                nodeType = nodeType
-            )
-            val otherName = conversation?.otherName?.takeIf { it.isNotBlank() } ?: otherUid
-            val lastMessage = conversation?.lastContent
-                ?.takeIf { it.isNotBlank() }
-                ?: "Abrí ZIBE para ver el mensaje"
-
-            notificationHelper.showChatSummaryNotification(
-                summary = summary,
-                lastSenderName = otherName,
-                lastMessage = lastMessage,
-                conversationId = chatId
-            )
-
-            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
+            handleDmMessage(data, myUid)
             return
         }
 
@@ -160,5 +127,94 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 //            lastSenderName = data[PayloadKeys.OTHER_NAME] ?: return,
 //            lastMessage = data[PayloadKeys.CONTENT].orEmpty()
 //        )
+    }
+
+    private suspend fun handleDmMessage(
+        data: Map<String, String>,
+        myUid: String
+    ) {
+        val chatId = data[PayloadKeys.CHAT_ID]
+        val messageId = data[PayloadKeys.MESSAGE_ID]
+        if (chatId.isNullOrBlank() || messageId.isNullOrBlank()) {
+            Log.w(TAG, "Invalid DM FCM payload: missing chatId or messageId")
+            return
+        }
+
+        Log.d(TAG, "Valid DM FCM payload chatId=$chatId messageId=$messageId")
+
+        val otherUid = getOtherUid(chatId, myUid)
+        if (otherUid.isNullOrBlank()) {
+            Log.w(TAG, "Invalid DM FCM payload: could not resolve otherUid chatId=$chatId")
+            return
+        }
+
+        val enabled = runCatching { userPreferencesProvider.individualNotificationsFlow.first() }
+            .onFailure {
+                Log.w(TAG, "Could not read DM notification preference; showing notification", it)
+            }
+            .getOrDefault(true)
+
+        if (!enabled) {
+            Log.i(TAG, "Skipping DM notification: individual notifications disabled chatId=$chatId")
+            applyDoubleCheck(myUid, otherUid, NODE_DM)
+            return
+        }
+
+        val fallbackSenderName = data[PayloadKeys.SENDER_NAME]
+            ?.takeIf { it.isNotBlank() }
+            ?: "ZIBE"
+        val fallbackContent = data[PayloadKeys.CONTENT]
+            ?.takeIf { it.isNotBlank() }
+            ?: FALLBACK_DM_CONTENT
+
+        val summary = runCatching {
+            chatRepository.getUnreadSummaryForChats(myUid, NODE_DM)
+        }.onFailure {
+            Log.w(TAG, "Could not read DM unread summary; using fallback chatId=$chatId", it)
+        }.getOrDefault(ChatRepository.UnreadSummary(totalChats = 1, totalUnread = 1))
+
+        val conversation = runCatching {
+            chatRepository.getConversation(
+                firstUid = myUid,
+                secondUid = otherUid,
+                nodeType = NODE_DM
+            )
+        }.onFailure {
+            Log.w(TAG, "Could not read DM conversation; using payload fallback chatId=$chatId", it)
+        }.getOrNull()
+
+        val senderName = conversation?.otherName
+            ?.takeIf { it.isNotBlank() }
+            ?: fallbackSenderName
+        val content = conversation?.lastContent
+            ?.takeIf { it.isNotBlank() }
+            ?: fallbackContent
+
+        Log.d(TAG, "Calling NotificationHelper for DM chatId=$chatId messageId=$messageId")
+        notificationHelper.showChatSummaryNotification(
+            summary = summary,
+            lastSenderName = senderName,
+            lastMessage = content,
+            conversationId = chatId
+        )
+
+        applyDoubleCheck(myUid, otherUid, NODE_DM)
+    }
+
+    private suspend fun applyDoubleCheck(
+        myUid: String,
+        otherUid: String,
+        nodeType: String
+    ) {
+        runCatching {
+            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
+        }.onFailure {
+            Log.w(TAG, "Could not apply double-check for latest unread", it)
+        }
+    }
+
+    private companion object {
+        const val TAG = "ZibeFCM"
+        const val FALLBACK_DM_CONTENT = "Abri ZIBE para ver el mensaje"
     }
 }

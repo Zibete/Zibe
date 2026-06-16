@@ -15,7 +15,8 @@ from firebase_admin import initialize_app, messaging, db
 NODE_SESSIONS = "Sessions"
 KEY_FCM_TOKEN = "fcmToken"
 
-# --- Chats / Groups ---
+# --- Users / Chats / Groups ---
+NODE_USERS_ACCOUNTS = "Users/Accounts"
 NODE_DM = "dm"
 PATH_DM_CHAT = "/Chats/dm/{chatId}/{messageId}"
 PATH_GROUP_CHAT = "/Groups/Chat/{groupName}/{messageId}"
@@ -28,17 +29,25 @@ ACTIVE_THREAD_OTHER_UID = "otherUid"
 PAYLOAD_KEY_TYPE = "type"
 PAYLOAD_KEY_CHAT_ID = "chatId"
 PAYLOAD_KEY_MESSAGE_ID = "messageId"
+PAYLOAD_KEY_SENDER_UID = "senderUid"
+PAYLOAD_KEY_SENDER_NAME = "senderName"
+PAYLOAD_KEY_CONTENT = "content"
 
 # --- Current RTDB message keys used by app models ---
 MSG_KEY_SENDER_UID = "senderUid"
+MSG_KEY_CONTENT = "content"
+MSG_KEY_TYPE = "type"
 GROUP_MSG_KEY_SENDER_NAME = "nameUser"
 GROUP_MSG_KEY_CONTENT = "content"
+DM_MSG_TYPE_TEXT = 100
+DM_VISIBLE_CONTENT_FALLBACK = "Abri ZIBE para ver el mensaje"
+DM_SENDER_NAME_FALLBACK = "ZIBE"
 
-# --- Legacy group payload keys (kept intact on purpose) ---
-LEGACY_PAYLOAD_KEY_OTHER_ID = "id_user"
-LEGACY_PAYLOAD_KEY_OTHER_NAME = "user"
-LEGACY_PAYLOAD_KEY_CONTENT = "msg"
-LEGACY_PAYLOAD_KEY_UNREAD = "novistos"
+# --- Legacy group contract, do not reuse for DM ---
+LEGACY_GROUP_PAYLOAD_KEY_OTHER_ID = "id_user"
+LEGACY_GROUP_PAYLOAD_KEY_OTHER_NAME = "user"
+LEGACY_GROUP_PAYLOAD_KEY_CONTENT = "msg"
+LEGACY_GROUP_PAYLOAD_KEY_UNREAD = "novistos"
 
 # ============================================================
 # INIT ADMIN SDK
@@ -66,6 +75,30 @@ def _get_user_token(uid: str) -> str | None:
     value = db.reference(f"{NODE_SESSIONS}/{uid}/{KEY_FCM_TOKEN}").get()
     token = str(value).strip() if value is not None else ""
     return token or None
+
+
+def _get_sender_name(sender_uid: str) -> str:
+    if not sender_uid:
+        return DM_SENDER_NAME_FALLBACK
+
+    value = db.reference(f"{NODE_USERS_ACCOUNTS}/{sender_uid}/name").get()
+    sender_name = str(value).strip() if value is not None else ""
+    return sender_name or DM_SENDER_NAME_FALLBACK
+
+
+def _get_visible_dm_content(data: dict) -> str:
+    content = _read_str(data, MSG_KEY_CONTENT)
+    message_type = data.get(MSG_KEY_TYPE)
+
+    try:
+        is_text = int(message_type) == DM_MSG_TYPE_TEXT
+    except (TypeError, ValueError):
+        is_text = False
+
+    if is_text and content:
+        return content
+
+    return DM_VISIBLE_CONTENT_FALLBACK
 
 
 def _parse_other_uid_from_chat_id(chat_id: str, sender_uid: str) -> str | None:
@@ -129,7 +162,7 @@ def _send_push(
 ) -> str | None:
     """
     Sends FCM.
-    - DM uses data-only (include_notification=False)
+    - DM uses data + notification for reliable background display
     - Group keeps current legacy behavior
     """
     if not token:
@@ -149,8 +182,8 @@ def _send_push(
             body=body or "",
         )
 
-    msg = messaging.Message(**message_kwargs)
-    return messaging.send(msg)
+    fcm_message = messaging.Message(**message_kwargs)
+    return messaging.send(fcm_message)
 
 # ============================================================
 # TRIGGER 1: /Chats/dm/{chatId}/{messageId}
@@ -163,8 +196,8 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     - trigger path: /Chats/dm/{chatId}/{messageId}
     - receiver token: /Sessions/{uid}/fcmToken
     - skip push if receiver is already in the same activeThread
-    - payload: { type, chatId, messageId }
-    - FCM mode: data-only
+    - payload data: { type, chatId, messageId, senderUid, senderName, content }
+    - FCM mode: data + notification
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
@@ -183,6 +216,12 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     if not sender_uid:
         logger.warning("DM trigger missing senderUid chatId=%s messageId=%s", chat_id, message_id)
         return
+    logger.info(
+        "DM trigger sender resolved chatId=%s messageId=%s senderUid=%s",
+        chat_id,
+        message_id,
+        sender_uid,
+    )
 
     receiver_uid = _parse_other_uid_from_chat_id(chat_id, sender_uid)
     if not receiver_uid:
@@ -202,6 +241,13 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             sender_uid,
         )
         return
+
+    logger.info(
+        "DM trigger receiver resolved chatId=%s messageId=%s receiverUid=%s",
+        chat_id,
+        message_id,
+        receiver_uid,
+    )
 
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
         logger.info(
@@ -226,6 +272,9 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         PAYLOAD_KEY_TYPE: NODE_DM,
         PAYLOAD_KEY_CHAT_ID: chat_id,
         PAYLOAD_KEY_MESSAGE_ID: message_id,
+        PAYLOAD_KEY_SENDER_UID: sender_uid,
+        PAYLOAD_KEY_SENDER_NAME: _get_sender_name(sender_uid),
+        PAYLOAD_KEY_CONTENT: _get_visible_dm_content(data),
     }
 
     logger.info(
@@ -239,7 +288,9 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         fcm_message_id = _send_push(
             token=token,
             data_payload=payload,
-            include_notification=False,
+            include_notification=True,
+            title=f"Nuevo mensaje de {payload[PAYLOAD_KEY_SENDER_NAME]}",
+            body=payload[PAYLOAD_KEY_CONTENT],
         )
         logger.info(
             "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
@@ -274,7 +325,7 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
 
     sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
     sender_name = _read_str(data, GROUP_MSG_KEY_SENDER_NAME) or group_name
-    msg_text = _read_str(data, GROUP_MSG_KEY_CONTENT)
+    group_message_text = _read_str(data, GROUP_MSG_KEY_CONTENT)
 
     members = db.reference(f"Groups/Users/{group_name}").get()
     if not isinstance(members, dict):
@@ -293,10 +344,10 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
 
         payload = {
             PAYLOAD_KEY_TYPE: group_name,
-            LEGACY_PAYLOAD_KEY_OTHER_ID: sender_uid,
-            LEGACY_PAYLOAD_KEY_OTHER_NAME: sender_name,
-            LEGACY_PAYLOAD_KEY_CONTENT: msg_text,
-            LEGACY_PAYLOAD_KEY_UNREAD: data.get(LEGACY_PAYLOAD_KEY_UNREAD, ""),
+            LEGACY_GROUP_PAYLOAD_KEY_OTHER_ID: sender_uid,
+            LEGACY_GROUP_PAYLOAD_KEY_OTHER_NAME: sender_name,
+            LEGACY_GROUP_PAYLOAD_KEY_CONTENT: group_message_text,
+            LEGACY_GROUP_PAYLOAD_KEY_UNREAD: data.get(LEGACY_GROUP_PAYLOAD_KEY_UNREAD, ""),
         }
 
         _send_push(
@@ -304,5 +355,5 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             data_payload=payload,
             include_notification=True,
             title=f"Nuevo mensaje de {group_name}",
-            body=msg_text or sender_name,
+            body=group_message_text or sender_name,
         )

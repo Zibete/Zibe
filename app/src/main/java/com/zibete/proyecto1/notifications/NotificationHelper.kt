@@ -1,16 +1,22 @@
 package com.zibete.proyecto1.notifications
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.RingtoneManager
+import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.data.ChatRepository.UnreadSummary
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -38,6 +44,7 @@ class NotificationHelper @Inject constructor(
                 "${summary.totalUnread} mensajes de $lastSenderName"
         }
 
+        Log.d(TAG, "Preparing DM notification chatId=$conversationId")
         showMessageNotification(
             notificationId = conversationId.hashCode(),
             title = title,
@@ -71,6 +78,8 @@ class NotificationHelper @Inject constructor(
         text: String,
         openIntent: Intent
     ) {
+        if (!canPostNotifications(notificationId)) return
+
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannel(nm)
 
@@ -88,9 +97,12 @@ class NotificationHelper @Inject constructor(
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
 
         nm.notify(notificationId, builder.build())
+        Log.d(TAG, "NotificationManager.notify executed notificationId=$notificationId")
     }
 
     private fun ensureChannel(nm: NotificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
         val channelName: CharSequence = context.getString(R.string.channel_name)
         val channel = NotificationChannel(
             channelId,
@@ -98,6 +110,21 @@ class NotificationHelper @Inject constructor(
             NotificationManager.IMPORTANCE_HIGH
         ).apply { setShowBadge(true) }
         nm.createNotificationChannel(channel)
+        Log.d(TAG, "Notification channel ready channelId=$channelId")
+    }
+
+    private fun canPostNotifications(notificationId: Int): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+
+        val isGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!isGranted) {
+            Log.w(TAG, "notification permission denied notificationId=$notificationId")
+        }
+        return isGranted
     }
 
     private fun buildOpenMainIntent(): Intent =
@@ -109,6 +136,8 @@ class NotificationHelper @Inject constructor(
         buildOpenMainIntent().apply {
             putExtra(EXTRA_PENDING_DM_TYPE, NODE_DM)
             putExtra(EXTRA_PENDING_DM_CHAT_ID, chatId)
+            putExtra(PayloadKeys.TYPE, NODE_DM)
+            putExtra(PayloadKeys.CHAT_ID, chatId)
         }
 
     private fun pendingIntent(intent: Intent): PendingIntent {
@@ -118,5 +147,9 @@ class NotificationHelper @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+    }
+
+    private companion object {
+        const val TAG = "ZibeFCM"
     }
 }
