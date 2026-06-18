@@ -67,6 +67,14 @@ def _read_str(data: dict | None, key: str) -> str:
     return str(value).strip() if value is not None else ""
 
 
+def _event_data_as_dict(event: db_fn.Event) -> dict | None:
+    data = event.data
+    val = getattr(data, "val", None)
+    if callable(val):
+        data = val()
+    return data if isinstance(data, dict) else None
+
+
 def _get_user_token(uid: str) -> str | None:
     """Reads /Sessions/<uid>/fcmToken."""
     if not uid:
@@ -207,7 +215,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         logger.warning("DM trigger missing params chatId=%s messageId=%s", chat_id, message_id)
         return
 
-    data = event.data.val()
+    data = _event_data_as_dict(event)
     if not isinstance(data, dict):
         logger.warning("DM trigger invalid data chatId=%s messageId=%s", chat_id, message_id)
         return
@@ -319,7 +327,7 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     if not group_name:
         return
 
-    data = event.data.val()
+    data = _event_data_as_dict(event)
     if not isinstance(data, dict):
         return
 
