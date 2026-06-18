@@ -75,6 +75,18 @@ def _event_data_as_dict(event: db_fn.Event) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
+def _safe_id(value: str | None, *, head: int = 6, tail: int = 4) -> str:
+    """
+    Keeps production diagnostics useful without writing full UIDs/chat IDs/message IDs.
+    """
+    if not value:
+        return ""
+    text = str(value)
+    if len(text) <= head + tail + 3:
+        return text
+    return f"{text[:head]}...{text[-tail:]}"
+
+
 def _get_user_token(uid: str) -> str | None:
     """Reads /Sessions/<uid>/fcmToken."""
     if not uid:
@@ -209,73 +221,85 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
-    logger.info("DM trigger started chatId=%s messageId=%s", chat_id, message_id)
+    logger.info(
+        "DM trigger started chatId=%s messageId=%s",
+        _safe_id(chat_id),
+        _safe_id(message_id),
+    )
 
     if not chat_id or not message_id:
-        logger.warning("DM trigger missing params chatId=%s messageId=%s", chat_id, message_id)
+        logger.warning(
+            "DM trigger missing params chatId=%s messageId=%s",
+            _safe_id(chat_id),
+            _safe_id(message_id),
+        )
         return
 
     data = _event_data_as_dict(event)
     if not isinstance(data, dict):
-        logger.warning("DM trigger invalid data chatId=%s messageId=%s", chat_id, message_id)
+        logger.warning(
+            "DM trigger invalid data chatId=%s messageId=%s",
+            _safe_id(chat_id),
+            _safe_id(message_id),
+        )
         return
 
     sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
     if not sender_uid:
-        logger.warning("DM trigger missing senderUid chatId=%s messageId=%s", chat_id, message_id)
+        logger.warning(
+            "DM trigger missing senderUid chatId=%s messageId=%s",
+            _safe_id(chat_id),
+            _safe_id(message_id),
+        )
         return
     logger.info(
         "DM trigger sender resolved chatId=%s messageId=%s senderUid=%s",
-        chat_id,
-        message_id,
-        sender_uid,
+        _safe_id(chat_id),
+        _safe_id(message_id),
+        _safe_id(sender_uid),
     )
 
     receiver_uid = _parse_other_uid_from_chat_id(chat_id, sender_uid)
     if not receiver_uid:
         logger.warning(
             "DM trigger receiver not resolved chatId=%s messageId=%s senderUid=%s",
-            chat_id,
-            message_id,
-            sender_uid,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(sender_uid),
         )
         return
-
     if receiver_uid == sender_uid:
         logger.warning(
             "DM trigger skipped receiver equals sender chatId=%s messageId=%s senderUid=%s",
-            chat_id,
-            message_id,
-            sender_uid,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(sender_uid),
         )
         return
-
     logger.info(
         "DM trigger receiver resolved chatId=%s messageId=%s receiverUid=%s",
-        chat_id,
-        message_id,
-        receiver_uid,
+        _safe_id(chat_id),
+        _safe_id(message_id),
+        _safe_id(receiver_uid),
     )
 
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
         logger.info(
             "DM trigger skipped active DM chatId=%s messageId=%s receiverUid=%s",
-            chat_id,
-            message_id,
-            receiver_uid,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(receiver_uid),
         )
         return
-
     token = _get_user_token(receiver_uid)
     if not token:
         logger.warning(
             "DM trigger missing receiver token chatId=%s messageId=%s receiverUid=%s hasToken=False",
-            chat_id,
-            message_id,
-            receiver_uid,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(receiver_uid),
         )
         return
-
     payload = {
         PAYLOAD_KEY_TYPE: NODE_DM,
         PAYLOAD_KEY_CHAT_ID: chat_id,
@@ -287,9 +311,9 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
 
     logger.info(
         "DM trigger sending FCM chatId=%s messageId=%s receiverUid=%s hasToken=True",
-        chat_id,
-        message_id,
-        receiver_uid,
+        _safe_id(chat_id),
+        _safe_id(message_id),
+        _safe_id(receiver_uid),
     )
 
     try:
@@ -302,16 +326,16 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         )
         logger.info(
             "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
-            chat_id,
-            message_id,
-            fcm_message_id,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(fcm_message_id),
         )
     except Exception:
         logger.exception(
             "DM trigger FCM send failed chatId=%s messageId=%s receiverUid=%s",
-            chat_id,
-            message_id,
-            receiver_uid,
+            _safe_id(chat_id),
+            _safe_id(message_id),
+            _safe_id(receiver_uid),
         )
         raise
 
