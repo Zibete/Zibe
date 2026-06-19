@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -106,14 +107,14 @@ fun ChatMessageRow(
             horizontalArrangement = rowArrangement
         ) {
             Column(horizontalAlignment = horizontalAlignment) {
-                Row(
+                Column(
                     modifier = Modifier
                         .widthIn(max = if (item.message.type.isPhoto()) 280.dp else 320.dp)
                         .combinedClickable(
                             onClick = { if (hasSelection) toggleSelection() },
                             onLongClick = { toggleSelection() }
                         ),
-                    verticalAlignment = Alignment.Bottom
+                    horizontalAlignment = horizontalAlignment
                 ) {
                     MessageBubble(
                         msg = item.message,
@@ -136,12 +137,13 @@ fun ChatMessageRow(
                         onPhotoLongClick = { toggleSelection() }
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
-
                     MessageMetaRow(
                         createdAt = item.message.createdAt,
                         seen = item.message.seen,
-                        isMe = isMe
+                        isMe = isMe,
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .padding(top = 2.dp)
                     )
                 }
             }
@@ -371,11 +373,12 @@ private fun AudioAvatar(avatarUrl: String?) {
 fun MessageMetaRow(
     createdAt: Long,
     seen: Int,
-    isMe: Boolean
+    isMe: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.padding(bottom = 2.dp)
+        modifier = modifier.padding(bottom = 2.dp)
     ) {
         Text(
             text = TimeUtils.formatHour(createdAt),
