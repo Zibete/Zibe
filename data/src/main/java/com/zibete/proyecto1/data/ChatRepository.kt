@@ -200,37 +200,52 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun markChatAsSeen(chatRefs: ChatRefs) {
+    suspend fun markChatAsSeen(chatRefs: ChatRefs): ZibeResult<Unit> = zibeCatching {
         val refMyConversation = chatRefs.refMyConversation.get().await()
-        if (!refMyConversation.exists()) return
 
-        val unReadCount = refMyConversation
-            .child(ConversationKeys.UNREAD_COUNT)
-            .getValue(Int::class.java) ?: 0
+        markVisibleIncomingMessagesAsSeen(chatRefs)
 
-        if (unReadCount > 0) setDoubleCheckOnLastMessages(chatRefs, unReadCount)
+        if (!refMyConversation.exists()) return@zibeCatching
 
-        chatRefs.refMyConversation.child(ConversationKeys.SEEN).setValue(MSG_SEEN)
-        chatRefs.refMyConversation.child(ConversationKeys.UNREAD_COUNT).setValue(0)
+        chatRefs.refMyConversation.child(ConversationKeys.SEEN).setValue(MSG_SEEN).await()
+        chatRefs.refMyConversation.child(ConversationKeys.UNREAD_COUNT).setValue(0).await()
     }
 
-    private suspend fun setDoubleCheckOnLastMessages(
+    suspend fun markMessageAsSeenIfNeeded(
         chatRefs: ChatRefs,
-        unReadCount: Int
-    ) {
-        val snapshot = chatRefs.refChat
-            .orderByChild(ChatMessageKeys.CREATED_AT)
-            .limitToLast(unReadCount)
-            .get()
-            .await()
+        messageId: String,
+        message: ChatMessage
+    ): ZibeResult<Unit> = zibeCatching {
+        markMessageAsSeenIfNeededInternal(chatRefs, messageId, message)
+    }
+
+    private suspend fun markVisibleIncomingMessagesAsSeen(chatRefs: ChatRefs) {
+        val snapshot = chatRefs.refChat.get().await()
 
         if (!snapshot.exists()) return
 
-        for (snap in snapshot.children) {
-            if (snap.hasChild(ChatMessageKeys.SEEN)) {
-                snap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_SEEN)
-            }
+        snapshot.children.forEach { child ->
+            val messageId = child.key ?: return@forEach
+            val message = child.getValue(ChatMessage::class.java) ?: return@forEach
+            markMessageAsSeenIfNeededInternal(chatRefs, messageId, message)
         }
+    }
+
+    private suspend fun markMessageAsSeenIfNeededInternal(
+        chatRefs: ChatRefs,
+        messageId: String,
+        message: ChatMessage
+    ) {
+        if (messageId.isBlank()) return
+        if (message.senderUid == myUid) return
+        if (message.seen >= MSG_SEEN) return
+        if (message.isDeletedFor(myUid)) return
+
+        chatRefs.refChat
+            .child(messageId)
+            .child(ChatMessageKeys.SEEN)
+            .setValue(MSG_SEEN)
+            .await()
     }
 
     suspend fun deleteMessages(
@@ -442,13 +457,18 @@ class ChatRepository @Inject constructor(
         otherUid: String,
         nodeType: String
     ) {
-        firebaseRefsContainer.refData
+        val conversationSeenRef = firebaseRefsContainer.refData
             .child(myUid)
             .child(nodeType)
             .child(otherUid)
             .child(ConversationKeys.SEEN)
-            .setValue(MSG_RECEIVED)
-            .await()
+
+        val currentConversationSeen =
+            conversationSeenRef.get().await().getValue(Int::class.java) ?: 0
+
+        if (currentConversationSeen < MSG_RECEIVED) {
+            conversationSeenRef.setValue(MSG_RECEIVED).await()
+        }
 
         val unSeenDs = firebaseRefsContainer.refData
             .child(myUid)
@@ -474,8 +494,13 @@ class ChatRepository @Inject constructor(
         if (!messagesDs.exists()) return
 
         for (msgSnap in messagesDs.children) {
-            val sender = msgSnap.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
-            if (sender != null && sender != myUid && msgSnap.hasChild(ChatMessageKeys.SEEN)) {
+            val message = msgSnap.getValue(ChatMessage::class.java) ?: continue
+            if (
+                message.senderUid != myUid &&
+                !message.isDeletedFor(myUid) &&
+                message.seen < MSG_RECEIVED &&
+                msgSnap.hasChild(ChatMessageKeys.SEEN)
+            ) {
                 msgSnap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_RECEIVED).await()
             }
         }

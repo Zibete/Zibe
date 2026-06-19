@@ -216,6 +216,8 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
+
+                markIncomingMessageAsSeenIfNeeded(refs, event)
             }
         }
     }
@@ -225,7 +227,24 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun markMessagesAsSeenOnOpen() {
-        viewModelScope.launch { chatRepository.markChatAsSeen(requireChatRefs()) }
+        viewModelScope.launch {
+            chatRepository.markChatAsSeen(requireChatRefs())
+                .onFailure { onFailure(it) }
+        }
+    }
+
+    private suspend fun markIncomingMessageAsSeenIfNeeded(
+        refs: ChatRefs,
+        event: ChatChildEvent
+    ) {
+        val item = when (event) {
+            is ChatChildEvent.Added -> event.item
+            is ChatChildEvent.Changed -> event.item
+            is ChatChildEvent.Removed -> return
+        }
+
+        chatRepository.markMessageAsSeenIfNeeded(refs, item.id, item.message)
+            .onFailure { onFailure(it) }
     }
 
     private suspend fun setupChat() {
