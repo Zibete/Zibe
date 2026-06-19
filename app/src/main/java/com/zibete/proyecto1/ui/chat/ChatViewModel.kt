@@ -834,13 +834,17 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun deleteMessages(chatRefs: ChatRefs) {
-        chatRepository.deleteMessages(
-            chatRefs = chatRefs,
-            selectedIds = null
-        ).onSuccess { deleteResult ->
-            val deleteResult = deleteResult ?: return@onSuccess
-            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-        }.onFailure { onFailure(it) }
+        chatRepository.deleteConversationForMe(chatRefs)
+            .onSuccess { deleteResult ->
+                val deleteResult = deleteResult ?: return@onSuccess
+                _chatState.update {
+                    it.copy(
+                        messages = emptyList(),
+                        selectedIds = emptySet()
+                    )
+                }
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            }.onFailure { onFailure(it) }
     }
 
     suspend fun onFailure(e: Throwable) {

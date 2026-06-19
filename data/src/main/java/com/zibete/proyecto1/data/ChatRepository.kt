@@ -233,38 +233,12 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    private fun DatabaseReference.relativePathFrom(root: DatabaseReference): String {
-        val rootUrl = root.toString().trimEnd('/')
-        val refUrl = toString()
-        return refUrl
-            .substringAfter(rootUrl)
-            .substringBefore('?')
-            .trimStart('/')
-    }
-
     suspend fun deleteMessages(
         chatRefs: ChatRefs,
         selectedIds: List<String>?
     ): ZibeResult<DeleteResult> = zibeCatching {
-
-        // 1) Borrado definitivo del chat completo (mensajes + conversaciones)
         if (selectedIds == null) {
-            val snapshot = chatRefs.refChat.get().await()
-            val deletedCount = snapshot.childrenCount.toInt()
-
-            val root = chatRefs.refChat.root
-            val updates = mapOf(
-                chatRefs.refChat.relativePathFrom(root) to null,
-                chatRefs.refMyConversation.relativePathFrom(root) to null,
-                chatRefs.refOtherConversation.relativePathFrom(root) to null
-            )
-
-            root.updateChildren(updates).await()
-
-            DeleteResult(
-                deletedCount = deletedCount,
-                chatRemoved = true
-            )
+            return@zibeCatching deleteConversationForMeInternal(chatRefs)
         } else {
 
             // 2) Determinar ids a procesar
@@ -300,6 +274,42 @@ class ChatRepository @Inject constructor(
                 chatRemoved = chatRemoved
             )
         }
+    }
+
+    suspend fun deleteConversationForMe(chatRefs: ChatRefs): ZibeResult<DeleteResult> =
+        zibeCatching { deleteConversationForMeInternal(chatRefs) }
+
+    private suspend fun deleteConversationForMeInternal(chatRefs: ChatRefs): DeleteResult {
+        val snapshot = chatRefs.refChat.get().await()
+
+        if (!snapshot.exists() || snapshot.childrenCount == 0L) {
+            chatRefs.refMyConversation.removeValue().await()
+            return DeleteResult(
+                deletedCount = 0,
+                chatRemoved = true
+            )
+        }
+
+        var processed = 0
+        snapshot.children.forEach { child ->
+            val message = child.getValue(ChatMessage::class.java) ?: return@forEach
+            if (message.isDeletedFor(myUid)) return@forEach
+
+            processSoftDeleteOrRemove(
+                msgRef = child.ref,
+                type = message.type,
+                senderUid = message.senderUid,
+                content = message.content
+            )
+            processed++
+        }
+
+        val chatRemoved = removeConversationIfEmpty(chatRefs)
+
+        return DeleteResult(
+            deletedCount = processed,
+            chatRemoved = chatRemoved
+        )
     }
 
     private suspend fun processSoftDeleteOrRemove(
