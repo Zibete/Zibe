@@ -54,7 +54,8 @@ fun ChatInput(
     onMicReleased: () -> Unit,
     onMicPressStateChange: (Boolean) -> Unit = {},
     onMicButtonPositioned: (Offset) -> Unit = {},
-    onMicPointerInWindowChanged: (Offset) -> Unit = {}
+    onMicPointerInWindowChanged: (Offset) -> Unit = {},
+    onInputFocusChanged: (Boolean) -> Unit = {}
 ) {
     var isMicPressed by remember { mutableStateOf(false) }
     val chatComponentsHeight = dimensionResource(DsR.dimen.zibe_btn_height)
@@ -102,7 +103,8 @@ fun ChatInput(
                         value = inputText,
                         onValueChange = onInputChange,
                         placeholder = stringResource(R.string.escribe_un_mensaje),
-                        singleLine = true
+                        singleLine = true,
+                        onFocusChanged = onInputFocusChanged
                     )
                 }
             }
@@ -293,6 +295,5 @@ private fun ChatInputPreviewRecordingCanceled() {
         )
     }
 }
-
 
 

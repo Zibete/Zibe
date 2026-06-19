@@ -344,6 +344,14 @@ fun ChatScreen(
                         },
                         onMicButtonPositioned = { micCenterInWindow = it },
                         onMicPointerInWindowChanged = { micPointerInWindow = it },
+                        onInputFocusChanged = { isFocused ->
+                            if (isFocused && chatState.messages.isNotEmpty()) {
+                                scope.launch {
+                                    delay(250)
+                                    listState.animateScrollToItem(chatState.messages.lastIndex)
+                                }
+                            }
+                        },
                         showTrashDrop = playTrashDrop,
                         onTrashDropFinished = { playTrashDrop = false },
                         isAudioUploading = mediaUiState.isAudioUploading
