@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.chat
 
 import com.zibete.proyecto1.model.ChatMessageItem
+import java.time.LocalDate
 
 data class ChatMediaUiState(
     val recordingElapsedMs: Long,
@@ -30,3 +31,34 @@ data class ChatCallbacks(
     val onMicMoved: (Float, Float, Float) -> Unit,
     val onMicReleased: () -> Unit
 )
+
+sealed interface ChatTimelineItem {
+    val key: String
+    val createdAt: Long
+    val contentType: String
+
+    data class DateSeparator(
+        val date: LocalDate,
+        val text: String,
+        override val createdAt: Long
+    ) : ChatTimelineItem {
+        override val key: String = "date-$date"
+        override val contentType: String = "date_separator"
+    }
+
+    data class InfoMessage(
+        val item: ChatMessageItem
+    ) : ChatTimelineItem {
+        override val key: String = "info-${item.id}"
+        override val createdAt: Long = item.message.createdAt
+        override val contentType: String = "info_message"
+    }
+
+    data class Message(
+        val item: ChatMessageItem
+    ) : ChatTimelineItem {
+        override val key: String = "message-${item.id}"
+        override val createdAt: Long = item.message.createdAt
+        override val contentType: String = "message"
+    }
+}
