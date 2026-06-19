@@ -107,20 +107,21 @@ fun ChatMessageRow(
             horizontalArrangement = rowArrangement
         ) {
             Column(horizontalAlignment = horizontalAlignment) {
-                Column(
+                Row(
                     modifier = Modifier
-                        .widthIn(max = if (item.message.type.isPhoto()) 280.dp else 320.dp)
+                        .widthIn(max = if (item.message.type.isPhoto()) 318.dp else 340.dp)
                         .combinedClickable(
                             onClick = { if (hasSelection) toggleSelection() },
                             onLongClick = { toggleSelection() }
                         ),
-                    horizontalAlignment = horizontalAlignment
+                    verticalAlignment = Alignment.Bottom
                 ) {
                     MessageBubble(
                         msg = item.message,
                         isMe = isMe,
                         audioAvatarUrl = audioAvatarUrl,
                         photoList = photoList,
+                        modifier = Modifier.weight(1f, fill = false),
                         onPhotoClick = {
                             if (hasSelection) {
                                 toggleSelection()
@@ -137,13 +138,15 @@ fun ChatMessageRow(
                         onPhotoLongClick = { toggleSelection() }
                     )
 
+                    Spacer(modifier = Modifier.width(6.dp))
+
                     MessageMetaRow(
                         createdAt = item.message.createdAt,
                         seen = item.message.seen,
                         isMe = isMe,
                         modifier = Modifier
+                            .widthIn(min = if (isMe) 56.dp else 38.dp)
                             .wrapContentWidth()
-                            .padding(top = 2.dp)
                     )
                 }
             }
@@ -157,6 +160,7 @@ private fun MessageBubble(
     isMe: Boolean,
     audioAvatarUrl: String?,
     photoList: List<String>,
+    modifier: Modifier = Modifier,
     onPhotoClick: () -> Unit,
     onPhotoLongClick: () -> Unit
 ) {
@@ -174,7 +178,7 @@ private fun MessageBubble(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .clip(shape)
             .background(bubbleBrush)
             .border(1.dp, Color.Black.copy(alpha = 0.2f), shape)
@@ -275,7 +279,7 @@ fun ChatAudioBubble(
 
     Row(
         modifier = Modifier
-            .widthIn(min = 260.dp)
+            .widthIn(min = 220.dp, max = 260.dp)
             .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -382,6 +386,8 @@ fun MessageMetaRow(
     ) {
         Text(
             text = TimeUtils.formatHour(createdAt),
+            maxLines = 1,
+            softWrap = false,
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.75f)
         )

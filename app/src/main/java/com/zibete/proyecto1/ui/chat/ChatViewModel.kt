@@ -185,18 +185,30 @@ class ChatViewModel @Inject constructor(
             chatRepository.observeChatMessages(refs).collect { event ->
                 _chatState.update { state ->
                     when (event) {
-                        is ChatChildEvent.Added -> state.copy(
-                            messages = (state.messages + event.item).takeLast(MAX_CHAT_SIZE)
-                        )
-
-                        is ChatChildEvent.Changed -> state.copy(
-                            messages = state.messages.map { if (it.id == event.item.id) event.item else it },
-                            selectedIds = if (event.item.message.isDeletedFor(myUid)) {
-                                state.selectedIds - event.item.id
+                        is ChatChildEvent.Added -> {
+                            if (event.item.message.isDeletedFor(myUid)) {
+                                state.copy(selectedIds = state.selectedIds - event.item.id)
                             } else {
-                                state.selectedIds
+                                state.copy(
+                                    messages = (state.messages + event.item).takeLast(MAX_CHAT_SIZE)
+                                )
                             }
-                        )
+                        }
+
+                        is ChatChildEvent.Changed -> {
+                            if (event.item.message.isDeletedFor(myUid)) {
+                                state.copy(
+                                    messages = state.messages.filterNot { it.id == event.item.id },
+                                    selectedIds = state.selectedIds - event.item.id
+                                )
+                            } else {
+                                state.copy(
+                                    messages = state.messages.map {
+                                        if (it.id == event.item.id) event.item else it
+                                    }
+                                )
+                            }
+                        }
 
                         is ChatChildEvent.Removed -> state.copy(
                             messages = state.messages.filterNot { it.id == event.item.id },
@@ -729,7 +741,13 @@ class ChatViewModel @Inject constructor(
                 selectedIds = selectedIds
             ).onSuccess { deleteResult ->
                 val deleteResult = deleteResult ?: return@onSuccess
-                _chatState.update { it.copy(selectedIds = emptySet()) }
+                val selectedSet = selectedIds.toSet()
+                _chatState.update { state ->
+                    state.copy(
+                        messages = state.messages.filterNot { it.id in selectedSet },
+                        selectedIds = emptySet()
+                    )
+                }
                 _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
                 if (deleteResult.chatRemoved)
                     _events.emit(ChatSessionUiEvent.CloseChat)
