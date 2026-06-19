@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -71,6 +70,7 @@ import com.zibete.proyecto1.ui.signup.SignUpViewModel
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
+import java.io.Serializable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -104,8 +104,8 @@ class SplashActivity : ComponentActivity() {
         val deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
 
         splashViewModel.handleIntentExtras(
-            uiText = intent.getParcelableExtraCompat<UiText>(EXTRA_UI_TEXT),
-            snackType = intent.getParcelableExtraCompat<ZibeSnackType>(EXTRA_SNACK_TYPE),
+            uiText = intent.getUiTextExtra(EXTRA_UI_TEXT),
+            snackType = intent.getSerializableExtraCompat<ZibeSnackType>(EXTRA_SNACK_TYPE),
             hasSessionConflict = intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false),
             deleteAccount = deleteAccount
         )
@@ -404,12 +404,21 @@ class SplashActivity : ComponentActivity() {
         from.getRequiredStringExtra(key)?.let { to.putExtra(key, it) }
     }
 
-    private inline fun <reified T : Parcelable> Intent.getParcelableExtraCompat(key: String): T? {
+    private fun Intent.getUiTextExtra(key: String): UiText? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getParcelableExtra(key, T::class.java)
+            getParcelableExtra(key, UiText::class.java)
         } else {
             @Suppress("DEPRECATION")
-            getParcelableExtra(key) as? T
+            getParcelableExtra(key) as? UiText
+        }
+    }
+
+    private inline fun <reified T : Serializable> Intent.getSerializableExtraCompat(key: String): T? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getSerializableExtra(key, T::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            getSerializableExtra(key) as? T
         }
     }
 
