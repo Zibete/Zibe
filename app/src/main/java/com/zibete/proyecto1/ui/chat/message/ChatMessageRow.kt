@@ -61,6 +61,7 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.model.isDeletedFor
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.chat.media.MediaState
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
@@ -77,8 +78,11 @@ fun ChatMessageRow(
     myAudioAvatarUrl: String?,
     otherAudioAvatarUrl: String?,
     photoList: List<String>,
+    currentUid: String,
     onSelectionChanged: (ChatMessageItem, Boolean) -> Unit
 ) {
+    if (item.message.isDeletedFor(currentUid)) return
+
     val context = LocalContext.current
     val selectionColor = colorResource(DsR.color.accent_transparent)
     val audioAvatarUrl = if (isMe) myAudioAvatarUrl else otherAudioAvatarUrl

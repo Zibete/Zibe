@@ -50,6 +50,7 @@ import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.model.isDeletedFor
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.media.buildZibeUcropIntent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -189,7 +190,12 @@ class ChatViewModel @Inject constructor(
                         )
 
                         is ChatChildEvent.Changed -> state.copy(
-                            messages = state.messages.map { if (it.id == event.item.id) event.item else it }
+                            messages = state.messages.map { if (it.id == event.item.id) event.item else it },
+                            selectedIds = if (event.item.message.isDeletedFor(myUid)) {
+                                state.selectedIds - event.item.id
+                            } else {
+                                state.selectedIds
+                            }
                         )
 
                         is ChatChildEvent.Removed -> state.copy(

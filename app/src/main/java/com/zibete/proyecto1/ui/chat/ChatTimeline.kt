@@ -3,10 +3,16 @@ package com.zibete.proyecto1.ui.chat
 import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.model.ChatMessageItem
+import com.zibete.proyecto1.model.isVisibleFor
 import java.time.LocalDate
 
-fun buildChatTimeline(messages: List<ChatMessageItem>): List<ChatTimelineItem> {
-    val sortedMessages = messages.sortedBy { item -> item.message.createdAt }
+fun buildChatTimeline(
+    messages: List<ChatMessageItem>,
+    currentUid: String
+): List<ChatTimelineItem> {
+    val sortedMessages = messages
+        .filter { item -> item.message.isVisibleFor(currentUid) }
+        .sortedBy { item -> item.message.createdAt }
     val timeline = mutableListOf<ChatTimelineItem>()
     var currentDate: LocalDate? = null
 
