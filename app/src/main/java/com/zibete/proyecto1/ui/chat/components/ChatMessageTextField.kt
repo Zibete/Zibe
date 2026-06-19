@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -34,7 +35,8 @@ fun ChatMessageTextField(
     singleLine: Boolean = true,
     enabled: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onFocusChanged: (Boolean) -> Unit = {}
 ) {
     val zibeColors = LocalZibeExtendedColors.current
     val accentColor = zibeColors.accent
@@ -58,6 +60,7 @@ fun ChatMessageTextField(
         modifier = modifier
             .fillMaxWidth()
             .height(chatComponentsHeight)
+            .onFocusChanged { focusState -> onFocusChanged(focusState.isFocused) }
             .shadow(inputElevation, shape)
             .background(containerColor, shape),
         textStyle = LocalZibeTypography.current.body.copy(color = textColor),
@@ -110,7 +113,6 @@ fun ChatMessageTextFieldWithValuePreview() {
         )
     }
 }
-
 
 
 
