@@ -57,7 +57,7 @@ import com.zibete.proyecto1.ui.chat.components.ChatPhotoSourceSheet
 import com.zibete.proyecto1.ui.chat.components.ChatTopBar
 import com.zibete.proyecto1.ui.chat.components.DateOverlay
 import com.zibete.proyecto1.ui.chat.components.MicRecordOverlay
-import com.zibete.proyecto1.ui.chat.message.LegacyMessageRow
+import com.zibete.proyecto1.ui.chat.message.ChatMessageRow
 import com.zibete.proyecto1.ui.chat.message.isPhoto
 import com.zibete.proyecto1.ui.chat.preview.sampleBlockedHeader
 import com.zibete.proyecto1.ui.chat.preview.sampleChatStateEmpty
@@ -268,7 +268,7 @@ fun ChatScreen(
                                     val isSelected = chatState.selectedIds.contains(item.id)
                                     val hasSelection = chatState.selectedIds.isNotEmpty()
                                     val isMe = item.message.senderUid == myUid
-                                    LegacyMessageRow(
+                                    ChatMessageRow(
                                         item = item,
                                         isMe = isMe,
                                         isSelected = isSelected,
