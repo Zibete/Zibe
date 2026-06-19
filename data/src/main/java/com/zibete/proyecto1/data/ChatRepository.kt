@@ -375,23 +375,15 @@ class ChatRepository @Inject constructor(
             return true
         }
 
-        var deletedCount = 0
+        var visibleCount = 0
         snapshot.children.forEach { child ->
-            val type = child.child(ChatMessageKeys.TYPE).getValue(Int::class.java) ?: return@forEach
-            val senderUid =
-                child.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
-                    ?: return@forEach
-
-            val message = ChatMessage(
-                senderUid = senderUid,
-                type = type
-            )
-            if (message.isDeletedFor(myUid)) {
-                deletedCount++
+            val message = child.getValue(ChatMessage::class.java) ?: return@forEach
+            if (!message.isDeletedFor(myUid)) {
+                visibleCount++
             }
         }
 
-        return if (total == deletedCount) {
+        return if (visibleCount == 0) {
             chatRefs.refMyConversation.removeValue().await()
             true
         } else {
