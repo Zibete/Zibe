@@ -37,6 +37,9 @@ PAYLOAD_KEY_CONTENT = "content"
 MSG_KEY_SENDER_UID = "senderUid"
 MSG_KEY_CONTENT = "content"
 MSG_KEY_TYPE = "type"
+MSG_KEY_SEEN = "seen"
+MSG_RECEIVED = 2
+MSG_SEEN = 3
 GROUP_MSG_KEY_SENDER_NAME = "nameUser"
 GROUP_MSG_KEY_CONTENT = "content"
 DM_MSG_TYPE_TEXT = 100
@@ -172,6 +175,32 @@ def _is_receiver_in_active_dm(receiver_uid: str, other_uid: str) -> bool:
     return node_type == NODE_DM and active_other_uid == other_uid
 
 
+def _read_int(value: object) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _set_dm_message_seen_if_below(
+    chat_id: str,
+    message_id: str,
+    target_seen: int,
+) -> None:
+    if not chat_id or not message_id:
+        return
+
+    seen_ref = db.reference(f"Chats/dm/{chat_id}/{message_id}/{MSG_KEY_SEEN}")
+
+    def update(current_seen: object) -> int | object:
+        numeric_seen = _read_int(current_seen)
+        if numeric_seen is not None and numeric_seen >= target_seen:
+            return current_seen
+        return target_seen
+
+    seen_ref.transaction(update)
+
+
 def _send_push(
     *,
     token: str,
@@ -284,8 +313,9 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     )
 
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
+        _set_dm_message_seen_if_below(chat_id, message_id, MSG_SEEN)
         logger.info(
-            "DM trigger skipped active DM chatId=%s messageId=%s receiverUid=%s",
+            "DM trigger marked seen and skipped active DM chatId=%s messageId=%s receiverUid=%s",
             _safe_id(chat_id),
             _safe_id(message_id),
             _safe_id(receiver_uid),
@@ -324,6 +354,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             title=f"Nuevo mensaje de {payload[PAYLOAD_KEY_SENDER_NAME]}",
             body=payload[PAYLOAD_KEY_CONTENT],
         )
+        _set_dm_message_seen_if_below(chat_id, message_id, MSG_RECEIVED)
         logger.info(
             "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
             _safe_id(chat_id),
@@ -332,7 +363,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         )
     except Exception:
         logger.exception(
-            "DM trigger FCM send failed chatId=%s messageId=%s receiverUid=%s",
+            "DM trigger FCM send or seen update failed chatId=%s messageId=%s receiverUid=%s",
             _safe_id(chat_id),
             _safe_id(message_id),
             _safe_id(receiver_uid),
