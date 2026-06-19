@@ -45,7 +45,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
 import com.zibete.proyecto1.core.constants.Constants.UiTags.CHAT_SCREEN
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.SnackBarManager
@@ -139,6 +138,9 @@ fun ChatScreen(
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val timeline = remember(chatState.messages) {
+        buildChatTimeline(chatState.messages)
+    }
 
     val selectionCount = chatState.selectedIds.size
     val headerLoaded = headerState as? ChatHeaderState.Loaded
@@ -178,18 +180,18 @@ fun ChatScreen(
     var showDateOverlay by remember { mutableStateOf(false) }
     var dateOverlayJob by remember { mutableStateOf<Job?>(null) }
 
-    LaunchedEffect(chatState.messages.size) {
-        if (chatState.messages.isNotEmpty()) {
-            listState.scrollToItem(chatState.messages.lastIndex)
+    LaunchedEffect(chatState.messages.size, timeline.lastIndex) {
+        if (timeline.isNotEmpty()) {
+            listState.scrollToItem(timeline.lastIndex)
         }
     }
 
-    LaunchedEffect(listState, chatState.messages) {
+    LaunchedEffect(listState, timeline) {
         snapshotFlow { listState.firstVisibleItemIndex }
             .distinctUntilChanged()
             .collect { index ->
-                val timestamp =
-                    chatState.messages.getOrNull(index)?.message?.createdAt ?: return@collect
+                val timestamp = timeline.getOrNull(index)?.createdAt ?: return@collect
+                if (timestamp <= 0L) return@collect
                 dateOverlayText = TimeUtils.formatHeaderDate(timestamp)
                 showDateOverlay = true
                 dateOverlayJob?.cancel()
@@ -261,23 +263,34 @@ fun ChatScreen(
                             state = listState,
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
                         ) {
-                            items(chatState.messages, key = { it.id }) { item ->
-                                if (item.message.type == MSG_INFO) {
-                                    ChatInfoRow(text = item.message.content)
-                                } else {
-                                    val isSelected = chatState.selectedIds.contains(item.id)
-                                    val hasSelection = chatState.selectedIds.isNotEmpty()
-                                    val isMe = item.message.senderUid == myUid
-                                    ChatMessageRow(
-                                        item = item,
-                                        isMe = isMe,
-                                        isSelected = isSelected,
-                                        hasSelection = hasSelection,
-                                        myAudioAvatarUrl = myAudioAvatarUrl,
-                                        otherAudioAvatarUrl = otherAudioAvatarUrl,
-                                        photoList = photoList,
-                                        onSelectionChanged = callbacks.onSelectionChanged
-                                    )
+                            items(
+                                items = timeline,
+                                key = { item -> item.key },
+                                contentType = { item -> item.contentType }
+                            ) { item ->
+                                when (item) {
+                                    is ChatTimelineItem.DateSeparator -> {
+                                        ChatInfoRow(text = item.text)
+                                    }
+                                    is ChatTimelineItem.InfoMessage -> {
+                                        ChatInfoRow(text = item.item.message.content)
+                                    }
+                                    is ChatTimelineItem.Message -> {
+                                        val messageItem = item.item
+                                        val isSelected = chatState.selectedIds.contains(messageItem.id)
+                                        val hasSelection = chatState.selectedIds.isNotEmpty()
+                                        val isMe = messageItem.message.senderUid == myUid
+                                        ChatMessageRow(
+                                            item = messageItem,
+                                            isMe = isMe,
+                                            isSelected = isSelected,
+                                            hasSelection = hasSelection,
+                                            myAudioAvatarUrl = myAudioAvatarUrl,
+                                            otherAudioAvatarUrl = otherAudioAvatarUrl,
+                                            photoList = photoList,
+                                            onSelectionChanged = callbacks.onSelectionChanged
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -345,10 +358,10 @@ fun ChatScreen(
                         onMicButtonPositioned = { micCenterInWindow = it },
                         onMicPointerInWindowChanged = { micPointerInWindow = it },
                         onInputFocusChanged = { isFocused ->
-                            if (isFocused && chatState.messages.isNotEmpty()) {
+                            if (isFocused && timeline.isNotEmpty()) {
                                 scope.launch {
                                     delay(250)
-                                    listState.animateScrollToItem(chatState.messages.lastIndex)
+                                    listState.animateScrollToItem(timeline.lastIndex)
                                 }
                             }
                         },
