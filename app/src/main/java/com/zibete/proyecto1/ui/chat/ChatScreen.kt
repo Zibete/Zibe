@@ -49,6 +49,7 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.CHAT_SCREEN
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.TimeUtils
+import com.zibete.proyecto1.model.isVisibleFor
 import com.zibete.proyecto1.ui.chat.components.ArrowOverlay
 import com.zibete.proyecto1.ui.chat.components.ChatInfoRow
 import com.zibete.proyecto1.ui.chat.components.ChatInput
@@ -98,9 +99,11 @@ fun ChatRoute(
     }
 
     val photoList = remember(chatState.messages) {
-        chatState.messages.mapNotNull { item ->
-            item.message.content.takeIf { item.message.type.isPhoto() }
-        }
+        chatState.messages
+            .filter { item -> item.message.isVisibleFor(viewModel.myUid) }
+            .mapNotNull { item ->
+                item.message.content.takeIf { item.message.type.isPhoto() }
+            }
     }
 
     val myAudioAvatarUrl = (headerState as? ChatHeaderState.Loaded)?.let {
@@ -138,8 +141,8 @@ fun ChatScreen(
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val timeline = remember(chatState.messages) {
-        buildChatTimeline(chatState.messages)
+    val timeline = remember(chatState.messages, myUid) {
+        buildChatTimeline(chatState.messages, myUid)
     }
 
     val selectionCount = chatState.selectedIds.size
@@ -288,6 +291,7 @@ fun ChatScreen(
                                             myAudioAvatarUrl = myAudioAvatarUrl,
                                             otherAudioAvatarUrl = otherAudioAvatarUrl,
                                             photoList = photoList,
+                                            currentUid = myUid,
                                             onSelectionChanged = callbacks.onSelectionChanged
                                         )
                                     }

@@ -32,6 +32,7 @@ import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.Conversation
+import com.zibete.proyecto1.model.isDeletedFor
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -381,18 +382,12 @@ class ChatRepository @Inject constructor(
                 child.child(ChatMessageKeys.SENDER_UID).getValue(String::class.java)
                     ?: return@forEach
 
-            if (senderUid == myUid) {
-                when (type) {
-                    MSG_TEXT_SENDER_DLT,
-                    MSG_PHOTO_SENDER_DLT,
-                    MSG_AUDIO_SENDER_DLT -> deletedCount++
-                }
-            } else {
-                when (type) {
-                    MSG_TEXT_RECEIVER_DLT,
-                    MSG_PHOTO_RECEIVER_DLT,
-                    MSG_AUDIO_RECEIVER_DLT -> deletedCount++
-                }
+            val message = ChatMessage(
+                senderUid = senderUid,
+                type = type
+            )
+            if (message.isDeletedFor(myUid)) {
+                deletedCount++
             }
         }
 
