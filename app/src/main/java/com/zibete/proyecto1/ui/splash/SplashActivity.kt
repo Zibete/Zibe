@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -103,8 +104,8 @@ class SplashActivity : ComponentActivity() {
         val deleteAccount = intent.getBooleanExtra(EXTRA_DELETE_ACCOUNT, false)
 
         splashViewModel.handleIntentExtras(
-            uiText = intent.getParcelableExtra(EXTRA_UI_TEXT, UiText::class.java),
-            snackType = intent.getParcelableExtra(EXTRA_SNACK_TYPE, ZibeSnackType::class.java),
+            uiText = intent.getParcelableExtraCompat<UiText>(EXTRA_UI_TEXT),
+            snackType = intent.getParcelableExtraCompat<ZibeSnackType>(EXTRA_SNACK_TYPE),
             hasSessionConflict = intent.getBooleanExtra(EXTRA_SESSION_CONFLICT, false),
             deleteAccount = deleteAccount
         )
@@ -401,6 +402,15 @@ class SplashActivity : ComponentActivity() {
 
     private fun copyPayloadExtra(from: Intent, to: Intent, key: String) {
         from.getRequiredStringExtra(key)?.let { to.putExtra(key, it) }
+    }
+
+    private inline fun <reified T : Parcelable> Intent.getParcelableExtraCompat(key: String): T? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableExtra(key, T::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            getParcelableExtra(key) as? T
+        }
     }
 
     private fun Intent.getRequiredStringExtra(key: String): String? =
