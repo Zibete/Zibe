@@ -6,6 +6,8 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
 import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
@@ -40,8 +42,11 @@ import com.zibete.proyecto1.model.isDeletedFor
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 data class ChatRefs(
     val refAudios: StorageReference,
@@ -211,6 +216,33 @@ class ChatRepository @Inject constructor(
         )
 
         firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()
+    }
+
+    suspend fun acknowledgeDmMessageReceived(
+        myUid: String,
+        otherUid: String,
+        nodeType: String,
+        messageId: String
+    ): ZibeResult<Unit> = zibeCatching {
+        if (nodeType != NODE_DM || messageId.isBlank()) return@zibeCatching
+
+        val chatId = getChatId(myUid, otherUid)
+        val messageRef = firebaseRefsContainer.refChatsDm
+            .child(chatId)
+            .child(messageId)
+        val message = messageRef.get().await().getValue(ChatMessage::class.java)
+            ?: return@zibeCatching
+
+        if (message.senderUid != otherUid) return@zibeCatching
+
+        setSeenAtLeast(messageRef.child(ChatMessageKeys.SEEN), MSG_RECEIVED)
+        syncSenderConversationSeenIfLatest(
+            senderUid = otherUid,
+            receiverUid = myUid,
+            nodeType = nodeType,
+            messageCreatedAt = message.createdAt,
+            targetSeen = MSG_RECEIVED
+        )
     }
 
     suspend fun uploadMedia(
@@ -530,6 +562,70 @@ class ChatRepository @Inject constructor(
             ) {
                 msgSnap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_RECEIVED).await()
             }
+        }
+    }
+
+    private suspend fun setSeenAtLeast(
+        seenRef: DatabaseReference,
+        targetSeen: Int
+    ) {
+        seenRef.runTransactionAwait { currentData ->
+            val currentSeen = (currentData.value as? Number)?.toInt() ?: 0
+            if (currentSeen < targetSeen) currentData.value = targetSeen
+            Transaction.success(currentData)
+        }
+    }
+
+    private suspend fun syncSenderConversationSeenIfLatest(
+        senderUid: String,
+        receiverUid: String,
+        nodeType: String,
+        messageCreatedAt: Long,
+        targetSeen: Int
+    ) {
+        val conversationRef = firebaseRefsContainer.refData
+            .child(senderUid)
+            .child(nodeType)
+            .child(receiverUid)
+        conversationRef.runTransactionAwait { currentData ->
+            val currentSenderUid = currentData.child(ConversationKeys.USER_ID).value as? String
+            val currentLastMessageAt =
+                (currentData.child(ConversationKeys.LAST_MESSAGE_AT).value as? Number)?.toLong()
+            val currentSeen =
+                (currentData.child(ConversationKeys.SEEN).value as? Number)?.toInt() ?: 0
+
+            if (
+                currentSenderUid == senderUid &&
+                currentLastMessageAt == messageCreatedAt &&
+                currentSeen < targetSeen
+            ) {
+                currentData.child(ConversationKeys.SEEN).value = targetSeen
+            }
+            Transaction.success(currentData)
+        }
+    }
+
+    private suspend fun DatabaseReference.runTransactionAwait(
+        update: (MutableData) -> Transaction.Result
+    ) {
+        suspendCancellableCoroutine { continuation ->
+            runTransaction(object : Transaction.Handler {
+                override fun doTransaction(currentData: MutableData): Transaction.Result =
+                    update(currentData)
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    if (!continuation.isActive) return
+                    if (error != null) {
+                        continuation.resumeWithException(error.toException())
+                    } else {
+                        continuation.resume(Unit)
+                    }
+                }
+            })
         }
     }
 }
