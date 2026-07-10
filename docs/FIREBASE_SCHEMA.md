@@ -197,20 +197,41 @@ Los cambios de estado son monotónicos: `MSG_SEEN` no vuelve a `MSG_RECEIVED` y
 `messaging.send()` confirma únicamente que FCM aceptó el envío; no cuenta como
 recepción del dispositivo.
 
-La versión de `on_dm_message_created` que envía DM como data-only y sincroniza
-el caso active-DM requiere deploy para poder validarse en un entorno real. El
-comando previsto es:
+Los tres valores no representan lo mismo en todos los nodos:
+
+- `Chats/dm/{chatId}/{messageId}/seen` es el estado monotónico del mensaje y
+  controla los checks de la burbuja.
+- `Users/Data/{uid}/dm/{otherUid}/seen` es el estado visual del último mensaje
+  de esa conversación en chatlist. Puede volver a un valor menor cuando llega
+  un mensaje nuevo; no comparte la monotonicidad del mensaje individual.
+- `Users/Data/{uid}/dm/{otherUid}/unreadCount` es el badge del receptor. Puede
+  incrementarse y debe volver a `0` cuando los mensajes quedan vistos.
+
+Los DM se envían por FCM como data-only con prioridad alta. El cliente receptor
+crea la notificación local y confirma `MSG_RECEIVED` después de ejecutar
+`ZibeFirebaseMessagingService.onMessageReceived()`. Si el receptor ya publicó
+el mismo DM en `activeThread`, `on_dm_message_created` no envía push: avanza el
+mensaje directamente a `MSG_SEEN`, sincroniza el resumen si sigue siendo el
+último mensaje y limpia el badge.
+
+Firebase Rules protege el `seen` de mensaje como entero `1..3`, exige
+`MSG_DELIVERED` en la creación y bloquea downgrades, eliminación o cambios de
+participantes no autorizados. También mantiene inmutables `senderUid`, `content`,
+`createdAt` y `audioDurationMs` durante actualizaciones. En conversaciones,
+`seen` es un entero `0..3` y `unreadCount` un entero no negativo, sin máximo
+arbitrario.
+
+El código local no demuestra qué revisión de Functions está desplegada. Para
+publicar explícitamente este handler, el responsable operativo debe ejecutar:
 
 ```bash
 firebase deploy --only functions:on_dm_message_created --project zproyecto1
 ```
 
-No ejecutar este deploy como parte de cambios locales o validaciones Android.
-Después de una autorización explícita, validar tanto el data-message en
-background/chatlist como el branch donde ambos usuarios tienen el mismo DM
-activo. Si el entorno local no dispone de las herramientas necesarias para
-inspeccionar Functions Gen2 o Cloud Logging, hacer el diagnóstico desde Cloud
-Shell.
+La verificación operativa posterior debe cubrir el data-message en
+background/chatlist y el caso con ambos usuarios en el mismo DM activo. Para
+inspeccionar Functions Gen2 o Cloud Logging puede usarse Cloud Shell si el
+entorno local no dispone de las herramientas necesarias.
 
 ---
 
