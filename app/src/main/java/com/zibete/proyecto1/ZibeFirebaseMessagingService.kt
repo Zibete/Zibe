@@ -42,7 +42,9 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
         Log.d(
             TAG,
-            "FCM received type=${data[PayloadKeys.TYPE]} chatId=${data[PayloadKeys.CHAT_ID]} messageId=${data[PayloadKeys.MESSAGE_ID]}"
+            "FCM received type=${data[PayloadKeys.TYPE]} " +
+                "chatId=${safeId(data[PayloadKeys.CHAT_ID])} " +
+                "messageId=${safeId(data[PayloadKeys.MESSAGE_ID])}"
         )
 
         serviceScope.launch {
@@ -141,14 +143,24 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        Log.d(TAG, "Valid DM FCM payload chatId=$chatId messageId=$messageId")
+        Log.d(
+            TAG,
+            "Valid DM FCM payload chatId=${safeId(chatId)} messageId=${safeId(messageId)}"
+        )
 
         val otherUid = getOtherUid(chatId, myUid)
         if (otherUid.isNullOrBlank()) {
-            Log.w(TAG, "Invalid DM FCM payload: could not resolve otherUid chatId=$chatId")
+            Log.w(
+                TAG,
+                "Invalid DM FCM payload: could not resolve otherUid chatId=${safeId(chatId)}"
+            )
             return
         }
 
+        Log.d(
+            TAG,
+            "Calling DM receipt ack chatId=${safeId(chatId)} messageId=${safeId(messageId)}"
+        )
         chatRepository.acknowledgeDmMessageReceived(
             myUid = myUid,
             otherUid = otherUid,
@@ -165,7 +177,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             .getOrDefault(true)
 
         if (!enabled) {
-            Log.i(TAG, "Skipping DM notification: individual notifications disabled chatId=$chatId")
+            Log.i(
+                TAG,
+                "Skipping DM notification: individual notifications disabled " +
+                    "chatId=${safeId(chatId)}"
+            )
             return
         }
 
@@ -179,7 +195,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         val summary = runCatching {
             chatRepository.getUnreadSummaryForChats(myUid, NODE_DM)
         }.onFailure {
-            Log.w(TAG, "Could not read DM unread summary; using fallback chatId=$chatId", it)
+            Log.w(
+                TAG,
+                "Could not read DM unread summary; using fallback chatId=${safeId(chatId)}",
+                it
+            )
         }.getOrDefault(ChatRepository.UnreadSummary(totalChats = 1, totalUnread = 1))
 
         val conversation = runCatching {
@@ -189,7 +209,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                 nodeType = NODE_DM
             )
         }.onFailure {
-            Log.w(TAG, "Could not read DM conversation; using payload fallback chatId=$chatId", it)
+            Log.w(
+                TAG,
+                "Could not read DM conversation; using payload fallback chatId=${safeId(chatId)}",
+                it
+            )
         }.getOrNull()
 
         val senderName = conversation?.otherName
@@ -199,7 +223,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             ?.takeIf { it.isNotBlank() }
             ?: fallbackContent
 
-        Log.d(TAG, "Calling NotificationHelper for DM chatId=$chatId messageId=$messageId")
+        Log.d(
+            TAG,
+            "Calling NotificationHelper for DM chatId=${safeId(chatId)} " +
+                "messageId=${safeId(messageId)}"
+        )
         notificationHelper.showChatSummaryNotification(
             summary = summary,
             lastSenderName = senderName,
@@ -211,5 +239,11 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     private companion object {
         const val TAG = "ZibeFCM"
         const val FALLBACK_DM_CONTENT = "Abri ZIBE para ver el mensaje"
+
+        fun safeId(value: String?): String {
+            if (value.isNullOrBlank()) return "missing"
+            if (value.length <= 8) return "${value.take(2)}..."
+            return "${value.take(4)}...${value.takeLast(3)}"
+        }
     }
 }
