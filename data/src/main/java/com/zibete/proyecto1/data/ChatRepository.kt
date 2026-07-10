@@ -266,8 +266,8 @@ class ChatRepository @Inject constructor(
 
         if (!refMyConversation.exists()) return@zibeCatching
 
-        chatRefs.refMyConversation.child(ConversationKeys.SEEN).setValue(MSG_SEEN).await()
-        chatRefs.refMyConversation.child(ConversationKeys.UNREAD_COUNT).setValue(0).await()
+        setSeenAtLeast(chatRefs.refMyConversation.child(ConversationKeys.SEEN), MSG_SEEN)
+        clearMyUnreadCount(chatRefs)
     }
 
     suspend fun markMessageAsSeenIfNeeded(
@@ -286,7 +286,7 @@ class ChatRepository @Inject constructor(
         snapshot.children.forEach { child ->
             val messageId = child.key ?: return@forEach
             val message = child.getValue(ChatMessage::class.java) ?: return@forEach
-            markMessageAsSeenIfNeededInternal(chatRefs, messageId, message)
+            markIncomingMessageSeenAndSyncSender(chatRefs, messageId, message)
         }
     }
 
@@ -297,14 +297,48 @@ class ChatRepository @Inject constructor(
     ) {
         if (messageId.isBlank()) return
         if (message.senderUid == myUid) return
-        if (message.seen >= MSG_SEEN) return
         if (message.isDeletedFor(myUid)) return
 
-        chatRefs.refChat
-            .child(messageId)
-            .child(ChatMessageKeys.SEEN)
-            .setValue(MSG_SEEN)
-            .await()
+        markIncomingMessageSeenAndSyncSender(chatRefs, messageId, message)
+        clearMyUnreadCount(chatRefs)
+    }
+
+    private suspend fun markIncomingMessageSeenAndSyncSender(
+        chatRefs: ChatRefs,
+        messageId: String,
+        message: ChatMessage
+    ) {
+        if (messageId.isBlank()) return
+        if (message.senderUid == myUid) return
+        if (message.isDeletedFor(myUid)) return
+
+        setMessageSeenAtLeast(chatRefs, messageId, MSG_SEEN)
+        syncSenderConversationSeenIfLatest(
+            conversationRef = chatRefs.refOtherConversation,
+            senderUid = message.senderUid,
+            messageCreatedAt = message.createdAt,
+            targetSeen = MSG_SEEN
+        )
+    }
+
+    private suspend fun setMessageSeenAtLeast(
+        chatRefs: ChatRefs,
+        messageId: String,
+        targetSeen: Int
+    ) {
+        setSeenAtLeast(
+            chatRefs.refChat.child(messageId).child(ChatMessageKeys.SEEN),
+            targetSeen
+        )
+    }
+
+    private suspend fun clearMyUnreadCount(chatRefs: ChatRefs) {
+        chatRefs.refMyConversation.runTransactionAwait { currentData ->
+            if (currentData.value != null) {
+                currentData.child(ConversationKeys.UNREAD_COUNT).value = 0
+            }
+            Transaction.success(currentData)
+        }
     }
 
     suspend fun deleteMessages(
@@ -511,60 +545,6 @@ class ChatRepository @Inject constructor(
         return UnreadSummary(totalChats, totalUnread)
     }
 
-    suspend fun applyDoubleCheckForLatestUnread(
-        myUid: String,
-        otherUid: String,
-        nodeType: String
-    ) {
-        val conversationSeenRef = firebaseRefsContainer.refData
-            .child(myUid)
-            .child(nodeType)
-            .child(otherUid)
-            .child(ConversationKeys.SEEN)
-
-        val currentConversationSeen =
-            conversationSeenRef.get().await().getValue(Int::class.java) ?: 0
-
-        if (currentConversationSeen < MSG_RECEIVED) {
-            conversationSeenRef.setValue(MSG_RECEIVED).await()
-        }
-
-        val unSeenDs = firebaseRefsContainer.refData
-            .child(myUid)
-            .child(nodeType)
-            .child(otherUid)
-            .child(ConversationKeys.UNREAD_COUNT)
-            .get()
-            .await()
-
-        val unSeen = unSeenDs.getValue(Int::class.java) ?: 0
-        if (unSeen <= 0) return
-
-        val chatId = getChatId(myUid, otherUid)
-
-        val messagesDs = firebaseRefsContainer.refChatsRoot
-            .child(nodeType)
-            .child(chatId)
-            .orderByChild(ChatMessageKeys.CREATED_AT)
-            .limitToLast(unSeen)
-            .get()
-            .await()
-
-        if (!messagesDs.exists()) return
-
-        for (msgSnap in messagesDs.children) {
-            val message = msgSnap.getValue(ChatMessage::class.java) ?: continue
-            if (
-                message.senderUid != myUid &&
-                !message.isDeletedFor(myUid) &&
-                message.seen < MSG_RECEIVED &&
-                msgSnap.hasChild(ChatMessageKeys.SEEN)
-            ) {
-                msgSnap.ref.child(ChatMessageKeys.SEEN).setValue(MSG_RECEIVED).await()
-            }
-        }
-    }
-
     private suspend fun setSeenAtLeast(
         seenRef: DatabaseReference,
         targetSeen: Int
@@ -587,6 +567,20 @@ class ChatRepository @Inject constructor(
             .child(senderUid)
             .child(nodeType)
             .child(receiverUid)
+        syncSenderConversationSeenIfLatest(
+            conversationRef = conversationRef,
+            senderUid = senderUid,
+            messageCreatedAt = messageCreatedAt,
+            targetSeen = targetSeen
+        )
+    }
+
+    private suspend fun syncSenderConversationSeenIfLatest(
+        conversationRef: DatabaseReference,
+        senderUid: String,
+        messageCreatedAt: Long,
+        targetSeen: Int
+    ) {
         conversationRef.runTransactionAwait { currentData ->
             val currentSenderUid = currentData.child(ConversationKeys.USER_ID).value as? String
             val currentLastMessageAt =
