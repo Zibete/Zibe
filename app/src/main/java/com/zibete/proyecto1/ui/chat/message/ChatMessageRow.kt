@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -401,35 +400,18 @@ fun MessageMetaRow(
 
 @Composable
 fun SeenStatusIcon(seen: Int) {
-    val checkColor = if (seen == MSG_SEEN) colorResource(DsR.color.check_seen) else Color.White
-
-    when (seen) {
-        MSG_DELIVERED -> SeenCheck(tint = checkColor)
-        MSG_RECEIVED, MSG_SEEN -> {
-            Box(modifier = Modifier.width(18.dp)) {
-                SeenCheck(
-                    tint = checkColor,
-                    modifier = Modifier.offset(x = 0.dp)
-                )
-                SeenCheck(
-                    tint = checkColor,
-                    modifier = Modifier.offset(x = 7.dp)
-                )
-            }
-        }
+    val iconRes = when (seen) {
+        MSG_DELIVERED -> R.drawable.ic_check_24
+        MSG_RECEIVED, MSG_SEEN -> R.drawable.ic_double_check_24
+        else -> return
     }
-}
+    val tintRes = if (seen == MSG_SEEN) DsR.color.check_seen else DsR.color.check_not_seen
 
-@Composable
-private fun SeenCheck(
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
     Icon(
-        painter = painterResource(R.drawable.ic_check_24),
+        painter = painterResource(iconRes),
         contentDescription = null,
-        tint = tint,
-        modifier = modifier.size(14.dp)
+        tint = colorResource(tintRes),
+        modifier = Modifier.size(18.dp)
     )
 }
 
