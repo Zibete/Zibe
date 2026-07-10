@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.chat.message
 
 import android.graphics.drawable.Drawable
-import android.graphics.PorterDuff
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.SystemClock
@@ -42,7 +41,6 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
-import com.zibete.proyecto1.core.constants.Constants.MSG_RECEIVED
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
@@ -58,6 +56,7 @@ import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
 import com.zibete.proyecto1.ui.chat.media.MediaState
+import com.zibete.proyecto1.ui.extensions.bindChecks
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
 import de.hdodenhof.circleimageview.CircleImageView
 
@@ -364,34 +363,14 @@ private fun vibrateShort(view: View) {
 }
 
 private fun renderSeenChecksRight(b: RowMsgRightBinding, seen: Int) {
-    when (seen) {
-        MSG_DELIVERED -> {
-            b.checked.isVisible = true
-            b.checked2.isVisible = false
-            b.checked.setColorFilter(
-                ContextCompat.getColor(b.root.context, DsR.color.blanco),
-                PorterDuff.Mode.SRC_IN
-            )
-        }
-        MSG_RECEIVED -> {
-            b.checked.isVisible = true
-            b.checked2.isVisible = true
-            val c = ContextCompat.getColor(b.root.context, DsR.color.blanco)
-            b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
-            b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
-        }
-        MSG_SEEN -> {
-            b.checked.isVisible = true
-            b.checked2.isVisible = true
-            val c = ContextCompat.getColor(b.root.context, DsR.color.check_seen)
-            b.checked.setColorFilter(c, PorterDuff.Mode.SRC_IN)
-            b.checked2.setColorFilter(c, PorterDuff.Mode.SRC_IN)
-        }
-        else -> {
-            b.checked.isVisible = false
-            b.checked2.isVisible = false
-        }
+    if (seen !in MSG_DELIVERED..MSG_SEEN) {
+        b.checked.isVisible = false
+        b.checked2.isVisible = false
+        return
     }
+
+    b.checked.bindChecks(isMine = true, seen = seen)
+    b.checked2.isVisible = false
 }
 
 private fun renderPhoto(image: ImageView, loading: View, notFound: View, url: String) {
@@ -614,6 +593,4 @@ fun Int?.isAudio(): Boolean = when (this) {
     MSG_AUDIO, MSG_AUDIO_RECEIVER_DLT, MSG_AUDIO_SENDER_DLT -> true
     else -> false
 }
-
-
 
