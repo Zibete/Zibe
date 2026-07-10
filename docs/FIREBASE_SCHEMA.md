@@ -184,6 +184,34 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 | `Chats/group_dm/{chatId}/{messageId}` | Mensajes con estructura de grupo (según implementación actual). | Considerar consolidación con `Groups/Chat/...` a futuro sin romper compatibilidad. |
 | `Groups/Chat/{groupName}/{messageId}` | Mensajes de un grupo identificado por `groupName`. | `groupName` debe ser estable — evitar renames que rompan historial. |
 
+#### Contrato de entrega y lectura DM
+
+| Estado | Writer válido | Significado |
+|---|---|---|
+| `MSG_DELIVERED = 1` | Cliente Android sender al crear el mensaje. | El mensaje fue persistido por el sender. |
+| `MSG_RECEIVED = 2` | Cliente Android receptor en `ZibeFirebaseMessagingService.onMessageReceived()`. | El receptor ejecutó código Android y confirmó la recepción del data-message. |
+| `MSG_SEEN = 3` | Cliente Android receptor al ver el chat, o `on_dm_message_created` si el receptor ya está en ese DM activo. | El receptor vio o leyó el mensaje. |
+
+Los cambios de estado son monotónicos: `MSG_SEEN` no vuelve a `MSG_RECEIVED` y
+`MSG_RECEIVED` no vuelve a `MSG_DELIVERED`. Un resultado exitoso de
+`messaging.send()` confirma únicamente que FCM aceptó el envío; no cuenta como
+recepción del dispositivo.
+
+La versión de `on_dm_message_created` que envía DM como data-only y sincroniza
+el caso active-DM requiere deploy para poder validarse en un entorno real. El
+comando previsto es:
+
+```bash
+firebase deploy --only functions:on_dm_message_created --project zproyecto1
+```
+
+No ejecutar este deploy como parte de cambios locales o validaciones Android.
+Después de una autorización explícita, validar tanto el data-message en
+background/chatlist como el branch donde ambos usuarios tienen el mismo DM
+activo. Si el entorno local no dispone de las herramientas necesarias para
+inspeccionar Functions Gen2 o Cloud Logging, hacer el diagnóstico desde Cloud
+Shell.
+
 ---
 
 ### 👥 Grupos
