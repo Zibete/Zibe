@@ -21,6 +21,10 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.NODE_CHATS_ROOT
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_USERS_DATA
+import com.zibete.proyecto1.core.constants.Constants.NODE_USERS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
@@ -184,6 +188,29 @@ class ChatRepository @Inject constructor(
 
     suspend fun pushMessageToChat(chatRefs: ChatRefs, message: ChatMessage) {
         chatRefs.refChat.push().setValue(message).await()
+    }
+
+    suspend fun sendDmMessageWithConversations(
+        senderUid: String,
+        receiverUid: String,
+        message: ChatMessage,
+        senderConversation: Conversation,
+        receiverConversation: Conversation
+    ): ZibeResult<Unit> = zibeCatching {
+        val chatId = getChatId(senderUid, receiverUid)
+        val messageId = checkNotNull(
+            firebaseRefsContainer.refChatsDm.child(chatId).push().key
+        ) { "Could not generate DM message id" }
+
+        val updates = mapOf<String, Any>(
+            "/$NODE_CHATS_ROOT/$NODE_DM/$chatId/$messageId" to message,
+            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$senderUid/$NODE_DM/$receiverUid" to
+                senderConversation,
+            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$receiverUid/$NODE_DM/$senderUid" to
+                receiverConversation
+        )
+
+        firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()
     }
 
     suspend fun uploadMedia(
