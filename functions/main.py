@@ -39,7 +39,6 @@ MSG_KEY_CONTENT = "content"
 MSG_KEY_CREATED_AT = "createdAt"
 MSG_KEY_TYPE = "type"
 MSG_KEY_SEEN = "seen"
-MSG_RECEIVED = 2
 MSG_SEEN = 3
 CONVERSATION_KEY_LAST_MESSAGE_AT = "lastMessageAt"
 CONVERSATION_KEY_USER_ID = "userId"
@@ -318,12 +317,6 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
-    logger.info(
-        "DM trigger started chatId=%s messageId=%s",
-        _safe_id(chat_id),
-        _safe_id(message_id),
-    )
-
     if not chat_id or not message_id:
         logger.warning(
             "DM trigger missing params chatId=%s messageId=%s",
@@ -349,13 +342,6 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             _safe_id(message_id),
         )
         return
-    logger.info(
-        "DM trigger sender resolved chatId=%s messageId=%s senderUid=%s",
-        _safe_id(chat_id),
-        _safe_id(message_id),
-        _safe_id(sender_uid),
-    )
-
     receiver_uid = _parse_other_uid_from_chat_id(chat_id, sender_uid)
     if not receiver_uid:
         logger.warning(
@@ -373,13 +359,6 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             _safe_id(sender_uid),
         )
         return
-    logger.info(
-        "DM trigger receiver resolved chatId=%s messageId=%s receiverUid=%s",
-        _safe_id(chat_id),
-        _safe_id(message_id),
-        _safe_id(receiver_uid),
-    )
-
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
         message_created_at = _read_int(data.get(MSG_KEY_CREATED_AT))
         if message_created_at is None:
@@ -429,24 +408,11 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         PAYLOAD_KEY_CONTENT: _get_visible_dm_content(data),
     }
 
-    logger.info(
-        "DM trigger sending FCM chatId=%s messageId=%s receiverUid=%s hasToken=True",
-        _safe_id(chat_id),
-        _safe_id(message_id),
-        _safe_id(receiver_uid),
-    )
-
     try:
-        fcm_message_id = _send_push(
+        _send_push(
             token=token,
             data_payload=payload,
             include_notification=False,
-        )
-        logger.info(
-            "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
-            _safe_id(chat_id),
-            _safe_id(message_id),
-            _safe_id(fcm_message_id),
         )
     except Exception:
         logger.exception(

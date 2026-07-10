@@ -40,13 +40,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        Log.d(
-            TAG,
-            "FCM received type=${data[PayloadKeys.TYPE]} " +
-                "chatId=${safeId(data[PayloadKeys.CHAT_ID])} " +
-                "messageId=${safeId(data[PayloadKeys.MESSAGE_ID])}"
-        )
-
         serviceScope.launch {
             try {
                 val uid = authSessionProvider.currentUser?.uid
@@ -143,11 +136,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        Log.d(
-            TAG,
-            "Valid DM FCM payload chatId=${safeId(chatId)} messageId=${safeId(messageId)}"
-        )
-
         val otherUid = getOtherUid(chatId, myUid)
         if (otherUid.isNullOrBlank()) {
             Log.w(
@@ -157,10 +145,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        Log.d(
-            TAG,
-            "Calling DM receipt ack chatId=${safeId(chatId)} messageId=${safeId(messageId)}"
-        )
         chatRepository.acknowledgeDmMessageReceived(
             myUid = myUid,
             otherUid = otherUid,
@@ -223,11 +207,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             ?.takeIf { it.isNotBlank() }
             ?: fallbackContent
 
-        Log.d(
-            TAG,
-            "Calling NotificationHelper for DM chatId=${safeId(chatId)} " +
-                "messageId=${safeId(messageId)}"
-        )
         notificationHelper.showChatSummaryNotification(
             summary = summary,
             lastSenderName = senderName,
