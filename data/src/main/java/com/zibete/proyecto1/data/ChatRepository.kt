@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
+import android.util.Log
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -236,9 +237,15 @@ class ChatRepository @Inject constructor(
             .child(chatId)
             .child(messageId)
         val message = messageRef.get().await().getValue(ChatMessage::class.java)
-            ?: return@zibeCatching
+        if (message == null) {
+            Log.w(TAG, "DM receipt ack skipped: message not found id=${safeId(messageId)}")
+            return@zibeCatching
+        }
 
-        if (message.senderUid != otherUid) return@zibeCatching
+        if (message.senderUid != otherUid) {
+            Log.w(TAG, "DM receipt ack skipped: sender mismatch id=${safeId(messageId)}")
+            return@zibeCatching
+        }
 
         setSeenAtLeast(messageRef.child(ChatMessageKeys.SEEN), MSG_RECEIVED)
         syncSenderConversationSeenIfLatest(
@@ -248,6 +255,7 @@ class ChatRepository @Inject constructor(
             messageCreatedAt = message.createdAt,
             targetSeen = MSG_RECEIVED
         )
+        Log.d(TAG, "DM receipt ack completed id=${safeId(messageId)} target=$MSG_RECEIVED")
     }
 
     suspend fun uploadMedia(
@@ -284,6 +292,10 @@ class ChatRepository @Inject constructor(
                 ConversationKeys.UNREAD_COUNT to 0
             )
         ).await()
+        Log.d(
+            TAG,
+            "DM unread cleared chat=${safeId(chatRefs.refChat.key)} pending=${unreadCount.coerceAtLeast(0)}"
+        )
     }
 
     suspend fun markMessageAsSeenIfNeeded(
@@ -361,7 +373,10 @@ class ChatRepository @Inject constructor(
     ) {
         if (messageId.isBlank()) return
         if (message.senderUid == myUid) return
-        if (message.seen >= MSG_SEEN) return
+        if (message.seen >= MSG_SEEN) {
+            Log.d(TAG, "Seen write skipped: already seen id=${safeId(messageId)}")
+            return
+        }
         if (message.isDeletedFor(myUid)) return
 
         markIncomingMessageSeenAndSyncSender(chatRefs, messageId, message)
@@ -405,6 +420,7 @@ class ChatRepository @Inject constructor(
             }
             Transaction.success(currentData)
         }
+        Log.d(TAG, "Unread count cleared chat=${safeId(chatRefs.refChat.key)}")
     }
 
     suspend fun deleteMessages(
@@ -687,5 +703,15 @@ class ChatRepository @Inject constructor(
                 }
             })
         }
+    }
+
+    private fun safeId(value: String?): String {
+        if (value.isNullOrBlank()) return "missing"
+        if (value.length <= 8) return "${value.take(2)}..."
+        return "${value.take(4)}...${value.takeLast(3)}"
+    }
+
+    private companion object {
+        const val TAG = "ZibeDmSeen"
     }
 }
