@@ -36,10 +36,15 @@ PAYLOAD_KEY_CONTENT = "content"
 # --- Current RTDB message keys used by app models ---
 MSG_KEY_SENDER_UID = "senderUid"
 MSG_KEY_CONTENT = "content"
+MSG_KEY_CREATED_AT = "createdAt"
 MSG_KEY_TYPE = "type"
 MSG_KEY_SEEN = "seen"
 MSG_RECEIVED = 2
 MSG_SEEN = 3
+CONVERSATION_KEY_LAST_MESSAGE_AT = "lastMessageAt"
+CONVERSATION_KEY_USER_ID = "userId"
+CONVERSATION_KEY_UNREAD_COUNT = "unreadCount"
+CONVERSATION_KEY_SEEN = "seen"
 GROUP_MSG_KEY_SENDER_NAME = "nameUser"
 GROUP_MSG_KEY_CONTENT = "content"
 DM_MSG_TYPE_TEXT = 100
@@ -201,6 +206,69 @@ def _set_dm_message_seen_if_below(
     seen_ref.transaction(update)
 
 
+def _sync_dm_conversation_if_latest(
+    *,
+    owner_uid: str,
+    other_uid: str,
+    sender_uid: str,
+    message_created_at: int,
+    target_seen: int,
+    clear_unread: bool,
+) -> None:
+    conversation_ref = db.reference(f"Users/Data/{owner_uid}/dm/{other_uid}")
+
+    def update(current: object) -> object:
+        if not isinstance(current, dict):
+            return current
+
+        current_sender_uid = _read_str(current, CONVERSATION_KEY_USER_ID)
+        current_last_message_at = _read_int(
+            current.get(CONVERSATION_KEY_LAST_MESSAGE_AT)
+        )
+        if (
+            current_sender_uid != sender_uid
+            or current_last_message_at != message_created_at
+        ):
+            return current
+
+        updated = dict(current)
+        current_seen = _read_int(current.get(CONVERSATION_KEY_SEEN))
+        if current_seen is None or current_seen < target_seen:
+            updated[CONVERSATION_KEY_SEEN] = target_seen
+        if clear_unread:
+            updated[CONVERSATION_KEY_UNREAD_COUNT] = 0
+        return updated
+
+    conversation_ref.transaction(update)
+
+
+def _mark_active_dm_seen(
+    *,
+    chat_id: str,
+    message_id: str,
+    sender_uid: str,
+    receiver_uid: str,
+    message_created_at: int,
+) -> None:
+    _set_dm_message_seen_if_below(chat_id, message_id, MSG_SEEN)
+    _sync_dm_conversation_if_latest(
+        owner_uid=sender_uid,
+        other_uid=receiver_uid,
+        sender_uid=sender_uid,
+        message_created_at=message_created_at,
+        target_seen=MSG_SEEN,
+        clear_unread=False,
+    )
+    _sync_dm_conversation_if_latest(
+        owner_uid=receiver_uid,
+        other_uid=sender_uid,
+        sender_uid=sender_uid,
+        message_created_at=message_created_at,
+        target_seen=MSG_SEEN,
+        clear_unread=True,
+    )
+
+
 def _send_push(
     *,
     token: str,
@@ -313,9 +381,31 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     )
 
     if _is_receiver_in_active_dm(receiver_uid, sender_uid):
-        _set_dm_message_seen_if_below(chat_id, message_id, MSG_SEEN)
+        message_created_at = _read_int(data.get(MSG_KEY_CREATED_AT))
+        if message_created_at is None:
+            message_created_at = _read_int(
+                db.reference(
+                    f"Chats/dm/{chat_id}/{message_id}/{MSG_KEY_CREATED_AT}"
+                ).get()
+            )
+        if message_created_at is None:
+            _set_dm_message_seen_if_below(chat_id, message_id, MSG_SEEN)
+            logger.warning(
+                "DM trigger active summary sync skipped missing createdAt chatId=%s messageId=%s",
+                _safe_id(chat_id),
+                _safe_id(message_id),
+            )
+            return
+
+        _mark_active_dm_seen(
+            chat_id=chat_id,
+            message_id=message_id,
+            sender_uid=sender_uid,
+            receiver_uid=receiver_uid,
+            message_created_at=message_created_at,
+        )
         logger.info(
-            "DM trigger marked seen and skipped active DM chatId=%s messageId=%s receiverUid=%s",
+            "DM trigger synchronized seen state and skipped active DM chatId=%s messageId=%s receiverUid=%s",
             _safe_id(chat_id),
             _safe_id(message_id),
             _safe_id(receiver_uid),
