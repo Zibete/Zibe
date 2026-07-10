@@ -37,6 +37,7 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.testing.TestScenarioStore
+import com.zibete.proyecto1.data.SessionRepositoryActions
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -164,5 +165,9 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSendFeedbackUseCase(): SendFeedbackUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideSessionRepositoryActions(): SessionRepositoryActions = mockk(relaxed = true)
 
 }
