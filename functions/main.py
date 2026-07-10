@@ -354,7 +354,6 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             title=f"Nuevo mensaje de {payload[PAYLOAD_KEY_SENDER_NAME]}",
             body=payload[PAYLOAD_KEY_CONTENT],
         )
-        _set_dm_message_seen_if_below(chat_id, message_id, MSG_RECEIVED)
         logger.info(
             "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
             _safe_id(chat_id),
@@ -363,7 +362,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         )
     except Exception:
         logger.exception(
-            "DM trigger FCM send or seen update failed chatId=%s messageId=%s receiverUid=%s",
+            "DM trigger FCM send failed chatId=%s messageId=%s receiverUid=%s",
             _safe_id(chat_id),
             _safe_id(message_id),
             _safe_id(receiver_uid),
