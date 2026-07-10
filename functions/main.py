@@ -211,7 +211,7 @@ def _send_push(
 ) -> str | None:
     """
     Sends FCM.
-    - DM uses data + notification for reliable background display
+    - DM uses data-only so Android handles receipt and local notification
     - Group keeps current legacy behavior
     """
     if not token:
@@ -246,7 +246,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
     - receiver token: /Sessions/{uid}/fcmToken
     - skip push if receiver is already in the same activeThread
     - payload data: { type, chatId, messageId, senderUid, senderName, content }
-    - FCM mode: data + notification
+    - FCM mode: data-only so Android executes onMessageReceived
     """
     chat_id = (event.params.get("chatId") or "").strip()
     message_id = (event.params.get("messageId") or "").strip()
@@ -350,9 +350,7 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
         fcm_message_id = _send_push(
             token=token,
             data_payload=payload,
-            include_notification=True,
-            title=f"Nuevo mensaje de {payload[PAYLOAD_KEY_SENDER_NAME]}",
-            body=payload[PAYLOAD_KEY_CONTENT],
+            include_notification=False,
         )
         logger.info(
             "DM trigger FCM sent chatId=%s messageId=%s fcmMessageId=%s",
