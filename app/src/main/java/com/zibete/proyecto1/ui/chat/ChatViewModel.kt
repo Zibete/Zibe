@@ -599,19 +599,12 @@ class ChatViewModel @Inject constructor(
             seen = MSG_DELIVERED
         )
 
-        val chatRefs = requireChatRefs()
-
-        // 1) Mensaje (esto dispara el trigger en Cloud Functions)
-        chatRepository.pushMessageToChat(chatRefs, chatMessage)
-
-        // 2) Texto resumen para Conversation
         val (myMsg, otherMsg) = when (msgType) {
             MSG_PHOTO -> context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
             MSG_AUDIO -> context.getString(R.string.audio_send) to context.getString(R.string.audio_received)
             else -> content to content
         }
 
-        // 3) Conversations
         val myNewChatWith = Conversation(
             lastContent = myMsg,
             lastMessageAt = lastMessageAt,
@@ -623,7 +616,6 @@ class ChatViewModel @Inject constructor(
             unreadCount = 0,
             seen = MSG_DELIVERED
         )
-        chatRepository.saveConversation(myUid, nodeType, otherUid, myNewChatWith)
 
         val otherNewConversation = Conversation(
             lastContent = otherMsg,
@@ -635,7 +627,21 @@ class ChatViewModel @Inject constructor(
             state = otherState,
             unreadCount = otherCountMsgReceivedUnread + 1
         )
-        chatRepository.saveConversation(otherUid, nodeType, myUid, otherNewConversation)
+
+        if (nodeType == NODE_DM) {
+            chatRepository.sendDmMessageWithConversations(
+                senderUid = myUid,
+                receiverUid = otherUid,
+                message = chatMessage,
+                senderConversation = myNewChatWith,
+                receiverConversation = otherNewConversation
+            ).getOrThrow()
+        } else {
+            val chatRefs = requireChatRefs()
+            chatRepository.pushMessageToChat(chatRefs, chatMessage)
+            chatRepository.saveConversation(myUid, nodeType, otherUid, myNewChatWith)
+            chatRepository.saveConversation(otherUid, nodeType, myUid, otherNewConversation)
+        }
 
         _chatState.update {
             it.copy(
