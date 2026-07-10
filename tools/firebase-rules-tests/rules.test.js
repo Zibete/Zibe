@@ -37,6 +37,39 @@ const userAccount = (uid) => ({
   longitude: 0,
 });
 
+const dmMessage = (overrides = {}) => ({
+  content: "hi",
+  createdAt: 123,
+  audioDurationMs: 0,
+  senderUid: uidA,
+  type: 100,
+  seen: 1,
+  ...overrides,
+});
+
+const dmConversation = (overrides = {}) => ({
+  lastContent: "hi",
+  lastMessageAt: 123,
+  userId: uidA,
+  otherId: uidA,
+  otherName: "User A",
+  otherPhotoUrl: "https://example.com/photo.png",
+  state: "dm",
+  unreadCount: 1,
+  seen: 0,
+  ...overrides,
+});
+
+const messageId = "message_1";
+const messagePath = `Chats/dm/${chatId}/${messageId}`;
+const conversationPath = `Users/Data/${uidB}/dm/${uidA}`;
+
+const seed = async (path, value) => {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.database().ref(path).set(value);
+  });
+};
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -87,54 +120,147 @@ describe("Realtime Database Rules", () => {
     );
   });
 
-  it("enforces dm chat participants and message validation", async () => {
-    const msgRef = authedDb(uidA).ref(`Chats/dm/${chatId}`).push();
+  it("allows valid dm message creation with seen 1", async () => {
+    await assertSucceeds(authedDb(uidA).ref(messagePath).set(dmMessage()));
+  });
+
+  it("allows the current atomic dm fan-out payload", async () => {
+    const senderConversation = dmConversation({
+      otherId: uidB,
+      unreadCount: 0,
+      seen: 1,
+    });
+    const receiverConversation = dmConversation({
+      unreadCount: 1,
+      seen: 0,
+    });
+
     await assertSucceeds(
-      msgRef.set({
-        content: "hi",
-        createdAt: 123,
-        audioDurationMs: 0,
-        senderUid: uidA,
-        type: 100,
-        seen: 1,
+      authedDb(uidA).ref().update({
+        [messagePath]: dmMessage(),
+        [`Users/Data/${uidA}/dm/${uidB}`]: senderConversation,
+        [conversationPath]: receiverConversation,
       })
-    );
-
-    await assertSucceeds(authedDb(uidB).ref(`Chats/dm/${chatId}`).get());
-    await assertFails(authedDb(uidC).ref(`Chats/dm/${chatId}`).get());
-
-    await assertSucceeds(
-      authedDb(uidB).ref(`Chats/dm/${chatId}/${msgRef.key}`).update({ seen: 2 })
-    );
-    await assertFails(
-      authedDb(uidB)
-        .ref(`Chats/dm/${chatId}/${msgRef.key}`)
-        .update({ content: "hack" })
     );
   });
 
-  it("allows participants to update conversations and blocks outsiders", async () => {
-    const conversation = {
-      lastContent: "hi",
-      lastMessageAt: 123,
-      userId: uidA,
-      otherId: uidA,
-      otherName: "User A",
-      otherPhotoUrl: "https://example.com/photo.png",
-      state: "dm",
-      unreadCount: 1,
-      seen: 1,
-    };
-
-    await assertSucceeds(
-      authedDb(uidA)
-        .ref(`Users/Data/${uidB}/dm/${uidA}`)
-        .set(conversation)
-    );
+  it("blocks dm message creation with seen above delivered", async () => {
     await assertFails(
-      authedDb(uidC)
-        .ref(`Users/Data/${uidB}/dm/${uidA}`)
-        .set(conversation)
+      authedDb(uidA).ref(messagePath).set(dmMessage({ seen: 2 }))
+    );
+  });
+
+  for (const [from, to] of [[1, 2], [2, 3], [1, 3]]) {
+    it(`allows dm message seen ${from} -> ${to}`, async () => {
+      await seed(messagePath, dmMessage({ seen: from }));
+      await assertSucceeds(
+        authedDb(uidB).ref(`${messagePath}/seen`).set(to)
+      );
+    });
+  }
+
+  for (const [from, to] of [[3, 2], [3, 1], [2, 1]]) {
+    it(`blocks dm message seen downgrade ${from} -> ${to}`, async () => {
+      await seed(messagePath, dmMessage({ seen: from }));
+      await assertFails(
+        authedDb(uidB).ref(`${messagePath}/seen`).set(to)
+      );
+    });
+  }
+
+  for (const invalidSeen of [0, 4, 1.5, "2"]) {
+    it(`blocks invalid dm message seen ${JSON.stringify(invalidSeen)}`, async () => {
+      await seed(messagePath, dmMessage());
+      await assertFails(
+        authedDb(uidB).ref(`${messagePath}/seen`).set(invalidSeen)
+      );
+    });
+  }
+
+  it("blocks deleting dm message seen", async () => {
+    await seed(messagePath, dmMessage());
+    await assertFails(authedDb(uidB).ref(`${messagePath}/seen`).set(null));
+  });
+
+  it("allows the existing dm soft-delete type update without changing seen", async () => {
+    await seed(messagePath, dmMessage());
+    await assertSucceeds(authedDb(uidA).ref(messagePath).update({ type: 103 }));
+  });
+
+  it("blocks non-participant dm message seen update", async () => {
+    await seed(messagePath, dmMessage());
+    await assertFails(authedDb(uidC).ref(`${messagePath}/seen`).set(2));
+  });
+
+  for (const [field, value] of [
+    ["senderUid", uidB],
+    ["content", "changed"],
+    ["createdAt", 456],
+    ["audioDurationMs", 1000],
+  ]) {
+    it(`blocks changing dm seen together with immutable ${field}`, async () => {
+      await seed(messagePath, dmMessage());
+      await assertFails(
+        authedDb(uidB).ref(messagePath).update({ seen: 2, [field]: value })
+      );
+    });
+  }
+
+  it("allows dm participants to read and blocks outsiders", async () => {
+    await seed(messagePath, dmMessage());
+    await assertSucceeds(authedDb(uidB).ref(messagePath).get());
+    await assertFails(authedDb(uidC).ref(messagePath).get());
+  });
+
+  it("allows current dm conversation payloads with seen 0 and 1", async () => {
+    await assertSucceeds(
+      authedDb(uidA).ref(conversationPath).set(dmConversation({ seen: 0 }))
+    );
+    await assertSucceeds(
+      authedDb(uidA).ref(conversationPath).set(dmConversation({ seen: 1 }))
+    );
+  });
+
+  for (const validSeen of [0, 1, 2, 3]) {
+    it(`allows dm conversation seen ${validSeen}`, async () => {
+      await seed(conversationPath, dmConversation());
+      await assertSucceeds(
+        authedDb(uidA).ref(`${conversationPath}/seen`).set(validSeen)
+      );
+    });
+  }
+
+  for (const invalidSeen of [-1, 4, 1.5, "2"]) {
+    it(`blocks invalid dm conversation seen ${JSON.stringify(invalidSeen)}`, async () => {
+      await seed(conversationPath, dmConversation());
+      await assertFails(
+        authedDb(uidA).ref(`${conversationPath}/seen`).set(invalidSeen)
+      );
+    });
+  }
+
+  for (const validUnread of [0, 1, 1000000]) {
+    it(`allows non-negative integer dm unreadCount ${validUnread}`, async () => {
+      await seed(conversationPath, dmConversation());
+      await assertSucceeds(
+        authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(validUnread)
+      );
+    });
+  }
+
+  for (const invalidUnread of [-1, 1.5, "1"]) {
+    it(`blocks invalid dm unreadCount ${JSON.stringify(invalidUnread)}`, async () => {
+      await seed(conversationPath, dmConversation());
+      await assertFails(
+        authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(invalidUnread)
+      );
+    });
+  }
+
+  it("blocks outsider updates to an otherwise valid dm conversation", async () => {
+    await seed(conversationPath, dmConversation());
+    await assertFails(
+      authedDb(uidC).ref(`${conversationPath}/seen`).set(2)
     );
   });
 
