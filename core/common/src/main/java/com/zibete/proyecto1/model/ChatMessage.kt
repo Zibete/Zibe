@@ -24,17 +24,7 @@ data class ChatMessage(
     var senderUid: String = "",
     var type: Int = 0,
     var seen: Int = 0
-) : Serializable {
-
-    override fun equals(other: Any?): Boolean =
-        other is ChatMessage &&
-                content == other.content &&
-                createdAt == other.createdAt &&
-                senderUid == other.senderUid
-
-    override fun hashCode(): Int =
-        listOf(createdAt, content, senderUid).hashCode()
-}
+) : Serializable
 
 fun ChatMessage.isDeletedFor(currentUid: String): Boolean =
     if (currentUid.isBlank()) {
