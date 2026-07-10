@@ -6,6 +6,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
+import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -148,6 +149,15 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
+        chatRepository.acknowledgeDmMessageReceived(
+            myUid = myUid,
+            otherUid = otherUid,
+            nodeType = NODE_DM,
+            messageId = messageId
+        ).onFailure {
+            Log.w(TAG, "Could not acknowledge DM message receipt", it)
+        }
+
         val enabled = runCatching { userPreferencesProvider.individualNotificationsFlow.first() }
             .onFailure {
                 Log.w(TAG, "Could not read DM notification preference; showing notification", it)
@@ -156,7 +166,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
         if (!enabled) {
             Log.i(TAG, "Skipping DM notification: individual notifications disabled chatId=$chatId")
-            applyDoubleCheck(myUid, otherUid, NODE_DM)
             return
         }
 
@@ -197,20 +206,6 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             lastMessage = content,
             conversationId = chatId
         )
-
-        applyDoubleCheck(myUid, otherUid, NODE_DM)
-    }
-
-    private suspend fun applyDoubleCheck(
-        myUid: String,
-        otherUid: String,
-        nodeType: String
-    ) {
-        runCatching {
-            chatRepository.applyDoubleCheckForLatestUnread(myUid, otherUid, nodeType)
-        }.onFailure {
-            Log.w(TAG, "Could not apply double-check for latest unread", it)
-        }
     }
 
     private companion object {
