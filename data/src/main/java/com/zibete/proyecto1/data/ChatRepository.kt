@@ -12,6 +12,7 @@ import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
 import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
+import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_SENDER_DLT
@@ -53,13 +54,16 @@ data class ChatRefs(
     val refPhotos: StorageReference,
     val refChat: DatabaseReference,
     val refMyConversation: DatabaseReference,
-    val refOtherConversation: DatabaseReference
+    val refOtherConversation: DatabaseReference,
+    val nodeType: String
 )
 
 data class DeleteResult(
     val deletedCount: Int,
     val chatRemoved: Boolean
 )
+
+private const val DM_SEEN_QUERY_BUFFER = 20
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
@@ -113,7 +117,8 @@ class ChatRepository @Inject constructor(
             refPhotos = refPhotos,
             refChat = refChat,
             refMyConversation = refMyConversation,
-            refOtherConversation = refOtherConversation
+            refOtherConversation = refOtherConversation,
+            nodeType = nodeType
         )
     }
 
@@ -260,14 +265,25 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun markChatAsSeen(chatRefs: ChatRefs): ZibeResult<Unit> = zibeCatching {
-        val refMyConversation = chatRefs.refMyConversation.get().await()
+        if (chatRefs.nodeType != NODE_DM) {
+            markLegacyChatAsSeen(chatRefs)
+            return@zibeCatching
+        }
 
-        markVisibleIncomingMessagesAsSeen(chatRefs)
+        val myConversation = chatRefs.refMyConversation.get().await()
+        if (!myConversation.exists()) return@zibeCatching
 
-        if (!refMyConversation.exists()) return@zibeCatching
+        val unreadCount = myConversation
+            .child(ConversationKeys.UNREAD_COUNT)
+            .getValue(Int::class.java) ?: 0
+        markPendingIncomingMessagesAsSeen(chatRefs, unreadCount)
 
-        setSeenAtLeast(chatRefs.refMyConversation.child(ConversationKeys.SEEN), MSG_SEEN)
-        clearMyUnreadCount(chatRefs)
+        chatRefs.refMyConversation.updateChildren(
+            mapOf(
+                ConversationKeys.SEEN to MSG_SEEN,
+                ConversationKeys.UNREAD_COUNT to 0
+            )
+        ).await()
     }
 
     suspend fun markMessageAsSeenIfNeeded(
@@ -278,16 +294,64 @@ class ChatRepository @Inject constructor(
         markMessageAsSeenIfNeededInternal(chatRefs, messageId, message)
     }
 
-    private suspend fun markVisibleIncomingMessagesAsSeen(chatRefs: ChatRefs) {
-        val snapshot = chatRefs.refChat.get().await()
+    private suspend fun markPendingIncomingMessagesAsSeen(
+        chatRefs: ChatRefs,
+        unreadCount: Int
+    ) {
+        val queryLimit = (unreadCount.coerceAtLeast(1).toLong() + DM_SEEN_QUERY_BUFFER)
+            .coerceAtMost(MAX_CHAT_SIZE.toLong())
+            .toInt()
+        val snapshot = chatRefs.refChat
+            .orderByChild(ChatMessageKeys.CREATED_AT)
+            .limitToLast(queryLimit)
+            .get()
+            .await()
 
         if (!snapshot.exists()) return
+
+        val pendingMessages = snapshot.children.mapNotNull { child ->
+            val messageId = child.key ?: return@mapNotNull null
+            val message = child.getValue(ChatMessage::class.java) ?: return@mapNotNull null
+            if (
+                message.senderUid == myUid ||
+                message.seen >= MSG_SEEN ||
+                message.isDeletedFor(myUid)
+            ) {
+                return@mapNotNull null
+            }
+            ChatMessageItem(messageId, message)
+        }
+
+        if (pendingMessages.isEmpty()) return
+
+        chatRefs.refChat.updateChildren(
+            pendingMessages.associate { item ->
+                "${item.id}/${ChatMessageKeys.SEEN}" to MSG_SEEN
+            }
+        ).await()
+
+        val latestMessage = pendingMessages.maxBy { it.message.createdAt }.message
+        syncSenderConversationSeenIfLatest(
+            conversationRef = chatRefs.refOtherConversation,
+            senderUid = latestMessage.senderUid,
+            messageCreatedAt = latestMessage.createdAt,
+            targetSeen = MSG_SEEN
+        )
+    }
+
+    private suspend fun markLegacyChatAsSeen(chatRefs: ChatRefs) {
+        val myConversation = chatRefs.refMyConversation.get().await()
+        val snapshot = chatRefs.refChat.get().await()
 
         snapshot.children.forEach { child ->
             val messageId = child.key ?: return@forEach
             val message = child.getValue(ChatMessage::class.java) ?: return@forEach
             markIncomingMessageSeenAndSyncSender(chatRefs, messageId, message)
         }
+
+        if (!myConversation.exists()) return
+        setSeenAtLeast(chatRefs.refMyConversation.child(ConversationKeys.SEEN), MSG_SEEN)
+        clearMyUnreadCount(chatRefs)
     }
 
     private suspend fun markMessageAsSeenIfNeededInternal(
@@ -297,6 +361,7 @@ class ChatRepository @Inject constructor(
     ) {
         if (messageId.isBlank()) return
         if (message.senderUid == myUid) return
+        if (message.seen >= MSG_SEEN) return
         if (message.isDeletedFor(myUid)) return
 
         markIncomingMessageSeenAndSyncSender(chatRefs, messageId, message)
@@ -310,6 +375,7 @@ class ChatRepository @Inject constructor(
     ) {
         if (messageId.isBlank()) return
         if (message.senderUid == myUid) return
+        if (message.seen >= MSG_SEEN) return
         if (message.isDeletedFor(myUid)) return
 
         setMessageSeenAtLeast(chatRefs, messageId, MSG_SEEN)

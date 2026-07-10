@@ -22,6 +22,7 @@ import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
@@ -55,6 +56,7 @@ import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.media.buildZibeUcropIntent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -84,6 +86,17 @@ class ChatViewModel @Inject constructor(
     private val sessionRepositoryProvider: SessionRepositoryProvider,
     private val userPreferencesProvider: UserPreferencesProvider
 ) : ViewModel() {
+
+    private val dmSeenRequests = Channel<Unit>(capacity = Channel.CONFLATED)
+
+    init {
+        viewModelScope.launch {
+            for (ignored in dmSeenRequests) {
+                chatRepository.markChatAsSeen(requireChatRefs())
+                    .onFailure { onFailure(it) }
+            }
+        }
+    }
 
     val myUid get() = userRepository.myUid
 
@@ -217,7 +230,11 @@ class ChatViewModel @Inject constructor(
                     }
                 }
 
-                markIncomingMessageAsSeenIfNeeded(refs, event)
+                if (nodeType == NODE_DM) {
+                    requestDmSeenSyncIfNeeded(event)
+                } else {
+                    markIncomingMessageAsSeenIfNeeded(refs, event)
+                }
             }
         }
     }
@@ -227,10 +244,29 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun markMessagesAsSeenOnOpen() {
+        if (nodeType == NODE_DM) {
+            dmSeenRequests.trySend(Unit)
+            return
+        }
+
         viewModelScope.launch {
             chatRepository.markChatAsSeen(requireChatRefs())
                 .onFailure { onFailure(it) }
         }
+    }
+
+    private fun requestDmSeenSyncIfNeeded(event: ChatChildEvent) {
+        val item = when (event) {
+            is ChatChildEvent.Added -> event.item
+            is ChatChildEvent.Changed -> event.item
+            is ChatChildEvent.Removed -> return
+        }
+        val message = item.message
+        if (message.senderUid == myUid) return
+        if (message.seen >= MSG_SEEN) return
+        if (message.isDeletedFor(myUid)) return
+
+        dmSeenRequests.trySend(Unit)
     }
 
     private suspend fun markIncomingMessageAsSeenIfNeeded(
@@ -242,6 +278,10 @@ class ChatViewModel @Inject constructor(
             is ChatChildEvent.Changed -> event.item
             is ChatChildEvent.Removed -> return
         }
+
+        if (item.message.senderUid == myUid) return
+        if (item.message.seen >= MSG_SEEN) return
+        if (item.message.isDeletedFor(myUid)) return
 
         chatRepository.markMessageAsSeenIfNeeded(refs, item.id, item.message)
             .onFailure { onFailure(it) }
