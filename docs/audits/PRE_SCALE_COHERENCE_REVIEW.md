@@ -280,4 +280,10 @@ Medios diferidos y declarados para seguimiento:
   pero falta validar con producto si debe existir un CTA anterior dedicado.
 - `core:common` conserva Android/Firebase legacy; no depende de app/data y
   `domain` permanece puro. Extraer esos tipos requiere una migración posterior.
+- Las operaciones legacy de Groups todavía exponen excepciones raw; los
+  ViewModels relanzan cancelación, pero migrar esos contratos a `ZibeResult`
+  queda como refactor posterior para no cambiar el contrato group en este PR.
+- Si el backend contiene chat IDs legacy con múltiples underscores, deben
+  inventariarse y migrarse antes de desplegar las Rules: el acceso ambiguo queda
+  bloqueado por seguridad y no se hizo ninguna migración remota.
 - Jetifier sigue habilitado por la dependencia legacy ya reproducida.

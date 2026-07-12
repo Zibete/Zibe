@@ -179,7 +179,9 @@ El owner `{uid}` controla `state` (bloqueo, silencio, ocultamiento). El otro
 participante solo escribe campos de entrega permitidos y nunca escribe `state`
 ni reemplaza el resumen completo. `unreadCount` exige exactamente el valor
 anterior + 1 para el sender y se materializa con `ServerValue.increment(1)`
-dentro del mismo fan-out raíz, evitando lost updates y manipulación de badges.
+dentro del mismo fan-out raíz. Rules exige, además, timestamp creciente, `seen =
+0` y estado sin cambios para un mensaje nuevo. Receipt solo puede avanzar
+`seen` si el resto del resumen permanece idéntico.
 
 ---
 
@@ -226,6 +228,9 @@ underscore, manteniendo los paths históricos. Si alguno contiene `_`, usa el
 formato no ambiguo `<sortedUidA>|<sortedUidB>`. Android, Functions y Rules
 aceptan ambos formatos; Rules no autoriza UIDs con `_` sobre paths legacy
 ambiguos. El carácter `|` queda reservado y no se admite dentro de un UID.
+Antes de desplegar Rules debe auditarse si existen paths legacy con múltiples
+underscores: quedan bloqueados por seguridad y requieren una migración operativa
+explícita al formato `|`; esta rama no despliega ni migra datos remotos.
 
 Firebase Rules protege el `seen` de mensaje como entero `1..3`, exige
 `MSG_DELIVERED` en la creación y bloquea downgrades, eliminación o cambios de
