@@ -212,6 +212,21 @@ describe("Realtime Database Rules", () => {
     );
   });
 
+  it("blocks a future timestamp summary denial of service", async () => {
+    await seed(conversationPath, dmConversation({
+      lastMessageAt: Date.now(),
+      unreadCount: 4,
+    }));
+    await assertFails(
+      authedDb(uidA).ref(conversationPath).update({
+        lastContent: "spoof",
+        lastMessageAt: Date.now() + 60_000,
+        unreadCount: 5,
+        seen: 0,
+      })
+    );
+  });
+
   it("rejects ambiguous legacy chat ids and accepts the unambiguous format", async () => {
     const ambiguousPath = "Chats/dm/alice_team_bob/message_1";
     const unambiguousPath = "Chats/dm/alice_team|bob/message_1";
@@ -262,8 +277,10 @@ describe("Realtime Database Rules", () => {
     await assertFails(authedDb(uidB).ref(`${messagePath}/seen`).set(null));
   });
 
-  it("allows the existing dm soft-delete type update without changing seen", async () => {
+  it("enforces participant-owned dm soft-delete transitions", async () => {
     await seed(messagePath, dmMessage());
+    await assertFails(authedDb(uidB).ref(messagePath).update({ type: 101 }));
+    await assertSucceeds(authedDb(uidB).ref(messagePath).update({ type: 102 }));
     await assertSucceeds(authedDb(uidA).ref(messagePath).update({ type: 103 }));
   });
 

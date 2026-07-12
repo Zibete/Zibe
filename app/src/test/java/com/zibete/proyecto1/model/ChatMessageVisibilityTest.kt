@@ -1,12 +1,15 @@
 package com.zibete.proyecto1.model
 
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
+import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_BOTH_DLT
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -39,6 +42,16 @@ class ChatMessageVisibilityTest {
 
         assertTrue(message.isVisibleFor(SENDER_UID))
         assertTrue(message.isVisibleFor(RECEIVER_UID))
+    }
+
+    @Test
+    fun bothDeleteTypes_hideMessageFromBothParticipants() {
+        listOf(MSG_TEXT_BOTH_DLT, MSG_PHOTO_BOTH_DLT, MSG_AUDIO_BOTH_DLT).forEach { type ->
+            val message = ChatMessage(senderUid = SENDER_UID, type = type)
+
+            assertTrue(message.isDeletedFor(SENDER_UID))
+            assertTrue(message.isDeletedFor(RECEIVER_UID))
+        }
     }
 
     private companion object {
