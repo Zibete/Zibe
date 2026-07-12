@@ -82,6 +82,7 @@ import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
+import com.zibete.proyecto1.notifications.NotificationPermissionCoordinator
 import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
@@ -121,6 +122,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private var locationRequest: LocationRequest? = null
     private var locationCallback: LocationCallback? = null
     private var locationUpdatesActive = false
+    private lateinit var notificationPermissionCoordinator: NotificationPermissionCoordinator
 
     override val toolbarMenuRes: Int = R.menu.menu_main
 
@@ -138,6 +140,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ZibeApp.ScreenUtils.init(this)
 
         setupUI()
+
+        notificationPermissionCoordinator = NotificationPermissionCoordinator(this)
+        notificationPermissionCoordinator.requestInContext()
 
         setupNavigation(isFreshStart = savedInstanceState == null)
 
@@ -865,4 +870,3 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         ) || super.onSupportNavigateUp()
     }
 }
-

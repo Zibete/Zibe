@@ -172,3 +172,21 @@ Ejecutado el 11 de julio de 2026:
 - El servicio FCM dejó de capturar `Throwable`; relanza cancelación y limita el
   manejo a `Exception`.
 - Tests de core verifican explícitamente cancellation y failure ordinario.
+
+## Etapa de plataforma, permisos y dependencias visuales
+
+- `POST_NOTIFICATIONS` dejó Splash y se solicita al entrar a Main, después de
+  explicar su uso para mensajes. Rechazar no bloquea navegación; rationale
+  permite reintentar y el rechazo permanente ofrece abrir App Settings.
+- `NotificationPermissionCoordinator` encapsula Activity Result, persistencia
+  de intento y Settings. Tests cubren pre-Android 13, primera solicitud y
+  rechazo permanente.
+- Coil se conserva como loader principal de Compose. Glide se mantiene en Views
+  y componentes AndroidView existentes; migrarlos sin valor funcional ampliaría
+  el riesgo de esta revisión.
+- Se eliminaron Picasso, glide-transformations, Room, Volley y LiveData porque
+  el source scan no encontró consumidores. Debug assemble, unit tests y
+  compilación de androidTest pasaron sin ellos.
+- Checklist manual pendiente de la validación final: permitir/rechazar/bloquear
+  notificaciones; camera allow/deny/cancel; gallery y crop cancelado; audio
+  allow/deny, mínimo, cancelación y envío.
