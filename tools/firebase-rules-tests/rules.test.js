@@ -124,7 +124,7 @@ describe("Realtime Database Rules", () => {
     await assertSucceeds(authedDb(uidA).ref(messagePath).set(dmMessage()));
   });
 
-  it("allows the current atomic dm fan-out payload", async () => {
+  it("allows atomic dm fan-out with receiver-owned fields and server increment", async () => {
     const senderConversation = dmConversation({
       otherId: uidB,
       unreadCount: 0,
@@ -139,7 +139,15 @@ describe("Realtime Database Rules", () => {
       authedDb(uidA).ref().update({
         [messagePath]: dmMessage(),
         [`Users/Data/${uidA}/dm/${uidB}`]: senderConversation,
-        [conversationPath]: receiverConversation,
+        [`${conversationPath}/lastContent`]: receiverConversation.lastContent,
+        [`${conversationPath}/lastMessageAt`]: receiverConversation.lastMessageAt,
+        [`${conversationPath}/userId`]: receiverConversation.userId,
+        [`${conversationPath}/otherId`]: receiverConversation.otherId,
+        [`${conversationPath}/otherName`]: receiverConversation.otherName,
+        [`${conversationPath}/otherPhotoUrl`]: receiverConversation.otherPhotoUrl,
+        [`${conversationPath}/state`]: receiverConversation.state,
+        [`${conversationPath}/unreadCount`]: { ".sv": { "increment": 1 } },
+        [`${conversationPath}/seen`]: receiverConversation.seen,
       })
     );
   });
@@ -214,10 +222,23 @@ describe("Realtime Database Rules", () => {
 
   it("allows current dm conversation payloads with seen 0 and 1", async () => {
     await assertSucceeds(
-      authedDb(uidA).ref(conversationPath).set(dmConversation({ seen: 0 }))
+      authedDb(uidB).ref(conversationPath).set(dmConversation({ seen: 0 }))
     );
     await assertSucceeds(
-      authedDb(uidA).ref(conversationPath).set(dmConversation({ seen: 1 }))
+      authedDb(uidB).ref(conversationPath).set(dmConversation({ seen: 1 }))
+    );
+  });
+
+  it("blocks the other participant from replacing or changing owned conversation state", async () => {
+    await seed(conversationPath, dmConversation());
+    await assertFails(
+      authedDb(uidA).ref(conversationPath).set(dmConversation({ state: "blocked" }))
+    );
+    await assertFails(
+      authedDb(uidA).ref(`${conversationPath}/state`).set("blocked")
+    );
+    await assertSucceeds(
+      authedDb(uidB).ref(`${conversationPath}/state`).set("blocked")
     );
   });
 

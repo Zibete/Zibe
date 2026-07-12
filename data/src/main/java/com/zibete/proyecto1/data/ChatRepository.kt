@@ -7,6 +7,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.MutableData
+import com.google.firebase.database.ServerValue
 import com.google.firebase.database.Transaction
 import com.google.firebase.storage.StorageReference
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
@@ -233,12 +234,24 @@ class ChatRepository @Inject constructor(
             firebaseRefsContainer.refChatsDm.child(chatId).push().key
         ) { "Could not generate DM message id" }
 
+        val receiverConversationPath =
+            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$receiverUid/$NODE_DM/$senderUid"
         val updates = mapOf<String, Any>(
             "/$NODE_CHATS_ROOT/$NODE_DM/$chatId/$messageId" to message,
             "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$senderUid/$NODE_DM/$receiverUid" to
                 senderConversation,
-            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$receiverUid/$NODE_DM/$senderUid" to
-                receiverConversation
+            "$receiverConversationPath/${ConversationKeys.LAST_CONTENT}" to
+                receiverConversation.lastContent,
+            "$receiverConversationPath/${ConversationKeys.LAST_MESSAGE_AT}" to
+                receiverConversation.lastMessageAt,
+            "$receiverConversationPath/${ConversationKeys.USER_ID}" to receiverConversation.userId,
+            "$receiverConversationPath/${ConversationKeys.OTHER_ID}" to receiverConversation.otherId,
+            "$receiverConversationPath/${ConversationKeys.OTHER_NAME}" to receiverConversation.otherName,
+            "$receiverConversationPath/${ConversationKeys.OTHER_PHOTO_URL}" to
+                receiverConversation.otherPhotoUrl,
+            "$receiverConversationPath/${ConversationKeys.STATE}" to receiverConversation.state,
+            "$receiverConversationPath/${ConversationKeys.UNREAD_COUNT}" to ServerValue.increment(1),
+            "$receiverConversationPath/${ConversationKeys.SEEN}" to receiverConversation.seen
         )
 
         firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()

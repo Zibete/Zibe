@@ -27,9 +27,10 @@ class ChatIdGeneratorTest {
     }
 
     @Test
-    fun getOtherUid_documentsCurrentUnderscoreLimitation() {
+    fun getOtherUid_supportsParticipantsContainingUnderscores() {
         val chatId = ChatIdGenerator.getChatId("alice_team", "bob")
 
-        assertNull(ChatIdGenerator.getOtherUid(chatId, "bob"))
+        assertEquals("alice_team", ChatIdGenerator.getOtherUid(chatId, "bob"))
+        assertEquals("bob", ChatIdGenerator.getOtherUid(chatId, "alice_team"))
     }
 }

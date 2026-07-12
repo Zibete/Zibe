@@ -441,6 +441,7 @@ class UserRepository constructor(
             mapOf(
                 ActiveThreadKeys.NODE_TYPE to nodeType,
                 ActiveThreadKeys.OTHER_UID to otherUid,
+                ActiveThreadKeys.UPDATED_AT to ServerValue.TIMESTAMP,
             )
         ).await()
     }

@@ -49,7 +49,8 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 │        │  ├─ ActiveView
 │        │  │  └─ activeThread
 │        │  │     ├─ nodeType
-│        │  │     └─ otherUid
+│        │  │     ├─ otherUid
+│        │  │     └─ updatedAt
 │        │  └─ ChatList
 │        │     └─ readGroupMessages
 │        ├─ ChatList
@@ -154,7 +155,7 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 | Path | Propósito | Invariante |
 |---|---|---|
 | `Users/Data/{uid}/ClientData/Status` | Presencia / última actividad (`lastSeenMs`, `isOnline`). | Actualizaciones frecuentes y livianas — evitar payloads grandes. |
-| `Users/Data/{uid}/ClientData/ActiveView` | Vista activa (qué chat/pantalla está mirando). | Debe limpiarse al salir — evitar estado stale. |
+| `Users/Data/{uid}/ClientData/ActiveView` | Vista activa (qué chat/pantalla está mirando). | `activeThread` incluye `updatedAt`; Functions solo lo acepta durante un lease de 120 segundos y la app lo limpia al salir. |
 
 **Listas y contadores**
 
@@ -173,6 +174,13 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 | `Users/Data/{uid}/group_dm/{otherUid}` | Resumen de conversaciones grupales/relación. | Estructura consistente con la UI que lo consume. |
 
 > 📌 Documentar en el código cómo se construye `chatId` (si aplica) y qué campos mínimos existen en estos resúmenes.
+
+El owner `{uid}` controla `state` (bloqueo, silencio, ocultamiento). El otro
+participante puede escribir los campos de entrega del resumen y crear `state =
+dm` cuando todavía no existe, pero no puede reemplazar el resumen completo ni
+cambiar luego el estado privado del owner. `unreadCount` se incrementa con
+`ServerValue.increment(1)` dentro del mismo fan-out raíz que crea mensaje y
+resúmenes, evitando lost updates entre envíos concurrentes.
 
 ---
 
@@ -213,6 +221,11 @@ crea la notificación local y confirma `MSG_RECEIVED` después de ejecutar
 el mismo DM en `activeThread`, `on_dm_message_created` no envía push: avanza el
 mensaje directamente a `MSG_SEEN`, sincroniza el resumen si sigue siendo el
 último mensaje y limpia el badge.
+
+`chatId` conserva el formato histórico `<sortedUidA>_<sortedUidB>`. Los parsers
+Android/Python resuelven al otro participante removiendo el UID conocido como
+prefijo o sufijo completo, por lo que siguen siendo compatibles con UIDs que
+contengan `_` sin migrar paths existentes.
 
 Firebase Rules protege el `seen` de mensaje como entero `1..3`, exige
 `MSG_DELIVERED` en la creación y bloquea downgrades, eliminación o cambios de

@@ -55,9 +55,26 @@ class DirectMessageContractTest(unittest.TestCase):
             self.main._parse_other_uid_from_chat_id("alice_bob", "bob"),
         )
 
-    def test_parse_other_uid_documents_current_underscore_limitation(self):
-        self.assertIsNone(
-            self.main._parse_other_uid_from_chat_id("alice_team_bob", "bob")
+    def test_parse_other_uid_supports_underscores(self):
+        self.assertEqual(
+            "alice_team",
+            self.main._parse_other_uid_from_chat_id("alice_team_bob", "bob"),
+        )
+
+    def test_active_dm_requires_fresh_lease(self):
+        self.main._get_active_thread = MagicMock(
+            return_value={
+                "nodeType": "dm",
+                "otherUid": "alice",
+                "updatedAt": 1_000,
+            }
+        )
+
+        self.assertTrue(
+            self.main._is_receiver_in_active_dm("bob", "alice", now_ms=121_000)
+        )
+        self.assertFalse(
+            self.main._is_receiver_in_active_dm("bob", "alice", now_ms=121_001)
         )
 
     def test_visible_content_uses_text_and_hides_media_url(self):

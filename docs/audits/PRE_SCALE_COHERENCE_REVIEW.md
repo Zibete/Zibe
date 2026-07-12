@@ -190,3 +190,22 @@ Ejecutado el 11 de julio de 2026:
 - Checklist manual pendiente de la validación final: permitir/rechazar/bloquear
   notificaciones; camera allow/deny/cancel; gallery y crop cancelado; audio
   allow/deny, mínimo, cancelación y envío.
+
+## Etapa de contrato distribuido Firebase
+
+- Android y Python comparten el parser backward-compatible del `chatId`
+  histórico y ahora soportan participantes con `_`.
+- `activeThread` incluye `updatedAt` de servidor. Functions exige un lease fresco
+  de 120 segundos antes de omitir el push y promover a `MSG_SEEN`, eliminando el
+  falso seen provocado por estado stale.
+- El fan-out DM mantiene una sola escritura raíz, pero el unread del receptor usa
+  `ServerValue.increment(1)`; envíos concurrentes ya no calculan el contador a
+  partir de una lectura obsoleta.
+- Rules quitó el write heredado sobre todo `Users/Data/{uid}`. El owner controla
+  el `state` de su resumen; el otro participante solo puede crear el estado DM
+  inicial y actualizar campos de entrega permitidos. ActiveView vuelve a ser
+  privado del owner.
+- Rules agregó el caso negativo de reemplazo/cambio de estado por el otro
+  participante y el caso positivo de fan-out con incremento de servidor: 43/43.
+- Python cubre parser, redacción de IDs, payload visible y freshness del lease.
+  No se ejecutó deploy.
