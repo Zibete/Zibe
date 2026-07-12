@@ -63,6 +63,11 @@ jobs:
       - name: Architecture boundaries
         run: python scripts/check_architecture.py
 
+      - name: Functions contract tests
+        run: |
+          python -m py_compile functions/main.py
+          python -m unittest discover functions/tests
+
       - name: 🧪 Firebase RTDB rules tests (emulator)
         run: npm run test:rules
 
@@ -71,6 +76,9 @@ jobs:
 
       - name: 🧪 AndroidTest lint model
         run: ./gradlew :app:generateDebugAndroidTestLintModel
+
+      - name: Hilt AndroidTest graph
+        run: ./gradlew :app:compileDebugAndroidTestKotlin
 
       - name: 🧼 Android Lint
         run: ./gradlew lintDebug
@@ -109,7 +117,7 @@ jobs:
             echo "## Android CI"
             echo ""
             echo "**Comandos (local):**"
-            echo "\`npm ci && npm run test:rules && ./gradlew testDebugUnitTest :app:generateDebugAndroidTestLintModel lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
+            echo "\`python scripts/check_architecture.py && python -m py_compile functions/main.py && python -m unittest discover functions/tests && npm ci && npm run test:rules && ./gradlew testDebugUnitTest :app:generateDebugAndroidTestLintModel :app:compileDebugAndroidTestKotlin lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
             echo ""
             echo "**Artifacts:** unit-test-reports / lint-reports"
           } >> "$GITHUB_STEP_SUMMARY"
