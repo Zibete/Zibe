@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.NavHost
@@ -50,6 +51,7 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
@@ -72,6 +74,9 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
 
     @Inject
     lateinit var appNavigator: AppNavigator
+
+    @Inject
+    lateinit var googleSignInUseCase: GoogleSignInUseCase
 
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
@@ -118,7 +123,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                         composable(SPLASH_SCREEN) {
                             SplashScreen()
                             LaunchedEffect(Unit) {
-                                splashViewModel.start(this@SplashActivity)
+                                splashViewModel.start()
                             }
                         }
                         // ======================================
@@ -159,7 +164,11 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                                     authViewModel.onResetPassword(email)
                                 },
                                 onGoogleClick = {
-                                    authViewModel.onGoogleClick(this@SplashActivity)
+                                    lifecycleScope.launch {
+                                        authViewModel.onGoogleCredentialResult(
+                                            googleSignInUseCase(this@SplashActivity)
+                                        )
+                                    }
                                 },
                                 onFacebookClick = {
                                     facebookLauncher.launch(listOf("public_profile", "email"))
@@ -260,10 +269,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                             onConfirm = {
                                 noInternetDialog = false
                                 coroutineScope.launch {
-                                    splashViewModel.start(
-                                        this@SplashActivity,
-                                        isRetry = true
-                                    )
+                                    splashViewModel.start(isRetry = true)
                                 }
                             },
                             onCancel = {

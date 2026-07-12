@@ -30,6 +30,10 @@ PRESENTATION_FORBIDDEN = (
     "com.zibete.proyecto1.data.UserRepository",
 )
 
+VIEWMODEL_FORBIDDEN = (
+    "android.",
+)
+
 def kotlin_files(path: Path):
     yield from path.rglob("*.kt")
 
@@ -54,11 +58,23 @@ def check_imports(path: Path, forbidden: tuple[str, ...], allow: set[str] | None
     return failures
 
 
+def check_viewmodels(path: Path):
+    failures: list[str] = []
+    for source in path.rglob("*ViewModel.kt"):
+        for imported in IMPORT.findall(source.read_text(encoding="utf-8")):
+            if any(imported.startswith(rule) for rule in VIEWMODEL_FORBIDDEN):
+                failures.append(f"{relative(source)}: forbidden ViewModel import {imported}")
+    return failures
+
+
 def main() -> int:
     failures = check_imports(ROOT / "domain" / "src", DOMAIN_FORBIDDEN)
     failures += check_imports(
         ROOT / "app" / "src" / "main" / "java" / "com" / "zibete" / "proyecto1" / "ui",
         PRESENTATION_FORBIDDEN,
+    )
+    failures += check_viewmodels(
+        ROOT / "app" / "src" / "main" / "java" / "com" / "zibete" / "proyecto1" / "ui"
     )
     if failures:
         print("Architecture boundary violations:")

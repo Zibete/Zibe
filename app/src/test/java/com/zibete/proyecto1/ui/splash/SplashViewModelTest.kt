@@ -51,7 +51,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -72,7 +72,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -104,7 +104,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -186,7 +186,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -216,9 +216,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(
-            context = mockk(relaxed = true)
-        )
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -264,7 +262,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then
@@ -295,7 +293,7 @@ class SplashViewModelTest {
         runCurrent()
 
         // When
-        vm.start(context = mockk(relaxed = true))
+        vm.start()
         advanceUntilIdle()
 
         // Then

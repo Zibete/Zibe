@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.main
 
-import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
@@ -153,9 +152,9 @@ class MainViewModel @Inject constructor(
     }
 
     // --- ACCIONES DE USUARIO ---
-    fun onLocationChanged(location: Location) {
+    fun onLocationChanged(latitude: Double, longitude: Double) {
         viewModelScope.launch {
-            locationRepository.updateLocation(location.latitude, location.longitude)
+            locationRepository.updateLocation(latitude, longitude)
         }
     }
 

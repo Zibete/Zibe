@@ -37,7 +37,7 @@ class EditProfileViewModelTest {
 
         vm.load()
         advanceUntilIdle()
-        vm.onPhotoSelected(mockk(relaxed = true))
+        vm.onPhotoSelected("content://photo/1")
         assertTrue(vm.uiState.value.hasPendingChanges)
 
         vm.onBackRequest()
@@ -66,7 +66,7 @@ class EditProfileViewModelTest {
         vm.load()
         advanceUntilIdle()
 
-        vm.onPhotoSelected(mockk(relaxed = true))
+        vm.onPhotoSelected("content://photo/2")
         vm.onPhotoDeletedSetDefault()
 
         assertFalse(vm.uiState.value.hasPendingChanges)

@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.editprofile
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
@@ -177,7 +176,7 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun onPhotoSelected(uri: Uri) {
+    fun onPhotoSelected(uri: String) {
         _uiState.update { s ->
             val ns = s.copy(photoPreviewUri = uri, deletePhoto = false)
             ns.copy(hasPendingChanges = recomputeSaveEnabled(ns))
@@ -241,7 +240,7 @@ class EditProfileViewModel @Inject constructor(
                 newDescription = state.description.trim(),
                 age = calculatedAge,
                 originalPhotoUrl = state.photoUrl,
-                photoPreviewUri = state.photoPreviewUri?.toString(),
+                photoPreviewUri = state.photoPreviewUri,
                 shouldDeletePhoto = state.deletePhoto
             ).onFailure { e ->
                 showSnack(
