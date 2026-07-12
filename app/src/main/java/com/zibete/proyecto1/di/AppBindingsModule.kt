@@ -60,6 +60,8 @@ import com.zibete.proyecto1.domain.session.SessionConflictNavigator
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.chat.AndroidChatTextProvider
 import com.zibete.proyecto1.ui.chat.ChatTextProvider
+import com.zibete.proyecto1.notifications.AndroidNotificationPermissionStateProvider
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -75,6 +77,12 @@ abstract class AppBindingsModule {
     abstract fun bindAppChecksProvider(
         impl: DefaultAppChecksProvider
     ): AppChecksProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationPermissionStateProvider(
+        impl: AndroidNotificationPermissionStateProvider
+    ): NotificationPermissionStateProvider
 
     @Binds
     abstract fun bindAuthSessionActions(

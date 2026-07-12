@@ -7,7 +7,6 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
-import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
@@ -16,7 +15,9 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
 import com.zibete.proyecto1.ui.components.ZibeSnackType
+import com.zibete.proyecto1.ui.custompermission.PermissionEducationMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,7 +34,7 @@ class SplashViewModel @Inject constructor(
     private val userPreferencesActions: UserPreferencesActions,
     private val sessionBootstrapper: SessionBootstrapper,
     private val logoutUseCase: LogoutUseCase,
-    private val snackBarManager: SnackBarManager
+    private val notificationPermissionStateProvider: NotificationPermissionStateProvider
 ) : ViewModel() {
 
     private val _events = MutableSharedFlow<SplashUiEvent>(
@@ -100,7 +101,16 @@ class SplashViewModel @Inject constructor(
 
             // 7) Permisos de ubicación
             if (!appChecksProvider.hasLocationPermission()) {
-                _events.emit(SplashUiEvent.NavigatePermission)
+                _events.emit(
+                    SplashUiEvent.NavigatePermission(PermissionEducationMode.COMBINED)
+                )
+                return@launch
+            }
+
+            if (notificationPermissionStateProvider.snapshot().shouldRequestDuringOnboarding) {
+                _events.emit(
+                    SplashUiEvent.NavigatePermission(PermissionEducationMode.NOTIFICATION_ONLY)
+                )
                 return@launch
             }
 

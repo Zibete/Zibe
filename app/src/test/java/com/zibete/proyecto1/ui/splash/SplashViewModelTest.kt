@@ -3,7 +3,6 @@ package com.zibete.proyecto1.ui.splash
 import androidx.lifecycle.SavedStateHandle
 import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.core.constants.Constants
-import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
@@ -11,6 +10,8 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.notifications.NotificationPermissionSnapshot
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeLogoutUseCase
@@ -19,8 +20,7 @@ import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
-import io.mockk.every
-import io.mockk.mockk
+import com.zibete.proyecto1.ui.custompermission.PermissionEducationMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -222,8 +222,64 @@ class SplashViewModelTest {
         // Then
         val event = deferred.await()
 
-        assertEquals(SplashUiEvent.NavigatePermission, event)
+        assertEquals(
+            SplashUiEvent.NavigatePermission(PermissionEducationMode.COMBINED),
+            event
+        )
         assertFalse(sessionBootstrapper.wasCalled)
+    }
+
+    @Test
+    fun `existing user with unrequested notifications sees notification only education`() = runTest {
+        val scenario = TestScenario(
+            currentUserUid = TestData.UID,
+            onboardingDone = true,
+            hasLocationPermission = true
+        )
+        val sessionBootstrapper = FakeSessionBootstrapper { scenario }
+        val vm = buildVm(
+            scenario = scenario,
+            sessionBootstrapper = sessionBootstrapper,
+            notificationPermissionStateProvider = FakeNotificationStateProvider(
+                pendingNotificationStatus()
+            )
+        )
+        val deferred = async { awaitEvent(vm) }
+        runCurrent()
+
+        vm.start()
+        advanceUntilIdle()
+
+        assertEquals(
+            SplashUiEvent.NavigatePermission(PermissionEducationMode.NOTIFICATION_ONLY),
+            deferred.await()
+        )
+        assertFalse(sessionBootstrapper.wasCalled)
+    }
+
+    @Test
+    fun `previous notification denial continues to main without another prompt`() = runTest {
+        val scenario = TestScenario(
+            currentUserUid = TestData.UID,
+            onboardingDone = true,
+            hasLocationPermission = true
+        )
+        val sessionBootstrapper = FakeSessionBootstrapper { scenario }
+        val vm = buildVm(
+            scenario = scenario,
+            sessionBootstrapper = sessionBootstrapper,
+            notificationPermissionStateProvider = FakeNotificationStateProvider(
+                pendingNotificationStatus().copy(wasRequested = true)
+            )
+        )
+        val deferred = async { awaitEvent(vm) }
+        runCurrent()
+
+        vm.start()
+        advanceUntilIdle()
+
+        assertEquals(SplashUiEvent.NavigateMain(), deferred.await())
+        assertTrue(sessionBootstrapper.wasCalled)
     }
 
     @Test
@@ -320,7 +376,8 @@ class SplashViewModelTest {
         userPreferencesActions: UserPreferencesActions = FakeUserPreferencesActions { scenario },
         sessionBootstrapper: SessionBootstrapper = FakeSessionBootstrapper { scenario },
         logoutUseCase: LogoutUseCase = FakeLogoutUseCase { scenario },
-        snackBarManager: SnackBarManager = mockk(relaxed = true)
+        notificationPermissionStateProvider: NotificationPermissionStateProvider =
+            FakeNotificationStateProvider(preAndroid13Status())
     ): SplashViewModel {
         return SplashViewModel(
             authSessionProvider = authSessionProvider,
@@ -330,8 +387,34 @@ class SplashViewModelTest {
             userPreferencesActions = userPreferencesActions,
             sessionBootstrapper = sessionBootstrapper,
             logoutUseCase = logoutUseCase,
-            snackBarManager = snackBarManager
+            notificationPermissionStateProvider = notificationPermissionStateProvider
         )
     }
 
+    private fun pendingNotificationStatus() = NotificationPermissionSnapshot(
+        requiresRuntimePermission = true,
+        isRuntimePermissionGranted = false,
+        wasRequested = false,
+        areAppNotificationsEnabled = false,
+        isMessageChannelEnabled = true
+    )
+
+    private fun preAndroid13Status() = NotificationPermissionSnapshot(
+        requiresRuntimePermission = false,
+        isRuntimePermissionGranted = true,
+        wasRequested = false,
+        areAppNotificationsEnabled = true,
+        isMessageChannelEnabled = true
+    )
+
+}
+
+private class FakeNotificationStateProvider(
+    private var status: NotificationPermissionSnapshot
+) : NotificationPermissionStateProvider {
+    override fun snapshot(): NotificationPermissionSnapshot = status
+
+    override fun markRequested() {
+        status = status.copy(wasRequested = true)
+    }
 }

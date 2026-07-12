@@ -14,6 +14,9 @@ data class SettingsUiState(
     val requiresReauthForSensitiveActions: Boolean = true,
     val groupNotificationsEnabled: Boolean = true,
     val individualNotificationsEnabled: Boolean = true,
+    val systemNotificationsEnabled: Boolean = true,
+    val messageChannelEnabled: Boolean = true,
+    val notificationRuntimePermissionGranted: Boolean = true,
 
     val loadingAction: SettingsAction? = null,
 

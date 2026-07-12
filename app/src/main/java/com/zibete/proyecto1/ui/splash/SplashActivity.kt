@@ -58,6 +58,7 @@ import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
+import com.zibete.proyecto1.ui.custompermission.PermissionEducationMode
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
 import com.zibete.proyecto1.ui.signup.SignUpScreen
@@ -80,6 +81,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
 
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
+    private var permissionEducationMode = PermissionEducationMode.COMBINED
 
     // ===============================
     // Google & Facebook
@@ -227,12 +229,13 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                         composable(PERMISSION_SCREEN) {
 
                             CustomPermissionScreen(
-                                onPermissionGranted = {
+                                mode = permissionEducationMode,
+                                onPermissionFlowCompleted = {
                                     navController.navigate(SPLASH_SCREEN) {
                                         popUpTo(PERMISSION_SCREEN) { inclusive = true }
                                     }
                                 },
-                                onPermissionDenied = {
+                                onLocationDenied = {
                                     splashViewModel.onLogoutRequested()
                                 }
                             )
@@ -302,8 +305,10 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                                     popUpTo(SPLASH_SCREEN) { inclusive = true }
                                 }
 
-                            is SplashUiEvent.NavigatePermission ->
+                            is SplashUiEvent.NavigatePermission -> {
+                                permissionEducationMode = event.mode
                                 navController.navigate(PERMISSION_SCREEN)
+                            }
 
                             is SplashUiEvent.NavigateMain -> {
                                 val intent =
