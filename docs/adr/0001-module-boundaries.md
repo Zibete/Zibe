@@ -25,4 +25,3 @@ concretas desde presentation.
 - Los modelos que cruzan capas son propios de ZIBE.
 - El wiring Hilt y los adapters agregan código explícito, pero evitan fugas de
   infraestructura y duplicación de repositorios.
-
