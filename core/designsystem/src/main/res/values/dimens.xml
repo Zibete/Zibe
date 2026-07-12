@@ -147,8 +147,6 @@
     <dimen name="chat_list_avatar_stroke">1dp</dimen>
     <dimen name="user_list_avatar_stroke">2dp</dimen>
     <dimen name="popup_menu_stroke">1dp</dimen>
-    <dimen name="drawer_panel_stroke">1dp</dimen>
-    <dimen name="drawer_width">320dp</dimen>
 
 
     <!--Toolbar-->

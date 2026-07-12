@@ -433,9 +433,10 @@
     <!-- ============================= -->
 
     <string name="menu_edit_profile">Editar Perfil</string>
-    <string name="menu_groups">Grupos</string>
-    <string name="menu_users">Personas</string>
-    <string name="menu_chat">Chat</string>
+    <string name="menu_groups">Salas</string>
+    <string name="menu_users">Descubrir</string>
+    <string name="menu_chat">Chats</string>
+    <string name="account_open">Abrir Cuenta</string>
 
     <string name="menu_add_favorite">Agregar a favoritos</string>
     <string name="menu_remove_favorite">Eliminar de favoritos</string>
