@@ -16,7 +16,9 @@ app --------------------> data -----------------> domain
   Firebase, proveedores sociales, Hilt ni implementaciones concretas.
 - `data`: implementa contratos de `domain`; es dueño de Firebase Auth, RTDB,
   Storage, DataStore, snapshots, paths y referencias.
-- `core:common`: `ZibeResult`, política de cancelación y utilidades puras.
+- `core:common`: resultados, modelos y utilidades compartidas sin dependencia de
+  `app`/`data`. Conserva tipos Android y anotaciones de serialización legacy;
+  esa compatibilidad está aislada y no habilita Android dentro de `domain`.
 - `core:designsystem`: tokens, tema y componentes Compose compartidos.
 - `app`: composición Hilt, Activities/Fragments/Compose, navegación, permisos,
   media y adaptadores legacy.

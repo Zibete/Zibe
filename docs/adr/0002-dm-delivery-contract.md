@@ -18,6 +18,8 @@ incremento read-modify-write de unread perdía actualizaciones concurrentes.
 - Los estados son monotónicos; Rules impide downgrade y mutación de payload.
 - Mensaje y dos resúmenes se escriben en un fan-out raíz atómico.
 - Unread del receptor usa incremento de servidor.
+- Chat IDs históricos sin underscore conservan `_`; UIDs con underscore usan
+  `|` reservado para evitar colisiones entre pares.
 - Functions, Android, Rules, tests y documentación comparten el mismo contrato.
 
 ## Consecuencias
@@ -25,4 +27,3 @@ incremento read-modify-write de unread perdía actualizaciones concurrentes.
 La semántica distingue entrega de transporte, recepción y lectura real. El
 lease reduce falsos seen tras muerte del proceso. El contrato exige tests de
 Rules y Functions ante cualquier cambio de path, ownership o estado.
-

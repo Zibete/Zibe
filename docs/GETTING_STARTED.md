@@ -6,7 +6,7 @@
 |---|---|
 | Android Studio | Versión estable reciente. |
 | JDK 17 | Requerido para compilar. |
-| Android SDK | minSdk 26 · targetSdk 34. |
+| Android SDK | minSdk 26 · targetSdk 35 · compileSdk 36. |
 | Node.js 20 | Solo si vas a correr tests de reglas Firebase. |
 
 ---

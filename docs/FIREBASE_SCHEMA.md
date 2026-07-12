@@ -176,11 +176,10 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 > 📌 Documentar en el código cómo se construye `chatId` (si aplica) y qué campos mínimos existen en estos resúmenes.
 
 El owner `{uid}` controla `state` (bloqueo, silencio, ocultamiento). El otro
-participante puede escribir los campos de entrega del resumen y crear `state =
-dm` cuando todavía no existe, pero no puede reemplazar el resumen completo ni
-cambiar luego el estado privado del owner. `unreadCount` se incrementa con
-`ServerValue.increment(1)` dentro del mismo fan-out raíz que crea mensaje y
-resúmenes, evitando lost updates entre envíos concurrentes.
+participante solo escribe campos de entrega permitidos y nunca escribe `state`
+ni reemplaza el resumen completo. `unreadCount` exige exactamente el valor
+anterior + 1 para el sender y se materializa con `ServerValue.increment(1)`
+dentro del mismo fan-out raíz, evitando lost updates y manipulación de badges.
 
 ---
 
@@ -222,10 +221,11 @@ el mismo DM en `activeThread`, `on_dm_message_created` no envía push: avanza el
 mensaje directamente a `MSG_SEEN`, sincroniza el resumen si sigue siendo el
 último mensaje y limpia el badge.
 
-`chatId` conserva el formato histórico `<sortedUidA>_<sortedUidB>`. Los parsers
-Android/Python resuelven al otro participante removiendo el UID conocido como
-prefijo o sufijo completo, por lo que siguen siendo compatibles con UIDs que
-contengan `_` sin migrar paths existentes.
+`chatId` conserva `<sortedUidA>_<sortedUidB>` cuando ambos UIDs no contienen
+underscore, manteniendo los paths históricos. Si alguno contiene `_`, usa el
+formato no ambiguo `<sortedUidA>|<sortedUidB>`. Android, Functions y Rules
+aceptan ambos formatos; Rules no autoriza UIDs con `_` sobre paths legacy
+ambiguos. El carácter `|` queda reservado y no se admite dentro de un UID.
 
 Firebase Rules protege el `seen` de mensaje como entero `1..3`, exige
 `MSG_DELIVERED` en la creación y bloquea downgrades, eliminación o cambios de
