@@ -21,6 +21,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
 
 @AndroidEntryPoint
@@ -41,20 +42,27 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        runBlocking(Dispatchers.IO) {
-            try {
-                val uid = authSessionProvider.currentUser?.uid
-                if (uid.isNullOrBlank()) {
-                    Log.w(TAG, "Skipping FCM: no authenticated user")
-                    return@runBlocking
-                }
+        val completed = runBlocking(Dispatchers.IO) {
+            withTimeoutOrNull(CALLBACK_TIMEOUT_MS) {
+                try {
+                    val uid = authSessionProvider.currentUser?.uid
+                    if (uid.isNullOrBlank()) {
+                        Log.w(TAG, "Skipping FCM: no authenticated user")
+                        return@withTimeoutOrNull true
+                    }
 
-                handleDataMessage(data, uid)
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                Log.e(TAG, "Error handling FCM", exception)
-            }
+                    handleDataMessage(data, uid)
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (exception: Exception) {
+                    Log.e(TAG, "Error handling FCM", exception)
+                }
+                true
+            } ?: false
+        }
+        if (!completed) {
+            Log.w(TAG, "FCM callback timed out; showing payload fallback")
+            showPayloadFallback(data)
         }
     }
 
@@ -65,28 +73,30 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         Log.d(TAG, "Refreshed FCM token received")
 
         runBlocking(Dispatchers.IO) {
-            try {
-                val uid = authSessionProvider.currentUser?.uid
-                if (uid == null) {
-                    Log.w(TAG, "Skipping FCM token sync: no authenticated user")
-                    return@runBlocking
-                }
+            val completed = withTimeoutOrNull(CALLBACK_TIMEOUT_MS) {
+                try {
+                    val uid = authSessionProvider.currentUser?.uid
+                    if (uid == null) {
+                        Log.w(TAG, "Skipping FCM token sync: no authenticated user")
+                        return@withTimeoutOrNull true
+                    }
 
-                val installId = sessionRepositoryProvider.getLocalInstallId()
-                if (installId.isBlank()) {
-                    Log.w(TAG, "Skipping FCM token sync: installId unavailable")
-                    return@runBlocking
-                }
+                    val installId = sessionRepositoryProvider.getLocalInstallId()
+                    if (installId.isBlank()) {
+                        Log.w(TAG, "Skipping FCM token sync: installId unavailable")
+                        return@withTimeoutOrNull true
+                    }
 
-                sessionRepositoryActions.setActiveSession(
-                    uid = uid,
-                    installId = installId,
-                    fcmToken = token
-                )
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                Log.e(TAG, "Error syncing refreshed FCM token", exception)
+                    sessionRepositoryActions.setActiveSession(uid, installId, token)
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (exception: Exception) {
+                    Log.e(TAG, "Error syncing refreshed FCM token", exception)
+                }
+                true
+            } ?: false
+            if (!completed) {
+                Log.w(TAG, "FCM token callback timed out; bootstrap will retry session sync")
             }
         }
     }
@@ -221,9 +231,25 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         )
     }
 
+    private fun showPayloadFallback(data: Map<String, String>) {
+        if (data[PayloadKeys.TYPE] != NODE_DM) return
+        val chatId = data[PayloadKeys.CHAT_ID]?.takeIf(String::isNotBlank) ?: return
+        notificationHelper.showChatSummaryNotification(
+            summary = UnreadSummary(totalChats = 1, totalUnread = 1),
+            lastSenderName = data[PayloadKeys.SENDER_NAME]
+                ?.takeIf(String::isNotBlank)
+                ?: "ZIBE",
+            lastMessage = data[PayloadKeys.CONTENT]
+                ?.takeIf(String::isNotBlank)
+                ?: FALLBACK_DM_CONTENT,
+            conversationId = chatId
+        )
+    }
+
     private companion object {
         const val TAG = "ZibeFCM"
         const val FALLBACK_DM_CONTENT = "Abri ZIBE para ver el mensaje"
+        const val CALLBACK_TIMEOUT_MS = 8_000L
 
         fun safeId(value: String?): String {
             if (value.isNullOrBlank()) return "missing"

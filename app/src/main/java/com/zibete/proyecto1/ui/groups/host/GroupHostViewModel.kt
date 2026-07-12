@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.groups.host
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
@@ -21,10 +20,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,50 +53,44 @@ class GroupHostViewModel @Inject constructor(
     }
 
     private fun bootstrap() {
-
         viewModelScope.launch {
-            groupContext
-                .collect { ctx ->
+            groupContext.filterNotNull().collectLatest { context ->
                     _uiState.update {
-                        it.copy(groupContext = ctx)
+                        it.copy(groupContext = context)
                     }
-                }
+                    observeGroup(context)
+            }
+        }
+    }
+
+    private suspend fun observeGroup(groupContext: GroupContext) {
+        val groupName = groupContext.groupName
+        val groupMeta = groupRepository.getGroup(groupName)
+
+        if (groupMeta == null) {
+            showSnack(
+                UiText.StringRes(R.string.group_not_exists, listOf(groupName)),
+                ZibeSnackType.WARNING
+            )
+            return
         }
 
-        val groupContext = uiState.value.groupContext ?: return
+        _uiState.update { it.copy(isLoading = true) }
 
-        viewModelScope.launch {
-
-            val groupName = groupContext.groupName
-
-            val groupMeta = groupRepository.getGroup(groupName)
-
-            if (groupMeta == null) {
-                showSnack(
-                    UiText.StringRes(
-                        R.string.group_not_exists,
-                        listOf(groupName)
-                    ),
-                    ZibeSnackType.WARNING
-                )
-                return@launch
-            }
-
-            _uiState.update { it.copy(isLoading = true) }
-
-            groupRepository.observeGroupUsers(groupName)
-                .collect { users ->
+        coroutineScope {
+            launch {
+                groupRepository.observeGroupUsers(groupName).collect { users ->
                     _uiState.update { it.copy(users = users, isLoading = false) }
                 }
+            }
 
-            // 4) Group chat events (filtrados para no mostrar historial previo)
-            groupRepository.observeGroupChatEvents(
-                groupName = groupName
-            ).collect { event ->
-                when (event) {
-                    is GroupChatChildEvent.Added -> onMessageAdded(event.item)
-                    is GroupChatChildEvent.Changed -> onMessageChanged(event.item)
-                    is GroupChatChildEvent.Removed -> onMessageRemoved(event.id)
+            launch {
+                groupRepository.observeGroupChatEvents(groupName).collect { event ->
+                    when (event) {
+                        is GroupChatChildEvent.Added -> onMessageAdded(event.item)
+                        is GroupChatChildEvent.Changed -> onMessageChanged(event.item)
+                        is GroupChatChildEvent.Removed -> onMessageRemoved(event.id)
+                    }
                 }
             }
         }
@@ -186,7 +182,7 @@ class GroupHostViewModel @Inject constructor(
         }
     }
 
-    fun sendPhotoMessage(photoUri: Uri) {
+    fun sendPhotoMessage(photoUri: String) {
         val groupContext = uiState.value.groupContext ?: return
 
         viewModelScope.launch {
@@ -194,7 +190,7 @@ class GroupHostViewModel @Inject constructor(
             try {
                 groupRepository.sendGroupPhotoMessage(
                     groupName = groupContext.groupName,
-                    photoUri = photoUri.toString(),
+                    photoUri = photoUri,
                     senderName = groupContext.userName,
                     userType = groupContext.userType
                 )
@@ -224,14 +220,4 @@ class GroupHostViewModel @Inject constructor(
         )
     }
 
-    fun onNotImplementedYet() {
-        viewModelScope.launch {
-            _events.send(
-                GroupHostEvent.ShowSnack(
-                    message = UiText.StringRes(R.string.not_implemented),
-                    type = ZibeSnackType.WARNING
-                )
-            )
-        }
-    }
 }

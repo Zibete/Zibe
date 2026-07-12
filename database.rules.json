@@ -74,13 +74,13 @@
               ".write": "auth != null && auth.uid == $uid",
               "lastContent": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
               "lastMessageAt": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber()" },
-              "userId": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
+              "userId": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString() && (auth.uid == $uid || newData.val() == $otherUid)" },
               "otherId": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString() && newData.val() == $otherUid" },
               "otherName": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
               "otherPhotoUrl": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
               "state": { ".write": "auth != null && (auth.uid == $uid || (!data.exists() && auth.uid == $otherUid && newData.val() == 'dm'))", ".validate": "newData.isString() && newData.val().length <= 20" },
-              "unreadCount": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0" },
-              "seen": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 3 && (!data.exists() || newData.val() >= data.val())" }
+              "unreadCount": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (auth.uid == $uid || newData.val() == (data.isNumber() ? data.val() + 1 : 1))" },
+              "seen": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 3" }
             }
           },
 
@@ -107,11 +107,11 @@
     "Chats": {
       "dm": {
         "$chatId": {
-          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
-          ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '|') || $chatId.endsWith('|' + auth.uid) || (!auth.uid.contains('_') && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))))",
           ".indexOn": ["createdAt"],
           "$messageId": {
-            ".validate": "!newData.exists() || (newData.hasChildren(['content','createdAt','senderUid','type','seen']) && newData.child('content').isString() && newData.child('createdAt').isNumber() && newData.child('senderUid').isString() && newData.child('type').isNumber() && (!newData.hasChild('audioDurationMs') || newData.child('audioDurationMs').isNumber()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val() && ((!data.hasChild('audioDurationMs') && !newData.hasChild('audioDurationMs')) || (data.hasChild('audioDurationMs') && newData.hasChild('audioDurationMs') && newData.child('audioDurationMs').val() == data.child('audioDurationMs').val())))))",
+            ".write": "auth != null && newData.exists() && ($chatId.beginsWith(auth.uid + '|') || $chatId.endsWith('|' + auth.uid) || (!auth.uid.contains('_') && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))))",
+            ".validate": "newData.hasChildren(['content','createdAt','senderUid','type','seen']) && newData.child('content').isString() && newData.child('createdAt').isNumber() && newData.child('senderUid').isString() && newData.child('type').isNumber() && (!newData.hasChild('audioDurationMs') || newData.child('audioDurationMs').isNumber()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val() && (newData.child('seen').val() == data.child('seen').val() || auth.uid != data.child('senderUid').val()) && ((!data.hasChild('audioDurationMs') && !newData.hasChild('audioDurationMs')) || (data.hasChild('audioDurationMs') && newData.hasChild('audioDurationMs') && newData.child('audioDurationMs').val() == data.child('audioDurationMs').val()))))",
             "seen": { ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 3 && (!data.exists() ? newData.val() == 1 : newData.val() >= data.val())" }
           }
         }
@@ -120,8 +120,8 @@
       "group_dm": {
         ".read": "auth != null",
         "$chatId": {
-          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
-          ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+          ".read": "auth != null && ($chatId.beginsWith(auth.uid + '|') || $chatId.endsWith('|' + auth.uid) || (!auth.uid.contains('_') && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))))",
+          ".write": "auth != null && ($chatId.beginsWith(auth.uid + '|') || $chatId.endsWith('|' + auth.uid) || (!auth.uid.contains('_') && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))))",
           ".indexOn": ["createdAt"],
           "$messageId": {
             ".validate": "!newData.exists() || (newData.hasChildren(['content','createdAt','senderUid','type','seen']) && newData.child('content').isString() && newData.child('createdAt').isNumber() && newData.child('senderUid').isString() && newData.child('type').isNumber() && newData.child('seen').isNumber() && (!newData.hasChild('audioDurationMs') || newData.child('audioDurationMs').isNumber()) && (!data.exists() ? newData.child('senderUid').val() == auth.uid : (newData.child('senderUid').val() == data.child('senderUid').val() && newData.child('content').val() == data.child('content').val() && newData.child('createdAt').val() == data.child('createdAt').val())))"

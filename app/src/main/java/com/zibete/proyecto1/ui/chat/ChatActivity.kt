@@ -143,6 +143,10 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     override fun onStop() {
+        if (mediaRecorder != null) {
+            finishRecording(send = false)
+            chatViewModel.onMicReleased()
+        }
         super.onStop()
         chatViewModel.onThreadScreenStopped()
     }

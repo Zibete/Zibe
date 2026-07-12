@@ -102,7 +102,11 @@ fun GroupHostRoute(groupHostViewModel: GroupHostViewModel) {
         ) { page ->
             when (page) {
                 0 -> GroupUsersTab(state = state, onUserClick = groupHostViewModel::onUserClicked)
-                1 -> GroupChatTab(state = state, onSendText = groupHostViewModel::sendTextMessage, onSendPhoto = groupHostViewModel::sendPhotoMessage)
+                1 -> GroupChatTab(
+                    state = state,
+                    onSendText = groupHostViewModel::sendTextMessage,
+                    onSendPhoto = { groupHostViewModel.sendPhotoMessage(it.toString()) }
+                )
                 2 -> PrivateChatsPlaceholder(unread = state.unreadMessages)
             }
         }

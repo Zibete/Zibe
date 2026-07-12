@@ -328,7 +328,9 @@ class UserRepository constructor(
                 trySend(total)
             }
 
-            override fun onCancelled(error: DatabaseError) = Unit
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
         }
 
         query.addValueEventListener(listener)
@@ -436,7 +438,10 @@ class UserRepository constructor(
         }
 
 
-    override suspend fun setActiveThread(otherUid: String, nodeType: String) {
+    override suspend fun setActiveThread(
+        otherUid: String,
+        nodeType: String
+    ): ZibeResult<Unit> = zibeCatching {
         activeThreadRef().setValue(
             mapOf(
                 ActiveThreadKeys.NODE_TYPE to nodeType,
@@ -446,7 +451,7 @@ class UserRepository constructor(
         ).await()
     }
 
-    override suspend fun clearActiveThread() {
+    override suspend fun clearActiveThread(): ZibeResult<Unit> = zibeCatching {
         activeThreadRef().removeValue().await()
     }
 

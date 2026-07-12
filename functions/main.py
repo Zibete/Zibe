@@ -136,11 +136,13 @@ def _parse_other_uid_from_chat_id(chat_id: str, sender_uid: str) -> str | None:
     chatId contract in app:
       ChatIdGenerator.getChatId(uidA, uidB) -> "<sortedUidA>_<sortedUidB>"
     """
-    if not chat_id or not sender_uid or "_" not in chat_id:
+    if not chat_id or not sender_uid:
         return None
 
-    prefix = f"{sender_uid}_"
-    suffix = f"_{sender_uid}"
+    delimiter = "|" if "|" in chat_id else "_"
+
+    prefix = f"{sender_uid}{delimiter}"
+    suffix = f"{delimiter}{sender_uid}"
     if chat_id.startswith(prefix):
         return chat_id[len(prefix):] or None
     if chat_id.endswith(suffix):
