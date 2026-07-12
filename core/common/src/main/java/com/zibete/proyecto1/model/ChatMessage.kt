@@ -2,10 +2,13 @@ package com.zibete.proyecto1.model
 
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_BOTH_DLT
 import java.io.Serializable
 
 sealed class ChatChildEvent {
@@ -40,11 +43,17 @@ fun ChatMessage.isVisibleFor(currentUid: String): Boolean = !isDeletedFor(curren
 private val senderDeletedTypes = setOf(
     MSG_TEXT_SENDER_DLT,
     MSG_PHOTO_SENDER_DLT,
-    MSG_AUDIO_SENDER_DLT
+    MSG_AUDIO_SENDER_DLT,
+    MSG_TEXT_BOTH_DLT,
+    MSG_PHOTO_BOTH_DLT,
+    MSG_AUDIO_BOTH_DLT
 )
 
 private val receiverDeletedTypes = setOf(
     MSG_TEXT_RECEIVER_DLT,
     MSG_PHOTO_RECEIVER_DLT,
-    MSG_AUDIO_RECEIVER_DLT
+    MSG_AUDIO_RECEIVER_DLT,
+    MSG_TEXT_BOTH_DLT,
+    MSG_PHOTO_BOTH_DLT,
+    MSG_AUDIO_BOTH_DLT
 )

@@ -190,12 +190,15 @@ object Constants {
     const val MSG_TEXT = 100
     const val MSG_TEXT_SENDER_DLT = 101
     const val MSG_TEXT_RECEIVER_DLT = 102
+    const val MSG_TEXT_BOTH_DLT = 103
     const val MSG_PHOTO = 200
     const val MSG_PHOTO_SENDER_DLT = 201
     const val MSG_PHOTO_RECEIVER_DLT = 202
+    const val MSG_PHOTO_BOTH_DLT = 203
     const val MSG_AUDIO = 300
     const val MSG_AUDIO_SENDER_DLT = 301
     const val MSG_AUDIO_RECEIVER_DLT = 302
+    const val MSG_AUDIO_BOTH_DLT = 303
 
     const val MSG_DELIVERED = 1
     const val MSG_RECEIVED = 2

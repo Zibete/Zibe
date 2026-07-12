@@ -286,4 +286,7 @@ Medios diferidos y declarados para seguimiento:
 - Si el backend contiene chat IDs legacy con múltiples underscores, deben
   inventariarse y migrarse antes de desplegar las Rules: el acceso ambiguo queda
   bloqueado por seguridad y no se hizo ninguna migración remota.
+- Rules limita timestamps de fan-out a cinco segundos hacia futuro y valida
+  soft-delete por rol. Cuando ambos participantes borran, Android conserva un
+  tombstone `*_BOTH_DLT`; no intenta eliminación física no autorizada.
 - Jetifier sigue habilitado por la dependencia legacy ya reproducida.

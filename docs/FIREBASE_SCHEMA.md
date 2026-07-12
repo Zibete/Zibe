@@ -182,6 +182,8 @@ anterior + 1 para el sender y se materializa con `ServerValue.increment(1)`
 dentro del mismo fan-out raíz. Rules exige, además, timestamp creciente, `seen =
 0` y estado sin cambios para un mensaje nuevo. Receipt solo puede avanzar
 `seen` si el resto del resumen permanece idéntico.
+El timestamp escrito por el partner no puede superar `now + 5s`, evitando que
+un cliente alterado bloquee envíos posteriores con un valor futuro extremo.
 
 ---
 
@@ -238,6 +240,11 @@ participantes no autorizados. También mantiene inmutables `senderUid`, `content
 `createdAt` y `audioDurationMs` durante actualizaciones. En conversaciones,
 `seen` es un entero `0..3` y `unreadCount` un entero no negativo, sin máximo
 arbitrario.
+
+El soft-delete es participant-specific: solo el sender aplica tipos
+`*_SENDER_DLT` y solo el receptor `*_RECEIVER_DLT`. Cuando ambos borraron, el
+mensaje queda como tombstone `*_BOTH_DLT`; el cliente no lo elimina físicamente.
+Una limpieza definitiva requiere un proceso backend confiable.
 
 El código local no demuestra qué revisión de Functions está desplegada. Para
 publicar explícitamente este handler, el responsable operativo debe ejecutar:

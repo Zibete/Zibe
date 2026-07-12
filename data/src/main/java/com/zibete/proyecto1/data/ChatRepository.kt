@@ -15,14 +15,17 @@ import com.zibete.proyecto1.core.constants.Constants.ChatMessageKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
+import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
+import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_RECEIVED
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
+import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_BOTH_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHATS_ROOT
@@ -549,16 +552,17 @@ class ChatRepository @Inject constructor(
                 MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_SENDER_DLT)
                     .await()
 
-                MSG_TEXT_RECEIVER_DLT -> msgRef.removeValue().await()
+                MSG_TEXT_RECEIVER_DLT ->
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_BOTH_DLT).await()
 
                 MSG_PHOTO_RECEIVER_DLT -> {
                     deleteStorageByUrlIfPossible(content)
-                    msgRef.removeValue().await()
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_BOTH_DLT).await()
                 }
 
                 MSG_AUDIO_RECEIVER_DLT -> {
                     deleteStorageByUrlIfPossible(content)
-                    msgRef.removeValue().await()
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_BOTH_DLT).await()
                 }
             }
         } else {
@@ -572,16 +576,17 @@ class ChatRepository @Inject constructor(
                 MSG_AUDIO -> msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_RECEIVER_DLT)
                     .await()
 
-                MSG_TEXT_SENDER_DLT -> msgRef.removeValue().await()
+                MSG_TEXT_SENDER_DLT ->
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_TEXT_BOTH_DLT).await()
 
                 MSG_PHOTO_SENDER_DLT -> {
                     deleteStorageByUrlIfPossible(content)
-                    msgRef.removeValue().await()
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_PHOTO_BOTH_DLT).await()
                 }
 
                 MSG_AUDIO_SENDER_DLT -> {
                     deleteStorageByUrlIfPossible(content)
-                    msgRef.removeValue().await()
+                    msgRef.child(ChatMessageKeys.TYPE).setValue(MSG_AUDIO_BOTH_DLT).await()
                 }
             }
         }
