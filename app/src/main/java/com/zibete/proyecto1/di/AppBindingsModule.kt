@@ -58,6 +58,8 @@ import com.zibete.proyecto1.core.auth.AndroidExternalSessionCleaner
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionConflictNavigator
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.ui.chat.AndroidChatTextProvider
+import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -123,6 +125,11 @@ abstract class AppBindingsModule {
     abstract fun bindSendChatMessageUseCase(
         impl: DefaultSendChatMessageUseCase
     ): SendChatMessageUseCase
+
+    @Binds
+    abstract fun bindChatTextProvider(
+        impl: AndroidChatTextProvider
+    ): ChatTextProvider
 
     @Binds
     @Singleton

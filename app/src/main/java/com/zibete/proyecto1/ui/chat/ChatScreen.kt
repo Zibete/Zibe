@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -86,8 +87,9 @@ fun ChatRoute(
     callbacks: ChatCallbacks,
     snackBarManager: SnackBarManager? = null
 ) {
-    val headerState by viewModel.headerState.collectAsStateWithLifecycle()
-    val chatState by viewModel.chatState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val headerState = uiState.header
+    val chatState = uiState.chat
 
     var showPhotoSheet by rememberSaveable { mutableStateOf(false) }
 
@@ -107,7 +109,7 @@ fun ChatRoute(
     }
 
     val myAudioAvatarUrl = (headerState as? ChatHeaderState.Loaded)?.let {
-        viewModel.myIdentity.userPhotoUrl
+        viewModel.myPhotoUrl
     }
 
     ChatScreen(
@@ -325,7 +327,7 @@ fun ChatScreen(
                             inputText = it
                             callbacks.onTextChanged(it)
                         },
-                        pendingPhotoUri = chatState.pendingPhotoUri,
+                        pendingPhotoUri = chatState.pendingPhotoUri?.let(Uri::parse),
                         isPhotoUploading = isPhotoUploading,
                         onRemovePendingPhoto = callbacks.onRemovePendingPhoto,
                         isRecording = chatState.isRecording,

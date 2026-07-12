@@ -1,16 +1,8 @@
 package com.zibete.proyecto1.ui.chat
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.yalantis.ucrop.UCrop
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
@@ -18,14 +10,11 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
-import com.zibete.proyecto1.core.constants.Constants.MAX_CHAT_SIZE
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
-import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
@@ -49,15 +38,12 @@ import com.zibete.proyecto1.domain.chat.SendChatMessageCommand
 import com.zibete.proyecto1.domain.chat.SendChatMessageOutcome
 import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.model.ChatChildEvent
-import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.isDeletedFor
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.media.buildZibeUcropIntent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,18 +51,17 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    @ApplicationContext private val context: Context,
+    private val textProvider: ChatTextProvider,
     private val groupRepositoryProvider: GroupRepositoryProvider,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val userRepositoryActions: UserRepositoryActions,
@@ -95,7 +80,7 @@ class ChatViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             for (ignored in dmSeenRequests) {
-                chatRepository.markChatAsSeen(requireChatRefs())
+                chatRepository.markChatAsSeen(requireChatThread())
                     .onFailure { onFailure(it) }
             }
         }
@@ -115,11 +100,10 @@ class ChatViewModel @Inject constructor(
         val fcmToken: String = ""
     )
 
-    lateinit var myIdentity: ChatIdentity
-    lateinit var otherIdentity: ChatIdentity
-
-    val groupName: String
-        get() = runBlocking { userPreferencesProvider.groupNameFlow.first() }
+    private var myIdentity = ChatIdentity(userName = "", userPhotoUrl = "")
+    private var otherIdentity = ChatIdentity(userName = "", userPhotoUrl = "")
+    val myPhotoUrl: String get() = myIdentity.userPhotoUrl
+    private var groupName: String = ""
 
     // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
@@ -127,15 +111,9 @@ class ChatViewModel @Inject constructor(
 
     // ------------------------------------------------------------------------------------------------------------------------
     private val _headerState = MutableStateFlow<ChatHeaderState>(ChatHeaderState.Loading)
-    val headerState: StateFlow<ChatHeaderState> = _headerState.asStateFlow()
 
     // ------------------------------------------------------------------------------------------------------------------------
-    private val _otherProfile = MutableStateFlow<Users?>(null)
-    val otherProfile: StateFlow<Users?> = _otherProfile
-
-    // ------------------------------------------------------------------------------------------------------------------------
-    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages
+    private var otherProfile: Users? = null
 
     // ------------------------------------------------------------------------------------------------------------------------
     // Estado de conexión del otro usuario
@@ -146,16 +124,23 @@ class ChatViewModel @Inject constructor(
     // ------------------------------------------------------------------------------------------------------------------------
     // Referencias del chat (para mensajes, storage, etc.)
     private val _chatRefs = MutableStateFlow<ChatThread?>(null)
-    val chatRefs: StateFlow<ChatThread?> = _chatRefs.asStateFlow()
 
     // ------------------------------------------------------------------------------------------------------------------------
     private val _chatState = MutableStateFlow(ChatState())
-    val chatState: StateFlow<ChatState> = _chatState
+    val uiState: StateFlow<ChatUiState> = combine(_headerState, _chatState) { header, chat ->
+        ChatUiState(header = header, chat = chat)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        ChatUiState()
+    )
     // ------------------------------------------------------------------------------------------------------------------------
 
     fun init() {
         viewModelScope.launch {
             _headerState.value = ChatHeaderState.Loading
+
+            groupName = userPreferencesProvider.groupNameFlow.first()
 
             setupChat()
 
@@ -195,43 +180,11 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun startChatListeners() {
+    private fun startChatListeners() {
         viewModelScope.launch {
-            val refs = requireChatRefs()
+            val refs = requireChatThread()
             chatRepository.observeChatMessages(refs).collect { event ->
-                _chatState.update { state ->
-                    when (event) {
-                        is ChatChildEvent.Added -> {
-                            if (event.item.message.isDeletedFor(myUid)) {
-                                state.copy(selectedIds = state.selectedIds - event.item.id)
-                            } else {
-                                state.copy(
-                                    messages = (state.messages + event.item).takeLast(MAX_CHAT_SIZE)
-                                )
-                            }
-                        }
-
-                        is ChatChildEvent.Changed -> {
-                            if (event.item.message.isDeletedFor(myUid)) {
-                                state.copy(
-                                    messages = state.messages.filterNot { it.id == event.item.id },
-                                    selectedIds = state.selectedIds - event.item.id
-                                )
-                            } else {
-                                state.copy(
-                                    messages = state.messages.map {
-                                        if (it.id == event.item.id) event.item else it
-                                    }
-                                )
-                            }
-                        }
-
-                        is ChatChildEvent.Removed -> state.copy(
-                            messages = state.messages.filterNot { it.id == event.item.id },
-                            selectedIds = state.selectedIds - event.item.id
-                        )
-                    }
-                }
+                _chatState.update { state -> state.reduce(event, myUid) }
 
                 if (nodeType == NODE_DM) {
                     requestDmSeenSyncIfNeeded(event)
@@ -242,10 +195,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun sameMsg(a: ChatMessageItem, b: ChatMessageItem): Boolean {
-        return a.id == b.id
-    }
-
     private fun markMessagesAsSeenOnOpen() {
         if (nodeType == NODE_DM) {
             dmSeenRequests.trySend(Unit)
@@ -253,7 +202,7 @@ class ChatViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            chatRepository.markChatAsSeen(requireChatRefs())
+            chatRepository.markChatAsSeen(requireChatThread())
                 .onFailure { onFailure(it) }
         }
     }
@@ -321,7 +270,7 @@ class ChatViewModel @Inject constructor(
     private suspend fun loadChatPublicProfiles() {
         val profile = userRepositoryProvider.getAccount(otherUid) ?: return
 
-        _otherProfile.value = profile
+        otherProfile = profile
 
         val otherFcmToken = sessionRepositoryProvider.getFcmToken(profile.id) ?: return
 
@@ -338,7 +287,7 @@ class ChatViewModel @Inject constructor(
 
         _headerState.value = ChatHeaderState.Loaded(
             name = currentOtherName(),
-            status = context.getString(R.string.loading),
+            status = textProvider.loading,
             photoUrl = otherIdentity.userPhotoUrl
         )
     }
@@ -346,7 +295,7 @@ class ChatViewModel @Inject constructor(
     private suspend fun loadChatFromGroup() {
         val profile = userRepositoryProvider.getAccount(otherUid) ?: return
 
-        _otherProfile.value = profile
+        otherProfile = profile
 
         val otherFcmToken = sessionRepositoryProvider.getFcmToken(profile.id) ?: return
 
@@ -391,7 +340,7 @@ class ChatViewModel @Inject constructor(
 
         _headerState.value = ChatHeaderState.Loaded(
             name = currentOtherName(),
-            status = context.getString(R.string.loading),
+            status = textProvider.loading,
             photoUrl = otherIdentity.userPhotoUrl
         )
     }
@@ -399,118 +348,40 @@ class ChatViewModel @Inject constructor(
 
     private fun mapStatusToText(status: UserStatus): String =
         when (status) {
-            is UserStatus.Online -> context.getString(R.string.online)
+            is UserStatus.Online -> textProvider.online
             is UserStatus.TypingOrRecording -> status.text
             is UserStatus.LastSeen -> status.text
-            is UserStatus.Offline -> context.getString(R.string.offline)
+            is UserStatus.Offline -> textProvider.offline
         }
 
-
-    fun startUCropFlow(
-        sourceUri: Uri,
-        activity: AppCompatActivity,
-        uCropLauncher: ActivityResultLauncher<Intent>
-    ) {
-        uCropLauncher.launch(buildZibeUcropIntent(activity, sourceUri))
-    }
-
-    fun handleCroppedImageResult(
-        resultCode: Int,
-        fileName: String?,
-        data: Intent?
-    ) {
-        if (resultCode == Activity.RESULT_OK && data != null) {
-            val resultUri = UCrop.getOutput(data)
-
-            if (resultUri == null || fileName == null) {
-                clearPendingPhotoState()
-                viewModelScope.launch {
-                    _events.emit(
-                        ChatSessionUiEvent.ShowErrorDialog(
-                            uiText = UiText.StringRes(R.string.chat_error_get_cropped_image)
-                        )
-                    )
-                }
-                return
-            }
-
-            viewModelScope.launch {
-                onPhotoSelected(resultUri)
-                val url = uploadMedia(
-                    fileName = fileName,
-                    uri = resultUri,
-                    path = PATH_PHOTOS
-                )
-
-                if (url == null) {
-                    clearPendingPhotoState()
-                    _events.emit(
-                        ChatSessionUiEvent.ShowErrorDialog(
-                            uiText = UiText.StringRes(R.string.chat_error_upload_image)
-                        )
-                    )
-                } else {
-                    onPhotoReady(url, true)
-                }
-            }
-        } else if (resultCode == UCrop.RESULT_ERROR && data != null) {
-            clearPendingPhotoState()
-            val error = UCrop.getError(data)
-            Log.e("UCrop", "Error al recortar: $error")
-            viewModelScope.launch {
-                _events.emit(
-                    ChatSessionUiEvent.ShowErrorDialog(
-                        uiText = UiText.StringRes(R.string.chat_error_crop_image)
-                    )
-                )
-            }
-        } else {
-            clearPendingPhotoState()
-        }
-    }
-
-    fun onSendMessage() {
-        val state = _chatState.value
-        viewModelScope.launch {
-            when {
-                state.photoReady && state.pendingFileUrl != null -> {
-                    onSendPhoto(state.pendingFileUrl)
-                }
-
-                state.textReady -> {
-                    // This assumes there's a mechanism to get the current text, 
-                    // or it uses a stored text value. 
-                    // For now, let's assume we need to handle this properly.
-                }
-            }
-        }
-    }
 
     fun onSendMessage(text: String) {
-        viewModelScope.launch {
-            onSendText(text)
-        }
+        sendMessage(MSG_TEXT, text)
     }
 
     fun onTextChanged(text: String) {
         _chatState.update { it.copy(textReady = text.isNotBlank()) }
     }
 
-    fun onCameraClicked() {
-        // Implementation
-    }
-
-    fun onAttachClicked() {
-        onSendPhotoClicked()
-    }
-
-    fun onPhotoSelected(uri: Uri) {
+    fun onPhotoSelected(uri: String) {
         _chatState.update {
             it.copy(
                 pendingPhotoUri = uri,
                 photoReady = true,
                 pendingFileUrl = null
             )
+        }
+    }
+
+    fun onCroppedPhotoReady(fileName: String, uri: String) {
+        onPhotoSelected(uri)
+        uploadMedia(fileName, uri, PATH_PHOTOS) { url ->
+            if (url == null) {
+                clearPendingPhotoState()
+                onError(UiText.StringRes(R.string.chat_error_upload_image))
+            } else {
+                onPhotoReady(url, true)
+            }
         }
     }
 
@@ -522,10 +393,6 @@ class ChatViewModel @Inject constructor(
         _chatState.update { it.copy(isRecording = true) }
     }
 
-    fun onMicMoved(x: Float, y: Float, width: Float) {
-        // Implementation
-    }
-
     fun onMicReleased() {
         _chatState.update { it.copy(isRecording = false) }
     }
@@ -535,37 +402,12 @@ class ChatViewModel @Inject constructor(
     }
 
 
-    suspend fun onSendText(text: String) {
-        sendMessage(
-            msgType = MSG_TEXT,
-            content = text
-        )
-    }
+    fun onSendPhoto(url: String) = sendMessage(MSG_PHOTO, url)
 
-    suspend fun onSendPhoto(url: String) {
-        sendMessage(
-            msgType = MSG_PHOTO,
-            content = url
-        )
-    }
+    fun onSendAudio(url: String, audioDurationMs: Long) =
+        sendMessage(MSG_AUDIO, url, audioDurationMs)
 
-    suspend fun onSendAudio(url: String, audioDurationMs: Long) {
-        sendMessage(
-            msgType = MSG_AUDIO,
-            content = url,
-            audioDurationMs = audioDurationMs
-        )
-    }
-
-    fun onTextReady(state: Boolean) {
-        _chatState.update {
-            it.copy(
-                textReady = state
-            )
-        }
-    }
-
-    fun onPhotoReady(url: String, state: Boolean) {
+    private fun onPhotoReady(url: String, state: Boolean) {
         _chatState.update {
             it.copy(
                 photoReady = state,
@@ -588,33 +430,41 @@ class ChatViewModel @Inject constructor(
     //  MENSAJES
     // =========================================================================
 
-    suspend fun uploadMedia(fileName: String, uri: Uri, path: String): String? {
-        return try {
-            val refs = chatRefs.first { it != null }!!
-
-            chatRepository.uploadMedia(
-                uri.toString(),
-                fileName,
-                refs,
-                path
-            )
-        } catch (_: Exception) {
-            null
+    fun uploadMedia(
+        fileName: String,
+        uri: String,
+        path: String,
+        onComplete: (String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = runCatching {
+                val thread = _chatRefs.first { it != null }!!
+                chatRepository.uploadMedia(uri, fileName, thread, path)
+            }.getOrNull()
+            onComplete(result)
         }
     }
 
-    suspend fun sendMessage(
+    private fun sendMessage(
         msgType: Int,
         content: String,
         audioDurationMs: Long = 0L
     ) {
         if (content.isEmpty()) return
+        viewModelScope.launch { sendMessageInternal(msgType, content, audioDurationMs) }
+    }
+
+    private suspend fun sendMessageInternal(
+        msgType: Int,
+        content: String,
+        audioDurationMs: Long
+    ) {
 
         val lastMessageAt = now()
 
         val (myMsg, otherMsg) = when (msgType) {
-            MSG_PHOTO -> context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
-            MSG_AUDIO -> context.getString(R.string.audio_send) to context.getString(R.string.audio_received)
+            MSG_PHOTO -> textProvider.sentPhoto to textProvider.receivedPhoto
+            MSG_AUDIO -> textProvider.sentAudio to textProvider.receivedAudio
             else -> content to content
         }
 
@@ -653,23 +503,19 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    suspend fun onError(message: UiText) {
-        _events.emit(
+    fun onError(message: UiText) {
+        _events.tryEmit(
             ChatSessionUiEvent.ShowErrorDialog(
                 uiText = message
             )
         )
     }
 
-    fun onPhotoPickerHandled() {
-        _chatState.update { it.copy(showPhotoPicker = false) }
-    }
-
     fun onSendPhotoClicked() {
         viewModelScope.launch {
             val otherChatWith = chatRepository.getConversation(otherUid, myUid, nodeType)
             val otherState = otherChatWith?.state ?: nodeType
-            val otherName = otherProfile.value?.name
+            val otherName = otherProfile?.name
 
             if (otherState == CHAT_STATE_BLOCKED) {
                 _events.emit(
@@ -754,8 +600,8 @@ class ChatViewModel @Inject constructor(
         _chatState.update { it.copy(selectedIds = emptySet()) }
     }
 
-    private fun requireChatRefs(): ChatThread =
-        _chatRefs.value ?: error("ChatRefs not initialized. Call setChatContext() first.")
+    private fun requireChatThread(): ChatThread =
+        _chatRefs.value ?: error("Chat thread is not initialized")
 
     fun onDeleteSelectedMessages() {
         val selectedIds = _chatState.value.selectedIds.toList()
@@ -763,7 +609,7 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             chatRepository.deleteMessages(
-                thread = requireChatRefs(),
+                thread = requireChatThread(),
                 selectedIds = selectedIds
             ).onSuccess { deleteResult ->
                 val deleteResult = deleteResult ?: return@onSuccess
@@ -873,7 +719,7 @@ class ChatViewModel @Inject constructor(
             }.onFailure { onFailure(it) }
     }
 
-    suspend fun onFailure(e: Throwable) {
+    private suspend fun onFailure(e: Throwable) {
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
                 UiText.StringRes(
@@ -886,7 +732,7 @@ class ChatViewModel @Inject constructor(
 
     private fun currentOtherName(): String {
         return if (nodeType == NODE_DM) {
-            val fromProfile = _otherProfile.value?.name
+            val fromProfile = otherProfile?.name
             if (!fromProfile.isNullOrBlank()) fromProfile else otherIdentity.userName
         } else {
             otherIdentity.userName

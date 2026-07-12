@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.chat.preview
 
-import android.net.Uri
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
@@ -50,7 +49,7 @@ fun sampleSelectionState(): ChatState {
 fun samplePhotoUploadingState(): ChatState =
     sampleChatStateMixedMessages().copy(
         photoReady = true,
-        pendingPhotoUri = Uri.parse("content://preview/photo"),
+        pendingPhotoUri = "content://preview/photo",
         pendingFileUrl = null
     )
 
