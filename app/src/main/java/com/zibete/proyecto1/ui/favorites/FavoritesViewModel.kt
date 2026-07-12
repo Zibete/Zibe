@@ -3,16 +3,13 @@ package com.zibete.proyecto1.ui.favorites
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
-import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
-import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -21,13 +18,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
-    private val userRepository: UserRepository,
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val localRepositoryProvider: LocalRepositoryProvider,
+    private val userDirectoryProvider: UserDirectoryProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
@@ -84,55 +80,30 @@ class FavoritesViewModel @Inject constructor(
     }
 
     private suspend fun fetchFavoriteUsers(): List<FavoriteUserUi> {
-        val myUid = userRepository.myUid
+        val myUid = localRepositoryProvider.myUid
 
-        val favListSnap = firebaseRefsContainer.refData
-            .child(myUid)
-            .child(NODE_FAVORITE_LIST)
-            .get()
-            .await()
-
-        if (!favListSnap.exists() || favListSnap.childrenCount == 0L) {
-            return emptyList()
-        }
-
-        val favIds = linkedSetOf<String>()
-        favListSnap.children.forEach { child ->
-            val key = child.key.orEmpty()
-            if (key.isNotBlank()) {
-                favIds += key
-                return@forEach
-            }
-        }
-
-
+        val favIds = userDirectoryProvider.getFavoriteUserIds(myUid)
         if (favIds.isEmpty()) return emptyList()
-
-        val accountsSnap = firebaseRefsContainer.refAccounts.get().await()
-        if (!accountsSnap.exists()) return emptyList()
 
         val foundIds = mutableSetOf<String>()
         val favorites = mutableListOf<FavoriteUserUi>()
 
-        accountsSnap.children.forEach { child ->
-            val uid = child.key.orEmpty()
+        userDirectoryProvider.getAllAccounts().forEach { user ->
+            val uid = user.id
             if (uid.isBlank() || uid !in favIds) return@forEach
-            val u = child.getValue(Users::class.java) ?: return@forEach
             foundIds += uid
             favorites += FavoriteUserUi(
                 id = uid,
-                name = u.name,
-                age = ageCalculator(u.birthDate),
-                profilePhoto = u.photoUrl,
-                isOnline = u.online
+                name = user.name,
+                age = ageCalculator(user.birthDate),
+                profilePhoto = user.photoUrl,
+                isOnline = user.online
             )
         }
 
         val missingIds = favIds.filterNot { it in foundIds }
         if (missingIds.isNotEmpty()) {
-            viewModelScope.launch(Dispatchers.IO) {
-                missingIds.forEach { favListSnap.ref.child(it).removeValue().await() }
-            }
+            userDirectoryProvider.removeFavoriteUserIds(myUid, missingIds)
         }
 
         return favorites.sortedBy { it.name.lowercase() }

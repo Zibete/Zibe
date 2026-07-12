@@ -1,14 +1,39 @@
 package com.zibete.proyecto1.data
 
-import android.net.Uri
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.model.Users
+import kotlinx.coroutines.flow.Flow
+
+data class HiddenChat(
+    val id: String,
+    val name: String
+)
 
 interface LocalRepositoryProvider {
+    val myUid: String
     val myUserName: String
     val myProfilePhotoUrl: String
     val myEmail: String
+}
+
+interface UserDirectoryProvider {
+    suspend fun getAllAccounts(): List<Users>
+    suspend fun getFavoriteUserIds(uid: String): Set<String>
+    suspend fun removeFavoriteUserIds(uid: String, userIds: Collection<String>)
+    suspend fun getConversationStates(uid: String): Map<String, String>
+    suspend fun hasBlockedUser(otherUid: String, myUid: String): Boolean
+}
+
+interface ConversationOverviewRepository {
+    fun observeUnreadChatList(): Flow<Int>
+    suspend fun getHiddenChats(): List<HiddenChat>
+    suspend fun updateChatState(
+        otherUid: String,
+        otherName: String,
+        nodeType: String,
+        newState: String
+    ): ZibeResult<Unit>
 }
 
 interface UserRepositoryProvider {
@@ -22,7 +47,7 @@ interface UserRepositoryProvider {
 
 interface UserRepositoryActions {
     suspend fun createUserNode(
-        firebaseUser: FirebaseUser,
+        user: AuthUser,
         name: String,
         birthDate: String,
         description: String
@@ -32,7 +57,7 @@ interface UserRepositoryActions {
     suspend fun setUserActivityStatus(status: String)
     suspend fun deleteMyAccountData(): ZibeResult<Unit>
     suspend fun deleteProfilePhoto(): ZibeResult<Unit>
-    suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit>
+    suspend fun putProfilePhotoInStorage(localUri: String): ZibeResult<Unit>
     suspend fun updateUserFields(fields: Map<String, Any?>)
     suspend fun updateLocalProfile(name: String?, photoUrl: String?, email: String?)
     suspend fun sendFeedback(

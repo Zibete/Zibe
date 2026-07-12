@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.data.profile
 
 import android.content.Context
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -30,6 +29,7 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
@@ -53,7 +53,7 @@ class ProfileRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ProfileRepositoryProvider, ProfileRepositoryActions {
 
-    private val firebaseUser: FirebaseUser
+    private val firebaseUser: AuthUser
         get() = checkNotNull(authSessionProvider.currentUser) {
             USER_PROVIDER_ERR_EXCEPTION
         }

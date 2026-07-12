@@ -101,3 +101,25 @@ Ejecutado el 11 de julio de 2026:
 - Timeline ordenada, visibilidad participant-specific y soft-delete actual.
 - Compatibilidad de Groups/group chat legacy.
 - Sin deploy, merge, release ni tag durante esta revisión.
+
+## Etapa de límites arquitectónicos y DI
+
+- `domain` ya no declara dependencias de Firebase Auth/Database, Facebook,
+  Credentials, Hilt Android ni Jakarta Inject, y sus contratos de auth, sesión
+  y perfil exponen modelos y valores propios (`AuthUser`,
+  `AuthCredentialRequest`, `String` para URI y subscriptions cancelables).
+- Logout delega la limpieza de sesiones Android/sociales a
+  `ExternalSessionCleaner`; la implementación con Credential Manager y Facebook
+  vive en `app`.
+- Presentation de users, favorites, groups y main depende de contratos. Las
+  lecturas Firebase que estaban en ViewModels se movieron a `data`, y
+  `MainViewModel` inyecta `LogoutUseCase` en lugar de `DefaultLogoutUseCase`.
+- `scripts/check_architecture.py` bloquea imports Android/Firebase/sociales en
+  `domain` y dependencias concretas/Firebase nuevas en presentation. CI lo
+  ejecuta antes de los tests de Rules.
+- Excepción temporal explícita: `ChatViewModel`, `ChatListViewModel`,
+  `ChatListFragment` y `ProfileViewModel` conservan dependencias de chat
+  concretas hasta las etapas 4 y 5. El check no permite extender esa deuda a
+  otros archivos.
+- Validación dirigida: compilación de main/unit/androidTest, grafo Hilt,
+  `testDebugUnitTest`, check arquitectónico y `git diff --check` pasaron.

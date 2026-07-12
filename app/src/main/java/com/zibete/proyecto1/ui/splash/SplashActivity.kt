@@ -438,7 +438,7 @@ class SplashActivity : ComponentActivity() {
 
         loginManager.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(result: LoginResult) {
-                authViewModel.onFacebookAccessToken(result.accessToken)
+                authViewModel.onFacebookAccessToken(result.accessToken.token)
             }
 
             override fun onCancel() {

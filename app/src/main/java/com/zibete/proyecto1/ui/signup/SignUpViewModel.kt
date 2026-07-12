@@ -147,16 +147,14 @@ class SignUpViewModel @Inject constructor(
             ).onFailure { e ->
                 handleRegisterError(e)
                 return@launch
-            }.onSuccess { authResult ->
-
-                val firebaseUser = authResult?.user
+            }.onSuccess { authUser ->
+                val createdUser = authUser
                     ?: return@launch handleRegisterError(
                         IllegalStateException(SIGNUP_ERR_EXCEPTION)
                     )
-
                 // 3. Guardar perfil RTDB
                 sessionBootstrapper.bootstrap(
-                    uid = firebaseUser.uid,
+                    uid = createdUser.uid,
                     name = name,
                     birthDate = birthDate,
                     description = description

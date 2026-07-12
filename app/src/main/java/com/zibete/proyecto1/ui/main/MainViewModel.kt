@@ -13,14 +13,15 @@ import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.data.GroupContext
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.LocationRepository
-import com.zibete.proyecto1.data.PresenceRepository
+import com.zibete.proyecto1.data.ConversationOverviewRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.LocationRepositoryActions
+import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
-import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
+import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -48,11 +49,12 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val exitGroupUseCase: ExitGroupUseCase,
-    private val userRepository: UserRepository,
-    private val groupRepository: GroupRepository,
-    private val locationRepository: LocationRepository,
-    private val presenceRepository: PresenceRepository,
-    private val logoutUseCase: DefaultLogoutUseCase,
+    private val localRepositoryProvider: LocalRepositoryProvider,
+    private val conversationOverviewRepository: ConversationOverviewRepository,
+    private val groupRepository: GroupRepositoryProvider,
+    private val locationRepository: LocationRepositoryActions,
+    private val presenceRepository: PresenceRepositoryActions,
+    private val logoutUseCase: LogoutUseCase,
     private val userPreferencesProvider: UserPreferencesProvider,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val profileRepositoryActions: ProfileRepositoryActions,
@@ -82,9 +84,9 @@ class MainViewModel @Inject constructor(
     private val _uiEvents = Channel<MainUiEvent>(Channel.BUFFERED)
     val uiEvents: Flow<MainUiEvent> = _uiEvents.receiveAsFlow()
 
-    fun myDisplayName(): String = userRepository.myUserName
-    fun myEmail(): String = userRepository.myEmail
-    fun myPhotoUrl(): String = userRepository.myProfilePhotoUrl
+    fun myDisplayName(): String = localRepositoryProvider.myUserName
+    fun myEmail(): String = localRepositoryProvider.myEmail
+    fun myPhotoUrl(): String = localRepositoryProvider.myProfilePhotoUrl
 
     fun startPresence() {
         viewModelScope.launch {
@@ -95,7 +97,7 @@ class MainViewModel @Inject constructor(
     init {
         // 1) Badge chats
         viewModelScope.launch {
-            userRepository.observeUnreadChatList()
+            conversationOverviewRepository.observeUnreadChatList()
                 .collect { count ->
                     _uiState.update { it.copy(chatListBadgeCount = count) }
                 }
@@ -152,7 +154,7 @@ class MainViewModel @Inject constructor(
     // --- ACCIONES DE USUARIO ---
     fun onLocationChanged(location: Location) {
         viewModelScope.launch {
-            locationRepository.updateLocation(location)
+            locationRepository.updateLocation(location.latitude, location.longitude)
         }
     }
 
@@ -306,7 +308,7 @@ class MainViewModel @Inject constructor(
 
     private fun onUnhideChatsSelected() {
         viewModelScope.launch {
-            val hiddenChats = userRepository.getHiddenChats()
+            val hiddenChats = conversationOverviewRepository.getHiddenChats()
             if (hiddenChats.isEmpty()) {
                 showSnack(
                     uiText = UiText.StringRes(R.string.msg_no_hidden_chats),
@@ -320,7 +322,12 @@ class MainViewModel @Inject constructor(
 
     fun onUnhideChatConfirmed(userId: String, userName: String) {
         viewModelScope.launch {
-            userRepository.updateChatState(userId, userName, NODE_DM, CHAT_STATE_DEFAULT_DM)
+            conversationOverviewRepository.updateChatState(
+                userId,
+                userName,
+                NODE_DM,
+                CHAT_STATE_DEFAULT_DM
+            )
                 .onSuccess {
                     showSnack(
                         uiText = UiText.StringRes(R.string.chat_unhide_success, listOf(userName)),

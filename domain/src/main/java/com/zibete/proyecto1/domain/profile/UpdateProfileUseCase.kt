@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.domain.profile
 
-import android.net.Uri
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
@@ -17,7 +16,7 @@ interface UpdateProfileUseCase {
         newDescription: String,
         age: Int,
         originalPhotoUrl: String?,
-        photoPreviewUri: Uri?,
+        photoPreviewUri: String?,
         shouldDeletePhoto: Boolean
     ): ZibeResult<String?>
 }
@@ -34,7 +33,7 @@ class DefaultUpdateProfileUseCase @Inject constructor(
         newDescription: String,
         age: Int,
         originalPhotoUrl: String?,
-        photoPreviewUri: Uri?,
+        photoPreviewUri: String?,
         shouldDeletePhoto: Boolean
     ): ZibeResult<String?> =
         zibeCatching {

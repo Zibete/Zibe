@@ -2,7 +2,6 @@ package com.zibete.proyecto1.data
 
 import android.content.Context
 import android.net.Uri
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -13,6 +12,7 @@ import com.zibete.proyecto1.core.constants.Constants.AccountsKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
+import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_PATH
@@ -20,6 +20,7 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.PATH_PROFILE_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PROFILE_PHOTO
@@ -31,6 +32,7 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.Users
@@ -43,28 +45,27 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Singleton
 
-data class HiddenChat(
-    val id: String,
-    val name: String
-)
-
 @Singleton
 class UserRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
     private val presenceRepository: PresenceRepository,
     @ApplicationContext private val context: Context
-) : LocalRepositoryProvider, UserRepositoryProvider, UserRepositoryActions {
+) : LocalRepositoryProvider,
+    UserRepositoryProvider,
+    UserRepositoryActions,
+    UserDirectoryProvider,
+    ConversationOverviewRepository {
 
     // ============================================================
     // SESSION (cache local)
     // ============================================================
-    val firebaseUser: FirebaseUser
+    val firebaseUser: AuthUser
         get() = checkNotNull(authSessionProvider.currentUser) {
             USER_PROVIDER_ERR_EXCEPTION
         }
 
-    val myUid: String
+    override val myUid: String
         get() = firebaseUser.uid
 
     override var myUserName: String = ""
@@ -141,8 +142,8 @@ class UserRepository constructor(
     override suspend fun getDefaultProfilePhotoUrl(): ZibeResult<String> =
         zibeCatching { defaultProfilePhotoRef().downloadUrl.await().toString() }
 
-    override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
-        zibeCatching { getProfilePhotoStoragePath().putFile(localUri).await() }
+    override suspend fun putProfilePhotoInStorage(localUri: String): ZibeResult<Unit> =
+        zibeCatching { getProfilePhotoStoragePath().putFile(Uri.parse(localUri)).await() }
 
     override suspend fun deleteProfilePhoto(): ZibeResult<Unit> =
         zibeCatching { getProfilePhotoStoragePath().delete().await() }
@@ -210,17 +211,17 @@ class UserRepository constructor(
     // ============================================================
 
     override suspend fun createUserNode(
-        firebaseUser: FirebaseUser,
+        user: AuthUser,
         name: String,
         birthDate: String,
         description: String
     ): ZibeResult<Unit> = zibeCatching {
-        val id = firebaseUser.uid
+        val id = user.uid
         val userName = name
         val createdAt = now()
         val age = if (birthDate.isBlank()) 0 else ageCalculator(birthDate)
-        val email: String = firebaseUser.email ?: ""
-        val photoUrl: String = firebaseUser.photoUrl?.toString()
+        val email: String = user.email.orEmpty()
+        val photoUrl: String = user.photoUrl
             ?: getDefaultProfilePhotoUrl().getOrThrow()
 
         val newUser = Users(
@@ -256,11 +257,62 @@ class UserRepository constructor(
             .orEmpty()
             .isNotBlank()
 
+    override suspend fun getAllAccounts(): List<Users> =
+        firebaseRefsContainer.refAccounts.get().await().children.mapNotNull { snapshot ->
+            snapshot.getValue(Users::class.java)?.copy(id = snapshot.key.orEmpty())
+        }
+
+    override suspend fun getFavoriteUserIds(uid: String): Set<String> =
+        firebaseRefsContainer.refData
+            .child(uid)
+            .child(NODE_FAVORITE_LIST)
+            .get()
+            .await()
+            .children
+            .mapNotNullTo(linkedSetOf()) { it.key?.takeIf(String::isNotBlank) }
+
+    override suspend fun removeFavoriteUserIds(uid: String, userIds: Collection<String>) {
+        if (userIds.isEmpty()) return
+        val updates = userIds.associate { userId ->
+            "$uid/$NODE_FAVORITE_LIST/$userId" to null
+        }
+        firebaseRefsContainer.refData.updateChildren(updates).await()
+    }
+
+    override suspend fun getConversationStates(uid: String): Map<String, String> =
+        firebaseRefsContainer.refData
+            .child(uid)
+            .child(NODE_DM)
+            .get()
+            .await()
+            .children
+            .mapNotNull { snapshot ->
+                val otherUid = snapshot.key?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+                val state = snapshot.child(ConversationKeys.STATE)
+                    .getValue(String::class.java)
+                    ?.takeIf(String::isNotBlank)
+                    ?: return@mapNotNull null
+                otherUid to state
+            }
+            .toMap()
+
+    override suspend fun hasBlockedUser(otherUid: String, myUid: String): Boolean =
+        firebaseRefsContainer.refData
+            .child(otherUid)
+            .child(NODE_DM)
+            .child(myUid)
+            .child(ConversationKeys.STATE)
+            .get()
+            .await()
+            .getValue(String::class.java) == CHAT_STATE_BLOCKED
+
     // ============================================================
     // UNREAD CHATS (Flow)  - suma unreadCount
     // ============================================================
 
-    fun observeUnreadChatList(nodeType: String = NODE_DM): Flow<Int> = callbackFlow {
+    override fun observeUnreadChatList(): Flow<Int> = observeUnreadChatList(NODE_DM)
+
+    fun observeUnreadChatList(nodeType: String): Flow<Int> = callbackFlow {
         // OLD: orderByChild("noVisto")
         val query = conversationsRootRef(myUid, nodeType)
             .orderByChild(ConversationKeys.UNREAD_COUNT)
@@ -314,7 +366,9 @@ class UserRepository constructor(
     // CHAT STATE (ConversationKeys.STATE)
     // ============================================================
 
-    suspend fun getHiddenChats(nodeType: String = NODE_DM): List<HiddenChat> {
+    override suspend fun getHiddenChats(): List<HiddenChat> = getHiddenChats(NODE_DM)
+
+    suspend fun getHiddenChats(nodeType: String): List<HiddenChat> {
         val snapshot = conversationsRootRef(myUid, nodeType).get().await()
         if (!snapshot.exists()) return emptyList()
 
@@ -331,7 +385,7 @@ class UserRepository constructor(
         }.sortedBy { it.name.lowercase() }
     }
 
-    suspend fun updateChatState(
+    override suspend fun updateChatState(
         otherUid: String,
         otherName: String,
         nodeType: String,

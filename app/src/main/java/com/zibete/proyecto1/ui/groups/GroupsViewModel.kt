@@ -8,9 +8,9 @@ import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
-import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,8 +26,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GroupsViewModel @Inject constructor(
-    private val groupRepository: GroupRepository,
-    private val userRepository: UserRepository,
+    private val groupRepository: GroupRepositoryProvider,
+    private val localRepositoryProvider: LocalRepositoryProvider,
     private val userPreferencesActions: UserPreferencesActions,
 ) : ViewModel() {
 
@@ -158,13 +158,13 @@ class GroupsViewModel @Inject constructor(
 
             joinGroupAndNavigate(
                 groupName = groupName,
-                userName = userRepository.myUserName,
+                userName = localRepositoryProvider.myUserName,
                 userType = PUBLIC_USER,
                 message = message
             )
         }
     }
 
-    fun myDisplayName(): String = userRepository.myUserName
-    fun myPhotoUrl(): String = userRepository.myProfilePhotoUrl
+    fun myDisplayName(): String = localRepositoryProvider.myUserName
+    fun myPhotoUrl(): String = localRepositoryProvider.myProfilePhotoUrl
 }

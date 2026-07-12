@@ -1,11 +1,12 @@
 package com.zibete.proyecto1.data
 
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.core.constants.Constants.SessionKeys
+import com.zibete.proyecto1.data.SessionConflictSubscription
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,13 +36,13 @@ class SessionRepository @Inject constructor(
             .await()
             .getValue(String::class.java)
 
-    override suspend fun getSessionsByFcmToken(token: String): DataSnapshot {
-        return firebaseRefsContainer.refSessions
+    override suspend fun countSessionsByFcmToken(token: String): Long =
+        firebaseRefsContainer.refSessions
             .orderByChild(SessionKeys.FCM_TOKEN)
             .equalTo(token)
             .get()
             .await()
-    }
+            .childrenCount
 
     // ============================================================
     // WRITE
@@ -79,7 +80,7 @@ class SessionRepository @Inject constructor(
         uid: String,
         myInstallId: String,
         onConflict: () -> Unit
-    ): ValueEventListener {
+    ): SessionConflictSubscription {
 
         val ref = refInstallId(uid)
 
@@ -95,11 +96,7 @@ class SessionRepository @Inject constructor(
         }
 
         ref.addValueEventListener(listener)
-        return listener
-    }
-
-    override fun removeSessionListener(uid: String, listener: ValueEventListener) {
-        refInstallId(uid).removeEventListener(listener)
+        return SessionConflictSubscription { ref.removeEventListener(listener) }
     }
 
 

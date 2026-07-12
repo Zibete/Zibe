@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.auth
 
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.di.SettingsConfig
@@ -11,6 +10,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
@@ -146,7 +146,7 @@ class AuthViewModelTest {
         scenario: TestScenario = TestScenario(),
         authSessionProvider: AuthSessionProvider = FakeAuthSessionProvider(
             currentUser = scenario.currentUserUid?.let { uid ->
-                mockk<FirebaseUser> { every { this@mockk.uid } returns uid }
+                AuthUser(uid, null, null, null)
             }
         ),
         authSessionActions: AuthSessionActions = FakeAuthSessionActions { scenario },

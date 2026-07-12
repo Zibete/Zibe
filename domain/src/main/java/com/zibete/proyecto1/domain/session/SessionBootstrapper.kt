@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.domain.session
 
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
@@ -10,6 +9,7 @@ import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import javax.inject.Inject
 
 interface SessionBootstrapper {
@@ -76,10 +76,10 @@ class DefaultSessionBootstrapper @Inject constructor(
 
         // Usuario nuevo
         if (!accountExists) {
-            authSessionProvider.currentUser?.let { user: FirebaseUser ->
+            authSessionProvider.currentUser?.let { user: AuthUser ->
                 val resolvedName = name.ifBlank { user.displayName.orEmpty() }
                 userRepositoryActions.createUserNode(
-                    user,
+                    user = user,
                     resolvedName,
                     birthDate,
                     description
@@ -95,10 +95,10 @@ class DefaultSessionBootstrapper @Inject constructor(
     }
 
     private suspend fun setLocalProfile() {
-        authSessionProvider.currentUser?.let { user: FirebaseUser ->
+        authSessionProvider.currentUser?.let { user: AuthUser ->
             userRepositoryActions.updateLocalProfile(
                 name = user.displayName,
-                photoUrl = user.photoUrl.toString(),
+                photoUrl = user.photoUrl,
                 email = user.email
             )
         }

@@ -3,9 +3,6 @@ package com.zibete.proyecto1.ui.auth
 import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.facebook.AccessToken
-import com.google.firebase.auth.FacebookAuthProvider
-import com.google.firebase.auth.GoogleAuthProvider
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.di.SettingsConfig
 import com.zibete.proyecto1.core.navigation.AppNavigator
@@ -19,6 +16,7 @@ import com.zibete.proyecto1.core.validation.CredentialValidators
 import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthCredentialRequest
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -181,9 +179,9 @@ class AuthViewModel @Inject constructor(
                     return@launch
                 }
                 .onSuccess { idToken ->
-                    val credential = GoogleAuthProvider.getCredential(idToken!!, null)
-
-                    authSessionActions.signInWithCredential(credential)
+                    authSessionActions.signInWithCredential(
+                        AuthCredentialRequest.Google(idToken!!)
+                    )
                         .onFailure { e ->
                             showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                         }
@@ -198,13 +196,13 @@ class AuthViewModel @Inject constructor(
 
     // ================= FACEBOOK =================
 
-    fun onFacebookAccessToken(token: AccessToken) {
+    fun onFacebookAccessToken(token: String) {
         viewModelScope.launch {
             setLoadingLogin(true)
 
-            val facebookCredential = FacebookAuthProvider.getCredential(token.token)
-
-            authSessionActions.signInWithCredential(facebookCredential)
+            authSessionActions.signInWithCredential(
+                AuthCredentialRequest.Facebook(token)
+            )
                 .onFailure { e ->
                     showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                 }.onSuccess {

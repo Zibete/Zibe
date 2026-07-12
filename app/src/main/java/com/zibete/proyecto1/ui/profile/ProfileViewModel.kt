@@ -19,7 +19,7 @@ import com.zibete.proyecto1.core.utils.onSuccessNotNull
 import com.zibete.proyecto1.data.ChatRefs
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
-import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
@@ -49,7 +49,7 @@ class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val chatRepository: ChatRepository,
     private val groupRepositoryProvider: GroupRepositoryProvider,
-    private val locationRepository: LocationRepository,
+    private val locationRepository: LocationRepositoryProvider,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val profileRepositoryActions: ProfileRepositoryActions,
     private val userPreferencesProvider: UserPreferencesProvider,

@@ -1,17 +1,15 @@
 package com.zibete.proyecto1.fakes
 
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.data.auth.AuthCredentialRequest
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.testing.TestScenario
-import io.mockk.mockk
 
 class FakeAuthSessionProvider(
-    override var currentUser: FirebaseUser? = null
+    override var currentUser: AuthUser? = null
 ) : AuthSessionProvider {
     override fun authProvider(): AuthProvider {
         return AuthProvider.PASSWORD
@@ -34,18 +32,18 @@ class FakeAuthSessionActions(
     override suspend fun signInWithEmail(
         email: String,
         password: String
-    ): ZibeResult<AuthResult> {
+    ): ZibeResult<Unit> {
         lastEmail = email
         lastPassword = password
         return if (shouldFail) {
             ZibeResult.Failure(runtimeException)
         } else {
-            ZibeResult.Success(mockk(relaxed = true))
+            ZibeResult.Success(Unit)
         }
     }
 
     override suspend fun signInWithCredential(
-        credential: AuthCredential
+        credential: AuthCredentialRequest
     ): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
@@ -71,13 +69,13 @@ class FakeAuthSessionActions(
     override suspend fun createUser(
         email: String,
         password: String
-    ): ZibeResult<AuthResult> {
+    ): ZibeResult<AuthUser> {
         lastEmail = email
         lastPassword = password
         return if (shouldFail) {
             ZibeResult.Failure(runtimeException)
         } else {
-            ZibeResult.Success(mockk(relaxed = true))
+            ZibeResult.Success(AuthUser("uid", null, null, email))
         }
     }
 

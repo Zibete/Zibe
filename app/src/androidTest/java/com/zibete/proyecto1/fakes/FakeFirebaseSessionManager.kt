@@ -1,29 +1,22 @@
 package com.zibete.proyecto1.fakes
 
-import com.google.firebase.auth.AuthCredential
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
+import com.zibete.proyecto1.data.auth.AuthCredentialRequest
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.testing.TestScenario
-import io.mockk.mockk
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class FakeAuthSessionProvider(
     private val scenarioProvider: () -> TestScenario
 ) : AuthSessionProvider {
 
-    override val currentUser: FirebaseUser?
+    override val currentUser: AuthUser?
         get() {
             val uid = scenarioProvider().currentUserUid ?: return null
 
-            return mock<FirebaseUser>().apply {
-                doReturn(uid).whenever(this).uid
-            }
+            return AuthUser(uid, null, null, null)
         }
 
     override fun authProvider(): AuthProvider {
@@ -47,18 +40,18 @@ class FakeAuthSessionActions(
     override suspend fun signInWithEmail(
         email: String,
         password: String
-    ): ZibeResult<AuthResult> {
+    ): ZibeResult<Unit> {
         lastEmail = email
         lastPassword = password
         return if (shouldFail) {
             ZibeResult.Failure(runtimeException)
         } else {
-            ZibeResult.Success(mockk(relaxed = true))
+            ZibeResult.Success(Unit)
         }
     }
 
     override suspend fun signInWithCredential(
-        credential: AuthCredential
+        credential: AuthCredentialRequest
     ): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
@@ -84,13 +77,13 @@ class FakeAuthSessionActions(
     override suspend fun createUser(
         email: String,
         password: String
-    ): ZibeResult<AuthResult> {
+    ): ZibeResult<AuthUser> {
         lastEmail = email
         lastPassword = password
         return if (shouldFail) {
             ZibeResult.Failure(runtimeException)
         } else {
-            ZibeResult.Success(mockk(relaxed = true))
+            ZibeResult.Success(AuthUser("uid", null, null, email))
         }
     }
 
