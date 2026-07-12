@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
@@ -51,6 +52,7 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
     protected open val toolbarMenuRes: Int? = null
     protected open val toolbarMenuVisiblePredicate: (Menu) -> Unit = { }
     protected open val enableComposeSnackHost: Boolean = true
+    protected open val snackHostTopOffset: Dp = 0.dp
 
     // Hooks (override where applies)
     protected open fun activityRootView(): View? = null
@@ -133,7 +135,8 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
                     ZibeGlobalSnackHost(
                         snackBarManager = snackBarManager,
                         bottomNav = bottomNav,
-                        appBar = appBar
+                        appBar = appBar,
+                        configuredTopOffset = snackHostTopOffset
                     )
                 }
             }
@@ -262,7 +265,8 @@ abstract class BaseEdgeToEdgeActivity : AppCompatActivity() {
 private fun ZibeGlobalSnackHost(
     snackBarManager: SnackBarManager,
     bottomNav: View?,
-    appBar: View?
+    appBar: View?,
+    configuredTopOffset: Dp
 ) {
     val snackHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -333,12 +337,12 @@ private fun ZibeGlobalSnackHost(
             .fillMaxSize()
             .systemBarsPadding()
             .padding(
-                top = extraTop + dimensionResource(DsR.dimen.element_spacing_medium),
+                top = configuredTopOffset + extraTop +
+                    dimensionResource(DsR.dimen.element_spacing_medium),
                 bottom = dimensionResource(DsR.dimen.element_spacing_medium) + extraBottom
             )
     )
 }
-
 
 
 

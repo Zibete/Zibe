@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,18 +54,15 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.ProfileCard
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
 import com.zibete.proyecto1.ui.components.ZibeCollapsingFabStack
 import com.zibete.proyecto1.ui.components.ZibeMenuItem
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
 import com.zibete.proyecto1.ui.components.ZibeToolbar
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.EntryPointAccessors
-import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +89,6 @@ fun ProfileRoute(
         ).snackBarManager()
     }
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(profileViewModel.otherUid) {
         profileViewModel.loadProfile()
@@ -103,12 +98,6 @@ fun ProfileRoute(
         if (!isActive) return@LaunchedEffect
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             profileViewModel.refreshProfileMeta()
-            profileViewModel.snackEvents.collectLatest { snackEvent ->
-                snackbarHostState.showZibeMessage(
-                    message = snackEvent.uiText.asString(context),
-                    snackType = snackEvent.type
-                )
-            }
         }
     }
 
@@ -125,7 +114,6 @@ fun ProfileRoute(
 
     ProfileScreen(
         state = state,
-        snackbarHostState = snackbarHostState,
         userStatus = userStatus,
         photoList = photosFromChat,
         groupName = groupName,
@@ -147,7 +135,6 @@ fun ProfileRoute(
 @Composable
 fun ProfileScreen(
     state: ProfileUiState,
-    snackbarHostState: SnackbarHostState,
     userStatus: UserStatus,
     photoList: List<String>,
     groupName: String,
@@ -228,12 +215,6 @@ fun ProfileScreen(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
-            snackbarHost = {
-                ZibeSnackbar(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.TopStart)
-                )
-            },
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 ZibeToolbar(
@@ -414,7 +395,6 @@ fun ProfileScreenPreview() {
     ZibeTheme {
         ProfileScreen(
             state = sampleState,
-            snackbarHostState = SnackbarHostState(),
             userStatus = UserStatus.Online,
             photoList = listOf("url1", "url2"),
             groupName = "Sample Group",
@@ -432,7 +412,5 @@ fun ProfileScreenPreview() {
         )
     }
 }
-
-
 
 

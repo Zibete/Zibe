@@ -8,6 +8,7 @@ import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
@@ -49,7 +50,7 @@ class GroupsViewModel @Inject constructor(
             if (showLoading) _uiState.update { it.copy(isLoading = true) }
             if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
 
-            runCatching { groupRepository.getAllGroups() }
+            runCatchingPreservingCancellation { groupRepository.getAllGroups() }
                 .onSuccess { groupsList ->
                     allGroups = groupsList.sortedBy { it.name.lowercase() }
                     updateVisibleGroups(isLoading = false, isRefreshing = false)

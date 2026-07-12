@@ -157,3 +157,18 @@ Ejecutado el 11 de julio de 2026:
   delega reglas de envío al ViewModel/caso de uso.
 - URI de preview y uploads cruzan hacia el ViewModel como `String`; los tipos
   Android se materializan únicamente en Activity/controller/composables.
+
+## Etapa de UI effects y errores
+
+- Chat, profile y splash usan el host global de `BaseEdgeToEdgeActivity`; se
+  eliminaron hosts y collectors paralelos. El host compartido acepta offset
+  superior adicional y sigue calculando app bar, system bars y bottom nav.
+- `ChatRoute`/`ChatScreen` ya no reciben `SnackBarManager`; el manager queda en
+  el borde de Activity/handlers y existe un solo collector por host.
+- `runCatchingPreservingCancellation` define la política común para operaciones
+  suspendidas: relanza `CancellationException` y conserva failures ordinarios.
+  Se aplicó en ViewModels, FCM y repositorios que antes podían degradar una
+  cancelación a fallback o error visible.
+- El servicio FCM dejó de capturar `Throwable`; relanza cancelación y limita el
+  manejo a `Exception`.
+- Tests de core verifican explícitamente cancellation y failure ordinario.

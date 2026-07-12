@@ -15,6 +15,7 @@ import com.zibete.proyecto1.core.utils.getOrDefault
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.core.utils.onSuccessNotNull
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
@@ -262,7 +263,7 @@ class ProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             setActionLoading(true)
-            runCatching {
+            runCatchingPreservingCancellation {
                 profileRepositoryActions.toggleNotificationsUser(otherUid, otherName)
             }.onSuccess { isNotificationsSilenced ->
                 _uiState.update { it.copy(isNotificationsSilenced = isNotificationsSilenced) }
@@ -301,7 +302,7 @@ class ProfileViewModel @Inject constructor(
     }
 
     suspend fun toggleBlock(otherName: String) {
-        runCatching {
+        runCatchingPreservingCancellation {
             profileRepositoryActions.toggleBlock(otherUid, otherName)
         }.onSuccess { isBlockedByMe ->
             _uiState.update { it.copy(isBlockedByMe = isBlockedByMe) }

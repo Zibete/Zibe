@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -14,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,15 +51,13 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
-import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.ui.auth.AuthScreen
 import com.zibete.proyecto1.ui.auth.AuthViewModel
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
+import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.custompermission.CustomPermissionScreen
 import com.zibete.proyecto1.ui.main.MainActivity
 import com.zibete.proyecto1.ui.onboarding.OnboardingScreen
@@ -71,18 +67,15 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import java.io.Serializable
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 @Suppress("CustomSplashScreen")
-class SplashActivity : ComponentActivity() {
+class SplashActivity : BaseEdgeToEdgeActivity() {
 
     @Inject
     lateinit var appNavigator: AppNavigator
 
-    @Inject
-    lateinit var snackBarManager: SnackBarManager
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
 
@@ -118,7 +111,6 @@ class SplashActivity : ComponentActivity() {
             ZibeTheme {
 
                 val navController = rememberNavController()
-                val snackHostState = remember { SnackbarHostState() }
                 var showSessionConflictDialog by remember { mutableStateOf(false) }
                 var noInternetDialog by remember { mutableStateOf(false) }
 
@@ -288,26 +280,6 @@ class SplashActivity : ComponentActivity() {
                         )
                     }
 
-                    // SNACKBAR HOST
-                    ZibeSnackbar(
-                        hostState = snackHostState,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
-                }
-
-                // ====== EVENTOS DEL SNACKBARMANAGER ======
-                val context = LocalContext.current
-                val lifecycleOwner = LocalLifecycleOwner.current
-
-                LaunchedEffect(lifecycleOwner) {
-                    lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                        snackBarManager.events.collectLatest { event ->
-                            snackHostState.showZibeMessage(
-                                message = event.uiText.asString(context),
-                                snackType = event.type
-                            )
-                        }
-                    }
                 }
 
                 // ====== EVENTOS DEL SPLASH VIEWMODEL ======
