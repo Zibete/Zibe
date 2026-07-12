@@ -175,8 +175,9 @@ Ejecutado el 11 de julio de 2026:
 
 ## Etapa de plataforma, permisos y dependencias visuales
 
-- `POST_NOTIFICATIONS` dejó Splash y se solicita al entrar a Main, después de
-  explicar su uso para mensajes. Rechazar no bloquea navegación; rationale
+- `POST_NOTIFICATIONS` dejó Splash y se solicita en contexto al entrar a
+  Settings, después de que el usuario ya accedió a la aplicación. Rechazar no
+  bloquea navegación; rationale
   permite reintentar y el rechazo permanente ofrece abrir App Settings.
 - `NotificationPermissionCoordinator` encapsula Activity Result, persistencia
   de intento y Settings. Tests cubren pre-Android 13, primera solicitud y
@@ -209,3 +210,24 @@ Ejecutado el 11 de julio de 2026:
   participante y el caso positivo de fan-out con incremento de servidor: 43/43.
 - Python cubre parser, redacción de IDs, payload visible y freshness del lease.
   No se ejecutó deploy.
+
+## Etapa de cobertura, CI y compatibilidad de dispositivo
+
+- CI ejecuta el check de límites arquitectónicos, compilación y tests Python de
+  Functions, tests de Rules, unit tests JVM, modelo lint de androidTest,
+  compilación del grafo Hilt de androidTest, lint, assemble debug y compilación
+  release. Los reportes unitarios y de lint se conservan como artifacts.
+- La solicitud de notificaciones ya no ocurre durante el arranque de
+  `MainActivity`: se dispara desde la acción explícita de navegar a Settings.
+  Esto conserva la solicitud contextual y evita interrumpir login, onboarding
+  o restauración de sesión.
+- Se eliminó `gpuimage` 2.1.0, dependencia directa sin consumidores que
+  empaquetaba `libyuv-decoder.so` no compatible con páginas de 16 KB. DataStore
+  se actualizó a 1.2.1 y `graphics-path` se fijó en 1.1.0 estable.
+- `zipalign -c -P 16 -v 4 app-debug.apk` finalizó con `Verification successful`.
+  Una instalación limpia en el emulador Android 17 abrió Splash sin diálogo de
+  compatibilidad.
+- `:app:connectedDebugAndroidTest` pasó 20/20 en `Pixel_6a(AVD) - 17`. Las
+  corridas anteriores quedaron caracterizadas: el sistema cubría la app con el
+  diálogo de compatibilidad por las bibliotecas nativas antiguas; al corregir el
+  grafo, la misma suite pasó completa sin intervención durante la ejecución.

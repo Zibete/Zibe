@@ -203,7 +203,7 @@ dependencies {
     implementation(libs.credentials.play.services)
     implementation(libs.google.id)
 
-    implementation(libs.gpu.image)
+    implementation(libs.graphics.path)
     implementation(libs.floating.action.button)
 
     implementation(libs.lottie)

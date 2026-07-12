@@ -142,7 +142,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         setupUI()
 
         notificationPermissionCoordinator = NotificationPermissionCoordinator(this)
-        notificationPermissionCoordinator.requestInContext()
 
         setupNavigation(isFreshStart = savedInstanceState == null)
 
@@ -514,6 +513,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             }
 
                             is MainUiEvent.NavigateToSettings -> {
+                                notificationPermissionCoordinator.requestInContext()
                                 ensureNavHostController().navigate(R.id.settingsFragment)
                             }
 

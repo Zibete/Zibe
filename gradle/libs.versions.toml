@@ -21,7 +21,7 @@ concurrentFutures = "1.2.0"
 navigation = "2.9.6"
 activityCompose = "1.9.0"
 lifecycle = "2.8.0"
-dataStore = "1.1.1"
+dataStore = "1.2.1"
 hiltNavigation = "1.3.0"
 blurView = "version-3.1.0"
 circleImageView = "3.1.0"
@@ -34,7 +34,7 @@ ucrop = "2.2.8"
 playServicesLocation = "21.3.0"
 firebaseUi = "8.0.2"
 googleId = "1.1.1"
-gpuImage = "2.1.0"
+graphicsPath = "1.1.0"
 floatingActionButton = "1.6.4"
 lottie = "6.4.0"
 junit4 = "4.13.2"
@@ -92,6 +92,7 @@ lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStore" }
+graphics-path = { module = "androidx.graphics:graphics-path", version.ref = "graphicsPath" }
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigation" }
 blur-view = { module = "com.github.Dimezis:BlurView", version.ref = "blurView" }
 circle-image-view = { module = "de.hdodenhof:circleimageview", version.ref = "circleImageView" }
@@ -106,7 +107,6 @@ ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 firebase-ui-auth = { module = "com.firebaseui:firebase-ui-auth", version.ref = "firebaseUi" }
 google-id = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleId" }
-gpu-image = { module = "jp.co.cyberagent.android:gpuimage", version.ref = "gpuImage" }
 floating-action-button = { module = "com.github.clans:fab", version.ref = "floatingActionButton" }
 lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
