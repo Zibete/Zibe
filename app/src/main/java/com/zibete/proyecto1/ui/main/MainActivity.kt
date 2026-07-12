@@ -16,20 +16,23 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.widget.SearchView
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.app.ActivityCompat
 import androidx.core.content.IntentCompat
 import androidx.core.view.get
-import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.core.view.size
-import androidx.core.view.updatePadding
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
@@ -38,7 +41,6 @@ import androidx.navigation.NavController
 import androidx.navigation.navOptions
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
-import com.bumptech.glide.Glide
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -51,7 +53,6 @@ import com.google.android.gms.location.SettingsClient
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.navigation.NavigationView
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
@@ -72,7 +73,6 @@ import com.zibete.proyecto1.core.utils.UserMessageUtils
 import com.zibete.proyecto1.core.utils.ZibeApp
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.databinding.ActivityMainBinding
-import com.zibete.proyecto1.databinding.NavViewBinding
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseEdgeToEdgeActivity
 import com.zibete.proyecto1.ui.chat.ChatActivity
@@ -85,6 +85,7 @@ import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
 import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -107,8 +108,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private lateinit var materialToolbar: MaterialToolbar
     private lateinit var bottomNavigationView: BottomNavigationView
     private var currentScreen: CurrentScreen = CurrentScreen.OTHER
-    private var drawerLayout: DrawerLayout? = null
-    private var navigationView: NavigationView? = null
     private var usersFragmentSettings: View? = null
     private var filterButton: ImageView? = null
     private var refreshButton: ImageView? = null
@@ -251,25 +250,14 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
             handleBackInBase = false
         )
 
-        // Drawer
-        drawerLayout = binding.drawerLayout
-
         materialToolbar.setNavigationOnClickListener {
             if (dismissImeIfVisible()) return@setNavigationOnClickListener
-            val showBack = mainViewModel.destinationUiState.value.showBack
-            if (showBack) {
+            if (mainViewModel.destinationUiState.value.showBack) {
                 onBackPressedDispatcher.onBackPressed()
-            } else {
-                drawerLayout?.openDrawer(GravityCompat.START)
             }
         }
 
-        navigationView = binding.navView
-
-        // Header Info
-        val headerView = navigationView?.getHeaderView(0)
-
-        setupHeader(headerView)
+        setupAccountUi(appBarMain.accountAvatarHost)
 
         // Bottom Nav
         bottomNavigationView = appBarMain.contentMain.bottomNav
@@ -278,26 +266,30 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     }
 
-    private fun setupHeader(headerView: View?) {
-        if (headerView == null) return
-
-        with(NavViewBinding.bind(headerView)) {
-            drawerHeaderUserName.text = mainViewModel.myDisplayName()
-            drawerHeaderEmail.text = mainViewModel.myEmail()
-
-            ViewCompat.setOnApplyWindowInsetsListener(binding.navView) { v, insets ->
-                val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.updatePadding(top = sys.top, bottom = sys.bottom)
-                insets
-            }
-            ViewCompat.requestApplyInsets(binding.navView)
-
-            Glide.with(root.context)
-                .load(mainViewModel.myPhotoUrl())
-                .into(drawerHeaderCircleImage)
-
-            drawerHeaderContainer.setOnClickListener {
-                editProfileNavigation()
+    private fun setupAccountUi(host: ComposeView) {
+        host.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        host.setContent {
+            ZibeTheme {
+                val uiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AccountAvatarButton(
+                        photoUrl = uiState.accountPhotoUrl,
+                        onClick = mainViewModel::openAccountSheet
+                    )
+                    AccountSheet(
+                        isOpen = uiState.isAccountSheetOpen,
+                        displayName = uiState.accountName,
+                        email = uiState.accountEmail,
+                        photoUrl = uiState.accountPhotoUrl,
+                        onDismiss = mainViewModel::closeAccountSheet,
+                        onEditProfile = mainViewModel::onEditProfileSelected,
+                        onSettings = mainViewModel::onAccountSettingsSelected,
+                        onLogout = mainViewModel::onAccountLogoutSelected
+                    )
+                }
             }
         }
     }
@@ -330,28 +322,11 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                 R.id.nav_chat_list,
                 R.id.nav_group_select,
                 R.id.nav_favorites
-            ),
-            drawerLayout
+            )
         )
 
         navController.let { nav ->
             NavigationUI.setupActionBarWithNavController(this, nav, appBarConfiguration)
-        }
-
-        navigationView?.setNavigationItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.action_index -> {
-                    navController.navigate(R.id.nav_chat_list)
-                    bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked = true
-                }
-
-                R.id.action_edit_profile -> mainViewModel.onEditProfileSelected()
-                R.id.action_settings -> mainViewModel.emit(MainUiEvent.NavigateToSettings)
-                R.id.action_logout -> mainViewModel.emit(MainUiEvent.ConfirmLogout)
-                else -> return@setNavigationItemSelectedListener false
-            }
-            drawerLayout?.closeDrawer(GravityCompat.START)
-            true
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
@@ -391,6 +366,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     // Visibilidad
                     materialToolbar.isVisible = state.showToolbar
                     usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
+                    binding.appBarMain.accountAvatarHost.isVisible = state.showAccountAvatar
                     bottomNavigationView.isVisible = state.showBottomNav
                     // title
                     materialToolbar.title = when {
@@ -426,17 +402,11 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                         when (event) {
 
                             is MainUiEvent.ToUsers -> {
-                                navController.navigate(R.id.nav_users)
-                                bottomNavigationView.menu.findItem(R.id.navBottomUsers)?.isChecked =
-                                    true
-                                drawerLayout?.closeDrawer(GravityCompat.START)
+                                navigateRoot(R.id.nav_users)
                             }
 
                             is MainUiEvent.ToChat -> {
-                                navController.navigate(R.id.nav_chat_list)
-                                bottomNavigationView.menu.findItem(R.id.navBottomChat)?.isChecked =
-                                    true
-                                drawerLayout?.closeDrawer(GravityCompat.START)
+                                navigateRoot(R.id.nav_chat_list)
                             }
 
                             is MainUiEvent.BackToChat -> {
@@ -444,46 +414,23 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             }
 
                             is MainUiEvent.ToGroupHost -> {
-                                navController.navigate(
-                                    R.id.nav_group_host,
-                                    navOptions { launchSingleTop = true }
-                                )
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
-                                    true
+                                navigateRoot(R.id.nav_group_host)
                             }
 
                             is MainUiEvent.ToGroupsSelect -> {
-                                navController.navigate(
-                                    R.id.nav_group_select,
-                                    null,
-                                    navOptions { launchSingleTop = true }
-                                )
-
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
-                                    true
+                                navigateRoot(R.id.nav_group_select)
                             }
 
                             is MainUiEvent.ToFavorites -> {
-                                navController.navigate(R.id.nav_favorites)
-                                bottomNavigationView.menu.findItem(R.id.navBottomFavorites)?.isChecked =
-                                    true
+                                navigateRoot(R.id.nav_favorites)
                             }
 
                             is MainUiEvent.ToEditProfile -> {
                                 navController.navigate(R.id.editProfileFragment)
-                                drawerLayout?.closeDrawer(GravityCompat.START)
                             }
 
                             is MainUiEvent.ToGroupsAfterExit -> {
-                                navController.navigate(
-                                    R.id.nav_group_select,
-                                    navOptions {
-                                        popUpTo(R.id.nav_group_select) { inclusive = false }
-                                        launchSingleTop = true
-                                    }
-                                )
-                                bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
-                                    true
+                                navigateRoot(R.id.nav_group_select)
                             }
 
                             is MainUiEvent.BackExitAppOrCloseSearch -> {
@@ -631,8 +578,18 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         mainViewModel.onChatTabSelected()
     }
 
-    fun editProfileNavigation() {
-        mainViewModel.onEditProfileSelected()
+    private fun navigateRoot(destinationId: Int) {
+        if (navController.currentDestination?.id == destinationId) return
+        navController.navigate(
+            destinationId,
+            navOptions {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+            }
+        )
     }
 
     override fun onExitEditProfile() {
@@ -673,20 +630,8 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         mainViewModel.setDestinationUiState(state)
 
-        drawerLayout?.setDrawerLockMode(
-            if (state.showDrawer) {
-                DrawerLayout.LOCK_MODE_UNLOCKED
-            } else {
-                DrawerLayout.LOCK_MODE_LOCKED_CLOSED
-            }
-        )
-
         state.selectedBottomNavItemId?.let { itemId ->
             bottomNavigationView.menu.findItem(itemId)?.isChecked = true
-        }
-
-        state.selectedDrawerItemId?.let { itemId ->
-            navigationView?.setCheckedItem(itemId)
         }
 
         searchCoordinator.updateAvailability(state.menuConfig.showSearch)
@@ -808,12 +753,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (dismissImeIfVisible()) return
-                    // 1. Si el drawer está abierto → cerrarlo
-                    if (drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
-                        drawerLayout?.closeDrawer(GravityCompat.START)
-                        return
-                    }
-
                     if (navController.currentDestination?.id == R.id.settingsFragment) {
                         if (navController.popBackStack()) return
                     }
@@ -839,6 +778,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override fun onResume() {
         super.onResume()
+        mainViewModel.refreshAccountProfile()
         invalidateOptionsMenu()
         val hasPermission = ActivityCompat.checkSelfPermission(
             this,

@@ -26,16 +26,6 @@
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
     </style>
 
-    <!-- Navigation View -->
-    <style name="Zibe.NavigationView" parent="Widget.Material3.NavigationView">
-        <item name="android:background">@drawable/bg_drawer_panel_zibe</item>
-        <item name="itemIconSize">24dp</item>
-        <item name="itemIconPadding">12dp</item>
-        <item name="itemTextAppearance">@style/TextAppearance.Zibe.ActionLabel</item>
-        <item name="itemTextColor">?attr/colorOnPrimary</item>
-        <item name="itemIconTint">?attr/colorOnPrimary</item>
-    </style>
-
     <!-- PopupMenu -->
     <style name="ThemeOverlay.Zibe.PopupMenu" parent="ThemeOverlay.Material3">
         <item name="popupMenuStyle">@style/Widget.Zibe.PopupMenu</item>

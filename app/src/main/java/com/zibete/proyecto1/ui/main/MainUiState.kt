@@ -6,5 +6,9 @@ data class MainUiState(
 
     val unreadGroupChatCount: Int = 0,
     val unreadPrivateMessagesCount: Int = 0,
-    val isGlobalLoading: Boolean = false
+    val isGlobalLoading: Boolean = false,
+    val isAccountSheetOpen: Boolean = false,
+    val accountName: String = "",
+    val accountEmail: String = "",
+    val accountPhotoUrl: String = ""
 )

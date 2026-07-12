@@ -16,13 +16,12 @@ data class MainDestinationUiState(
     val currentScreen: CurrentScreen = CurrentScreen.OTHER,
     val showToolbar: Boolean = true,
     val showBottomNav: Boolean = true,
-    val showDrawer: Boolean = true,
+    val showAccountAvatar: Boolean = false,
     val showBack: Boolean = false,
     val showUsersFragmentSettings: Boolean = false,
     val title: UiText? = null,
     val useGroupNameTitle: Boolean = false,
     val selectedBottomNavItemId: Int? = null,
-    val selectedDrawerItemId: Int? = null,
     val menuConfig: ToolbarMenuConfig = ToolbarMenuConfig()
 )
 
@@ -33,7 +32,7 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.USERS,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = true,
+            showAccountAvatar = true,
             showBack = false,
             showUsersFragmentSettings = true,
             title = CurrentScreen.USERS.titleRes,
@@ -51,12 +50,11 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.CHAT,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = true,
+            showAccountAvatar = true,
             showBack = false,
             showUsersFragmentSettings = false,
             title = CurrentScreen.CHAT.titleRes,
             selectedBottomNavItemId = R.id.navBottomChat,
-            selectedDrawerItemId = R.id.action_index,
             menuConfig = ToolbarMenuConfig(
                 showSettings = true,
                 showUnblockUsers = true,
@@ -70,7 +68,7 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.GROUPS,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = true,
+            showAccountAvatar = true,
             showBack = false,
             showUsersFragmentSettings = false,
             title = CurrentScreen.GROUPS.titleRes,
@@ -87,7 +85,7 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.GROUPS,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = false,
+            showAccountAvatar = true,
             showBack = true,
             showUsersFragmentSettings = false,
             title = CurrentScreen.GROUPS.titleRes,
@@ -104,7 +102,7 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.FAVORITES,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = true,
+            showAccountAvatar = true,
             showBack = false,
             showUsersFragmentSettings = false,
             title = CurrentScreen.FAVORITES.titleRes,
@@ -120,11 +118,10 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.EDIT_PROFILE,
             showToolbar = true,
             showBottomNav = false,
-            showDrawer = false,
+            showAccountAvatar = false,
             showBack = true,
             showUsersFragmentSettings = false,
             title = CurrentScreen.EDIT_PROFILE.titleRes,
-            selectedDrawerItemId = R.id.action_edit_profile,
             menuConfig = ToolbarMenuConfig(
                 showSettings = true
             )
@@ -134,11 +131,10 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.OTHER,
             showToolbar = true,
             showBottomNav = false,
-            showDrawer = false,
+            showAccountAvatar = false,
             showBack = true,
             showUsersFragmentSettings = false,
             title = CurrentScreen.SETTINGS.titleRes,
-            selectedDrawerItemId = R.id.action_settings,
             menuConfig = ToolbarMenuConfig()
         )
 
@@ -146,7 +142,7 @@ class MainDestinationUiMapper {
             currentScreen = CurrentScreen.OTHER,
             showToolbar = true,
             showBottomNav = true,
-            showDrawer = true,
+            showAccountAvatar = false,
             showBack = false,
             showUsersFragmentSettings = false,
             menuConfig = ToolbarMenuConfig()

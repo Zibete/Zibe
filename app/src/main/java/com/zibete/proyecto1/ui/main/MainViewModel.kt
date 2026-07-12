@@ -84,10 +84,6 @@ class MainViewModel @Inject constructor(
     private val _uiEvents = Channel<MainUiEvent>(Channel.BUFFERED)
     val uiEvents: Flow<MainUiEvent> = _uiEvents.receiveAsFlow()
 
-    fun myDisplayName(): String = localRepositoryProvider.myUserName
-    fun myEmail(): String = localRepositoryProvider.myEmail
-    fun myPhotoUrl(): String = localRepositoryProvider.myProfilePhotoUrl
-
     fun startPresence() {
         viewModelScope.launch {
             presenceRepository.startPresence()
@@ -95,6 +91,8 @@ class MainViewModel @Inject constructor(
     }
 
     init {
+        refreshAccountProfile()
+
         // 1) Badge chats
         viewModelScope.launch {
             conversationOverviewRepository.observeUnreadChatList()
@@ -216,7 +214,36 @@ class MainViewModel @Inject constructor(
 
     fun onEditProfileSelected() {
         if (_destinationUiState.value.currentScreen == CurrentScreen.EDIT_PROFILE) return
+        closeAccountSheet()
         viewModelScope.launch { toEditProfile() }
+    }
+
+    fun openAccountSheet() {
+        _uiState.update { it.copy(isAccountSheetOpen = true) }
+    }
+
+    fun refreshAccountProfile() {
+        _uiState.update {
+            it.copy(
+                accountName = localRepositoryProvider.myUserName,
+                accountEmail = localRepositoryProvider.myEmail,
+                accountPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
+            )
+        }
+    }
+
+    fun closeAccountSheet() {
+        _uiState.update { it.copy(isAccountSheetOpen = false) }
+    }
+
+    fun onAccountSettingsSelected() {
+        closeAccountSheet()
+        toSettings()
+    }
+
+    fun onAccountLogoutSelected() {
+        closeAccountSheet()
+        emit(MainUiEvent.ConfirmLogout)
     }
 
     fun toEditProfile() = emit(MainUiEvent.ToEditProfile)
