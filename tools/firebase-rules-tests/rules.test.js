@@ -1,4 +1,5 @@
 const path = require("node:path");
+const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { before, after, beforeEach, describe, it } = require("node:test");
 const {
@@ -145,10 +146,15 @@ describe("Realtime Database Rules", () => {
         [`${conversationPath}/otherId`]: receiverConversation.otherId,
         [`${conversationPath}/otherName`]: receiverConversation.otherName,
         [`${conversationPath}/otherPhotoUrl`]: receiverConversation.otherPhotoUrl,
+        [`${conversationPath}/state`]: receiverConversation.state,
         [`${conversationPath}/unreadCount`]: { ".sv": { "increment": 1 } },
         [`${conversationPath}/seen`]: receiverConversation.seen,
       })
     );
+    const persistedState = await authedDb(uidB)
+      .ref(`${conversationPath}/state`)
+      .get();
+    assert.equal(persistedState.val(), "dm");
   });
 
   it("allows a subsequent dm fan-out and resets latest-message seen", async () => {
@@ -182,6 +188,7 @@ describe("Realtime Database Rules", () => {
         [`${conversationPath}/otherId`]: uidA,
         [`${conversationPath}/otherName`]: "User A",
         [`${conversationPath}/otherPhotoUrl`]: "https://example.com/photo.png",
+        [`${conversationPath}/state`]: "hide",
         [`${conversationPath}/unreadCount`]: { ".sv": { "increment": 1 } },
         [`${conversationPath}/seen`]: 0,
       })
@@ -200,9 +207,21 @@ describe("Realtime Database Rules", () => {
     await assertFails(
       authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(0)
     );
-    await assertSucceeds(
+    await assertFails(
       authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(5)
     );
+  });
+
+  it("rejects ambiguous legacy chat ids and accepts the unambiguous format", async () => {
+    const ambiguousPath = "Chats/dm/alice_team_bob/message_1";
+    const unambiguousPath = "Chats/dm/alice_team|bob/message_1";
+    await seed(ambiguousPath, dmMessage({ senderUid: "alice_team" }));
+    await seed(unambiguousPath, dmMessage({ senderUid: "alice_team" }));
+
+    await assertFails(authedDb("alice").ref(ambiguousPath).get());
+    await assertFails(authedDb("alice_team").ref(ambiguousPath).get());
+    await assertSucceeds(authedDb("alice_team").ref(unambiguousPath).get());
+    await assertSucceeds(authedDb("bob").ref(unambiguousPath).get());
   });
 
   it("blocks dm message creation with seen above delivered", async () => {
@@ -299,10 +318,29 @@ describe("Realtime Database Rules", () => {
     it(`allows dm conversation seen ${validSeen}`, async () => {
       await seed(conversationPath, dmConversation());
       await assertSucceeds(
-        authedDb(uidA).ref(`${conversationPath}/seen`).set(validSeen)
+        authedDb(uidB).ref(`${conversationPath}/seen`).set(validSeen)
       );
     });
   }
+
+  it("allows receiver receipt updates only on an unchanged sender summary", async () => {
+    const senderSummaryPath = `Users/Data/${uidA}/dm/${uidB}`;
+    await seed(senderSummaryPath, dmConversation({
+      userId: uidA,
+      otherId: uidB,
+      unreadCount: 0,
+      seen: 1,
+    }));
+    await assertSucceeds(
+      authedDb(uidB).ref(`${senderSummaryPath}/seen`).set(2)
+    );
+    await assertFails(
+      authedDb(uidB).ref(senderSummaryPath).update({
+        seen: 3,
+        lastContent: "forged",
+      })
+    );
+  });
 
   for (const invalidSeen of [-1, 4, 1.5, "2"]) {
     it(`blocks invalid dm conversation seen ${JSON.stringify(invalidSeen)}`, async () => {

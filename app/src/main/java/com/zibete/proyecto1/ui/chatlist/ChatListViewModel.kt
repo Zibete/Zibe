@@ -8,7 +8,6 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
@@ -126,29 +125,31 @@ class ChatListViewModel @Inject constructor(
 
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
             conversationOverviewRepository.updateChatState(userId, userName, nodeType, newState)
-
-            val isNotificationsSilenced = newState == CHAT_STATE_SILENT
-            _events.tryEmit(
-                ChatSessionUiEvent.ShowToggleNotificationSuccess(
-                    name = userName,
-                    isNotificationsSilenced = isNotificationsSilenced
-                )
-            )
+                .onSuccess {
+                    _events.emit(
+                        ChatSessionUiEvent.ShowToggleNotificationSuccess(
+                            name = userName,
+                            isNotificationsSilenced = newState == CHAT_STATE_SILENT
+                        )
+                    )
+                }
+                .onFailure { onFailure(it) }
         }
     }
 
     fun onConfirmToggleBlockAction(otherUid: String, otherName: String) {
         viewModelScope.launch {
-            val isBlockedByMe =
-                profileRepositoryProvider.getMyChatState(otherUid)
-                    .getOrThrow() == CHAT_STATE_BLOCKED
-            _events.emit(
-                ChatSessionUiEvent.ConfirmToggleBlockAction(
-                    name = otherName,
-                    isBlockedByMe = isBlockedByMe,
-                    onConfirm = { toggleBlock(otherUid, otherName) }
-                )
-            )
+            profileRepositoryProvider.getMyChatState(otherUid)
+                .onSuccess { state ->
+                    _events.emit(
+                        ChatSessionUiEvent.ConfirmToggleBlockAction(
+                            name = otherName,
+                            isBlockedByMe = state == CHAT_STATE_BLOCKED,
+                            onConfirm = { toggleBlock(otherUid, otherName) }
+                        )
+                    )
+                }
+                .onFailure { onFailure(it) }
         }
     }
 

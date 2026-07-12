@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.coroutineScope
+import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -174,6 +175,8 @@ class GroupHostViewModel @Inject constructor(
                     senderUid = groupRepository.myUid
                 )
                 _uiState.update { it.copy(isSending = false) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 onError(e)
             } finally {
@@ -194,6 +197,8 @@ class GroupHostViewModel @Inject constructor(
                     senderName = groupContext.userName,
                     userType = groupContext.userType
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 onError(e)
             } finally {

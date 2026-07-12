@@ -251,6 +251,7 @@ class ChatRepository @Inject constructor(
             "$receiverConversationPath/${ConversationKeys.OTHER_NAME}" to receiverConversation.otherName,
             "$receiverConversationPath/${ConversationKeys.OTHER_PHOTO_URL}" to
                 receiverConversation.otherPhotoUrl,
+            "$receiverConversationPath/${ConversationKeys.STATE}" to receiverConversation.state,
             "$receiverConversationPath/${ConversationKeys.UNREAD_COUNT}" to ServerValue.increment(1),
             "$receiverConversationPath/${ConversationKeys.SEEN}" to receiverConversation.seen
         )
@@ -590,6 +591,8 @@ class ChatRepository @Inject constructor(
         if (url.isBlank()) return
         try {
             firebaseRefsContainer.firebaseStorage.getReferenceFromUrl(url).delete().await()
+        } catch (exception: kotlin.coroutines.cancellation.CancellationException) {
+            throw exception
         } catch (_: Exception) {
             // ignore: no existe / no es storage / permisos / etc.
         }
