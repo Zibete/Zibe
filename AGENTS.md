@@ -171,8 +171,9 @@ Se recomienda usarlas para búsqueda, inspección y operaciones sobre el repo an
   snapshots, paths y referencias.
 - `domain` solo depende de `core:common`; no importa Android, Firebase,
   proveedores sociales, Hilt ni implementaciones.
-- `core:common` contiene resultados/utilidades puras y `core:designsystem` el
-  sistema visual compartido.
+- `core:common` contiene resultados, modelos y utilidades compartidas sin
+  depender de `app`/`data`; conserva compatibilidad Android/Firebase legacy.
+  `core:designsystem` contiene el sistema visual compartido.
 - Ante una capacidad nueva, extender la abstracción dueña. No saltar capas ni
   crear un helper/repositorio paralelo para evitar modificar el contrato.
 - Ejecutar `python scripts/check_architecture.py` al tocar límites o DI.

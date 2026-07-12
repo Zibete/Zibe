@@ -244,3 +244,40 @@ Ejecutado el 11 de julio de 2026:
 - El template de PR exige resultados verificables, pendientes honestos y
   declaración de operaciones Firebase. README enlaza arquitectura, ADRs y esta
   auditoría sin placeholders de assets futuros.
+
+## Revisión final independiente
+
+Cuatro revisores de solo lectura cubrieron arquitectura/DI, Firebase/chat,
+toolchain/plataforma y lifecycle/seguridad. Hallazgos críticos y altos
+corregidos:
+
+- El fan-out ya no reescribe `state` del receptor. Rules permite resetear el
+  `seen` del resumen ante un mensaje nuevo, exige incremento exacto de unread y
+  cubre un segundo envío sobre conversaciones `seen/silent/hide` existentes.
+- Los chat IDs con underscore usan `|` como delimitador reservado y no ambiguo;
+  el formato `_` queda para compatibilidad de UIDs históricos sin underscore.
+- Rules bloquea borrado físico DM y que el sender falsifique receipt/seen.
+- Los listeners de disponibilidad, usuarios de grupo y chat corren en jobs
+  hermanos; ningún `collect` infinito deja inicialización inalcanzable.
+- Fallos de estado, envío, media, activeThread y listeners Firebase se propagan
+  como `ZibeResult`/Flow sin tragar cancelación. `activeThread` renueva el lease
+  cada 60 segundos.
+- Una grabación activa se cancela y elimina al entrar en background. El callback
+  FCM queda acotado a 8 segundos y usa payload fallback si el backend se demora.
+- Los ViewModels dejaron de importar tipos Android; el check arquitectónico
+  aplica esa regla. Google Credential Manager, contexto, URI y Location quedan
+  en Activities/Compose/providers Android.
+- Se retiraron permisos FGS/media sin consumidores, se alineó Lifecycle 2.9.4,
+  CI conserva reportes multi-módulo, verifica 16 KB y publica el APK debug.
+
+Medios diferidos y declarados para seguimiento:
+
+- `ChatPhotoController` todavía necesita persistir el estado de camera/crop a
+  través de recreación y limpiar temporales exitosos/abandonados.
+- Los errores one-shot de camera/crop pueden perderse si llegan sin collector;
+  conviene modelarlos como estado durable o canal con semántica definida.
+- La solicitud de notificaciones ocurre al navegar a Settings. Es contextual,
+  pero falta validar con producto si debe existir un CTA anterior dedicado.
+- `core:common` conserva Android/Firebase legacy; no depende de app/data y
+  `domain` permanece puro. Extraer esos tipos requiere una migración posterior.
+- Jetifier sigue habilitado por la dependencia legacy ya reproducida.
