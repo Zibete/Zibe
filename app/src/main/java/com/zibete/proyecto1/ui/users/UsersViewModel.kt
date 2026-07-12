@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.users
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
@@ -79,10 +78,8 @@ class UsersViewModel @Inject constructor(
             currentFilters = readFiltersFromPrefs()
             val myUid = localRepositoryProvider.myUid
 
-            val fetchStart = SystemClock.elapsedRealtime()
             runCatchingPreservingCancellation { fetchUsersBase(myUid) }
                 .onSuccess { users ->
-                    SystemClock.elapsedRealtime() - fetchStart
                     allUsers = users
                     updateVisibleUsers(isLoading = false)
                     if (users.isNotEmpty()) {

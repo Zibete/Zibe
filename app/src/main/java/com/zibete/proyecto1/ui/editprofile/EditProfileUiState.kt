@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.editprofile
 
-import android.net.Uri
 import com.zibete.proyecto1.core.ui.UiText
 
 enum class PendingNav { BACK, SETTINGS }
@@ -22,7 +21,7 @@ data class EditProfileUiState(
     val defaultPhotoUrl: String? = null,
 
     val photoUrl: String? = null,      // foto actual (remota)
-    val photoPreviewUri: Uri? = null,  // foto seleccionada local (sin subir todavía)
+    val photoPreviewUri: String? = null, // foto seleccionada local (sin subir todavía)
     val deletePhoto: Boolean = false,  // marcar para volver a default
 
     val hasPendingChanges: Boolean = false,

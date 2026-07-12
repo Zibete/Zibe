@@ -712,7 +712,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { mainViewModel.onLocationChanged(it) }
+                result.lastLocation?.let {
+                    mainViewModel.onLocationChanged(it.latitude, it.longitude)
+                }
             }
         }
         ensureLocationSettingsAndStart()

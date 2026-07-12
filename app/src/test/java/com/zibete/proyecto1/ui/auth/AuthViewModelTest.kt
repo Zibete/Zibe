@@ -11,13 +11,11 @@ import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthUser
-import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeEmailValidator
-import com.zibete.proyecto1.fakes.FakeGoogleSignInUseCase
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -150,13 +148,11 @@ class AuthViewModelTest {
             }
         ),
         authSessionActions: AuthSessionActions = FakeAuthSessionActions { scenario },
-        deleteAccountUseCase: DeleteAccountUseCase = FakeDeleteAccountUseCase { scenario },
-        googleSignInUseCase: GoogleSignInUseCase = FakeGoogleSignInUseCase { scenario }
+        deleteAccountUseCase: DeleteAccountUseCase = FakeDeleteAccountUseCase { scenario }
     ): AuthViewModel = AuthViewModel(
         authSessionProvider = authSessionProvider,
         authSessionActions = authSessionActions,
         deleteAccountUseCase = deleteAccountUseCase,
-        googleSignInUseCase = googleSignInUseCase,
         snackBarManager = snackBarManager,
         appNavigator = appNavigator,
         config = testConfig,

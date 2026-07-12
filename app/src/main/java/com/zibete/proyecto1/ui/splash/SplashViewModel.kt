@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.splash
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -55,7 +54,7 @@ class SplashViewModel @Inject constructor(
         savedStateHandle[EXTRA_DELETE_ACCOUNT] = deleteAccount
     }
 
-    fun start(context: Context, isRetry: Boolean = false) {
+    fun start(isRetry: Boolean = false) {
         viewModelScope.launch {
             if (isRetry) delay(150L)
             delay(1000L) // delay visual
@@ -87,7 +86,7 @@ class SplashViewModel @Inject constructor(
             }
 
             // 5) Internet
-            if (!appChecksProvider.hasInternetConnection(context)) {
+            if (!appChecksProvider.hasInternetConnection()) {
                 _events.emit(SplashUiEvent.ShowNoInternetDialog)
                 return@launch
             }
@@ -100,7 +99,7 @@ class SplashViewModel @Inject constructor(
             }
 
             // 7) Permisos de ubicación
-            if (!appChecksProvider.hasLocationPermission(context)) {
+            if (!appChecksProvider.hasLocationPermission()) {
                 _events.emit(SplashUiEvent.NavigatePermission)
                 return@launch
             }

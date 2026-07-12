@@ -123,7 +123,7 @@ fun EditProfileRoute(
         onPhotoSelected = { uri ->
             val localUri = uri.copyToTempFile(context)
             if (localUri != null) {
-                editProfileViewModel.onPhotoSelected(localUri)
+                editProfileViewModel.onPhotoSelected(localUri.toString())
             } else {
                 editProfileViewModel.showSnack(
                     UiText.StringRes(R.string.err_zibe),
@@ -463,7 +463,5 @@ fun EditProfileScreenPreview() {
         )
     }
 }
-
-
 
 

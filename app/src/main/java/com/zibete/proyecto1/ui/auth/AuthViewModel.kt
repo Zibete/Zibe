@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.auth
 
-import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
@@ -9,6 +8,7 @@ import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
@@ -17,7 +17,6 @@ import com.zibete.proyecto1.core.validation.EmailValidator
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthCredentialRequest
-import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,7 +35,6 @@ class AuthViewModel @Inject constructor(
     private val authSessionProvider: AuthSessionProvider,
     private val authSessionActions: AuthSessionActions,
     private val deleteAccountUseCase: DeleteAccountUseCase,
-    private val googleSignInUseCase: GoogleSignInUseCase,
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
     private val config: SettingsConfig,
@@ -169,11 +167,11 @@ class AuthViewModel @Inject constructor(
     }
 
     // ================= GOOGLE =================
-    fun onGoogleClick(activity: Activity) {
+    fun onGoogleCredentialResult(result: ZibeResult<String>) {
         viewModelScope.launch {
             setLoadingLogin(true)
 
-            googleSignInUseCase(activity)
+            result
                 .onFailure { e ->
                     showSnack(getAuthErrorMessage(e), ZibeSnackType.ERROR)
                     return@launch
