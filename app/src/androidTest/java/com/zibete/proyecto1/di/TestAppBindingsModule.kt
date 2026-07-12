@@ -6,6 +6,8 @@ import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.ConversationOverviewRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryActions
 import com.zibete.proyecto1.data.LocationRepositoryProvider
@@ -22,6 +24,7 @@ import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
+import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
@@ -142,6 +145,19 @@ object TestAppBindingsModule {
     @Singleton
     fun provideConversationOverviewRepository(): ConversationOverviewRepository =
         mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideChatRepositoryContract(): ChatRepositoryContract = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideDirectMessageReceiptAcknowledger(): DirectMessageReceiptAcknowledger =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideSendChatMessageUseCase(): SendChatMessageUseCase = mockk(relaxed = true)
 
     @Provides
     @Singleton

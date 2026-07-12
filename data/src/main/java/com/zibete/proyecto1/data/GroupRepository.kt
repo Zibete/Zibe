@@ -176,7 +176,7 @@ class GroupRepository constructor(
         awaitClose { ref.removeEventListener(listener) }
     }.flowOn(Dispatchers.IO)
 
-    fun observeIsUserInGroup(groupName: String, userId: String): Flow<Boolean> = callbackFlow {
+    override fun observeIsUserInGroup(groupName: String, userId: String): Flow<Boolean> = callbackFlow {
 
         val ref = groupUsersRef(groupName)
             .child(userId)

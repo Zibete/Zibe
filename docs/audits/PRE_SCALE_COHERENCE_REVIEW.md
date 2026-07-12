@@ -123,3 +123,21 @@ Ejecutado el 11 de julio de 2026:
   otros archivos.
 - Validación dirigida: compilación de main/unit/androidTest, grafo Hilt,
   `testDebugUnitTest`, check arquitectónico y `git diff --check` pasaron.
+
+## Etapa de dominio y persistencia de chat
+
+- `ChatRefs`, `DatabaseReference`, `StorageReference`, snapshots y paths quedan
+  encapsulados en `ChatRepository`; app y domain operan con `ChatThread` y
+  `ChatRepositoryContract`.
+- `ChatListViewModel` consume `observeConversations()` como `Flow` y ya no crea
+  ni retiene listeners Firebase. Chat, chat list y profile dejaron de inyectar
+  repositorios concretos, por lo que se eliminaron todas las excepciones del
+  check arquitectónico.
+- `DefaultSendChatMessageUseCase` concentra bloqueo por receptor, creación del
+  mensaje `MSG_DELIVERED`, resúmenes, incremento unread y elección entre fan-out
+  DM atómico o persistencia group legacy.
+- `ZibeFirebaseMessagingService` depende de
+  `DirectMessageReceiptAcknowledger`; el callback completa el trabajo suspendido
+  dentro de su ventana de ejecución y mantiene receipt separado del éxito FCM.
+- Tests de domain verifican que DM use una sola operación de fan-out, conserve
+  delivered/unread y no escriba cuando el receptor bloqueó al emisor.

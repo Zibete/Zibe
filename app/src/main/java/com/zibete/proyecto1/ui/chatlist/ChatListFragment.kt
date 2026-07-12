@@ -20,7 +20,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.databinding.FragmentChatListBinding
 import com.zibete.proyecto1.model.Conversation
@@ -38,7 +38,7 @@ import javax.inject.Inject
 class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
     @Inject
-    lateinit var userRepository: UserRepository
+    lateinit var localRepositoryProvider: LocalRepositoryProvider
 
     @Inject
     lateinit var profileRepositoryProvider: ProfileRepositoryProvider
@@ -112,7 +112,7 @@ class ChatListFragment : BaseChatSessionFragment(), SearchHandler {
 
         adapterChatList = AdapterChatList(
             lifecycleScope = viewLifecycleOwner.lifecycleScope,
-            myUid = userRepository.myUid,
+            myUid = localRepositoryProvider.myUid,
             profileRepositoryProvider = profileRepositoryProvider,
             onChatClicked = ::openChat,
             onChatLongPressed = ::showChatMenu

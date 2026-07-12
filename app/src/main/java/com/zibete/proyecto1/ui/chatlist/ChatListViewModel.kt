@@ -2,10 +2,6 @@ package com.zibete.proyecto1.ui.chatlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
@@ -15,9 +11,10 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
-import com.zibete.proyecto1.data.ChatRefs
-import com.zibete.proyecto1.data.ChatRepository
-import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.ChatThread
+import com.zibete.proyecto1.data.ConversationOverviewRepository
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Conversation
@@ -30,23 +27,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
-    private val userRepository: UserRepository,
+    private val localRepositoryProvider: LocalRepositoryProvider,
+    private val conversationOverviewRepository: ConversationOverviewRepository,
     private val profileRepositoryActions: ProfileRepositoryActions,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepositoryContract
 ) : ViewModel() {
 
 //    private val chatRef
 //        get() = userRepository.conversationsRootRef(nodeType = NODE_DM)
 
-    private var chatRootRef: DatabaseReference? = null
-
-    private var chatListListener: ValueEventListener? = null
+    private var observeJob: Job? = null
     private var allChats: List<Conversation> = emptyList()
 
     private val _uiState = MutableStateFlow(ChatListUiState())
@@ -56,26 +53,10 @@ class ChatListViewModel @Inject constructor(
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
 
     fun startObserving() {
-        if (chatListListener != null) return
+        if (observeJob != null) return
         setIsLoading(true)
-
-        val chatRef = chatRootRef ?: userRepository.conversationsRootRef(nodeType = NODE_DM).also { chatRootRef = it }
-
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.exists()) {
-                    allChats = emptyList()
-                    _uiState.value = ChatListUiState(
-                        isLoading = false,
-                        chats = emptyList(),
-                        filteredChats = emptyList(),
-                        showOnboarding = true,
-                        searchQuery = _uiState.value.searchQuery
-                    )
-                    return
-                }
-
-                val all = mapSnapshot(snapshot)
+        observeJob = viewModelScope.launch {
+            chatRepository.observeConversations(NODE_DM).collect { all ->
                 val visible = computeVisibleChats(all)
                 allChats = visible
 
@@ -90,19 +71,12 @@ class ChatListViewModel @Inject constructor(
                     searchQuery = q
                 )
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                setIsLoading(false)
-            }
         }
-
-        chatListListener = listener
-        chatRef.addValueEventListener(listener)
     }
 
     fun stopObserving() {
-        chatRootRef?.let { ref -> chatListListener?.let(ref::removeEventListener) }
-        chatListListener = null
+        observeJob?.cancel()
+        observeJob = null
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -116,11 +90,6 @@ class ChatListViewModel @Inject constructor(
             )
         }
     }
-
-    private fun mapSnapshot(snapshot: DataSnapshot): List<Conversation> =
-        snapshot.children
-            .mapNotNull { it.getValue(Conversation::class.java) }
-            .sorted()
 
     private fun computeVisibleChats(all: List<Conversation>): List<Conversation> =
         all.filter { chat -> chat.isVisible() }
@@ -141,17 +110,21 @@ class ChatListViewModel @Inject constructor(
 
     fun onMarkAsReadChatListClicked(userId: String, nodeType: String) {
         viewModelScope.launch {
-            userRepository.toggleUnreadBadge(userId, nodeType)
+            conversationOverviewRepository.toggleUnreadBadge(userId, nodeType)
         }
     }
 
     fun onToggleNotificationsClicked(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val chatWith = chatRepository.getConversation(secondUid = userId, nodeType = nodeType)
+            val chatWith = chatRepository.getConversation(
+                firstUid = localRepositoryProvider.myUid,
+                secondUid = userId,
+                nodeType = nodeType
+            )
             val currentState = chatWith?.state
 
             val newState = if (currentState == CHAT_STATE_SILENT) nodeType else CHAT_STATE_SILENT
-            userRepository.updateChatState(userId, userName, nodeType, newState)
+            conversationOverviewRepository.updateChatState(userId, userName, nodeType, newState)
 
             val isNotificationsSilenced = newState == CHAT_STATE_SILENT
             _events.tryEmit(
@@ -195,7 +168,7 @@ class ChatListViewModel @Inject constructor(
 
     fun onDeleteChoiceMode(userId: String, userName: String, nodeType: String) {
         viewModelScope.launch {
-            val chatRefs = chatRepository.buildChatRefs(userId, nodeType)
+            val chatRefs = chatRepository.chatThread(userId, nodeType)
             val count = chatRepository.getMessageCount(chatRefs)
             _events.emit(
                 ChatSessionUiEvent.DeleteClickedChoiceMode(
@@ -218,7 +191,7 @@ class ChatListViewModel @Inject constructor(
         }.onFailure { onFailure(it) }
     }
 
-    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+    private fun onConfirmDelete(chatRefs: ChatThread, userName: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
@@ -236,7 +209,7 @@ class ChatListViewModel @Inject constructor(
     }
 
     private suspend fun hideConversation(userId: String, userName: String, nodeType: String) {
-        userRepository.updateChatState(
+        conversationOverviewRepository.updateChatState(
             userId,
             userName,
             nodeType,
@@ -246,9 +219,9 @@ class ChatListViewModel @Inject constructor(
         }.onFailure { onFailure(it) }
     }
 
-    private suspend fun deleteMessages(chatRefs: ChatRefs) {
+    private suspend fun deleteMessages(chatRefs: ChatThread) {
         chatRepository.deleteMessages(
-            chatRefs = chatRefs,
+            thread = chatRefs,
             selectedIds = null
         ).onSuccess { deleteResult ->
             val deleteResult = deleteResult ?: return@onSuccess

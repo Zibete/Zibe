@@ -34,6 +34,9 @@ interface ConversationOverviewRepository {
         nodeType: String,
         newState: String
     ): ZibeResult<Unit>
+    suspend fun toggleUnreadBadge(otherUid: String, nodeType: String)
+    suspend fun setActiveThread(otherUid: String, nodeType: String)
+    suspend fun clearActiveThread()
 }
 
 interface UserRepositoryProvider {
