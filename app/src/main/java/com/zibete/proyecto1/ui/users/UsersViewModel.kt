@@ -8,6 +8,7 @@ import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
@@ -79,7 +80,7 @@ class UsersViewModel @Inject constructor(
             val myUid = localRepositoryProvider.myUid
 
             val fetchStart = SystemClock.elapsedRealtime()
-            runCatching { fetchUsersBase(myUid) }
+            runCatchingPreservingCancellation { fetchUsersBase(myUid) }
                 .onSuccess { users ->
                     SystemClock.elapsedRealtime() - fetchStart
                     allUsers = users
@@ -178,7 +179,7 @@ class UsersViewModel @Inject constructor(
         toFetch.forEach { otherUid ->
             hasBlockedMeInFlight += otherUid
             viewModelScope.launch(Dispatchers.IO) {
-                val result = runCatching {
+                val result = runCatchingPreservingCancellation {
                     hasBlockedMeSemaphore.withPermit {
                         fetchHasBlockedMe(otherUid)
                     }

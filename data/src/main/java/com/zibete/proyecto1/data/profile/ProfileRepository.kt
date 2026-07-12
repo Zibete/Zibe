@@ -28,6 +28,7 @@ import com.zibete.proyecto1.core.utils.TimeUtils.formatLastSeen
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
@@ -291,7 +292,9 @@ class ProfileRepository @Inject constructor(
                         return
                     }
                     launch {
-                        val otherAt = runCatching { activeThreadRef(userId).get().await() }
+                        val otherAt = runCatchingPreservingCancellation {
+                            activeThreadRef(userId).get().await()
+                        }
                             .getOrNull()
                             ?: run {
                                 trySend(UserStatus.Online)

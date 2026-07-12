@@ -23,6 +23,7 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
 import com.zibete.proyecto1.data.ConversationOverviewRepository
@@ -437,7 +438,7 @@ class ChatViewModel @Inject constructor(
         onComplete: (String?) -> Unit
     ) {
         viewModelScope.launch {
-            val result = runCatching {
+            val result = runCatchingPreservingCancellation {
                 val thread = _chatRefs.first { it != null }!!
                 chatRepository.uploadMedia(uri, fileName, thread, path)
             }.getOrNull()
@@ -571,7 +572,7 @@ class ChatViewModel @Inject constructor(
 
     fun onToggleBlockClicked() {
         viewModelScope.launch {
-            runCatching {
+            runCatchingPreservingCancellation {
                 profileRepositoryActions.toggleBlock(otherUid, otherIdentity.userName)
             }.onSuccess { isBlockedByMe ->
                 _headerState.update { current ->

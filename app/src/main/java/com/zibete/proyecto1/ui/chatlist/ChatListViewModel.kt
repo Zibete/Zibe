@@ -11,6 +11,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
 import com.zibete.proyecto1.data.ConversationOverviewRepository
@@ -184,7 +185,7 @@ class ChatListViewModel @Inject constructor(
     }
 
     private suspend fun toggleBlock(otherUid: String, otherName: String) {
-        runCatching {
+        runCatchingPreservingCancellation {
             profileRepositoryActions.toggleBlock(otherUid, otherName)
         }.onSuccess { isBlockedByMe ->
             _events.emit(ChatSessionUiEvent.ShowToggleBlockSuccess(otherName, isBlockedByMe))

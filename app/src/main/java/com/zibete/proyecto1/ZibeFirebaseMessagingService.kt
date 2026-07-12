@@ -7,6 +7,7 @@ import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
 import com.zibete.proyecto1.data.UnreadSummary
@@ -20,6 +21,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.cancellation.CancellationException
 
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
@@ -48,8 +50,10 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                 }
 
                 handleDataMessage(data, uid)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error handling FCM", t)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Log.e(TAG, "Error handling FCM", exception)
             }
         }
     }
@@ -79,8 +83,10 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                     installId = installId,
                     fcmToken = token
                 )
-            } catch (t: Throwable) {
-                Log.e(TAG, "Error syncing refreshed FCM token", t)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Log.e(TAG, "Error syncing refreshed FCM token", exception)
             }
         }
     }
@@ -152,7 +158,9 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             Log.w(TAG, "Could not acknowledge DM message receipt", it)
         }
 
-        val enabled = runCatching { userPreferencesProvider.individualNotificationsFlow.first() }
+        val enabled = runCatchingPreservingCancellation {
+            userPreferencesProvider.individualNotificationsFlow.first()
+        }
             .onFailure {
                 Log.w(TAG, "Could not read DM notification preference; showing notification", it)
             }
@@ -174,7 +182,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             ?.takeIf { it.isNotBlank() }
             ?: FALLBACK_DM_CONTENT
 
-        val summary = runCatching {
+        val summary = runCatchingPreservingCancellation {
             chatRepository.getUnreadSummaryForChats(myUid, NODE_DM)
         }.onFailure {
             Log.w(
@@ -184,7 +192,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             )
         }.getOrDefault(UnreadSummary(totalChats = 1, totalUnread = 1))
 
-        val conversation = runCatching {
+        val conversation = runCatchingPreservingCancellation {
             chatRepository.getConversation(
                 firstUid = myUid,
                 secondUid = otherUid,

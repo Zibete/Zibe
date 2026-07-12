@@ -30,4 +30,5 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.androidx.annotation)
     implementation(libs.javax.inject)
+    testImplementation(libs.junit4)
 }

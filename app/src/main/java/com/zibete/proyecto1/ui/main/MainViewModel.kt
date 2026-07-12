@@ -12,6 +12,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
@@ -354,7 +355,7 @@ class MainViewModel @Inject constructor(
     }
 
     suspend fun toggleBlock(userId: String, userName: String) {
-        runCatching {
+        runCatchingPreservingCancellation {
             profileRepositoryActions.toggleBlock(userId, userName)
         }.onSuccess { isBlockedByMe ->
             emit(

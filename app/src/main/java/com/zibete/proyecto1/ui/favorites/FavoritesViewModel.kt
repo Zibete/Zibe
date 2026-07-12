@@ -6,6 +6,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -46,7 +47,7 @@ class FavoritesViewModel @Inject constructor(
             if (shouldShowLoading) _uiState.update { it.copy(isLoading = true) }
             if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
 
-            runCatching { fetchFavoriteUsers() }
+            runCatchingPreservingCancellation { fetchFavoriteUsers() }
                 .onSuccess { result ->
                     allFavorites = result
                     updateVisibleFavorites(isLoading = false, isRefreshing = false)

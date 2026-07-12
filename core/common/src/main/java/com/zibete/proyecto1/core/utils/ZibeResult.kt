@@ -7,6 +7,15 @@ sealed interface ZibeResult<out T> {
     data class Failure(val exception: Throwable) : ZibeResult<Nothing>
 }
 
+inline fun <T> runCatchingPreservingCancellation(block: () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        Result.failure(exception)
+    }
+
 inline fun <T> zibeCatching(block: () -> T): ZibeResult<T> =
     runCatching(block).fold(
         onSuccess = { ZibeResult.Success(it) },

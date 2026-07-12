@@ -13,6 +13,7 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.auth.AuthCredentialRequest.Facebook
 import com.zibete.proyecto1.data.auth.AuthCredentialRequest.Google
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -129,7 +130,7 @@ class FirebaseSessionManager @Inject constructor(
             AuthProvider.NONE -> return false
         }
 
-        return runCatching {
+        return runCatchingPreservingCancellation {
             user.reauthenticate(credential).await()
             true
         }.getOrDefault(false)

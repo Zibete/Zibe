@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,22 +31,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.UiTags.CHAT_SCREEN
-import com.zibete.proyecto1.core.designsystem.R as DsR
-import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.TimeUtils
 import com.zibete.proyecto1.model.isVisibleFor
 import com.zibete.proyecto1.ui.chat.components.ArrowOverlay
@@ -70,13 +61,10 @@ import com.zibete.proyecto1.ui.chat.preview.samplePhotoUploadingState
 import com.zibete.proyecto1.ui.chat.preview.sampleRecordingStates
 import com.zibete.proyecto1.ui.chat.preview.sampleSelectionState
 import com.zibete.proyecto1.ui.components.ZibeButtonSecondary
-import com.zibete.proyecto1.ui.components.ZibeSnackbar
-import com.zibete.proyecto1.ui.components.showZibeMessage
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -84,8 +72,7 @@ import kotlinx.coroutines.launch
 fun ChatRoute(
     viewModel: ChatViewModel,
     mediaUiState: ChatMediaUiState,
-    callbacks: ChatCallbacks,
-    snackBarManager: SnackBarManager? = null
+    callbacks: ChatCallbacks
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val headerState = uiState.header
@@ -122,8 +109,7 @@ fun ChatRoute(
         mediaUiState = mediaUiState,
         showPhotoSheet = showPhotoSheet,
         onDismissPhotoSheet = { showPhotoSheet = false },
-        callbacks = callbacks,
-        snackBarManager = snackBarManager
+        callbacks = callbacks
     )
 }
 
@@ -138,8 +124,7 @@ fun ChatScreen(
     mediaUiState: ChatMediaUiState,
     showPhotoSheet: Boolean,
     onDismissPhotoSheet: () -> Unit,
-    callbacks: ChatCallbacks,
-    snackBarManager: SnackBarManager? = null
+    callbacks: ChatCallbacks
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -168,7 +153,6 @@ fun ChatScreen(
 
     var rootPositionInWindow by remember { mutableStateOf(Offset.Zero) }
     var playTrashDrop by remember { mutableStateOf(false) }
-    var topBarHeightPx by remember { mutableIntStateOf(0) }
     val showSend = chatState.textReady || chatState.photoReady || mediaUiState.isAudioUploading
 
     val isPhotoUploading =
@@ -221,11 +205,7 @@ fun ChatScreen(
     ) {
         Scaffold(
             topBar = {
-                Box(
-                    modifier = Modifier.onGloballyPositioned { coordinates ->
-                        topBarHeightPx = coordinates.size.height
-                    }
-                ) {
+                Box {
                     ChatTopBar(
                         name = title,
                         status = status,
@@ -379,11 +359,6 @@ fun ChatScreen(
             }
         )
 
-        ChatSnackHost(
-            snackBarManager = snackBarManager,
-            topBarHeightPx = topBarHeightPx
-        )
-
         MicRecordOverlay(
             isVisible = showMicOverlay,
             pointerInWindow = micPointerInWindow ?: micCenterInWindow,
@@ -398,39 +373,6 @@ fun ChatScreen(
         )
     }
 
-}
-
-@Composable
-private fun ChatSnackHost(
-    snackBarManager: SnackBarManager?,
-    topBarHeightPx: Int
-) {
-    if (snackBarManager == null) return
-
-    val snackHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val topPadding = with(density) { topBarHeightPx.toDp() } +
-        dimensionResource(DsR.dimen.element_spacing_medium)
-
-    LaunchedEffect(lifecycleOwner, snackBarManager) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            snackBarManager.events.collectLatest { event ->
-                snackHostState.showZibeMessage(
-                    message = event.uiText.asString(context),
-                    snackType = event.type
-                )
-            }
-        }
-    }
-
-    ZibeSnackbar(
-        hostState = snackHostState,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = topPadding)
-    )
 }
 
 private fun previewCallbacks(): ChatCallbacks = ChatCallbacks(

@@ -22,6 +22,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -50,7 +51,7 @@ class ChatActivity : BaseChatSessionActivity() {
         const val MIN_AUDIO_DURATION_MS = 1_000L
     }
 
-    override val enableComposeSnackHost: Boolean = false
+    override val snackHostTopOffset = 56.dp
 
     private val chatViewModel: ChatViewModel by viewModels()
     private var mediaRecorder: MediaRecorder? = null
@@ -117,8 +118,7 @@ class ChatActivity : BaseChatSessionActivity() {
                 ChatRoute(
                     viewModel = chatViewModel,
                     mediaUiState = mediaUiState,
-                    callbacks = callbacks,
-                    snackBarManager = snackBarManager
+                    callbacks = callbacks
                 )
             }
         }
