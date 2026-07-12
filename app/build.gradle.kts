@@ -1,5 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -11,13 +12,12 @@ val facebookClientToken = localProperties.getProperty("FACEBOOK_CLIENT_TOKEN")?.
 val fbLoginProtocolScheme = "fb${facebookAppId.lowercase()}"
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
-    id("com.google.gms.google-services")
-    id("kotlin-parcelize")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
@@ -27,7 +27,7 @@ android {
     defaultConfig {
         applicationId = "com.zibete.proyecto1"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 3
         versionName = "1.10"
 
@@ -56,12 +56,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = "11"
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildTypes {
@@ -82,6 +78,13 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
 gradle.taskGraph.whenReady {
     val hasReleaseTask = allTasks.any { it.name.contains("release", ignoreCase = true) }
     if (!hasReleaseTask) return@whenReady
@@ -94,13 +97,6 @@ gradle.taskGraph.whenReady {
     }
 }
 
-configurations.all {
-    resolutionStrategy {
-        force("com.google.android.material:material:1.13.0")
-    }
-}
-
-
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
@@ -110,136 +106,136 @@ dependencies {
     // -------------------------------
     // ANDROIDX BASE
     // -------------------------------
-    implementation("androidx.appcompat:appcompat:1.7.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("androidx.viewpager:viewpager:1.0.0")
-    implementation("androidx.recyclerview:recyclerview:1.4.0")
-//    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.annotation:annotation:1.9.1")
-    implementation("androidx.concurrent:concurrent-futures:1.2.0")
+    implementation(libs.appcompat)
+    implementation(libs.constraintlayout)
+    implementation(libs.swiperefreshlayout)
+    implementation(libs.viewpager)
+    implementation(libs.recyclerview)
+    implementation(libs.material)
+    implementation(libs.androidx.annotation)
+    implementation(libs.concurrent.futures)
 
     // Navigation
-    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
-    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
-    implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
+    implementation(libs.navigation.compose)
 
     // -------------------------------
     // COMPOSE
     // -------------------------------
-    implementation(platform("androidx.compose:compose-bom:2026.01.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.runtime:runtime")
-    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.runtime)
+    implementation(libs.activity.compose)
 
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     // -------------------------------
     // LIFECYCLE
     // -------------------------------
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.0")
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime)
+    implementation(libs.lifecycle.viewmodel)
+    implementation(libs.lifecycle.livedata)
 
     // -------------------------------
     // DATASTORE
     // -------------------------------
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.datastore.preferences)
 
     // -------------------------------
     // HILT (KSP)
     // -------------------------------
-    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation(libs.hilt.navigation.compose)
 
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    ksp("com.google.dagger:hilt-android-compiler:2.59.2")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
-    androidTestImplementation("com.google.dagger:hilt-android-testing:2.59.2")
-    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.59.2")
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 
     // -------------------------------
     // IMAGES / UI
     // -------------------------------
-    implementation("com.github.Dimezis:BlurView:version-3.1.0")
-    implementation("de.hdodenhof:circleimageview:3.1.0")
-    implementation("com.github.chrisbanes:PhotoView:2.3.0")
-    implementation("com.squareup.picasso:picasso:2.71828")
+    implementation(libs.blur.view)
+    implementation(libs.circle.image.view)
+    implementation(libs.photo.view)
+    implementation(libs.picasso)
 
     // Glide
-    implementation("com.github.bumptech.glide:glide:5.0.5")
-    implementation("jp.wasabeef:glide-transformations:4.3.0")
+    implementation(libs.glide)
+    implementation(libs.glide.transformations)
 
     // Coil
-    implementation("io.coil-kt:coil:2.6.0")
-    implementation("io.coil-kt:coil-gif:2.6.0")
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation(libs.coil)
+    implementation(libs.coil.gif)
+    implementation(libs.coil.compose)
 
-    implementation("id.zelory:compressor:3.0.1")
-    implementation("com.github.rahimlis:badgedtablayout:v1.2")
-    implementation("com.github.yalantis:ucrop:2.2.8")
+    implementation(libs.compressor)
+    implementation(libs.badge.tab.layout)
+    implementation(libs.ucrop)
 
     // -------------------------------
     // GOOGLE / FIREBASE
     // -------------------------------
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.play.services.location)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-database")
-    implementation("com.google.firebase:firebase-storage")
-    implementation("com.google.firebase:firebase-messaging")
-    releaseImplementation("com.google.firebase:firebase-appcheck-playintegrity")
-    debugImplementation("com.google.firebase:firebase-appcheck-debug")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.compose.material.icons)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.database)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.messaging)
+    releaseImplementation(libs.firebase.appcheck.play.integrity)
+    debugImplementation(libs.firebase.appcheck.debug)
 
-    implementation("com.firebaseui:firebase-ui-auth:8.0.2")
-    implementation("com.facebook.android:facebook-login:17.0.0")
+    implementation(libs.firebase.ui.auth)
+    implementation(libs.facebook.login)
 
     // -------------------------------
     // OTHERS
     // -------------------------------
 
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services)
+    implementation(libs.google.id)
 
-    implementation("androidx.room:room-ktx:2.6.1")
-    implementation("com.android.volley:volley:1.2.1")
-    implementation("jp.co.cyberagent.android:gpuimage:2.1.0")
-    implementation("com.github.clans:fab:1.6.4")
+    implementation(libs.room)
+    implementation(libs.volley)
+    implementation(libs.gpu.image)
+    implementation(libs.floating.action.button)
 
-    implementation("com.airbnb.android:lottie:6.4.0")
-    implementation("com.airbnb.android:lottie-compose:6.4.0")
+    implementation(libs.lottie)
+    implementation(libs.lottie.compose)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation(libs.coroutines.play.services)
 
     // -------------------------------
     // TESTING
     // -------------------------------
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("io.mockk:mockk:1.14.7")
-    testImplementation("org.mockito:mockito-core:5.12.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation(libs.junit4)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.arch.core.testing)
+    testImplementation(libs.mockk)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(kotlin("test"))
 
-    androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")
-    androidTestImplementation("androidx.test:runner:1.7.0")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2026.01.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("io.mockk:mockk-android:1.14.7")
-    androidTestImplementation("org.mockito:mockito-android:5.12.0")
-    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.espresso.intents)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockito.android)
+    androidTestImplementation(libs.mockito.kotlin)
 
     // Local libs
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))

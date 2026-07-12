@@ -1,6 +1,7 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.library)
 }
 
 android {
@@ -12,24 +13,27 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
+}
 
-    kotlinOptions {
-        jvmTarget = "11"
+kotlin {
+    jvmToolchain(17)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-database")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation("com.facebook.android:facebook-login:17.0.0")
-    implementation("com.google.dagger:hilt-android:2.59.2")
-    implementation("javax.inject:javax.inject:1")
-    implementation("jakarta.inject:jakarta.inject-api:2.0.1")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.database)
+    implementation(libs.coroutines.core)
+    implementation(libs.credentials)
+    implementation(libs.facebook.login)
+    implementation(libs.hilt.android)
+    implementation(libs.javax.inject)
+    implementation(libs.jakarta.inject)
 }
