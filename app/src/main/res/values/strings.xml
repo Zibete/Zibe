@@ -294,6 +294,12 @@
     <string name="label_age">%1$d años</string>
     <string name="action_exit">Salir</string>
     <string name="action_continue">Continuar</string>
+    <string name="action_not_now">Ahora no</string>
+    <string name="action_settings">Abrir configuración</string>
+    <string name="notification_permission_title">Activá las notificaciones</string>
+    <string name="notification_permission_message">ZIBE usa notificaciones para avisarte cuando recibís mensajes. Podés continuar aunque no las habilites.</string>
+    <string name="notification_permission_settings_title">Notificaciones desactivadas</string>
+    <string name="notification_permission_settings_message">Para volver a recibir avisos de mensajes, habilitá las notificaciones desde la configuración de ZIBE.</string>
     <string name="action_retry">Reintentar</string>
 
     <!-- ============================= -->

@@ -141,7 +141,6 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime)
     implementation(libs.lifecycle.viewmodel)
-    implementation(libs.lifecycle.livedata)
 
     // -------------------------------
     // DATASTORE
@@ -165,11 +164,9 @@ dependencies {
     implementation(libs.blur.view)
     implementation(libs.circle.image.view)
     implementation(libs.photo.view)
-    implementation(libs.picasso)
 
     // Glide
     implementation(libs.glide)
-    implementation(libs.glide.transformations)
 
     // Coil
     implementation(libs.coil)
@@ -206,8 +203,6 @@ dependencies {
     implementation(libs.credentials.play.services)
     implementation(libs.google.id)
 
-    implementation(libs.room)
-    implementation(libs.volley)
     implementation(libs.gpu.image)
     implementation(libs.floating.action.button)
 
