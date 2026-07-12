@@ -149,7 +149,9 @@ class ChatRepository @Inject constructor(
             }
 
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) = Unit
-            override fun onCancelled(error: DatabaseError) = Unit
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
         }
 
         chatRefs.refChat.addChildEventListener(listener)
@@ -249,7 +251,6 @@ class ChatRepository @Inject constructor(
             "$receiverConversationPath/${ConversationKeys.OTHER_NAME}" to receiverConversation.otherName,
             "$receiverConversationPath/${ConversationKeys.OTHER_PHOTO_URL}" to
                 receiverConversation.otherPhotoUrl,
-            "$receiverConversationPath/${ConversationKeys.STATE}" to receiverConversation.state,
             "$receiverConversationPath/${ConversationKeys.UNREAD_COUNT}" to ServerValue.increment(1),
             "$receiverConversationPath/${ConversationKeys.SEEN}" to receiverConversation.seen
         )
@@ -294,8 +295,7 @@ class ChatRepository @Inject constructor(
         fileName: String,
         thread: ChatThread,
         storagePath: String
-    ): String? {
-        return try {
+    ): ZibeResult<String> = zibeCatching {
             val refs = refsFor(thread)
             val refData = when (storagePath) {
                 PATH_AUDIOS -> refs.refAudios
@@ -305,9 +305,6 @@ class ChatRepository @Inject constructor(
             val fileRef = refData.child(fileName)
             fileRef.putFile(Uri.parse(localUri)).await()
             fileRef.downloadUrl.await().toString()
-        } catch (_: Exception) {
-            null
-        }
     }
 
     override suspend fun markChatAsSeen(thread: ChatThread): ZibeResult<Unit> = zibeCatching {

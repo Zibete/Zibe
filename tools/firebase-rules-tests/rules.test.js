@@ -16,7 +16,7 @@ const rules = readFileSync(
 const uidA = "user_a";
 const uidB = "user_b";
 const uidC = "user_c";
-const chatId = [uidA, uidB].sort().join("_");
+const chatId = [uidA, uidB].sort().join("|");
 
 let testEnv;
 
@@ -145,10 +145,63 @@ describe("Realtime Database Rules", () => {
         [`${conversationPath}/otherId`]: receiverConversation.otherId,
         [`${conversationPath}/otherName`]: receiverConversation.otherName,
         [`${conversationPath}/otherPhotoUrl`]: receiverConversation.otherPhotoUrl,
-        [`${conversationPath}/state`]: receiverConversation.state,
         [`${conversationPath}/unreadCount`]: { ".sv": { "increment": 1 } },
         [`${conversationPath}/seen`]: receiverConversation.seen,
       })
+    );
+  });
+
+  it("allows a subsequent dm fan-out and resets latest-message seen", async () => {
+    await seed(`Users/Data/${uidA}/dm/${uidB}`, dmConversation({
+      userId: uidA,
+      otherId: uidB,
+      state: "silent",
+      unreadCount: 0,
+      seen: 3,
+    }));
+    await seed(conversationPath, dmConversation({
+      state: "hide",
+      unreadCount: 4,
+      seen: 3,
+    }));
+
+    await assertSucceeds(
+      authedDb(uidA).ref().update({
+        [`Chats/dm/${chatId}/message_2`]: dmMessage({ createdAt: 456 }),
+        [`Users/Data/${uidA}/dm/${uidB}`]: dmConversation({
+          userId: uidA,
+          otherId: uidB,
+          state: "silent",
+          unreadCount: 0,
+          seen: 1,
+          lastMessageAt: 456,
+        }),
+        [`${conversationPath}/lastContent`]: "next",
+        [`${conversationPath}/lastMessageAt`]: 456,
+        [`${conversationPath}/userId`]: uidA,
+        [`${conversationPath}/otherId`]: uidA,
+        [`${conversationPath}/otherName`]: "User A",
+        [`${conversationPath}/otherPhotoUrl`]: "https://example.com/photo.png",
+        [`${conversationPath}/unreadCount`]: { ".sv": { "increment": 1 } },
+        [`${conversationPath}/seen`]: 0,
+      })
+    );
+  });
+
+  it("blocks physical dm deletion and sender-forged receipt", async () => {
+    await seed(messagePath, dmMessage());
+    await assertFails(authedDb(uidA).ref(messagePath).remove());
+    await assertFails(authedDb(uidA).ref(`${messagePath}/seen`).set(2));
+    await assertSucceeds(authedDb(uidB).ref(`${messagePath}/seen`).set(2));
+  });
+
+  it("blocks arbitrary receiver unread updates by the sender", async () => {
+    await seed(conversationPath, dmConversation({ unreadCount: 4 }));
+    await assertFails(
+      authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(0)
+    );
+    await assertSucceeds(
+      authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(5)
     );
   });
 
@@ -264,7 +317,7 @@ describe("Realtime Database Rules", () => {
     it(`allows non-negative integer dm unreadCount ${validUnread}`, async () => {
       await seed(conversationPath, dmConversation());
       await assertSucceeds(
-        authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(validUnread)
+        authedDb(uidB).ref(`${conversationPath}/unreadCount`).set(validUnread)
       );
     });
   }
@@ -273,7 +326,7 @@ describe("Realtime Database Rules", () => {
     it(`blocks invalid dm unreadCount ${JSON.stringify(invalidUnread)}`, async () => {
       await seed(conversationPath, dmConversation());
       await assertFails(
-        authedDb(uidA).ref(`${conversationPath}/unreadCount`).set(invalidUnread)
+        authedDb(uidB).ref(`${conversationPath}/unreadCount`).set(invalidUnread)
       );
     });
   }

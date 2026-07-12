@@ -50,7 +50,7 @@ interface ChatRepositoryContract {
         fileName: String,
         thread: ChatThread,
         storagePath: String
-    ): String?
+    ): ZibeResult<String>
     suspend fun markChatAsSeen(thread: ChatThread): ZibeResult<Unit>
     suspend fun markMessageAsSeenIfNeeded(
         thread: ChatThread,

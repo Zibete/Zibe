@@ -58,7 +58,7 @@ class DirectMessageContractTest(unittest.TestCase):
     def test_parse_other_uid_supports_underscores(self):
         self.assertEqual(
             "alice_team",
-            self.main._parse_other_uid_from_chat_id("alice_team_bob", "bob"),
+            self.main._parse_other_uid_from_chat_id("alice_team|bob", "bob"),
         )
 
     def test_active_dm_requires_fresh_lease(self):

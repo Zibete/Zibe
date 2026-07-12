@@ -30,7 +30,18 @@ class ChatIdGeneratorTest {
     fun getOtherUid_supportsParticipantsContainingUnderscores() {
         val chatId = ChatIdGenerator.getChatId("alice_team", "bob")
 
+        assertEquals("alice_team|bob", chatId)
         assertEquals("alice_team", ChatIdGenerator.getOtherUid(chatId, "bob"))
         assertEquals("bob", ChatIdGenerator.getOtherUid(chatId, "alice_team"))
+    }
+
+    @Test
+    fun getChatId_avoidsUnderscoreCollisions() {
+        val firstPair = ChatIdGenerator.getChatId("a", "b_c")
+        val secondPair = ChatIdGenerator.getChatId("a_b", "c")
+
+        assertEquals("a|b_c", firstPair)
+        assertEquals("a_b|c", secondPair)
+        assert(firstPair != secondPair)
     }
 }
