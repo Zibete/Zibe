@@ -50,7 +50,7 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-data class ChatRefs(
+private data class ChatRefs(
     val refAudios: StorageReference,
     val refPhotos: StorageReference,
     val refChat: DatabaseReference,
@@ -59,17 +59,12 @@ data class ChatRefs(
     val nodeType: String
 )
 
-data class DeleteResult(
-    val deletedCount: Int,
-    val chatRemoved: Boolean
-)
-
 private const val DM_SEEN_QUERY_BUFFER = 20
 
 class ChatRepository @Inject constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
-) {
+) : ChatRepositoryContract, DirectMessageReceiptAcknowledger {
 
     val firebaseUser: AuthUser
         get() = checkNotNull(authSessionProvider.currentUser) {
@@ -79,10 +74,14 @@ class ChatRepository @Inject constructor(
     val myUid: String
         get() = firebaseUser.uid
 
-    fun buildChatRefs(
+    override fun chatThread(
         otherUid: String,
         nodeType: String
-    ): ChatRefs {
+    ): ChatThread = ChatThread(otherUid, nodeType)
+
+    private fun refsFor(thread: ChatThread): ChatRefs {
+        val otherUid = thread.otherUid
+        val nodeType = thread.nodeType
 
         val chatId = getChatId(myUid, otherUid)
 
@@ -127,7 +126,8 @@ class ChatRepository @Inject constructor(
         return "${otherUid}_${nodeType}"
     }
 
-    fun observeChatMessages(chatRefs: ChatRefs): Flow<ChatChildEvent> = callbackFlow {
+    override fun observeChatMessages(thread: ChatThread): Flow<ChatChildEvent> = callbackFlow {
+        val chatRefs = refsFor(thread)
         val listener = object : ChildEventListener {
 
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -155,8 +155,27 @@ class ChatRepository @Inject constructor(
         awaitClose { chatRefs.refChat.removeEventListener(listener) }
     }
 
-    suspend fun getConversation(
-        firstUid: String = myUid,
+    override fun observeConversations(nodeType: String): Flow<List<Conversation>> = callbackFlow {
+        val ref = firebaseRefsContainer.refData.child(myUid).child(nodeType)
+        val listener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trySend(
+                    snapshot.children
+                        .mapNotNull { it.getValue(Conversation::class.java) }
+                        .sorted()
+                )
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    override suspend fun getConversation(
+        firstUid: String,
         secondUid: String,
         nodeType: String
     ): Conversation? {
@@ -170,7 +189,7 @@ class ChatRepository @Inject constructor(
         return snapshot.getValue(Conversation::class.java)
     }
 
-    suspend fun hasConversation(
+    override suspend fun hasConversation(
         otherUid: String,
         nodeType: String
     ): ZibeResult<Boolean> = zibeCatching {
@@ -183,25 +202,26 @@ class ChatRepository @Inject constructor(
             .exists()
     }
 
-    suspend fun saveConversation(
+    override suspend fun saveConversation(
         ownerUid: String,
         nodeType: String,
         otherUid: String,
-        chatWith: Conversation
+        conversation: Conversation
     ) {
         firebaseRefsContainer.refData
             .child(ownerUid)
             .child(nodeType)
             .child(otherUid)
-            .setValue(chatWith)
+            .setValue(conversation)
             .await()
     }
 
-    suspend fun pushMessageToChat(chatRefs: ChatRefs, message: ChatMessage) {
+    override suspend fun pushMessageToChat(thread: ChatThread, message: ChatMessage) {
+        val chatRefs = refsFor(thread)
         chatRefs.refChat.push().setValue(message).await()
     }
 
-    suspend fun sendDmMessageWithConversations(
+    override suspend fun sendDmMessageWithConversations(
         senderUid: String,
         receiverUid: String,
         message: ChatMessage,
@@ -224,13 +244,12 @@ class ChatRepository @Inject constructor(
         firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()
     }
 
-    suspend fun acknowledgeDmMessageReceived(
+    override suspend fun acknowledgeReceived(
         myUid: String,
         otherUid: String,
-        nodeType: String,
         messageId: String
     ): ZibeResult<Unit> = zibeCatching {
-        if (nodeType != NODE_DM || messageId.isBlank()) return@zibeCatching
+        if (messageId.isBlank()) return@zibeCatching
 
         val chatId = getChatId(myUid, otherUid)
         val messageRef = firebaseRefsContainer.refChatsDm
@@ -251,27 +270,35 @@ class ChatRepository @Inject constructor(
         syncSenderConversationSeenIfLatest(
             senderUid = otherUid,
             receiverUid = myUid,
-            nodeType = nodeType,
+            nodeType = NODE_DM,
             messageCreatedAt = message.createdAt,
             targetSeen = MSG_RECEIVED
         )
     }
 
-    suspend fun uploadMedia(
-        uri: Uri,
+    override suspend fun uploadMedia(
+        localUri: String,
         fileName: String,
-        refData: StorageReference
+        thread: ChatThread,
+        storagePath: String
     ): String? {
         return try {
+            val refs = refsFor(thread)
+            val refData = when (storagePath) {
+                PATH_AUDIOS -> refs.refAudios
+                PATH_PHOTOS -> refs.refPhotos
+                else -> error("Unsupported chat storage path")
+            }
             val fileRef = refData.child(fileName)
-            fileRef.putFile(uri).await()
+            fileRef.putFile(Uri.parse(localUri)).await()
             fileRef.downloadUrl.await().toString()
         } catch (_: Exception) {
             null
         }
     }
 
-    suspend fun markChatAsSeen(chatRefs: ChatRefs): ZibeResult<Unit> = zibeCatching {
+    override suspend fun markChatAsSeen(thread: ChatThread): ZibeResult<Unit> = zibeCatching {
+        val chatRefs = refsFor(thread)
         if (chatRefs.nodeType != NODE_DM) {
             markLegacyChatAsSeen(chatRefs)
             return@zibeCatching
@@ -293,11 +320,12 @@ class ChatRepository @Inject constructor(
         ).await()
     }
 
-    suspend fun markMessageAsSeenIfNeeded(
-        chatRefs: ChatRefs,
+    override suspend fun markMessageAsSeenIfNeeded(
+        thread: ChatThread,
         messageId: String,
         message: ChatMessage
     ): ZibeResult<Unit> = zibeCatching {
+        val chatRefs = refsFor(thread)
         markMessageAsSeenIfNeededInternal(chatRefs, messageId, message)
     }
 
@@ -414,10 +442,11 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun deleteMessages(
-        chatRefs: ChatRefs,
+    override suspend fun deleteMessages(
+        thread: ChatThread,
         selectedIds: List<String>?
     ): ZibeResult<DeleteResult> = zibeCatching {
+        val chatRefs = refsFor(thread)
         if (selectedIds == null) {
             return@zibeCatching deleteConversationForMeInternal(chatRefs)
         } else {
@@ -457,8 +486,8 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun deleteConversationForMe(chatRefs: ChatRefs): ZibeResult<DeleteResult> =
-        zibeCatching { deleteConversationForMeInternal(chatRefs) }
+    override suspend fun deleteConversationForMe(thread: ChatThread): ZibeResult<DeleteResult> =
+        zibeCatching { deleteConversationForMeInternal(refsFor(thread)) }
 
     private suspend fun deleteConversationForMeInternal(chatRefs: ChatRefs): DeleteResult {
         val snapshot = chatRefs.refChat.get().await()
@@ -557,7 +586,7 @@ class ChatRepository @Inject constructor(
     }
 
 
-    suspend fun removeConversationIfEmpty(chatRefs: ChatRefs): Boolean {
+    private suspend fun removeConversationIfEmpty(chatRefs: ChatRefs): Boolean {
         val snapshot = chatRefs.refChat.get().await()
         val total = snapshot.childrenCount.toInt()
 
@@ -582,18 +611,13 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun getMessageCount(chatRefs: ChatRefs): Int {
-        return chatRefs.refChat.get().await().childrenCount.toInt()
+    override suspend fun getMessageCount(thread: ChatThread): Int {
+        return refsFor(thread).refChat.get().await().childrenCount.toInt()
     }
 
     // -----------------------------------------------------
     // Conversation
-    data class UnreadSummary(
-        val totalChats: Int,
-        val totalUnread: Int
-    )
-
-    suspend fun getUnreadSummaryForChats(
+    override suspend fun getUnreadSummaryForChats(
         myUid: String,
         nodeType: String
     ): UnreadSummary {

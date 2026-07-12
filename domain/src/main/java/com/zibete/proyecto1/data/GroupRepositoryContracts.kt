@@ -13,6 +13,7 @@ interface GroupRepositoryProvider {
     fun observeUnreadGroupChat(groupName: String): Flow<Int>
     fun observeUnreadPrivateMessages(): Flow<Int>
     fun observeGroupUsers(groupName: String): Flow<List<UserGroup>>
+    fun observeIsUserInGroup(groupName: String, userId: String): Flow<Boolean>
     suspend fun getGroup(groupName: String): Groups?
     suspend fun isNickInUse(groupName: String, nick: String): Boolean
     suspend fun markGroupAsRead(groupName: String)

@@ -34,21 +34,23 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
-import com.zibete.proyecto1.data.ChatRefs
-import com.zibete.proyecto1.data.ChatRepository
-import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.ChatThread
+import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
-import com.zibete.proyecto1.data.SessionRepository
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
+import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.chat.SendChatMessageCommand
+import com.zibete.proyecto1.domain.chat.SendChatMessageOutcome
+import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
 import com.zibete.proyecto1.model.ChatMessageItem
-import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.isDeletedFor
@@ -75,14 +77,15 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext private val context: Context,
-    private val groupRepository: GroupRepository,
     private val groupRepositoryProvider: GroupRepositoryProvider,
-    private val userRepository: UserRepository,
+    private val localRepositoryProvider: LocalRepositoryProvider,
+    private val userRepositoryActions: UserRepositoryActions,
+    private val conversationOverviewRepository: ConversationOverviewRepository,
     private val userRepositoryProvider: UserRepositoryProvider,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val profileRepositoryActions: ProfileRepositoryActions,
-    private val chatRepository: ChatRepository,
-    private val sessionRepository: SessionRepository,
+    private val chatRepository: ChatRepositoryContract,
+    private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val sessionRepositoryProvider: SessionRepositoryProvider,
     private val userPreferencesProvider: UserPreferencesProvider
 ) : ViewModel() {
@@ -98,7 +101,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    val myUid get() = userRepository.myUid
+    val myUid get() = localRepositoryProvider.myUid
 
     val otherUid: String = savedStateHandle[EXTRA_CHAT_ID] ?: ""
     val nodeType: String = savedStateHandle[EXTRA_CHAT_NODE] ?: NODE_DM
@@ -142,8 +145,8 @@ class ChatViewModel @Inject constructor(
 
     // ------------------------------------------------------------------------------------------------------------------------
     // Referencias del chat (para mensajes, storage, etc.)
-    private val _chatRefs = MutableStateFlow<ChatRefs?>(null)
-    val chatRefs: StateFlow<ChatRefs?> = _chatRefs.asStateFlow()
+    private val _chatRefs = MutableStateFlow<ChatThread?>(null)
+    val chatRefs: StateFlow<ChatThread?> = _chatRefs.asStateFlow()
 
     // ------------------------------------------------------------------------------------------------------------------------
     private val _chatState = MutableStateFlow(ChatState())
@@ -175,7 +178,7 @@ class ChatViewModel @Inject constructor(
 
     private suspend fun startGroupUserAvailability() {
         if (nodeType != NODE_DM) {
-            groupRepository.observeIsUserInGroup(groupName, otherUid).collect { isAvailable ->
+            groupRepositoryProvider.observeIsUserInGroup(groupName, otherUid).collect { isAvailable ->
                 if (!isAvailable) {
                     _events.emit(
                         ChatSessionUiEvent.OtherUserNoLongerAvailable(
@@ -270,7 +273,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun markIncomingMessageAsSeenIfNeeded(
-        refs: ChatRefs,
+        refs: ChatThread,
         event: ChatChildEvent
     ) {
         val item = when (event) {
@@ -290,7 +293,7 @@ class ChatViewModel @Inject constructor(
     private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
 
-        _chatRefs.value = chatRepository.buildChatRefs(otherUid, nodeType)
+        _chatRefs.value = chatRepository.chatThread(otherUid, nodeType)
 
         if (nodeType == NODE_DM) {
             loadChatPublicProfiles()
@@ -316,15 +319,15 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun loadChatPublicProfiles() {
-        val profile = userRepository.getAccount(otherUid) ?: return
+        val profile = userRepositoryProvider.getAccount(otherUid) ?: return
 
         _otherProfile.value = profile
 
-        val otherFcmToken = sessionRepository.getFcmToken(profile.id) ?: return
+        val otherFcmToken = sessionRepositoryProvider.getFcmToken(profile.id) ?: return
 
         myIdentity = ChatIdentity(
-            userName = userRepository.myUserName,
-            userPhotoUrl = userRepository.myProfilePhotoUrl
+            userName = localRepositoryProvider.myUserName,
+            userPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
         )
 
         otherIdentity = ChatIdentity(
@@ -367,8 +370,8 @@ class ChatViewModel @Inject constructor(
             )
         } else {
             ChatIdentity(
-                userName = userRepository.myUserName,
-                userPhotoUrl = userRepository.myProfilePhotoUrl
+                userName = localRepositoryProvider.myUserName,
+                userPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
             )
         }
 
@@ -589,16 +592,11 @@ class ChatViewModel @Inject constructor(
         return try {
             val refs = chatRefs.first { it != null }!!
 
-            val refData = when (path) {
-                PATH_AUDIOS -> refs.refAudios
-                PATH_PHOTOS -> refs.refPhotos
-                else -> throw IllegalArgumentException(context.getString(R.string.err_zibe))
-            }
-
             chatRepository.uploadMedia(
-                uri,
+                uri.toString(),
                 fileName,
-                refData
+                refs,
+                path
             )
         } catch (_: Exception) {
             null
@@ -612,32 +610,7 @@ class ChatViewModel @Inject constructor(
     ) {
         if (content.isEmpty()) return
 
-        val myConversation = chatRepository.getConversation(myUid, otherUid, nodeType)
-        val myState = myConversation?.state ?: nodeType
-
-        val otherConversation = chatRepository.getConversation(otherUid, myUid, nodeType)
-        val otherState = otherConversation?.state ?: nodeType
-        val otherCountMsgReceivedUnread = otherConversation?.unreadCount ?: 0
-
-        if (otherState == CHAT_STATE_BLOCKED) {
-            _events.emit(
-                ChatSessionUiEvent.ShowBlockedByOther(
-                    userName = currentOtherName()
-                )
-            )
-            return
-        }
-
         val lastMessageAt = now()
-
-        val chatMessage = ChatMessage(
-            content = content,
-            createdAt = lastMessageAt,
-            audioDurationMs = audioDurationMs,
-            senderUid = myUid,
-            type = msgType,
-            seen = MSG_DELIVERED
-        )
 
         val (myMsg, otherMsg) = when (msgType) {
             MSG_PHOTO -> context.getString(R.string.photo_send) to context.getString(R.string.photo_received)
@@ -645,42 +618,30 @@ class ChatViewModel @Inject constructor(
             else -> content to content
         }
 
-        val myNewChatWith = Conversation(
-            lastContent = myMsg,
-            lastMessageAt = lastMessageAt,
-            userId = myUid,
-            otherId = otherUid,
-            otherName = currentOtherName(),
-            otherPhotoUrl = otherIdentity.userPhotoUrl,
-            state = myState,
-            unreadCount = 0,
-            seen = MSG_DELIVERED
-        )
-
-        val otherNewConversation = Conversation(
-            lastContent = otherMsg,
-            lastMessageAt = lastMessageAt,
-            userId = myUid,
-            otherId = myUid,
-            otherName = myIdentity.userName,
-            otherPhotoUrl = myIdentity.userPhotoUrl,
-            state = otherState,
-            unreadCount = otherCountMsgReceivedUnread + 1
-        )
-
-        if (nodeType == NODE_DM) {
-            chatRepository.sendDmMessageWithConversations(
-                senderUid = myUid,
-                receiverUid = otherUid,
-                message = chatMessage,
-                senderConversation = myNewChatWith,
-                receiverConversation = otherNewConversation
+        when (
+            sendChatMessageUseCase.execute(
+                SendChatMessageCommand(
+                    senderUid = myUid,
+                    receiverUid = otherUid,
+                    nodeType = nodeType,
+                    messageType = msgType,
+                    content = content,
+                    audioDurationMs = audioDurationMs,
+                    createdAt = lastMessageAt,
+                    senderConversationContent = myMsg,
+                    receiverConversationContent = otherMsg,
+                    receiverName = currentOtherName(),
+                    receiverPhotoUrl = otherIdentity.userPhotoUrl,
+                    senderName = myIdentity.userName,
+                    senderPhotoUrl = myIdentity.userPhotoUrl
+                )
             ).getOrThrow()
-        } else {
-            val chatRefs = requireChatRefs()
-            chatRepository.pushMessageToChat(chatRefs, chatMessage)
-            chatRepository.saveConversation(myUid, nodeType, otherUid, myNewChatWith)
-            chatRepository.saveConversation(otherUid, nodeType, myUid, otherNewConversation)
+        ) {
+            SendChatMessageOutcome.BlockedByRecipient -> {
+                _events.emit(ChatSessionUiEvent.ShowBlockedByOther(currentOtherName()))
+                return
+            }
+            SendChatMessageOutcome.Sent -> Unit
         }
 
         _chatState.update {
@@ -723,7 +684,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun setUserActivityStatus(status: String) {
-        viewModelScope.launch { userRepository.setUserActivityStatus(status) }
+        viewModelScope.launch { userRepositoryActions.setUserActivityStatus(status) }
     }
 
     // --- Acciones de menú ----------
@@ -741,7 +702,7 @@ class ChatViewModel @Inject constructor(
                 CHAT_STATE_SILENT
             }
 
-            userRepository.updateChatState(otherUid, userName, nodeType, newState)
+            conversationOverviewRepository.updateChatState(otherUid, userName, nodeType, newState)
             val isNotificationsSilenced = newState == CHAT_STATE_SILENT
             val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
 
@@ -793,7 +754,7 @@ class ChatViewModel @Inject constructor(
         _chatState.update { it.copy(selectedIds = emptySet()) }
     }
 
-    private fun requireChatRefs(): ChatRefs =
+    private fun requireChatRefs(): ChatThread =
         _chatRefs.value ?: error("ChatRefs not initialized. Call setChatContext() first.")
 
     fun onDeleteSelectedMessages() {
@@ -802,7 +763,7 @@ class ChatViewModel @Inject constructor(
 
         viewModelScope.launch {
             chatRepository.deleteMessages(
-                chatRefs = requireChatRefs(),
+                thread = requireChatRefs(),
                 selectedIds = selectedIds
             ).onSuccess { deleteResult ->
                 val deleteResult = deleteResult ?: return@onSuccess
@@ -848,7 +809,7 @@ class ChatViewModel @Inject constructor(
         if (isActionLoading()) return
         val userName = currentOtherName()
         viewModelScope.launch {
-            val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
+            val chatRefs = chatRepository.chatThread(otherUid, NODE_DM)
             val count = chatRepository.getMessageCount(chatRefs)
             if (_chatState.value.messages.isEmpty())
                 _events.emit(
@@ -870,7 +831,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+    private fun onConfirmDelete(chatRefs: ChatThread, userName: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
@@ -888,7 +849,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private suspend fun hideConversation(userId: String, userName: String, nodeType: String) {
-        userRepository.updateChatState(
+        conversationOverviewRepository.updateChatState(
             userId,
             userName,
             nodeType,
@@ -898,7 +859,7 @@ class ChatViewModel @Inject constructor(
         }.onFailure { onFailure(it) }
     }
 
-    private suspend fun deleteMessages(chatRefs: ChatRefs) {
+    private suspend fun deleteMessages(chatRefs: ChatThread) {
         chatRepository.deleteConversationForMe(chatRefs)
             .onSuccess { deleteResult ->
                 val deleteResult = deleteResult ?: return@onSuccess
@@ -934,7 +895,7 @@ class ChatViewModel @Inject constructor(
 
     fun onThreadScreenStarted() {
         viewModelScope.launch {
-            userRepository.setActiveThread(
+            conversationOverviewRepository.setActiveThread(
                 otherUid = otherUid,
                 nodeType = nodeType
             )
@@ -943,7 +904,7 @@ class ChatViewModel @Inject constructor(
 
     fun onThreadScreenStopped() {
         viewModelScope.launch {
-            userRepository.clearActiveThread()
+            conversationOverviewRepository.clearActiveThread()
         }
     }
 

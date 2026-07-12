@@ -7,7 +7,9 @@ import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.utils.onFailure
-import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
+import com.zibete.proyecto1.data.UnreadSummary
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
@@ -15,23 +17,20 @@ import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.notifications.NotificationHelper
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var authSessionProvider: AuthSessionProvider
     @Inject lateinit var userPreferencesProvider: UserPreferencesProvider
-    @Inject lateinit var chatRepository: ChatRepository
+    @Inject lateinit var chatRepository: ChatRepositoryContract
+    @Inject lateinit var receiptAcknowledger: DirectMessageReceiptAcknowledger
     @Inject lateinit var sessionRepositoryActions: SessionRepositoryActions
     @Inject lateinit var sessionRepositoryProvider: SessionRepositoryProvider
     @Inject lateinit var notificationHelper: NotificationHelper
-
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         val data = remoteMessage.data
@@ -40,12 +39,12 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        serviceScope.launch {
+        runBlocking(Dispatchers.IO) {
             try {
                 val uid = authSessionProvider.currentUser?.uid
                 if (uid.isNullOrBlank()) {
                     Log.w(TAG, "Skipping FCM: no authenticated user")
-                    return@launch
+                    return@runBlocking
                 }
 
                 handleDataMessage(data, uid)
@@ -61,18 +60,18 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 
         Log.d(TAG, "Refreshed FCM token received")
 
-        serviceScope.launch {
+        runBlocking(Dispatchers.IO) {
             try {
                 val uid = authSessionProvider.currentUser?.uid
                 if (uid == null) {
                     Log.w(TAG, "Skipping FCM token sync: no authenticated user")
-                    return@launch
+                    return@runBlocking
                 }
 
                 val installId = sessionRepositoryProvider.getLocalInstallId()
                 if (installId.isBlank()) {
                     Log.w(TAG, "Skipping FCM token sync: installId unavailable")
-                    return@launch
+                    return@runBlocking
                 }
 
                 sessionRepositoryActions.setActiveSession(
@@ -145,10 +144,9 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        chatRepository.acknowledgeDmMessageReceived(
+        receiptAcknowledger.acknowledgeReceived(
             myUid = myUid,
             otherUid = otherUid,
-            nodeType = NODE_DM,
             messageId = messageId
         ).onFailure {
             Log.w(TAG, "Could not acknowledge DM message receipt", it)
@@ -184,7 +182,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
                 "Could not read DM unread summary; using fallback chatId=${safeId(chatId)}",
                 it
             )
-        }.getOrDefault(ChatRepository.UnreadSummary(totalChats = 1, totalUnread = 1))
+        }.getOrDefault(UnreadSummary(totalChats = 1, totalUnread = 1))
 
         val conversation = runCatching {
             chatRepository.getConversation(

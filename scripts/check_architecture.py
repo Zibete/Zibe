@@ -30,16 +30,6 @@ PRESENTATION_FORBIDDEN = (
     "com.zibete.proyecto1.data.UserRepository",
 )
 
-# Removed in the chat domain/presentation stages. Keeping the list explicit makes
-# the debt visible and prevents it from spreading to another presentation file.
-TEMPORARY_CHAT_EXCEPTIONS = {
-    "app/src/main/java/com/zibete/proyecto1/ui/chat/ChatViewModel.kt",
-    "app/src/main/java/com/zibete/proyecto1/ui/chatlist/ChatListFragment.kt",
-    "app/src/main/java/com/zibete/proyecto1/ui/chatlist/ChatListViewModel.kt",
-    "app/src/main/java/com/zibete/proyecto1/ui/profile/ProfileViewModel.kt",
-}
-
-
 def kotlin_files(path: Path):
     yield from path.rglob("*.kt")
 
@@ -69,7 +59,6 @@ def main() -> int:
     failures += check_imports(
         ROOT / "app" / "src" / "main" / "java" / "com" / "zibete" / "proyecto1" / "ui",
         PRESENTATION_FORBIDDEN,
-        TEMPORARY_CHAT_EXCEPTIONS,
     )
     if failures:
         print("Architecture boundary violations:")

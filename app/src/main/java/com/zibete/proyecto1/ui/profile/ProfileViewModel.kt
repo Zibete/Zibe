@@ -16,8 +16,8 @@ import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.onSuccessNotNull
-import com.zibete.proyecto1.data.ChatRefs
-import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.ChatThread
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
@@ -47,7 +47,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val chatRepository: ChatRepository,
+    private val chatRepository: ChatRepositoryContract,
     private val groupRepositoryProvider: GroupRepositoryProvider,
     private val locationRepository: LocationRepositoryProvider,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
@@ -332,7 +332,7 @@ class ProfileViewModel @Inject constructor(
         val profile = _uiState.value.profile ?: return
         val userName = profile.name
         viewModelScope.launch {
-            val chatRefs = chatRepository.buildChatRefs(otherUid, NODE_DM)
+            val chatRefs = chatRepository.chatThread(otherUid, NODE_DM)
             val count = chatRepository.getMessageCount(chatRefs)
             if (_uiState.value.isHide) onConfirmDelete(chatRefs, userName)
             else
@@ -349,7 +349,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    private fun onConfirmDelete(chatRefs: ChatRefs, userName: String) {
+    private fun onConfirmDelete(chatRefs: ChatThread, userName: String) {
         viewModelScope.launch {
             _events.emit(
                 ChatSessionUiEvent.ConfirmDeleteChat(
@@ -378,9 +378,9 @@ class ProfileViewModel @Inject constructor(
         }.onFailure { onFailure(it) }
     }
 
-    private suspend fun deleteMessages(chatRefs: ChatRefs) {
+    private suspend fun deleteMessages(chatRefs: ChatThread) {
         chatRepository.deleteMessages(
-            chatRefs = chatRefs,
+            thread = chatRefs,
             selectedIds = null
         ).onSuccess { deleteResult ->
             val deleteResult = deleteResult ?: return@onSuccess

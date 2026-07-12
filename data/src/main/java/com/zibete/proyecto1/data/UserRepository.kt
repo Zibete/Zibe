@@ -343,7 +343,7 @@ class UserRepository constructor(
      * OLD: toggleUnreadBadge(userId, chatType) manipulaba "noVisto" + un contador global.
      * Nuevo: solo alterna ConversationKeys.UNREAD_COUNT (no toca ChatList).
      */
-    suspend fun toggleUnreadBadge(otherUid: String, nodeType: String) {
+    override suspend fun toggleUnreadBadge(otherUid: String, nodeType: String) {
         val ref = conversationRef(
             nodeType = nodeType,
             otherUid = otherUid
@@ -436,7 +436,7 @@ class UserRepository constructor(
         }
 
 
-    suspend fun setActiveThread(otherUid: String, nodeType: String) {
+    override suspend fun setActiveThread(otherUid: String, nodeType: String) {
         activeThreadRef().setValue(
             mapOf(
                 ActiveThreadKeys.NODE_TYPE to nodeType,
@@ -445,7 +445,7 @@ class UserRepository constructor(
         ).await()
     }
 
-    suspend fun clearActiveThread() {
+    override suspend fun clearActiveThread() {
         activeThreadRef().removeValue().await()
     }
 

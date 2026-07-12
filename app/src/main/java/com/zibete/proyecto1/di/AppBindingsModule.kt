@@ -8,6 +8,9 @@ import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.ConversationOverviewRepository
+import com.zibete.proyecto1.data.ChatRepository
+import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.LocationRepositoryActions
@@ -40,6 +43,8 @@ import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
+import com.zibete.proyecto1.domain.chat.DefaultSendChatMessageUseCase
+import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
@@ -101,6 +106,23 @@ abstract class AppBindingsModule {
     abstract fun bindConversationOverviewRepository(
         impl: UserRepository
     ): ConversationOverviewRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepositoryContract(
+        impl: ChatRepository
+    ): ChatRepositoryContract
+
+    @Binds
+    @Singleton
+    abstract fun bindDirectMessageReceiptAcknowledger(
+        impl: ChatRepository
+    ): DirectMessageReceiptAcknowledger
+
+    @Binds
+    abstract fun bindSendChatMessageUseCase(
+        impl: DefaultSendChatMessageUseCase
+    ): SendChatMessageUseCase
 
     @Binds
     @Singleton
