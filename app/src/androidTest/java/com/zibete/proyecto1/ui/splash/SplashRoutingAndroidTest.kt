@@ -1,9 +1,12 @@
 package com.zibete.proyecto1.ui.splash
 
+import android.app.Activity
+import android.app.Instrumentation
 import android.content.Intent
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.zibete.proyecto1.R
@@ -34,6 +37,9 @@ class SplashSessionConflictAndroidTest :
     @Before
     fun setup() {
         Intents.init()
+        intending(hasComponent(MainActivity::class.java.name)).respondWith(
+            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+        )
         val intent = Intent(context, SplashActivity::class.java).apply {
             putExtra(EXTRA_SESSION_CONFLICT, true)
         }
@@ -133,6 +139,9 @@ class SplashToMainAndroidTest :
     fun setup() {
         Intents.init()
         try {
+            intending(hasComponent(MainActivity::class.java.name)).respondWith(
+                Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            )
             launchWithScenario(
                 TestScenario(
                     onboardingDone = true,
