@@ -35,6 +35,8 @@ import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
+import com.zibete.proyecto1.fakes.FakeNotificationPermissionStateProvider
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
@@ -67,6 +69,13 @@ object TestAppBindingsModule {
     @Singleton
     fun provideAppChecksProvider(store: TestScenarioStore): AppChecksProvider =
         FakeAppChecksProvider { store.scenario }
+
+    @Provides
+    @Singleton
+    fun provideNotificationPermissionStateProvider(
+        store: TestScenarioStore
+    ): NotificationPermissionStateProvider =
+        FakeNotificationPermissionStateProvider { store.scenario }
 
     @Provides
     @Singleton

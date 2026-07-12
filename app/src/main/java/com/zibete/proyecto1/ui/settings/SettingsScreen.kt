@@ -1,5 +1,9 @@
 package com.zibete.proyecto1.ui.settings
 
+import android.Manifest
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,6 +53,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.Lifecycle
+import androidx.core.app.ActivityCompat
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SETTINGS_SCREEN
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.navigation.NavAppEvent
@@ -69,6 +77,7 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.components.ZibeSwitchRow
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import com.zibete.proyecto1.notifications.notificationSettingsIntent
 import kotlinx.coroutines.launch
 
 @Composable
@@ -78,6 +87,14 @@ fun SettingsRoute(
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val activity = LocalContext.current as Activity
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { settingsViewModel.onNotificationPermissionResult() }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        settingsViewModel.refreshNotificationStatus()
+    }
 
     LaunchedEffect(Unit) {
         settingsViewModel.appNavigatorEvents.collect { event ->
@@ -90,6 +107,18 @@ fun SettingsRoute(
                         event.sessionConflict
                     )
                 }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        settingsViewModel.events.collect { event ->
+            when (event) {
+                SettingsUiEvent.RequestNotificationPermission ->
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+
+                SettingsUiEvent.OpenNotificationSettings ->
+                    activity.startActivity(notificationSettingsIntent(activity))
             }
         }
     }
@@ -115,6 +144,14 @@ fun SettingsRoute(
         onLogout = settingsViewModel::onLogoutRequested,
         onToggleIndividualNotifications = settingsViewModel::onIndividualNotificationsToggled,
         onToggleGroupNotifications = settingsViewModel::onGroupNotificationsToggled,
+        onManageSystemNotifications = {
+            settingsViewModel.onManageSystemNotifications(
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            )
+        },
         onSendFeedback = { feedback ->
             settingsViewModel.sendFeedback(feedback)
         }
@@ -136,6 +173,7 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     onToggleIndividualNotifications: (Boolean) -> Unit,
     onToggleGroupNotifications: (Boolean) -> Unit,
+    onManageSystemNotifications: () -> Unit,
     onSendFeedback: (feedback: String) -> Unit,
     onDeleteAccount: (passwordOrNull: String?) -> Unit
 ) {
@@ -324,6 +362,23 @@ fun SettingsScreen(
                     }
 
                     Spacer(Modifier.height(dimensionResource(DsR.dimen.element_spacing_small)))
+
+                    ActionRow(
+                        title = stringResource(R.string.system_notifications),
+                        subtitle = when {
+                            !state.notificationRuntimePermissionGranted ->
+                                stringResource(R.string.system_notifications_permission_off)
+                            !state.systemNotificationsEnabled ->
+                                stringResource(R.string.system_notifications_app_off)
+                            !state.messageChannelEnabled ->
+                                stringResource(R.string.system_notifications_channel_off)
+                            else -> stringResource(R.string.system_notifications_on)
+                        },
+                        enabled = !isBusy,
+                        onClick = onManageSystemNotifications
+                    )
+
+                    Spacer(Modifier.height(spacingXs8))
 
                     ZibeSwitchRow(
                         title = stringResource(R.string.individual_notifications),
@@ -717,11 +772,11 @@ fun SettingsScreenPreview() {
             onLogout = {},
             onToggleIndividualNotifications = {},
             onToggleGroupNotifications = {},
+            onManageSystemNotifications = {},
             onSendFeedback = {},
         ) {}
     }
 }
-
 
 
 

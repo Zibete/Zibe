@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.testing
 
 import com.zibete.proyecto1.testing.TestData.RUNTIME_EXCEPTION
-import com.zibete.proyecto1.ui.custompermission.di.PermissionInteractor
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +17,11 @@ data class TestScenario(
     // --- Device / permissions ---
     var hasInternet: Boolean = true,
     var hasLocationPermission: Boolean = true,
+    var notificationRuntimeRequired: Boolean = false,
+    var notificationPermissionGranted: Boolean = true,
+    var notificationWasRequested: Boolean = false,
+    var systemNotificationsEnabled: Boolean = true,
+    var messageChannelEnabled: Boolean = true,
 
     // --- Session / user ---
     var currentUserUid: String? = null,

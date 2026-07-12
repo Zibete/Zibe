@@ -25,11 +25,16 @@ import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.notifications.NotificationPermissionDecision
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
+import com.zibete.proyecto1.notifications.notificationPermissionDecision
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -50,7 +55,8 @@ class SettingsViewModel @Inject constructor(
     private val snackBarManager: SnackBarManager,
     private val appNavigator: AppNavigator,
     private val config: SettingsConfig,
-    private val emailValidator: EmailValidator
+    private val emailValidator: EmailValidator,
+    private val notificationPermissionStateProvider: NotificationPermissionStateProvider
 ) : ViewModel() {
 
     private var validationJob: Job? = null
@@ -58,12 +64,16 @@ class SettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _events = MutableSharedFlow<SettingsUiEvent>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
+
     val appNavigatorEvents = appNavigator.events
     val snackBarEvents = snackBarManager.events
 
     init {
         load()
         observePreferences()
+        refreshNotificationStatus()
     }
 
     private fun load() {
@@ -280,6 +290,43 @@ class SettingsViewModel @Inject constructor(
             uiText = uiText,
             snackType = ZibeSnackType.SUCCESS
         )
+    }
+
+    fun refreshNotificationStatus() {
+        val status = notificationPermissionStateProvider.snapshot()
+        _uiState.update {
+            it.copy(
+                systemNotificationsEnabled = status.areAppNotificationsEnabled,
+                messageChannelEnabled = status.isMessageChannelEnabled,
+                notificationRuntimePermissionGranted = status.isRuntimePermissionGranted
+            )
+        }
+    }
+
+    fun onManageSystemNotifications(shouldShowRationale: Boolean) {
+        val status = notificationPermissionStateProvider.snapshot()
+        when (
+            notificationPermissionDecision(
+                status = status,
+                shouldShowRationale = shouldShowRationale,
+                isExplicitUserAction = true
+            )
+        ) {
+            NotificationPermissionDecision.NONE -> refreshNotificationStatus()
+            NotificationPermissionDecision.REQUEST_PERMISSION -> {
+                notificationPermissionStateProvider.markRequested()
+                viewModelScope.launch {
+                    _events.emit(SettingsUiEvent.RequestNotificationPermission)
+                }
+            }
+            NotificationPermissionDecision.OPEN_SETTINGS -> viewModelScope.launch {
+                _events.emit(SettingsUiEvent.OpenNotificationSettings)
+            }
+        }
+    }
+
+    fun onNotificationPermissionResult() {
+        refreshNotificationStatus()
     }
 
     fun sendFeedback(

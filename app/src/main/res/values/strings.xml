@@ -218,6 +218,18 @@
     <!-- ============================= -->
     <!-- Permisos -->
     <!-- ============================= -->
+    <string name="permission_setup_title">Conectate y no te pierdas nada</string>
+    <string name="permission_setup_intro">Para que ZIBE funcione de la mejor manera, necesitamos configurar dos permisos.</string>
+    <string name="permission_location_title">Ubicación</string>
+    <string name="permission_location_description">Usamos tu ubicación mientras la app está en uso para mostrarte personas cercanas y mejorar la experiencia de Descubrir.</string>
+    <string name="permission_notifications_title">Notificaciones</string>
+    <string name="permission_notifications_description">Activalas para enterarte cuando recibís mensajes y nuevas conversaciones, incluso cuando no estás usando ZIBE.</string>
+    <string name="permission_setup_clarification">La ubicación es necesaria para continuar. Las notificaciones son opcionales y podés cambiarlas más adelante desde Ajustes.</string>
+    <string name="permission_notification_only_intro">Activá las notificaciones para enterarte de tus mensajes aunque no estés usando ZIBE.</string>
+    <string name="permission_notification_only_clarification">Las notificaciones son opcionales y podés cambiarlas más adelante desde Ajustes.</string>
+    <string name="permission_required_badge">Necesario</string>
+    <string name="permission_optional_badge">Opcional</string>
+    <string name="permission_legal_links">Podés consultar nuestras Condiciones de Servicio y Política de Privacidad.</string>
     <string name="permission_location_message">
             Para ofrecerte una mejor experiencia, ZIBE utiliza tu ubicación mientras la app está en uso.
             Esto nos permite mostrarte personas cercanas y mejorar tus coincidencias.
@@ -347,6 +359,11 @@
     <string name="menu_settings">Ajustes</string>
     <string name="account">Cuenta</string>
     <string name="notifications">Notificaciones</string>
+    <string name="system_notifications">Notificaciones del sistema</string>
+    <string name="system_notifications_on">Permitidas para ZIBE</string>
+    <string name="system_notifications_permission_off">Permiso desactivado. Tocá para recuperarlo.</string>
+    <string name="system_notifications_app_off">Desactivadas en el sistema. Tocá para abrir la configuración.</string>
+    <string name="system_notifications_channel_off">Avisos de mensajes silenciados. Tocá para abrir la configuración.</string>
 
     <string name="change_email_title">Cambiar email</string>
     <string name="change_email_message">

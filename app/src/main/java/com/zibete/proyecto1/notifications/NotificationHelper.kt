@@ -25,10 +25,8 @@ import javax.inject.Singleton
 
 @Singleton
 class NotificationHelper @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
-    private val channelId = "mensaje"
-
     fun showChatSummaryNotification(
         summary: UnreadSummary,
         lastSenderName: String,
@@ -83,7 +81,7 @@ class NotificationHelper @Inject constructor(
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannel(nm)
 
-        val builder = NotificationCompat.Builder(context, channelId)
+        val builder = NotificationCompat.Builder(context, MESSAGE_CHANNEL_ID)
             .setAutoCancel(true)
             .setWhen(System.currentTimeMillis())
             .setSmallIcon(R.drawable.ic_notifications_24dp)
@@ -105,12 +103,12 @@ class NotificationHelper @Inject constructor(
 
         val channelName: CharSequence = context.getString(R.string.channel_name)
         val channel = NotificationChannel(
-            channelId,
+            MESSAGE_CHANNEL_ID,
             channelName,
             NotificationManager.IMPORTANCE_HIGH
         ).apply { setShowBadge(true) }
         nm.createNotificationChannel(channel)
-        Log.d(TAG, "Notification channel ready channelId=$channelId")
+        Log.d(TAG, "Notification channel ready channelId=$MESSAGE_CHANNEL_ID")
     }
 
     private fun canPostNotifications(notificationId: Int): Boolean {
@@ -149,7 +147,8 @@ class NotificationHelper @Inject constructor(
         )
     }
 
-    private companion object {
-        const val TAG = "ZibeFCM"
+    companion object {
+        private const val TAG = "ZibeFCM"
+        const val MESSAGE_CHANNEL_ID = "mensaje"
     }
 }

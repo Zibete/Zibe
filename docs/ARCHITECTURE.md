@@ -74,9 +74,12 @@ Ver [FIREBASE_SCHEMA.md](FIREBASE_SCHEMA.md) y
 features publican mensajes mediante la política transversal; no crean hosts o
 collectors paralelos.
 
-Los permisos se solicitan en contexto. Notificaciones se pide al entrar a
-Settings; camera, picker y micrófono se piden al iniciar su acción. Rechazar no
-debe bloquear navegación y el rechazo permanente ofrece App Settings.
+Los permisos se solicitan en contexto. Ubicación y notificaciones se presentan
+en un mismo momento educativo, pero se solicitan de forma secuencial; ubicación
+es obligatoria y notificaciones no bloquea el acceso. Una negativa previa de
+notificaciones no vuelve a disparar prompts durante Splash y su recuperación se
+inicia solamente desde la acción explícita de Settings. Camera, picker y
+micrófono se piden al iniciar su acción.
 
 ## Source sets y validación
 

@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.custompermission
 
-sealed class PermissionUiEvent {
-    data object PermissionGranted : PermissionUiEvent()
-    data object PermissionDenied : PermissionUiEvent()
+sealed interface PermissionUiEvent {
+    data class RequestPermission(val request: PermissionRequest) : PermissionUiEvent
+    data object Completed : PermissionUiEvent
+    data object LocationDenied : PermissionUiEvent
 }
