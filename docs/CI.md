@@ -1,67 +1,46 @@
-﻿# 🤖 CI (Integración continua)
+# CI y matriz de validación
 
-Este repositorio usa GitHub Actions para validar que **compila**, que los **tests pasan** y que no se introducen regresiones de **lint**, sin requerir credenciales reales.
+El workflow `.github/workflows/android-ci.yml` valida PRs a `main` sin secretos
+ni acceso al backend real. Usa JDK 17, Node 20, configuración Firebase dummy y
+no ejecuta deploys.
 
----
-
-## 🧩 Workflow
-
-| Campo | Valor |
-|---|---|
-| 📄 Archivo | [`/.github/workflows/android-ci.yml`](../.github/workflows/android-ci.yml) |
-| 🏗️ Job principal | `build-test-lint` |
-
----
-
-## ✅ Qué valida (pipeline)
-
-**1. Checkout + validación del Gradle Wrapper**
-Previene modificaciones maliciosas del wrapper.
-
-**2. Configuración dummy para CI (sin secretos)**
-- Crea `local.properties` con valores de ejemplo.
-- Crea `app/google-services.json` copiando desde `app/google-services.example.json`.
-
-> Permite compilar en CI sin conectar el repo público a un Firebase real.
-
-**3. Toolchain**
-JDK 17 (Temurin) + cache de Gradle · Node.js 20 (para tests de reglas Firebase).
-
-**4. Tests de reglas Firebase**
-```bash
-npm ci
-npm run test:rules
-```
-
-**5. Gradle checks**
-```bash
-./gradlew testDebugUnitTest
-./gradlew lintDebug
-./gradlew :app:assembleDebug
-./gradlew :app:compileReleaseKotlin   # sanity check del source set release
-```
-
----
-
-## 🧪 Ejecución local equivalente
-
-> Ejecutar en la raíz del repo.
+## Matriz automática
 
 ```bash
+python scripts/check_architecture.py
+python -m py_compile functions/main.py
+python -m unittest discover functions/tests
 npm ci
 npm run test:rules
 ./gradlew testDebugUnitTest
+./gradlew :app:generateDebugAndroidTestLintModel
+./gradlew :app:compileDebugAndroidTestKotlin
 ./gradlew lintDebug
 ./gradlew :app:assembleDebug
 ./gradlew :app:compileReleaseKotlin
 ```
 
----
+CI publica reportes unitarios y de lint aunque un paso posterior falle. El
+grafo Hilt de androidTest se compila explícitamente para detectar bindings de
+test incompletos.
 
-## 🔒 Seguridad
+## Validación con dispositivo
 
-| Garantía | Detalle |
-|---|---|
-| ✅ Sin secretos de Firebase | El workflow no usa GitHub Secrets para credenciales. |
-| ✅ Sin deploys automáticos | Solo valida build / tests / lint. |
-| ✅ Seguro para forks/PRs | No expone infraestructura real. |
+Instrumentation no corre en GitHub Actions; se ejecuta antes de publicar un PR
+de riesgo Android cuando hay dispositivo o emulador disponible:
+
+```bash
+adb devices
+./gradlew :app:connectedDebugAndroidTest
+```
+
+Los flujos con credenciales reales, dos usuarios, push, background/killed,
+camera, crop, micrófono y retorno desde Settings requieren checklist física. Un
+PR queda draft si esa validación obligatoria no fue completada.
+
+## Seguridad operativa
+
+- `app/google-services.example.json` y valores dummy permiten compilar.
+- No se versionan `google-services.json`, `local.properties` ni secretos.
+- CI no hace deploy de Functions/Rules, merge, release ni tag.
+- Los tests de Rules usan el proyecto demo y Firebase Emulator.

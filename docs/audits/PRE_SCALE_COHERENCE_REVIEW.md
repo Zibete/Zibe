@@ -231,3 +231,16 @@ Ejecutado el 11 de julio de 2026:
   corridas anteriores quedaron caracterizadas: el sistema cubría la app con el
   diálogo de compatibilidad por las bibliotecas nativas antiguas; al corregir el
   grafo, la misma suite pasó completa sin intervención durante la ejecución.
+
+## Etapa de documentación permanente
+
+- `AGENTS.md` registra módulos, dirección de dependencias, estado/eventos/error,
+  contrato DM, paths, matriz por cambio, validación física, restricciones
+  operativas, prohibición de placeholders y uso de `$zibe-android-engineering`.
+- `docs/ARCHITECTURE.md` describe la arquitectura final y enlaza ADRs de límites
+  modulares y semántica delivery/receipt/seen.
+- `docs/CI.md` refleja todos los comandos reales del workflow, incluido
+  Functions y el grafo Hilt de androidTest.
+- El template de PR exige resultados verificables, pendientes honestos y
+  declaración de operaciones Firebase. README enlaza arquitectura, ADRs y esta
+  auditoría sin placeholders de assets futuros.

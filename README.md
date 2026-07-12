@@ -30,26 +30,9 @@
 | 🧱 Arquitectura detallada | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | 🔥 Esquema Firebase | [FIREBASE_SCHEMA.md](docs/FIREBASE_SCHEMA.md) |
 | 🧪 Pipeline CI | [CI.md](docs/CI.md) |
+| 📜 Decisiones de arquitectura | [ADR](docs/adr/) |
+| 🔎 Auditoría pre-scale | [PRE_SCALE_COHERENCE_REVIEW.md](docs/audits/PRE_SCALE_COHERENCE_REVIEW.md) |
 | 🤝 Cómo contribuir | [CONTRIBUTING.md](CONTRIBUTING.md) |
-
-[//]: # (---)
-
-[//]: # (## 🎬 Demo &#40;lo visual primero&#41;)
-
-[//]: # ()
-[//]: # (> 📸 Assets sugeridos en `docs/assets/` — reemplazar los placeholders con capturas reales.)
-
-<!-- GIF: Login → lista de chats → abrir chat → enviar mensaje -->
-<!-- ![Demo Login-Chat](docs/assets/demo-login-chat.gif) -->
-
-<!-- Imagen: ChatList con tags/estados + unread badges -->
-<!-- ![ChatList](docs/assets/chatlist.png) -->
-
-<!-- Imagen: Perfil — editar datos / foto -->
-<!-- ![Perfil](docs/assets/perfil.png) -->
-
-<!-- GIF: envío de imagen/audio en un chat -->
-<!-- ![Demo Media](docs/assets/demo-media.gif) -->
 
 ---
 
@@ -59,10 +42,7 @@
 |---|---|
 | 🧱 **Origen (2020)** | App creada con UI clásica (XML / Activities / Adapters) y base Firebase. |
 | 🔄 **Modernización (oct-2025 →)** | Migración progresiva a **Kotlin + AndroidX**, incorporación de **Jetpack Compose + Material 3**, refactor hacia **MVVM**, mejoras de seguridad y ordenamiento de arquitectura para dejarlo listo como repo público y mantenible. |
-| 🚧 **Estado actual** | En evolución continua (refactors y mejoras por PR), con foco en compatibilidad moderna (Android 13/14) y prácticas profesionales. |
-
-<!-- Esquema visual sugerido: "Antes (XML) → Ahora (Compose/MVVM)" con 3–5 hitos de refactor -->
-<!-- ![Evolución](docs/assets/evolucion.png) -->
+| 🚧 **Estado actual** | Arquitectura modular pre-scale, target SDK 35, JDK/bytecode 17 y contrato DM distribuido cubierto por tests Android, Python y Rules. |
 
 ---
 
@@ -113,11 +93,14 @@
 ./gradlew :app:assembleDebug
 
 # Tests unitarios (JVM)
-./gradlew test
+./gradlew testDebugUnitTest
+
+# Contratos backend
+python -m unittest discover functions/tests
+npm run test:rules
 ```
 
 > 🧪 El pipeline de CI corre automáticamente en cada push a `main`.
-> <!-- Captura sugerida: GitHub Actions en verde (CI passing) -->
 
 ---
 

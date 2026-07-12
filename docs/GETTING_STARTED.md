@@ -35,7 +35,6 @@ Descargá el archivo desde Firebase Console y colocalo en `app/google-services.j
 
 Habilitá **Google** y **Facebook** en Firebase Auth y completá la configuración requerida por cada proveedor (OAuth / redirects) según tu proyecto.
 
-> <!-- Captura sugerida: Firebase Console → Project settings → "Your apps" (Android) mostrando el package name -->
 
 ---
 
