@@ -289,4 +289,6 @@ Medios diferidos y declarados para seguimiento:
 - Rules limita timestamps de fan-out a cinco segundos hacia futuro y valida
   soft-delete por rol. Cuando ambos participantes borran, Android conserva un
   tombstone `*_BOTH_DLT`; no intenta eliminación física no autorizada.
+- El fan-out persiste `createdAt` y ambos `lastMessageAt` con timestamp de
+  servidor, evitando rechazos por clock skew del dispositivo.
 - Jetifier sigue habilitado por la dependencia legacy ya reproducida.

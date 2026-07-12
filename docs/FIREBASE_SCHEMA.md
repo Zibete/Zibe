@@ -184,6 +184,8 @@ dentro del mismo fan-out raíz. Rules exige, además, timestamp creciente, `seen
 `seen` si el resto del resumen permanece idéntico.
 El timestamp escrito por el partner no puede superar `now + 5s`, evitando que
 un cliente alterado bloquee envíos posteriores con un valor futuro extremo.
+Android persiste `createdAt`/`lastMessageAt` del fan-out DM con
+`ServerValue.TIMESTAMP`, por lo que el contrato no depende del reloj del equipo.
 
 ---
 
