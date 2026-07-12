@@ -76,6 +76,23 @@ Ejecutado el 11 de julio de 2026:
   consumidores en el source scan inicial; cada eliminación requiere validar el
   grafo y compilar.
 
+## Etapa de toolchain
+
+- Matriz aplicada: AGP 9.2.1, Gradle 9.4.1, Kotlin integrado 2.3.10, KSP 2.3.9,
+  JDK/bytecode 17, compile SDK 36, target SDK 35 y min SDK 26.
+- `gradle/libs.versions.toml` centraliza plugins, BOMs y librerías versionadas.
+- Se eliminaron los opt-outs `android.builtInKotlin=false`,
+  `android.newDsl=false` y `android.uniquePackageNames=false`.
+- Se eliminó el `force` global de Material y se alineó Navigation en 2.9.6.
+- Se evaluó retirar Jetifier. Sin Jetifier, `:app:processDebugResources` falla al
+  enlazar el estilo legacy `Widget.Support.CoordinatorLayout` con un color raw;
+  por eso se conserva temporalmente y de forma documentada hasta retirar o
+  reemplazar la dependencia legacy que aporta ese recurso.
+- Validación dirigida posterior: `help --warning-mode all`, unit tests, modelo
+  lint de androidTest, lint, assemble debug, compile release y KSP/Hilt de
+  androidTest pasaron. El único warning de configuración restante es Jetifier,
+  conservado por la incompatibilidad reproducida.
+
 ## Invariantes protegidas
 
 - Receipt de mensaje DM: delivered `1`, received `2`, seen `3`, sin downgrade.
