@@ -241,7 +241,7 @@ class EditProfileViewModel @Inject constructor(
                 newDescription = state.description.trim(),
                 age = calculatedAge,
                 originalPhotoUrl = state.photoUrl,
-                photoPreviewUri = state.photoPreviewUri,
+                photoPreviewUri = state.photoPreviewUri?.toString(),
                 shouldDeletePhoto = state.deletePhoto
             ).onFailure { e ->
                 showSnack(

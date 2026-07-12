@@ -7,7 +7,13 @@ import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
 import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.LocationRepository
+import com.zibete.proyecto1.data.LocationRepositoryActions
+import com.zibete.proyecto1.data.LocationRepositoryProvider
+import com.zibete.proyecto1.data.PresenceRepository
+import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
@@ -16,6 +22,7 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
@@ -36,11 +43,13 @@ import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
+import com.zibete.proyecto1.domain.session.ExternalSessionCleaner
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.domain.session.DefaultSessionConflictMonitor
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.core.auth.AndroidExternalSessionCleaner
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionConflictNavigator
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
@@ -80,6 +89,36 @@ abstract class AppBindingsModule {
     abstract fun bindLocalRepositoryProvider(
         impl: UserRepository
     ): LocalRepositoryProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindUserDirectoryProvider(
+        impl: UserRepository
+    ): UserDirectoryProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindConversationOverviewRepository(
+        impl: UserRepository
+    ): ConversationOverviewRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindLocationRepositoryProvider(
+        impl: LocationRepository
+    ): LocationRepositoryProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindLocationRepositoryActions(
+        impl: LocationRepository
+    ): LocationRepositoryActions
+
+    @Binds
+    @Singleton
+    abstract fun bindPresenceRepositoryActions(
+        impl: PresenceRepository
+    ): PresenceRepositoryActions
 
     @Binds
     @Singleton
@@ -156,6 +195,11 @@ abstract class AppBindingsModule {
     abstract fun bindLogoutUseCase(
         impl: DefaultLogoutUseCase
     ): LogoutUseCase
+
+    @Binds
+    abstract fun bindExternalSessionCleaner(
+        impl: AndroidExternalSessionCleaner
+    ): ExternalSessionCleaner
 
     @Binds
     abstract fun bindSendFeedbackUseCase(

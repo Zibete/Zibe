@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.domain.session
 
-import com.google.firebase.database.ValueEventListener
+import com.zibete.proyecto1.data.SessionConflictSubscription
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,26 +20,21 @@ class DefaultSessionConflictMonitor @Inject constructor(
     private val sessionConflictNavigator: SessionConflictNavigator
 ) : SessionConflictMonitor {
 
-    private var sessionListener: ValueEventListener? = null
-    private var currentUid: String? = null
+    private var subscription: SessionConflictSubscription? = null
 
     override fun start(uid: String, installId: String) {
         stop()
-        sessionListener = sessionRepositoryProvider.observeSessionConflict(
+        subscription = sessionRepositoryProvider.observeSessionConflict(
             uid = uid,
             myInstallId = installId
         ) {
             stop()
             sessionConflictNavigator.onSessionConflict()
         }
-        currentUid = uid
     }
 
     override fun stop() {
-        val uid = currentUid ?: return
-        val listener = sessionListener ?: return
-        sessionRepositoryProvider.removeSessionListener(uid, listener)
-        sessionListener = null
-        currentUid = null
+        subscription?.cancel()
+        subscription = null
     }
 }

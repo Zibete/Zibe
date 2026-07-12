@@ -2,7 +2,6 @@ package com.zibete.proyecto1.data
 
 import android.net.Uri
 import android.util.Log
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -35,6 +34,7 @@ import com.zibete.proyecto1.core.constants.USER_PROVIDER_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.ChatChildEvent
 import com.zibete.proyecto1.model.ChatMessage
@@ -71,7 +71,7 @@ class ChatRepository @Inject constructor(
     private val authSessionProvider: AuthSessionProvider,
 ) {
 
-    val firebaseUser: FirebaseUser
+    val firebaseUser: AuthUser
         get() = checkNotNull(authSessionProvider.currentUser) {
             USER_PROVIDER_ERR_EXCEPTION
         }

@@ -8,9 +8,9 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.data.GroupContext
-import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.model.ChatGroupItem
 import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.UserGroup
@@ -29,12 +29,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GroupHostViewModel @Inject constructor(
-    private val groupRepository: GroupRepository,
-    private val userRepository: UserRepository,
+    private val groupRepository: GroupRepositoryProvider,
+    private val localRepositoryProvider: LocalRepositoryProvider,
     private val userPreferencesProvider: UserPreferencesProvider
 ) : ViewModel() {
 
-    val myUid get() = userRepository.myUid
+    val myUid get() = localRepositoryProvider.myUid
 
     private val _uiState = MutableStateFlow(GroupHostUiState())
     val uiState = _uiState.asStateFlow()
@@ -149,7 +149,7 @@ class GroupHostViewModel @Inject constructor(
     }
 
     fun onUserClicked(user: UserGroup) {
-        if (user.userId.isBlank() || user.userId == userRepository.myUid) return
+        if (user.userId.isBlank() || user.userId == localRepositoryProvider.myUid) return
 
         viewModelScope.launch {
             _events.send(
@@ -194,7 +194,7 @@ class GroupHostViewModel @Inject constructor(
             try {
                 groupRepository.sendGroupPhotoMessage(
                     groupName = groupContext.groupName,
-                    photoUri = photoUri,
+                    photoUri = photoUri.toString(),
                     senderName = groupContext.userName,
                     userType = groupContext.userType
                 )

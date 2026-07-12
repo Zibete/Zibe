@@ -15,6 +15,7 @@ class FakeUserRepositoryProvider(
     private val runtimeException: Throwable get() = scenarioProvider().runtimeException
 
     // LocalRepositoryProvider implementation
+    override val myUid: String = TestData.UID
     override val myUserName: String = "Test User"
     override val myProfilePhotoUrl: String = ""
     override val myEmail: String = "test@example.com"

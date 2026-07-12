@@ -1,8 +1,7 @@
 package com.zibete.proyecto1.fakes
 
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.data.SessionRepositoryActions
+import com.zibete.proyecto1.data.SessionConflictSubscription
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
@@ -49,19 +48,11 @@ class FakeSessionRepositoryProvider(
         return null
     }
 
-    override suspend fun getSessionsByFcmToken(token: String): DataSnapshot =
-        throw NotImplementedError("Not needed for SessionBootstrapper tests")
+    override suspend fun countSessionsByFcmToken(token: String): Long = 0
 
     override fun observeSessionConflict(
         uid: String,
         myInstallId: String,
         onConflict: () -> Unit
-    ): ValueEventListener {
-        return object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) = Unit
-            override fun onCancelled(error: com.google.firebase.database.DatabaseError) = Unit
-        }
-    }
-
-    override fun removeSessionListener(uid: String, listener: ValueEventListener) = Unit
+    ): SessionConflictSubscription = SessionConflictSubscription { }
 }

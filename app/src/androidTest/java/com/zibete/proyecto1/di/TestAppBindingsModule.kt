@@ -1,13 +1,20 @@
 package com.zibete.proyecto1.di
 
+import com.zibete.proyecto1.testing.TestData
+
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.LocalRepositoryProvider
+import com.zibete.proyecto1.data.LocationRepositoryActions
+import com.zibete.proyecto1.data.LocationRepositoryProvider
+import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
@@ -119,6 +126,7 @@ object TestAppBindingsModule {
     @Singleton
     fun provideLocalRepositoryProvider(store: TestScenarioStore): LocalRepositoryProvider {
         return object : LocalRepositoryProvider {
+            override val myUid: String = TestData.UID
             override val myUserName: String = "Test User"
             override val myProfilePhotoUrl: String = ""
             override val myEmail: String = "test@example.com"
@@ -128,6 +136,31 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideGroupRepositoryProvider(): GroupRepositoryProvider =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideConversationOverviewRepository(): ConversationOverviewRepository =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideUserDirectoryProvider(): UserDirectoryProvider =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideLocationRepositoryProvider(): LocationRepositoryProvider =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideLocationRepositoryActions(): LocationRepositoryActions =
+        mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun providePresenceRepositoryActions(): PresenceRepositoryActions =
         mockk(relaxed = true)
 
     @Provides

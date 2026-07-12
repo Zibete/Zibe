@@ -1,12 +1,12 @@
 package com.zibete.proyecto1.domain.session
 
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.fakes.ActiveSessionCall
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeSessionRepositoryActions
@@ -16,7 +16,6 @@ import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -37,9 +36,7 @@ class SessionBootstrapperTest {
             accountExists = false,
             firstLoginDone = true
         )
-        val firebaseUser = mockk<FirebaseUser>(relaxed = true)
-        every { firebaseUser.uid } returns TestData.UID
-        every { firebaseUser.displayName } returns "AuthName"
+        val firebaseUser = AuthUser(TestData.UID, "AuthName", null, null)
         
         val authSessionProvider = FakeAuthSessionProvider(
             currentUser = firebaseUser

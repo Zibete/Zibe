@@ -60,6 +60,9 @@ jobs:
       - name: 📦 Install rules test deps
         run: npm ci
 
+      - name: Architecture boundaries
+        run: python scripts/check_architecture.py
+
       - name: 🧪 Firebase RTDB rules tests (emulator)
         run: npm run test:rules
 

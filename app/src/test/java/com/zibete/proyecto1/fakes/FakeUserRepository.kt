@@ -1,16 +1,15 @@
 package com.zibete.proyecto1.fakes
 
-import android.net.Uri
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 
 data class CreateUserNodeCall(
-    val user: FirebaseUser,
+    val user: AuthUser,
     val name: String,
     val birthDate: String,
     val description: String
@@ -86,7 +85,7 @@ class FakeUserRepositoryActions(
     }
 
     override suspend fun createUserNode(
-        firebaseUser: FirebaseUser,
+        user: AuthUser,
         name: String,
         birthDate: String,
         description: String
@@ -95,7 +94,7 @@ class FakeUserRepositoryActions(
         return if (s.shouldFail) {
             ZibeResult.Failure(s.runtimeException)
         } else {
-            lastCreateUserNodeCall = CreateUserNodeCall(firebaseUser, name, birthDate, description)
+            lastCreateUserNodeCall = CreateUserNodeCall(user, name, birthDate, description)
             ZibeResult.Success(Unit)
         }
     }
@@ -122,7 +121,7 @@ class FakeUserRepositoryActions(
             ZibeResult.Success(Unit)
         }
 
-    override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
+    override suspend fun putProfilePhotoInStorage(localUri: String): ZibeResult<Unit> =
         if (scenarioProvider().shouldFail) {
             ZibeResult.Failure(scenarioProvider().runtimeException)
         } else {

@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
@@ -15,6 +14,7 @@ import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.ui.components.ZibeSnackType
@@ -126,7 +126,7 @@ class SplashViewModel @Inject constructor(
     suspend fun continueToMain(
         uiText: UiText?,
         snackType: ZibeSnackType?,
-        currentUser: FirebaseUser
+        currentUser: AuthUser
     ) {
         sessionBootstrapper.bootstrap(currentUser.uid)
         _events.emit(SplashUiEvent.NavigateMain(uiText, snackType))

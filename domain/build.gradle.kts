@@ -27,13 +27,6 @@ kotlin {
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
     implementation(libs.coroutines.core)
-    implementation(libs.credentials)
-    implementation(libs.facebook.login)
-    implementation(libs.hilt.android)
     implementation(libs.javax.inject)
-    implementation(libs.jakarta.inject)
 }

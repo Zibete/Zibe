@@ -6,7 +6,7 @@ import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.auth.AuthSessionActions
-import jakarta.inject.Inject
+import javax.inject.Inject
 
 interface UpdateEmailUseCase {
     suspend fun execute(newEmail: String): ZibeResult<Unit>

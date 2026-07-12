@@ -1,9 +1,8 @@
 package com.zibete.proyecto1.fakes
 
-import android.net.Uri
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.UserRepositoryActions
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.testing.TestScenario
 
 class FakeUserRepositoryActions(
@@ -14,7 +13,7 @@ class FakeUserRepositoryActions(
     private val runtimeException: Throwable get() = scenarioProvider().runtimeException
 
     override suspend fun createUserNode(
-        firebaseUser: FirebaseUser,
+        user: AuthUser,
         name: String,
         birthDate: String,
         description: String
@@ -39,7 +38,7 @@ class FakeUserRepositoryActions(
     override suspend fun deleteProfilePhoto(): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
-    override suspend fun putProfilePhotoInStorage(localUri: Uri): ZibeResult<Unit> =
+    override suspend fun putProfilePhotoInStorage(localUri: String): ZibeResult<Unit> =
         if (shouldFail) ZibeResult.Failure(runtimeException) else ZibeResult.Success(Unit)
 
     override suspend fun updateUserFields(fields: Map<String, Any?>) {

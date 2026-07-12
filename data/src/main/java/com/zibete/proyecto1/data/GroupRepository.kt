@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -29,6 +28,7 @@ import com.zibete.proyecto1.core.utils.TimeUtils.now
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.di.qualifiers.ApplicationScope
 import com.zibete.proyecto1.model.ChatGroup
@@ -54,16 +54,16 @@ class GroupRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider,
 ) : GroupRepositoryProvider {
-    val firebaseUser: FirebaseUser
+    val firebaseUser: AuthUser
         get() = checkNotNull(authSessionProvider.currentUser) {
             USER_PROVIDER_ERR_EXCEPTION
         }
 
-    val myUid: String
+    override val myUid: String
         get() = firebaseUser.uid
 
     // EVENTS
-    fun observeGroupChatEvents(groupName: String): Flow<GroupChatChildEvent> = callbackFlow {
+    override fun observeGroupChatEvents(groupName: String): Flow<GroupChatChildEvent> = callbackFlow {
         val groupChatRef = groupChatRef(groupName)
 
         val listener = object : ChildEventListener {
@@ -97,7 +97,7 @@ class GroupRepository constructor(
     }.flowOn(Dispatchers.IO)
 
     // BADGES / COUNTS
-    fun unreadGroupBadgeCount(groupName: String): Flow<Int> =
+    override fun unreadGroupBadgeCount(groupName: String): Flow<Int> =
         combine(
             observeUnreadGroupChat(groupName),
             observeUnreadPrivateMessages()
@@ -108,7 +108,7 @@ class GroupRepository constructor(
     // ========== CORE FLOWS ==========
 
     /** unread del grupo = totalGrupo - readCount */
-    fun observeUnreadGroupChat(groupName: String): Flow<Int> =
+    override fun observeUnreadGroupChat(groupName: String): Flow<Int> =
         combine(
             observeGroupTotalMessages(groupName),
             observeReadGroupMessages()
@@ -117,7 +117,7 @@ class GroupRepository constructor(
         }
 
     /** suma unreadCount de chats privados dentro del nodo /Users/Data/<uid>/group_dm */
-    fun observeUnreadPrivateMessages(): Flow<Int> = callbackFlow {
+    override fun observeUnreadPrivateMessages(): Flow<Int> = callbackFlow {
         val ref = groupPrivateConversationsRef()
 
         val listener = object : ValueEventListener {
@@ -157,7 +157,7 @@ class GroupRepository constructor(
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    fun observeGroupUsers(groupName: String): Flow<List<UserGroup>> = callbackFlow {
+    override fun observeGroupUsers(groupName: String): Flow<List<UserGroup>> = callbackFlow {
         val ref = groupUsersRef(groupName)
 
         val listener = object : ValueEventListener {
@@ -209,7 +209,7 @@ class GroupRepository constructor(
             userGroup != null && userGroup.type == PUBLIC_USER
         }
 
-    suspend fun getGroup(groupName: String): Groups? =
+    override suspend fun getGroup(groupName: String): Groups? =
         groupMetaRef(groupName)
             .get()
             .await()
@@ -217,7 +217,7 @@ class GroupRepository constructor(
             ?.getValue(Groups::class.java)
             ?.also { if (it.name.isBlank()) it.name = groupName }
 
-    suspend fun isNickInUse(groupName: String, nick: String): Boolean {
+    override suspend fun isNickInUse(groupName: String, nick: String): Boolean {
         val snapshot = groupUsersRef(groupName)
             .get()
             .await()
@@ -290,7 +290,7 @@ class GroupRepository constructor(
             .child(NODE_CHAT_LIST)
 
     // Read / Unread
-    suspend fun markGroupAsRead(groupName: String) {
+    override suspend fun markGroupAsRead(groupName: String) {
         val total = (totalMessagesRef(groupName)
             .get().await().getValue(Long::class.java) ?: 0L).toInt()
         readGroupMessagesRef().setValue(total).await()
@@ -370,20 +370,21 @@ class GroupRepository constructor(
         incrementTotalMessages(groupName)
     }
 
-    suspend fun sendGroupPhotoMessage(
+    override suspend fun sendGroupPhotoMessage(
         groupName: String,
         senderName: String,
         userType: Int,
-        senderUid: String = myUid,
-        photoUri: Uri
+        senderUid: String,
+        photoUri: String
     ) {
-        val url = uploadGroupPhoto(groupName, photoUri)
+        val resolvedSenderUid = senderUid.ifBlank { myUid }
+        val url = uploadGroupPhoto(groupName, Uri.parse(photoUri))
 
         val chatMap = mutableMapOf(
             ChatGroupKeys.CONTENT to url,
             ChatGroupKeys.TIMESTAMP to ServerValue.TIMESTAMP,
             ChatGroupKeys.USER_NAME to senderName,
-            ChatGroupKeys.SENDER_UID to senderUid,
+            ChatGroupKeys.SENDER_UID to resolvedSenderUid,
             ChatGroupKeys.CHAT_TYPE to MSG_PHOTO,
             ChatGroupKeys.USER_TYPE to userType,
         )
@@ -423,17 +424,18 @@ class GroupRepository constructor(
         pushGroupMessage(groupName, chatMap)
     }
 
-    suspend fun saveUserInGroup(
+    override suspend fun saveUserInGroup(
         groupName: String,
         userName: String,
         userType: Int,
-        userId: String = myUid
+        userId: String
     ) {
+        val resolvedUserId = userId.ifBlank { myUid }
         val groupUserRef = groupUsersRef(groupName)
-            .child(userId)
+            .child(resolvedUserId)
 
         val userMap = mutableMapOf(
-            GroupUserKeys.USER_ID to userId,
+            GroupUserKeys.USER_ID to resolvedUserId,
             GroupUserKeys.USER_NAME to userName,
             GroupUserKeys.USER_TYPE to userType,
             GroupUserKeys.JOINED_AT_MS to ServerValue.TIMESTAMP
@@ -454,20 +456,21 @@ class GroupRepository constructor(
     }
 
     // Groups list / create (mantenemos tu Data actual)
-    suspend fun isGroupNameInUse(groupName: String): Boolean {
+    override suspend fun isGroupNameInUse(groupName: String): Boolean {
         return groupMetaRef(groupName).get().await().exists()
     }
 
-    suspend fun createGroup(
+    override suspend fun createGroup(
         groupName: String,
         groupDescription: String,
         groupType: Int,
-        creatorUid: String = myUid
+        creatorUid: String
     ) {
+        val resolvedCreatorUid = creatorUid.ifBlank { myUid }
         val group = Groups(
             name = groupName,
             description = groupDescription,
-            creatorUid = creatorUid,
+            creatorUid = resolvedCreatorUid,
             type = groupType,
             users = 0,
             createdAt = now()
@@ -480,7 +483,7 @@ class GroupRepository constructor(
         ensureGroupMeta(groupName)
     }
 
-    suspend fun getAllGroups(): List<Groups> {
+    override suspend fun getAllGroups(): List<Groups> {
         val snapshot = firebaseRefsContainer.refGroupMeta.get().await()
         if (!snapshot.exists()) return emptyList()
 

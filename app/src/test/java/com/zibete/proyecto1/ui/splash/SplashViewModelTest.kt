@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.ui.splash
 
 import androidx.lifecycle.SavedStateHandle
-import com.google.firebase.auth.FirebaseUser
 import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.core.constants.Constants
 import com.zibete.proyecto1.core.ui.SnackBarManager
@@ -9,6 +8,7 @@ import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
@@ -313,7 +313,7 @@ class SplashViewModelTest {
         scenario: TestScenario = TestScenario(),
         authSessionProvider: AuthSessionProvider = FakeAuthSessionProvider(
             currentUser = scenario.currentUserUid?.let { uid ->
-                mockk<FirebaseUser> { every { this@mockk.uid } returns uid }
+                AuthUser(uid, null, null, null)
             }
         ),
         savedStateHandle: SavedStateHandle = SavedStateHandle(),

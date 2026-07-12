@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.fakes
 
-import android.net.Uri
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import javax.inject.Inject
@@ -14,7 +13,7 @@ class FakeUpdateProfileUseCase @Inject constructor(
         newDescription: String,
         age: Int,
         originalPhotoUrl: String?,
-        photoPreviewUri: Uri?,
+        photoPreviewUri: String?,
         shouldDeletePhoto: Boolean
     ): ZibeResult<String?> = ZibeResult.Success(originalPhotoUrl)
 }

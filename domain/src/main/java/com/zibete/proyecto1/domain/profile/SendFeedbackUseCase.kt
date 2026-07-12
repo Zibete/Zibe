@@ -5,7 +5,7 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.UserRepositoryActions
-import jakarta.inject.Inject
+import javax.inject.Inject
 
 interface SendFeedbackUseCase {
     suspend fun execute(

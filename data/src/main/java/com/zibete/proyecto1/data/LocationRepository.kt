@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.data
 
-import android.location.Location
-import com.google.firebase.auth.FirebaseUser
+import com.zibete.proyecto1.data.auth.AuthUser
 import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.core.constants.Constants.AccountsKeys.LATITUDE
@@ -26,9 +25,9 @@ import kotlin.math.sqrt
 class LocationRepository constructor(
     private val firebaseRefsContainer: FirebaseRefsContainer,
     private val authSessionProvider: AuthSessionProvider
-) {
+) : LocationRepositoryProvider, LocationRepositoryActions {
 
-    private val firebaseUser: FirebaseUser?
+    private val firebaseUser: AuthUser?
         get() = authSessionProvider.currentUser
 
     private val myUid: String?
@@ -39,16 +38,20 @@ class LocationRepository constructor(
     // LOCATION
     // ============================================================
 
-    var latitude: Double = 0.0
-    var longitude: Double = 0.0
+    override var latitude: Double = 0.0
+        private set
+    override var longitude: Double = 0.0
+        private set
 
-    suspend fun updateLocation(location: Location) {
+    override suspend fun updateLocation(latitude: Double, longitude: Double) {
         val uid = myUid ?: return
+        this.latitude = latitude
+        this.longitude = longitude
         updateUserFields(
             uid = uid,
             fields = mapOf(
-                LATITUDE to location.latitude,
-                LONGITUDE to location.longitude
+                LATITUDE to latitude,
+                LONGITUDE to longitude
             )
         )
     }
@@ -71,14 +74,14 @@ class LocationRepository constructor(
         return user.latitude to user.longitude
     }
 
-    suspend fun getDistanceToUser(otherUid: String): ZibeResult<String> = zibeCatching {
+    override suspend fun getDistanceToUser(otherUid: String): ZibeResult<String> = zibeCatching {
         val (myLat, myLng) = getLocation(myUid)
         val (otherLat, otherLng) = getLocation(otherUid)
         val distance = getDistanceMeters(myLat, myLng, otherLat, otherLng)
         formatDistance(distance)
     }
 
-    fun getDistanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    override fun getDistanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadius = 6371.0 // km
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
@@ -89,7 +92,7 @@ class LocationRepository constructor(
         return (earthRadius * c * 1000) // metros
     }
 
-    fun formatDistance(distanceMeters: Double): String {
+    override fun formatDistance(distanceMeters: Double): String {
         return when {
             distanceMeters < 50 -> "Aquí"
             distanceMeters < 1000 -> {

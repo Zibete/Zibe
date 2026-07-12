@@ -4,7 +4,7 @@ import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.auth.AuthSessionActions
-import jakarta.inject.Inject
+import javax.inject.Inject
 
 interface UpdatePasswordUseCase {
     suspend fun execute(newPassword: String): ZibeResult<Unit>
