@@ -7,13 +7,12 @@ object ChatIdGenerator {
     }
 
     fun getOtherUid(chatId: String, myUid: String): String? {
-        val parts = chatId.split("_").filter { it.isNotBlank() }
-        if (parts.size != 2) return null
-
-        val (first, second) = parts
-        return when (myUid) {
-            first -> second
-            second -> first
+        if (chatId.isBlank() || myUid.isBlank()) return null
+        val prefix = "${myUid}_"
+        val suffix = "_${myUid}"
+        return when {
+            chatId.startsWith(prefix) -> chatId.removePrefix(prefix).takeIf(String::isNotBlank)
+            chatId.endsWith(suffix) -> chatId.removeSuffix(suffix).takeIf(String::isNotBlank)
             else -> null
         }
     }

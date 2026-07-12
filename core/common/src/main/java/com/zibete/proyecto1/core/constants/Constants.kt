@@ -94,6 +94,7 @@ object Constants {
     object ActiveThreadKeys {
         const val NODE_TYPE = "nodeType"
         const val OTHER_UID = "otherUid"
+        const val UPDATED_AT = "updatedAt"
     }
 
     object ChatListKeys {

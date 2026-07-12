@@ -25,7 +25,6 @@
       "Data": {
         "$uid": {
           ".read": "auth != null && auth.uid == $uid",
-          ".write": "auth != null && auth.uid == $uid",
 
           "ClientData": {
             "Status": {
@@ -36,10 +35,11 @@
             },
             "ActiveView": {
               "activeThread": {
-                ".read": "auth != null",
+                ".read": "auth != null && auth.uid == $uid",
                 ".write": "auth != null && auth.uid == $uid",
                 "nodeType": { ".validate": "newData.isString() && newData.val().length <= 20" },
-                "otherUid": { ".validate": "newData.isString()" }
+                "otherUid": { ".validate": "newData.isString()" },
+                "updatedAt": { ".validate": "newData.isNumber()" }
               }
             },
             "ChatList": {
@@ -71,16 +71,16 @@
             ".indexOn": ["unreadCount"],
             "$otherUid": {
               ".read": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
-              ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)",
-              "lastContent": { ".validate": "newData.isString()" },
-              "lastMessageAt": { ".validate": "newData.isNumber()" },
-              "userId": { ".validate": "newData.isString()" },
-              "otherId": { ".validate": "newData.isString()" },
-              "otherName": { ".validate": "newData.isString()" },
-              "otherPhotoUrl": { ".validate": "newData.isString()" },
-              "state": { ".validate": "newData.isString() && newData.val().length <= 20" },
-              "unreadCount": { ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0" },
-              "seen": { ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 3" }
+              ".write": "auth != null && auth.uid == $uid",
+              "lastContent": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
+              "lastMessageAt": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber()" },
+              "userId": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
+              "otherId": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString() && newData.val() == $otherUid" },
+              "otherName": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
+              "otherPhotoUrl": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isString()" },
+              "state": { ".write": "auth != null && (auth.uid == $uid || (!data.exists() && auth.uid == $otherUid && newData.val() == 'dm'))", ".validate": "newData.isString() && newData.val().length <= 20" },
+              "unreadCount": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0" },
+              "seen": { ".write": "auth != null && (auth.uid == $uid || auth.uid == $otherUid)", ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 3 && (!data.exists() || newData.val() >= data.val())" }
             }
           },
 

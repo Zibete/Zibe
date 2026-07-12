@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 from firebase_functions import db_fn
 from firebase_admin import initialize_app, messaging, db
@@ -24,6 +25,8 @@ PATH_GROUP_CHAT = "/Groups/Chat/{groupName}/{messageId}"
 # --- Active thread contract ---
 ACTIVE_THREAD_NODE_TYPE = "nodeType"
 ACTIVE_THREAD_OTHER_UID = "otherUid"
+ACTIVE_THREAD_UPDATED_AT = "updatedAt"
+ACTIVE_THREAD_LEASE_MS = 120_000
 
 # --- DM payload contract ---
 PAYLOAD_KEY_TYPE = "type"
@@ -136,15 +139,12 @@ def _parse_other_uid_from_chat_id(chat_id: str, sender_uid: str) -> str | None:
     if not chat_id or not sender_uid or "_" not in chat_id:
         return None
 
-    parts = [part.strip() for part in chat_id.split("_") if part and part.strip()]
-    if len(parts) != 2:
-        return None
-
-    uid_a, uid_b = parts
-    if sender_uid == uid_a:
-        return uid_b
-    if sender_uid == uid_b:
-        return uid_a
+    prefix = f"{sender_uid}_"
+    suffix = f"_{sender_uid}"
+    if chat_id.startswith(prefix):
+        return chat_id[len(prefix):] or None
+    if chat_id.endswith(suffix):
+        return chat_id[:-len(suffix)] or None
     return None
 
 
@@ -163,7 +163,11 @@ def _get_active_thread(uid: str) -> dict | None:
     return value if isinstance(value, dict) else None
 
 
-def _is_receiver_in_active_dm(receiver_uid: str, other_uid: str) -> bool:
+def _is_receiver_in_active_dm(
+    receiver_uid: str,
+    other_uid: str,
+    now_ms: int | None = None,
+) -> bool:
     """
     Skip push if receiver is already viewing this same DM:
       activeThread.nodeType == "dm"
@@ -175,8 +179,14 @@ def _is_receiver_in_active_dm(receiver_uid: str, other_uid: str) -> bool:
 
     node_type = _read_str(active_thread, ACTIVE_THREAD_NODE_TYPE)
     active_other_uid = _read_str(active_thread, ACTIVE_THREAD_OTHER_UID)
+    updated_at = _read_int(active_thread.get(ACTIVE_THREAD_UPDATED_AT))
+    current_time_ms = now_ms if now_ms is not None else int(time.time() * 1000)
+    is_fresh = (
+        updated_at is not None
+        and 0 <= current_time_ms - updated_at <= ACTIVE_THREAD_LEASE_MS
+    )
 
-    return node_type == NODE_DM and active_other_uid == other_uid
+    return node_type == NODE_DM and active_other_uid == other_uid and is_fresh
 
 
 def _read_int(value: object) -> int | None:
