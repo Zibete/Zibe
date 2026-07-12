@@ -18,13 +18,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -35,6 +33,7 @@ import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.media.ChatAudioPlayer
+import com.zibete.proyecto1.ui.chat.media.ChatPhotoController
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.profile.ProfileActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
@@ -54,19 +53,15 @@ class ChatActivity : BaseChatSessionActivity() {
     override val enableComposeSnackHost: Boolean = false
 
     private val chatViewModel: ChatViewModel by viewModels()
-    private var imageUriCamera: Uri? = null
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioUri: Uri? = null
     private var currentAudioFile: File? = null
     private var currentPfd: ParcelFileDescriptor? = null
     private var pendingAudioName: String? = null
-    private var pendingImageName: String? = null
     private var recordStartElapsed: Long = 0L
     private lateinit var iconVibrator: Vibrator
-    private lateinit var uCropResultLauncher: ActivityResultLauncher<Intent>
-    private lateinit var pickImageLauncher: ActivityResultLauncher<PickVisualMediaRequest>
-    private lateinit var takePictureLauncher: ActivityResultLauncher<Uri>
     private lateinit var requestPermissionsLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var photoController: ChatPhotoController
     private var onPermissionsGranted: (() -> Unit)? = null
     private var onPermissionsDenied: (() -> Unit)? = null
     private val pendingAudioUrl = mutableStateOf<String?>(null)
@@ -86,6 +81,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         iconVibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
 
+        photoController = ChatPhotoController(this, chatViewModel)
         initActivityResultLaunchers()
         installBackHandler()
 
@@ -106,12 +102,12 @@ class ChatActivity : BaseChatSessionActivity() {
                     onDeleteSelected = chatViewModel::onDeleteSelectedMessages,
                     onClearSelection = chatViewModel::clearSelection,
                     onPhotoSourceClick = chatViewModel::onSendPhotoClicked,
-                    onLaunchCamera = { launchCamera() },
-                    onLaunchGallery = { launchGallery() },
+                    onLaunchCamera = photoController::launchCamera,
+                    onLaunchGallery = photoController::launchGallery,
                     onRemovePendingPhoto = chatViewModel::onRemovePendingPhoto,
                     onTextChanged = chatViewModel::onTextChanged,
                     onSendText = chatViewModel::onSendMessage,
-                    onSendPhoto = { url -> lifecycleScope.launch { chatViewModel.onSendPhoto(url) } },
+                    onSendPhoto = chatViewModel::onSendPhoto,
                     onSendAudio = { url, duration -> sendAudio(url, duration) },
                     onSelectionChanged = chatViewModel::onMessageSelectionChanged,
                     onMicPressed = { handleMicPressed() },
@@ -160,7 +156,7 @@ class ChatActivity : BaseChatSessionActivity() {
     private fun installBackHandler() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (chatViewModel.chatState.value.selectedIds.isNotEmpty()) {
+                if (chatViewModel.uiState.value.chat.selectedIds.isNotEmpty()) {
                     chatViewModel.clearSelection()
                 } else {
                     isEnabled = false
@@ -171,40 +167,6 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun initActivityResultLaunchers() {
-        uCropResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                chatViewModel.handleCroppedImageResult(
-                    result.resultCode,
-                    pendingImageName,
-                    result.data
-                )
-                pendingImageName = null
-            }
-
-        pickImageLauncher =
-            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-                if (uri != null) {
-                    chatViewModel.onRemovePendingPhoto()
-                    chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
-                } else {
-                    pendingImageName = null
-                }
-            }
-
-        takePictureLauncher =
-            registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-                if (success) {
-                    imageUriCamera?.let { uri ->
-                        chatViewModel.onRemovePendingPhoto()
-                        chatViewModel.startUCropFlow(uri, this, uCropResultLauncher)
-                    }
-                } else {
-                    imageUriCamera?.let { contentResolver.delete(it, null, null) }
-                    pendingImageName = null
-                }
-                imageUriCamera = null
-            }
-
         requestPermissionsLauncher =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
                 val granted = result.values.all { it }
@@ -218,59 +180,17 @@ class ChatActivity : BaseChatSessionActivity() {
             }
     }
 
-    private fun launchCamera() {
-        requestPermissions(
-            permissions = arrayOf(Manifest.permission.CAMERA),
-            onGranted = {
-                pendingImageName = createPhotoFileName()
-                val cameraUri = createCameraImageUri()
-                if (cameraUri == null) {
-                    lifecycleScope.launch {
-                        chatViewModel.onError(UiText.StringRes(R.string.msg_camera_error))
-                    }
-                    return@requestPermissions
-                }
-                imageUriCamera = cameraUri
-                takePictureLauncher.launch(cameraUri)
-            },
-            onDenied = {
-                lifecycleScope.launch {
-                    chatViewModel.onError(UiText.StringRes(R.string.err_camera_permission_denied))
-                }
-            }
-        )
-    }
-
-    private fun launchGallery() {
-        pendingImageName = createPhotoFileName()
-        pickImageLauncher.launch(
-            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-        )
-    }
-
-    private fun createPhotoFileName(): String = "chat_photo_${System.currentTimeMillis()}.jpg"
-
-    private fun createCameraImageUri(): Uri? {
-        val picturesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: return null
-        if (!picturesDir.exists() && !picturesDir.mkdirs()) return null
-        val file = File.createTempFile("chat_camera_", ".jpg", picturesDir)
-        return FileProvider.getUriForFile(this, "${packageName}.provider", file)
-    }
-
     private fun handleMicPressed() {
         requestPermissions(
             permissions = arrayOf(Manifest.permission.RECORD_AUDIO),
             onGranted = { startRecording() },
             onDenied = {
-                lifecycleScope.launch {
-                    chatViewModel.onError(UiText.StringRes(R.string.err_zibe))
-                }
+                chatViewModel.onError(UiText.StringRes(R.string.err_zibe))
             }
         )
     }
 
     private fun handleMicMoved(x: Float, y: Float, width: Float) {
-        chatViewModel.onMicMoved(x, y, width)
         if (mediaRecorder == null) return
         val threshold = -width * 0.5f
         val canceled = x < threshold
@@ -294,9 +214,7 @@ class ChatActivity : BaseChatSessionActivity() {
         val fileName = createAudioFileName()
         val output = prepareAudioOutput(fileName)
         if (output == null) {
-            lifecycleScope.launch {
-                chatViewModel.onError(UiText.StringRes(R.string.chat_error_create_audio))
-            }
+            chatViewModel.onError(UiText.StringRes(R.string.chat_error_create_audio))
             return
         }
 
@@ -315,9 +233,7 @@ class ChatActivity : BaseChatSessionActivity() {
             recorder.prepare()
             recorder.start()
         } catch (_: Exception) {
-            lifecycleScope.launch {
-                chatViewModel.onError(UiText.StringRes(R.string.chat_error_open_audio))
-            }
+            chatViewModel.onError(UiText.StringRes(R.string.chat_error_open_audio))
             recorder.release()
             releaseRecorder()
             return
@@ -363,8 +279,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
         isAudioUploading.value = true
 
-        lifecycleScope.launch {
-            val url = chatViewModel.uploadMedia(audioName, audioUri, PATH_AUDIOS)
+        chatViewModel.uploadMedia(audioName, audioUri.toString(), PATH_AUDIOS) { url ->
             isAudioUploading.value = false
             if (url == null) {
                 chatViewModel.onError(UiText.StringRes(R.string.chat_error_upload_audio))
@@ -453,9 +368,7 @@ class ChatActivity : BaseChatSessionActivity() {
     }
 
     private fun sendAudio(url: String, duration: Long) {
-        lifecycleScope.launch {
-            chatViewModel.onSendAudio(url, duration)
-        }
+        chatViewModel.onSendAudio(url, duration)
     }
 
     private fun openProfile() {
@@ -492,5 +405,3 @@ class ChatActivity : BaseChatSessionActivity() {
         nm.cancelAll()
     }
 }
-
-

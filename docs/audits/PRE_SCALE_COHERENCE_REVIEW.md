@@ -141,3 +141,19 @@ Ejecutado el 11 de julio de 2026:
   dentro de su ventana de ejecución y mantiene receipt separado del éxito FCM.
 - Tests de domain verifican que DM use una sola operación de fan-out, conserve
   delivered/unread y no escriba cuando el receptor bloqueó al emisor.
+
+## Etapa de presentación y media de chat
+
+- `ChatViewModel` expone `ChatUiState` como estado principal inmutable; header y
+  contenido se combinan sin duplicar la lista de mensajes.
+- El ViewModel ya no importa `Context`, `Activity`, `Intent`, `Uri`, Activity
+  Result, UCrop ni APIs de media, no usa `runBlocking`, no mantiene identidades
+  `lateinit` y todas sus acciones públicas son no suspend.
+- Se eliminaron acciones placeholder. El reducer puro `ChatState.reduce()`
+  mantiene mensajes y selección coherentes ante add/change/remove y soft-delete,
+  con regresiones unitarias.
+- `ChatPhotoController` es dueño de camera, photo picker, crop, permisos y
+  archivos temporales; `ChatActivity` conserva el borde de grabación/audio y
+  delega reglas de envío al ViewModel/caso de uso.
+- URI de preview y uploads cruzan hacia el ViewModel como `String`; los tipos
+  Android se materializan únicamente en Activity/controller/composables.

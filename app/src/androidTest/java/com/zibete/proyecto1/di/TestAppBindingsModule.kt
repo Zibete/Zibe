@@ -33,6 +33,7 @@ import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
+import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
@@ -158,6 +159,10 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSendChatMessageUseCase(): SendChatMessageUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideChatTextProvider(): ChatTextProvider = mockk(relaxed = true)
 
     @Provides
     @Singleton
