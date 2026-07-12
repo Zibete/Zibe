@@ -241,14 +241,33 @@ class ChatRepository @Inject constructor(
 
         val receiverConversationPath =
             "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$receiverUid/$NODE_DM/$senderUid"
+        val messageValue = mapOf(
+            ChatMessageKeys.CONTENT to message.content,
+            ChatMessageKeys.CREATED_AT to ServerValue.TIMESTAMP,
+            ChatMessageKeys.AUDIO_DURATION_MS to message.audioDurationMs,
+            ChatMessageKeys.SENDER_UID to message.senderUid,
+            ChatMessageKeys.TYPE to message.type,
+            ChatMessageKeys.SEEN to message.seen
+        )
+        val senderConversationValue = mapOf(
+            ConversationKeys.LAST_CONTENT to senderConversation.lastContent,
+            ConversationKeys.LAST_MESSAGE_AT to ServerValue.TIMESTAMP,
+            ConversationKeys.USER_ID to senderConversation.userId,
+            ConversationKeys.OTHER_ID to senderConversation.otherId,
+            ConversationKeys.OTHER_NAME to senderConversation.otherName,
+            ConversationKeys.OTHER_PHOTO_URL to senderConversation.otherPhotoUrl,
+            ConversationKeys.STATE to senderConversation.state,
+            ConversationKeys.UNREAD_COUNT to senderConversation.unreadCount,
+            ConversationKeys.SEEN to senderConversation.seen
+        )
         val updates = mapOf<String, Any>(
-            "/$NODE_CHATS_ROOT/$NODE_DM/$chatId/$messageId" to message,
+            "/$NODE_CHATS_ROOT/$NODE_DM/$chatId/$messageId" to messageValue,
             "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$senderUid/$NODE_DM/$receiverUid" to
-                senderConversation,
+                senderConversationValue,
             "$receiverConversationPath/${ConversationKeys.LAST_CONTENT}" to
                 receiverConversation.lastContent,
             "$receiverConversationPath/${ConversationKeys.LAST_MESSAGE_AT}" to
-                receiverConversation.lastMessageAt,
+                ServerValue.TIMESTAMP,
             "$receiverConversationPath/${ConversationKeys.USER_ID}" to receiverConversation.userId,
             "$receiverConversationPath/${ConversationKeys.OTHER_ID}" to receiverConversation.otherId,
             "$receiverConversationPath/${ConversationKeys.OTHER_NAME}" to receiverConversation.otherName,
