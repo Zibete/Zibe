@@ -29,6 +29,18 @@ object Constants {
         const val EDIT_PROFILE_SCREEN = "edit_profile_screen"
         const val CHAT_SCREEN = "chat_screen"
         const val EDIT_PROFILE_WELCOME_SHEET = "EditProfileWelcomeSheet"
+        const val DISCOVER_SCREEN = "discover_screen"
+        const val DISCOVER_SEARCH = "discover_search"
+        const val DISCOVER_ONLINE_FILTER = "discover_online_filter"
+        const val DISCOVER_FILTERS = "discover_filters"
+        const val DISCOVER_LIST = "discover_list"
+        const val DISCOVER_EMPTY = "discover_empty"
+        const val FIRST_DM_SHEET = "first_dm_sheet"
+        const val ACCOUNT_AVATAR = "account_avatar"
+        const val ACCOUNT_SHEET = "account_sheet"
+        const val ACCOUNT_EDIT_PROFILE = "account_edit_profile"
+        const val ACCOUNT_SETTINGS = "account_settings"
+        const val ACCOUNT_LOGOUT = "account_logout"
     }
 
     object TestTags {

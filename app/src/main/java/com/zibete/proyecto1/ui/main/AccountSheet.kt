@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.main
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,7 +28,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_AVATAR
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_EDIT_PROFILE
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_LOGOUT
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SETTINGS
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SHEET
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
+import com.zibete.proyecto1.ui.motion.zibePressable
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
@@ -42,10 +47,10 @@ fun AccountAvatarButton(
     Surface(
         modifier = modifier
             .size(48.dp)
-            .testTag(ACCOUNT_AVATAR_TAG)
+            .testTag(ACCOUNT_AVATAR)
             .semantics { contentDescription = description }
             .clip(CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
+            .zibePressable(role = Role.Button, onClick = onClick),
         shape = CircleShape,
         color = LocalZibeExtendedColors.current.cardBackground
     ) {
@@ -83,7 +88,7 @@ fun AccountSheet(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(ACCOUNT_SHEET_TAG),
+                .testTag(ACCOUNT_SHEET),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -117,19 +122,19 @@ fun AccountSheet(
         AccountActionRow(
             iconRes = R.drawable.ic_person_24,
             title = stringResource(R.string.menu_edit_profile),
-            testTag = ACCOUNT_EDIT_PROFILE_TAG,
+            testTag = ACCOUNT_EDIT_PROFILE,
             onClick = onEditProfile
         )
         AccountActionRow(
             iconRes = R.drawable.ic_settings_rounded_24,
             title = stringResource(R.string.menu_settings),
-            testTag = ACCOUNT_SETTINGS_TAG,
+            testTag = ACCOUNT_SETTINGS,
             onClick = onSettings
         )
         AccountActionRow(
             iconRes = R.drawable.ic_logout_rounded_24,
             title = stringResource(R.string.logout),
-            testTag = ACCOUNT_LOGOUT_TAG,
+            testTag = ACCOUNT_LOGOUT,
             onClick = onLogout
         )
     }
@@ -148,7 +153,7 @@ private fun AccountActionRow(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .testTag(testTag)
-            .clickable(role = Role.Button, onClick = onClick)
+            .zibePressable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 4.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -165,9 +170,3 @@ private fun AccountActionRow(
         )
     }
 }
-
-const val ACCOUNT_AVATAR_TAG = "account_avatar"
-const val ACCOUNT_SHEET_TAG = "account_sheet"
-const val ACCOUNT_EDIT_PROFILE_TAG = "account_edit_profile"
-const val ACCOUNT_SETTINGS_TAG = "account_settings"
-const val ACCOUNT_LOGOUT_TAG = "account_logout"
