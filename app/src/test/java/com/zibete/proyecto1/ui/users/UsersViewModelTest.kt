@@ -85,7 +85,7 @@ class UsersViewModelTest {
         harness.vm.loadUsers()
         runCurrent()
 
-        val state = harness.vm.uiState.value
+        val state = awaitState(harness.vm) { !it.isLoading }
         assertTrue(state.users.isEmpty())
         assertFalse(state.isLoading)
         assertNull(state.error)
@@ -97,13 +97,10 @@ class UsersViewModelTest {
         val harness = harness()
         val failure = IllegalStateException("sin conexión")
         coEvery { harness.directory.getAllAccounts() } throws failure
-        val event = async { awaitEvent(harness.vm) }
-        runCurrent()
-
         harness.vm.loadUsers()
 
         val state = awaitState(harness.vm) { !it.isLoading && it.error != null }
-        val snack = event.await() as UsersUiEvent.ShowSnack
+        val snack = awaitEvent(harness.vm) as UsersUiEvent.ShowSnack
         assertNotNull(state.error)
         assertEquals(ZibeSnackType.ERROR, snack.snackType)
     }

@@ -67,6 +67,31 @@ class PermissionRoutingAndroidTest :
         composeRule.onNodeWithText(context.getString(R.string.permission_location_title))
             .assertDoesNotExist()
     }
+
+    @Test
+    fun notificationOnlyModeSurvivesActivityRecreation() {
+        val scenario = launchWithScenario(
+            TestScenario(
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                hasInternet = true,
+                hasLocationPermission = true,
+                notificationRuntimeRequired = true,
+                notificationPermissionGranted = false,
+                notificationWasRequested = false,
+                systemNotificationsEnabled = false
+            )
+        )
+        waitTag(PERMISSION_SCREEN, composeRule)
+
+        scenario.recreate()
+
+        waitTag(PERMISSION_SCREEN, composeRule)
+        composeRule.onNodeWithText(context.getString(R.string.permission_notifications_title))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.permission_location_title))
+            .assertDoesNotExist()
+    }
 }
 
 @RunWith(AndroidJUnit4::class)
