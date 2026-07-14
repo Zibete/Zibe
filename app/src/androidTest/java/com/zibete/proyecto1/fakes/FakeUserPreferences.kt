@@ -5,7 +5,7 @@ import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.testing.TestScenario
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -24,16 +24,34 @@ class FakeUserPreferencesProvider(
 
     override suspend fun isEditProfileWelcomeShown(): Boolean = false
 
-    override val groupContextFlow: Flow<GroupContext?> = flowOf(null)
-    override val inGroupFlow: Flow<Boolean> = flowOf(false)
-    override val applyAgeFilterFlow: Flow<Boolean> = flowOf(false)
-    override val applyOnlineFilterFlow: Flow<Boolean> = flowOf(false)
-    override val minAgeFlow: Flow<Int> = flowOf(18)
-    override val maxAgeFlow: Flow<Int> = flowOf(99)
-    override val individualNotificationsFlow: Flow<Boolean> = flowOf(true)
-    override val groupNotificationsFlow: Flow<Boolean> = flowOf(true)
-    override val filterSwitchFlow: Flow<Boolean> = flowOf(false)
-    override val groupNameFlow: Flow<String> = flowOf("")
+    override val groupContextFlow: Flow<GroupContext?> = flow {
+        val scenario = scenarioProvider()
+        emit(
+            if (scenario.inGroup) {
+                GroupContext(
+                    inGroup = true,
+                    groupName = scenario.groupName,
+                    userName = "test-user",
+                    userType = 0
+                )
+            } else {
+                null
+            }
+        )
+    }
+    override val inGroupFlow: Flow<Boolean> = flow { emit(scenarioProvider().inGroup) }
+    override val applyAgeFilterFlow: Flow<Boolean> =
+        flow { emit(scenarioProvider().applyAgeFilter) }
+    override val applyOnlineFilterFlow: Flow<Boolean> =
+        flow { emit(scenarioProvider().applyOnlineFilter) }
+    override val minAgeFlow: Flow<Int> = flow { emit(scenarioProvider().minAge) }
+    override val maxAgeFlow: Flow<Int> = flow { emit(scenarioProvider().maxAge) }
+    override val individualNotificationsFlow: Flow<Boolean> =
+        flow { emit(scenarioProvider().individualNotifications) }
+    override val groupNotificationsFlow: Flow<Boolean> =
+        flow { emit(scenarioProvider().groupNotifications) }
+    override val filterSwitchFlow: Flow<Boolean> = flow { emit(scenarioProvider().filterSwitch) }
+    override val groupNameFlow: Flow<String> = flow { emit(scenarioProvider().groupName) }
 }
 
 class FakeUserPreferencesActions(
