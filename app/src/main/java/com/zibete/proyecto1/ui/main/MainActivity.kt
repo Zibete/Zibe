@@ -414,6 +414,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                     if (!popped) {
                                         navController.navigate(
                                             R.id.nav_group_select,
+                                            null,
                                             navOptions { launchSingleTop = true }
                                         )
                                     }
@@ -551,6 +552,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         if (navController.currentDestination?.id == destinationId) return
         navController.navigate(
             destinationId,
+            null,
             navOptions {
                 launchSingleTop = true
                 restoreState = true
