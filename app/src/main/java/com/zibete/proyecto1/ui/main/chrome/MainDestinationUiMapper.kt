@@ -18,7 +18,6 @@ data class MainDestinationUiState(
     val showBottomNav: Boolean = true,
     val showAccountAvatar: Boolean = false,
     val showBack: Boolean = false,
-    val showUsersFragmentSettings: Boolean = false,
     val title: UiText? = null,
     val useGroupNameTitle: Boolean = false,
     val selectedBottomNavItemId: Int? = null,
@@ -34,15 +33,13 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = true,
             showBack = false,
-            showUsersFragmentSettings = true,
             title = CurrentScreen.USERS.titleRes,
             selectedBottomNavItemId = R.id.navBottomUsers,
             menuConfig = ToolbarMenuConfig(
                 showSettings = true,
                 showUnblockUsers = true,
                 showUnhideChats = true,
-                showFavorites = true,
-                showSearch = true
+                showFavorites = true
             )
         )
 
@@ -52,7 +49,6 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = true,
             showBack = false,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.CHAT.titleRes,
             selectedBottomNavItemId = R.id.navBottomChat,
             menuConfig = ToolbarMenuConfig(
@@ -70,7 +66,6 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = true,
             showBack = false,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.GROUPS.titleRes,
             selectedBottomNavItemId = R.id.navBottomGroups,
             menuConfig = ToolbarMenuConfig(
@@ -87,7 +82,6 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = true,
             showBack = true,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.GROUPS.titleRes,
             useGroupNameTitle = true,
             selectedBottomNavItemId = R.id.navBottomGroups,
@@ -104,7 +98,6 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = true,
             showBack = false,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.FAVORITES.titleRes,
             selectedBottomNavItemId = R.id.navBottomFavorites,
             menuConfig = ToolbarMenuConfig(
@@ -120,7 +113,6 @@ class MainDestinationUiMapper {
             showBottomNav = false,
             showAccountAvatar = false,
             showBack = true,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.EDIT_PROFILE.titleRes,
             menuConfig = ToolbarMenuConfig(
                 showSettings = true
@@ -133,7 +125,6 @@ class MainDestinationUiMapper {
             showBottomNav = false,
             showAccountAvatar = false,
             showBack = true,
-            showUsersFragmentSettings = false,
             title = CurrentScreen.SETTINGS.titleRes,
             menuConfig = ToolbarMenuConfig()
         )
@@ -144,7 +135,6 @@ class MainDestinationUiMapper {
             showBottomNav = true,
             showAccountAvatar = false,
             showBack = false,
-            showUsersFragmentSettings = false,
             menuConfig = ToolbarMenuConfig()
         )
     }
