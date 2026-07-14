@@ -1,35 +1,81 @@
 package com.zibete.proyecto1.ui.main
 
 import android.Manifest
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.Intent
 import android.view.View
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.navigation.findNavController
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.Intents.intending
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_AVATAR
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_EDIT_PROFILE
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_LOGOUT
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SETTINGS
+import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SHEET
+import com.zibete.proyecto1.data.ConversationOverviewRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.testing.waitTag
+import com.zibete.proyecto1.ui.chat.ChatActivity
+import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.every
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import org.hamcrest.Matchers.allOf
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 
 @RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 class MainNavigationAndroidTest :
     BaseHiltComposeManualLaunchTest<MainActivity>(MainActivity::class.java) {
+
+    @Inject
+    lateinit var conversationOverviewRepository: ConversationOverviewRepository
+
+    @Inject
+    lateinit var groupRepositoryProvider: GroupRepositoryProvider
+
+    private val chatBadgeCount = MutableStateFlow(0)
+    private val groupBadgeCount = MutableStateFlow(0)
     private lateinit var mainScenario: ActivityScenario<MainActivity>
 
     @Before
-    fun launchMain() {
+    fun prepareMain() {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(
             targetContext.packageName,
@@ -39,19 +85,22 @@ class MainNavigationAndroidTest :
             targetContext.packageName,
             Manifest.permission.ACCESS_FINE_LOCATION
         )
-        mainScenario = launchWithScenario(
-            TestScenario(
-                currentUserUid = TestData.UID,
-                onboardingDone = true,
-                firstLoginDone = true,
-                hasLocationPermission = true
-            )
-        )
+        every { conversationOverviewRepository.observeUnreadChatList() } returns chatBadgeCount
+        every { groupRepositoryProvider.unreadGroupBadgeCount(any()) } returns groupBadgeCount
+        every { groupRepositoryProvider.observeUnreadGroupChat(any()) } returns flowOf(0)
+        every { groupRepositoryProvider.observeUnreadPrivateMessages() } returns flowOf(0)
+        Intents.init()
+    }
+
+    @After
+    fun releaseIntents() {
+        Intents.release()
     }
 
     @Test
     fun mainStartsInChatsWithExpectedRootOrderAndNoDrawer() {
-        waitTag(ACCOUNT_AVATAR_TAG, composeRule)
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
 
         launchWithCurrentActivity { activity ->
             val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
@@ -65,37 +114,194 @@ class MainNavigationAndroidTest :
                 ),
                 (0 until bottomNav.menu.size()).map { bottomNav.menu.getItem(it).itemId }
             )
-            assertNull(activity.findViewById<View>(
-                activity.resources.getIdentifier("drawerLayout", "id", activity.packageName)
-            ))
+            assertNull(
+                activity.findViewById<View>(
+                    activity.resources.getIdentifier("drawerLayout", "id", activity.packageName)
+                )
+            )
             assertNull(activity.findViewById<MaterialToolbar>(R.id.materialToolbar).navigationIcon)
         }
     }
 
     @Test
-    fun accountAvatarOpensSheetAndEditProfileNavigation() {
-        waitTag(ACCOUNT_AVATAR_TAG, composeRule)
-        composeRule.onNodeWithTag(ACCOUNT_AVATAR_TAG).performClick()
-        waitTag(ACCOUNT_SHEET_TAG, composeRule)
-        composeRule.onNodeWithTag(ACCOUNT_EDIT_PROFILE_TAG).performClick()
+    fun roomsAndFavoritesItemsNavigateToTheirRootDestinations() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
 
-        composeRule.waitUntil(10_000) {
-            currentDestinationId() == R.id.editProfileFragment
+        selectBottomItem(R.id.navBottomGroups)
+        waitForDestination(R.id.nav_group_select)
+
+        selectBottomItem(R.id.navBottomFavorites)
+        waitForDestination(R.id.nav_favorites)
+
+        launchWithCurrentActivity { activity ->
+            val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
+            assertEquals(R.id.navBottomFavorites, bottomNav.selectedItemId)
         }
-        composeRule.onNodeWithTag(ACCOUNT_SHEET_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun backFromSettingsReturnsToPreviousRootAndRestoresBottomSelection() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).performClick()
+        waitTag(ACCOUNT_SHEET, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_SETTINGS).performClick()
+        waitForDestination(R.id.settingsFragment)
+
+        pressBack()
+
+        waitForDestination(R.id.nav_chat_list)
+        launchWithCurrentActivity { activity ->
+            val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
+            assertEquals(R.id.navBottomChat, bottomNav.selectedItemId)
+        }
+    }
+
+    @Test
+    fun pendingDmIntentOpensChatWithOtherUidAndDmNode() {
+        val otherUid = "other_uid"
+        intending(hasComponent(ChatActivity::class.java.name)).respondWith(
+            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+        )
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_PENDING_DM_TYPE, NODE_DM)
+            putExtra(EXTRA_PENDING_DM_CHAT_ID, getChatId(TestData.UID, otherUid))
+        }
+
+        launchMain(intent = intent)
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            intendedSafely(
+                allOf(
+                    hasComponent(ChatActivity::class.java.name),
+                    hasExtra(EXTRA_CHAT_ID, otherUid),
+                    hasExtra(EXTRA_CHAT_NODE, NODE_DM)
+                )
+            )
+        }
+    }
+
+    @Test
+    fun unreadCountsUpdateChatAndRoomsBadges() {
+        launchMain(
+            scenario = TestScenario(
+                currentUserUid = TestData.UID,
+                onboardingDone = true,
+                firstLoginDone = true,
+                hasLocationPermission = true,
+                inGroup = true,
+                groupName = "sala-test"
+            )
+        )
+        waitTag(ACCOUNT_AVATAR, composeRule)
+
+        chatBadgeCount.value = 4
+        groupBadgeCount.value = 2
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            var badgesMatch = false
+            launchWithCurrentActivity { activity ->
+                val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
+                val chatBadge = bottomNav.getBadge(R.id.navBottomChat)
+                val groupBadge = bottomNav.getBadge(R.id.navBottomGroups)
+                badgesMatch = chatBadge?.isVisible == true && chatBadge.number == 4 &&
+                    groupBadge?.isVisible == true && groupBadge.number == 2
+            }
+            badgesMatch
+        }
+
+        chatBadgeCount.value = 0
+        groupBadgeCount.value = 0
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            var badgesHidden = false
+            launchWithCurrentActivity { activity ->
+                val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
+                badgesHidden = bottomNav.getBadge(R.id.navBottomChat)?.isVisible == false &&
+                    bottomNav.getBadge(R.id.navBottomGroups)?.isVisible == false
+            }
+            badgesHidden
+        }
+    }
+
+    @Test
+    fun logoutRequiresConfirmationAndConfirmedActionNavigatesToSplash() {
+        intending(hasComponent(SplashActivity::class.java.name)).respondWith(
+            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+        )
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+
+        openLogoutConfirmation()
+        onView(withText(R.string.dialog_logout_message))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
+        onView(withId(android.R.id.button2)).inRoot(isDialog()).perform(click())
+
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).assertExists()
+        assertFalse(intendedSafely(hasComponent(SplashActivity::class.java.name)))
+
+        openLogoutConfirmation()
+        onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            intendedSafely(hasComponent(SplashActivity::class.java.name))
+        }
+    }
+
+    @Test
+    fun accountAvatarOpensSheetAndEditProfileNavigation() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).performClick()
+        waitTag(ACCOUNT_SHEET, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_EDIT_PROFILE).performClick()
+
+        waitForDestination(R.id.editProfileFragment)
+        composeRule.onNodeWithTag(ACCOUNT_SHEET).assertDoesNotExist()
     }
 
     @Test
     fun accountSettingsActionNavigatesWithoutReopeningSheet() {
-        waitTag(ACCOUNT_AVATAR_TAG, composeRule)
-        composeRule.onNodeWithTag(ACCOUNT_AVATAR_TAG).performClick()
-        waitTag(ACCOUNT_SHEET_TAG, composeRule)
-        composeRule.onNodeWithTag(ACCOUNT_SETTINGS_TAG).performClick()
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).performClick()
+        waitTag(ACCOUNT_SHEET, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_SETTINGS).performClick()
 
-        composeRule.waitUntil(10_000) {
-            currentDestinationId() == R.id.settingsFragment
+        waitForDestination(R.id.settingsFragment)
+        composeRule.onNodeWithTag(ACCOUNT_SHEET).assertDoesNotExist()
+    }
+
+    private fun launchMain(
+        scenario: TestScenario = TestScenario(
+            currentUserUid = TestData.UID,
+            onboardingDone = true,
+            firstLoginDone = true,
+            hasLocationPermission = true
+        ),
+        intent: Intent? = null
+    ) {
+        mainScenario = launchWithScenario(scenario, intent)
+    }
+
+    private fun openLogoutConfirmation() {
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).performClick()
+        waitTag(ACCOUNT_SHEET, composeRule)
+        composeRule.onNodeWithTag(ACCOUNT_LOGOUT).performClick()
+    }
+
+    private fun selectBottomItem(itemId: Int) {
+        launchWithCurrentActivity { activity ->
+            activity.findViewById<BottomNavigationView>(R.id.bottomNav).selectedItemId = itemId
         }
-        composeRule.onNodeWithTag(ACCOUNT_SHEET_TAG).assertDoesNotExist()
+    }
+
+    private fun waitForDestination(destinationId: Int) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            currentDestinationId() == destinationId
+        }
     }
 
     private fun currentDestinationId(): Int? {
@@ -105,6 +311,13 @@ class MainNavigationAndroidTest :
                 .currentDestination?.id
         }
         return destinationId
+    }
+
+    private fun intendedSafely(matcher: org.hamcrest.Matcher<Intent>): Boolean = try {
+        Intents.intended(matcher)
+        true
+    } catch (_: AssertionError) {
+        false
     }
 
     private fun launchWithCurrentActivity(block: (MainActivity) -> Unit) {
