@@ -300,8 +300,6 @@
     <string name="action_cancel">Cancelar</string>
     <string name="action_save">Listo</string>
 
-    <string name="action_filter_on">Filtrar</string>
-    <string name="action_filter_off">Quitar filtro</string>
     <string name="action_scroll_to_top">Ir arriba</string>
     <string name="label_age">%1$d años</string>
     <string name="action_exit">Salir</string>
@@ -437,6 +435,24 @@
     <string name="menu_users">Descubrir</string>
     <string name="menu_chat">Chats</string>
     <string name="account_open">Abrir Cuenta</string>
+    <string name="discover_for_you">Para vos</string>
+    <string name="discover_search_hint">Buscar personas</string>
+    <string name="discover_filters">Filtros</string>
+    <string name="discover_filters_subtitle">Ajustá quiénes aparecen en Descubrir.</string>
+    <string name="discover_only_online">Solo en línea</string>
+    <string name="discover_filter_age">Filtrar por edad</string>
+    <string name="discover_age_range">De %1$d a %2$d años</string>
+    <string name="discover_apply_filters">Aplicar filtros</string>
+    <string name="discover_clear_filters">Limpiar filtros</string>
+    <string name="discover_loading">Cargando personas</string>
+    <string name="discover_empty">No encontramos personas con estos criterios.</string>
+    <string name="discover_start_chat">Iniciar chat con %1$s</string>
+    <string name="discover_add_favorite">Agregar a %1$s a Favoritos</string>
+    <string name="discover_remove_favorite">Quitar a %1$s de Favoritos</string>
+    <string name="discover_first_dm_title">Iniciar una nueva conversación</string>
+    <string name="discover_first_dm_message">Estás por escribirle a una persona nueva. Sé respetuoso y evitá compartir información personal hasta sentirte cómodo.</string>
+    <string name="discover_first_dm_confirm">Iniciar chat</string>
+    <string name="discover_chat_check_error">No pudimos verificar la conversación. Intentá de nuevo.</string>
 
     <string name="menu_add_favorite">Agregar a favoritos</string>
     <string name="menu_remove_favorite">Eliminar de favoritos</string>
@@ -497,7 +513,6 @@
     <string name="yesterday">ayer</string>
     <string name="online">en línea</string>
     <string name="typing">escribiendo…</string>
-    <string name="online_upper_case">En línea</string>
     <string name="offline">desconectado</string>
 
     <string name="delete_account">Eliminar cuenta</string>
@@ -524,7 +539,6 @@
     <string name="favorite_added">%1$s ahora está en tus favoritos</string>
     <string name="favorite_removed">%1$s ya no está en tus favoritos</string>
     <string name="empty_chat">Chat vacío</string>
-    <string name="filter_title">Filtros de búsqueda</string>
     <string name="content_description_refresh">Actualizar</string>
 
 </resources>

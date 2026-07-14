@@ -93,8 +93,6 @@
 
     <dimen name="text_size_content">16sp</dimen>
 
-    <dimen name="text_size_row_title">18sp</dimen>
-    <dimen name="text_size_row_description">13sp</dimen>
     <dimen name="text_size_xs">11sp</dimen>
 
     <dimen name="tag_text_size">10sp</dimen>
@@ -137,7 +135,6 @@
 
 <!--    <dimen name="profile_photo_height">240dp</dimen>-->
     <dimen name="chat_list_avatar_size">56dp</dimen>
-    <dimen name="row_user_avatar_size">70dp</dimen>
     <dimen name="user_list_avatar_size">84dp</dimen>
     <dimen name="chat_list_check_height">16dp</dimen>
     <dimen name="chat_list_badge_height">20dp</dimen>
@@ -145,7 +142,6 @@
     <dimen name="status_indicator_margin">1dp</dimen>
     <dimen name="status_indicator_stroke">1dp</dimen>
     <dimen name="chat_list_avatar_stroke">1dp</dimen>
-    <dimen name="user_list_avatar_stroke">2dp</dimen>
     <dimen name="popup_menu_stroke">1dp</dimen>
 
 

@@ -13,14 +13,12 @@
         <item name="titleTextColor">?attr/colorOnSurface</item>
         <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
         <item name="titleTextAppearance">@style/TextAppearance.Zibe.Brand.Subtitle</item>
-        <item name="drawerArrowStyle">@style/Widget.Zibe.DrawerArrowOnGradient</item>
         <item name="actionOverflowButtonStyle">@style/Widget.Zibe.OverflowButtonOnGradient</item>
         <!-- Para iconos: usar app:navigationIconTint en el XML del toolbar -->
     </style>
 
     <!-- ToolbarOnGradient -->
     <style name="ThemeOverlay.Zibe.ToolbarOnGradient" parent="ThemeOverlay.Material3">
-        <item name="drawerArrowStyle">@style/Widget.Zibe.DrawerArrowOnGradient</item>
         <item name="actionOverflowButtonStyle">@style/Widget.Zibe.OverflowButtonOnGradient</item>
         <item name="colorControlNormal">@color/zibe_text_light</item>
         <item name="android:textColorPrimary">@color/zibe_text_light</item>
@@ -86,10 +84,6 @@
         <item name="searchIcon">@drawable/ic_search_rounded_24</item>
         <item name="queryBackground">@null</item>
         <item name="submitBackground">@null</item>
-    </style>
-
-    <style name="Widget.Zibe.DrawerArrowOnGradient" parent="Widget.AppCompat.DrawerArrowToggle">
-        <item name="color">?attr/colorOnPrimary</item>
     </style>
 
     <style name="Widget.Zibe.OverflowButtonOnGradient" parent="Widget.AppCompat.ActionButton.Overflow">

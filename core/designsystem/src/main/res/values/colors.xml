@@ -145,7 +145,6 @@
     <color name="glass_bg_dark">#60000000</color>
     <color name="status_stroke">#121212</color>
     <color name="chat_list_avatar_stroke">#FFFFFF</color>
-    <color name="user_list_avatar_stroke">#FFFFFF</color>
     <!--    <color name="glass_stroke_dark">#33000000</color>    &lt;!&ndash; negro 20% &ndash;&gt;-->
     <!--    <color name="glass_indicator_dark">#26000000</color> &lt;!&ndash; negro 15% para el pill &ndash;&gt;-->
 

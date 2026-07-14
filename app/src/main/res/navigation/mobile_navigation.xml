@@ -8,8 +8,7 @@
     <fragment
         android:id="@+id/nav_users"
         android:name="com.zibete.proyecto1.ui.users.UsersFragment"
-        android:label="@string/menu_users"
-        tools:layout="@layout/fragment_users" />
+        android:label="@string/menu_users" />
 
     <fragment
         android:id="@+id/nav_chat_list"

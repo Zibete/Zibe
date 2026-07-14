@@ -9,13 +9,6 @@ sealed class UsersUiEvent {
         val snackType: ZibeSnackType
     ) : UsersUiEvent()
 
-    data class ShowFilterDialog(
-        val applyAgeFilter: Boolean,
-        val applyOnlineFilter: Boolean,
-        val minAge: Int,
-        val maxAge: Int
-    ) : UsersUiEvent()
-
     data class NavigateToChat(
         val userId: String
     ) : UsersUiEvent()

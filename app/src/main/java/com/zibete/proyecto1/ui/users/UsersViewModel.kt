@@ -5,17 +5,27 @@ import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
+import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.onFailure
+import com.zibete.proyecto1.core.utils.onFinally
+import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
+import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.UserDirectoryProvider
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Users
+import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -27,12 +37,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 @HiltViewModel
 class UsersViewModel @Inject constructor(
@@ -41,13 +51,15 @@ class UsersViewModel @Inject constructor(
     private val locationRepository: LocationRepositoryProvider,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val userDirectoryProvider: UserDirectoryProvider,
+    private val chatRepository: ChatRepositoryContract,
+    private val profileRepositoryActions: ProfileRepositoryActions,
+    private val profileRepositoryProvider: ProfileRepositoryProvider
 ) : ViewModel() {
-
     private data class UsersFilters(
         val applyAgeFilter: Boolean = false,
         val applyOnlineFilter: Boolean = false,
-        val minAge: Int = 0,
-        val maxAge: Int = 0
+        val minAge: Int = MIN_AGE,
+        val maxAge: Int = MAX_AGE
     )
 
     private val _uiState = MutableStateFlow(UsersUiState())
@@ -58,159 +70,118 @@ class UsersViewModel @Inject constructor(
 
     private var allUsers: List<UsersRowUiModel> = emptyList()
     private var currentFilters = UsersFilters()
-    private var searchQuery: String = ""
+    private var searchQuery = ""
     private var loadJob: Job? = null
     private var metaJob: Job? = null
+    private val statusJobs = mutableMapOf<String, Job>()
     private val hasBlockedMeCache = mutableMapOf<String, Boolean>()
     private val hasBlockedMeInFlight = mutableSetOf<String>()
+    private val favoriteOverrides = mutableMapOf<String, Boolean>()
     private val hasBlockedMeSemaphore = Semaphore(4)
-    private var hasBlockedMeGeneration = 0
+    private var usersGeneration = 0
 
     fun loadUsers() {
         loadJob?.cancel()
         metaJob?.cancel()
-        hasBlockedMeGeneration += 1
+        usersGeneration += 1
         hasBlockedMeCache.clear()
         hasBlockedMeInFlight.clear()
         loadJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            val hasContent = allUsers.isNotEmpty()
+            _uiState.update {
+                it.copy(
+                    isLoading = !hasContent,
+                    isRefreshing = hasContent,
+                    error = null
+                )
+            }
 
             currentFilters = readFiltersFromPrefs()
+            syncFilterState()
             val myUid = localRepositoryProvider.myUid
 
             runCatchingPreservingCancellation { fetchUsersBase(myUid) }
                 .onSuccess { users ->
                     allUsers = users
-                    updateVisibleUsers(isLoading = false)
+                    updateVisibleUsers(isLoading = false, isRefreshing = false, error = null)
                     if (users.isNotEmpty()) {
                         metaJob = viewModelScope.launch {
-                            enrichUsersMeta(users)
+                            runCatchingPreservingCancellation { enrichUsersMeta(users, myUid) }
+                                .onFailure { emitSnack(it.toUsersError(), ZibeSnackType.ERROR) }
                         }
                     }
                 }
-                .onFailure { e ->
-                    _events.emit(
-                        UsersUiEvent.ShowSnack(
-                            uiText = e.message.toUiText(
-                                R.string.err_zibe_prefix,
-                                R.string.err_zibe
-                            ),
-                            snackType = ZibeSnackType.ERROR
-                        )
+                .onFailure { error ->
+                    val uiText = error.toUsersError()
+                    updateVisibleUsers(
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = if (hasContent) null else uiText
                     )
-                    _uiState.update { it.copy(isLoading = false) }
+                    emitSnack(uiText, ZibeSnackType.ERROR)
                 }
         }
     }
 
     private suspend fun fetchUsersBase(myUid: String): List<UsersRowUiModel> {
-        val lat = locationRepository.latitude
-        val lon = locationRepository.longitude
-
-        val tempList = mutableListOf<UsersRowUiModel>()
-
-        for (user in userDirectoryProvider.getAllAccounts()) {
-            val key = user.id
-            if (key.isBlank() || key == myUid) continue
-
-            val age = ageCalculator(user.birthDate)
-
-            val distanceMeters = locationRepository.getDistanceMeters(
-                lat, lon,
-                user.latitude, user.longitude
-            )
-
-            tempList.add(
-                UsersRowUiModel(
-                    id = key,
-                    name = user.name,
-                    age = age,
-                    isOnline = user.online,
-                    distanceMeters = distanceMeters,
-                    photoUrl = user.photoUrl,
-                    description = user.description
-                )
-            )
-        }
-
-        val result = tempList.sortedBy { it.distanceMeters }
-
-        return result
+        val latitude = locationRepository.latitude
+        val longitude = locationRepository.longitude
+        return userDirectoryProvider.getAllAccounts()
+            .asSequence()
+            .filter { it.id.isNotBlank() && it.id != myUid }
+            .map { it.toRow(latitude, longitude) }
+            .sortedBy { it.distanceMeters }
+            .toList()
     }
 
-    private suspend fun enrichUsersMeta(baseUsers: List<UsersRowUiModel>) {
-        val myUid = localRepositoryProvider.myUid
+    private fun Users.toRow(latitude: Double, longitude: Double) = UsersRowUiModel(
+        id = id,
+        name = name,
+        age = ageCalculator(birthDate),
+        isOnline = online,
+        distanceMeters = locationRepository.getDistanceMeters(
+            latitude,
+            longitude,
+            this.latitude,
+            this.longitude
+        ),
+        photoUrl = photoUrl,
+        description = description
+    )
 
+    private suspend fun enrichUsersMeta(baseUsers: List<UsersRowUiModel>, myUid: String) {
         val (favorites, chatStates) = withContext(Dispatchers.IO) {
             coroutineScope {
-                val favoritesDeferred = async { fetchFavoriteSet(myUid) }
-                val statesDeferred = async { fetchMyConversationStates(myUid) }
+                val favoritesDeferred = async { userDirectoryProvider.getFavoriteUserIds(myUid) }
+                val statesDeferred = async { userDirectoryProvider.getConversationStates(myUid) }
                 favoritesDeferred.await() to statesDeferred.await()
             }
         }
-        val enriched = baseUsers.map { user ->
+        val enrichedById = baseUsers.associate { user ->
             val chatState = chatStates[user.id].orEmpty()
-            val hasBlockedMe = hasBlockedMeCache[user.id] ?: false
-            user.copy(
-                isFavorite = favorites.contains(user.id),
+            user.id to user.copy(
+                isFavorite = favoriteOverrides[user.id] ?: favorites.contains(user.id),
                 isBlockedByMe = chatState == CHAT_STATE_BLOCKED,
-                hasBlockedMe = hasBlockedMe,
+                hasBlockedMe = hasBlockedMeCache[user.id] ?: false,
                 isNotificationsSilenced = chatState == CHAT_STATE_SILENT
             )
         }
-        allUsers = enriched
+        allUsers = allUsers.map { current -> enrichedById[current.id] ?: current }
         updateVisibleUsers()
     }
 
-    fun prefetchHasBlockedMe(userIds: List<String>) {
-        if (userIds.isEmpty()) return
-        val currentGeneration = hasBlockedMeGeneration
-        val toFetch = userIds
-            .asSequence()
-            .filter { it.isNotBlank() }
-            .distinct()
-            .filter { it !in hasBlockedMeCache && it !in hasBlockedMeInFlight }
-            .toList()
-        if (toFetch.isEmpty()) return
-
-        toFetch.forEach { otherUid ->
-            hasBlockedMeInFlight += otherUid
-            viewModelScope.launch(Dispatchers.IO) {
-                val result = runCatchingPreservingCancellation {
-                    hasBlockedMeSemaphore.withPermit {
-                        fetchHasBlockedMe(otherUid)
-                    }
-                }.getOrNull()
-                withContext(Dispatchers.Main) {
-                    if (currentGeneration != hasBlockedMeGeneration) return@withContext
-                    hasBlockedMeInFlight -= otherUid
-                    if (result == null) return@withContext
-                    hasBlockedMeCache[otherUid] = result
-                    applyHasBlockedMe(otherUid, result)
-                }
-            }
-        }
-    }
-
-    private fun applyHasBlockedMe(otherUid: String, hasBlockedMe: Boolean) {
-        val index = allUsers.indexOfFirst { it.id == otherUid }
-        if (index == -1) return
-        val current = allUsers[index]
-        if (current.hasBlockedMe == hasBlockedMe) return
-        val updated = allUsers.toMutableList()
-        updated[index] = current.copy(hasBlockedMe = hasBlockedMe)
-        allUsers = updated
+    fun onSearchQueryChanged(query: String?) {
+        searchQuery = query.orEmpty()
         updateVisibleUsers()
     }
 
-    private suspend fun fetchFavoriteSet(myUid: String): Set<String> =
-        userDirectoryProvider.getFavoriteUserIds(myUid)
-
-    private suspend fun fetchMyConversationStates(myUid: String): Map<String, String> =
-        userDirectoryProvider.getConversationStates(myUid)
-
-    private suspend fun fetchHasBlockedMe(otherUid: String): Boolean {
-        return userDirectoryProvider.hasBlockedUser(otherUid, localRepositoryProvider.myUid)
+    fun onOnlineFilterChanged(enabled: Boolean) {
+        applyFilters(
+            applyAgeFilter = currentFilters.applyAgeFilter,
+            applyOnlineFilter = enabled,
+            minAge = currentFilters.minAge,
+            maxAge = currentFilters.maxAge
+        )
     }
 
     fun applyFilters(
@@ -219,113 +190,229 @@ class UsersViewModel @Inject constructor(
         minAge: Int,
         maxAge: Int
     ) {
+        val safeMin = minAge.coerceIn(MIN_AGE, MAX_AGE)
+        val safeMax = maxAge.coerceIn(safeMin, MAX_AGE)
+        currentFilters = UsersFilters(
+            applyAgeFilter = applyAgeFilter,
+            applyOnlineFilter = applyOnlineFilter,
+            minAge = safeMin,
+            maxAge = safeMax
+        )
+        syncFilterState()
+        updateVisibleUsers()
+
         viewModelScope.launch {
-            userPreferencesActions.setApplyAgeFilter(applyAgeFilter)
-            userPreferencesActions.setApplyOnlineFilter(applyOnlineFilter)
-
-            if (applyAgeFilter) {
-                userPreferencesActions.setMinAge(minAge)
-                userPreferencesActions.setMaxAge(maxAge)
-                userPreferencesActions.setFilterSwitch(true)
-            } else {
-                userPreferencesActions.setMinAge(0)
-                userPreferencesActions.setMaxAge(0)
-                userPreferencesActions.setFilterSwitch(applyOnlineFilter)
-            }
-
-            currentFilters = UsersFilters(
-                applyAgeFilter = applyAgeFilter,
-                applyOnlineFilter = applyOnlineFilter,
-                minAge = minAge,
-                maxAge = maxAge
-            )
-            updateVisibleUsers()
+            runCatchingPreservingCancellation {
+                userPreferencesActions.setApplyAgeFilter(applyAgeFilter)
+                userPreferencesActions.setApplyOnlineFilter(applyOnlineFilter)
+                userPreferencesActions.setMinAge(if (applyAgeFilter) safeMin else 0)
+                userPreferencesActions.setMaxAge(if (applyAgeFilter) safeMax else 0)
+                userPreferencesActions.setFilterSwitch(applyAgeFilter || applyOnlineFilter)
+            }.onFailure { emitSnack(it.toUsersError(), ZibeSnackType.ERROR) }
         }
     }
 
     fun clearFilters() {
-        viewModelScope.launch {
-            userPreferencesActions.setApplyAgeFilter(false)
-            userPreferencesActions.setApplyOnlineFilter(false)
-            userPreferencesActions.setMinAge(0)
-            userPreferencesActions.setMaxAge(0)
-            userPreferencesActions.setFilterSwitch(false)
-
-            currentFilters = UsersFilters()
-            updateVisibleUsers()
-        }
-    }
-
-    fun onFilterClicked() {
-        viewModelScope.launch {
-            val filters = readFiltersFromPrefs()
-
-            _events.emit(
-                UsersUiEvent.ShowFilterDialog(
-                    applyAgeFilter = filters.applyAgeFilter,
-                    applyOnlineFilter = filters.applyOnlineFilter,
-                    minAge = filters.minAge,
-                    maxAge = filters.maxAge
-                )
-            )
-        }
+        applyFilters(
+            applyAgeFilter = false,
+            applyOnlineFilter = false,
+            minAge = MIN_AGE,
+            maxAge = MAX_AGE
+        )
     }
 
     fun onUserChatClick(userId: String) {
+        if (_uiState.value.chatCheckUserId != null) return
+        val user = allUsers.firstOrNull { it.id == userId } ?: return
+        _uiState.update { it.copy(chatCheckUserId = userId) }
         viewModelScope.launch {
-            _events.emit(UsersUiEvent.NavigateToChat(userId))
+            chatRepository.hasConversation(userId, NODE_DM)
+                .onSuccess { hasConversation ->
+                    if (hasConversation == true) emit(UsersUiEvent.NavigateToChat(userId))
+                    else _uiState.update { it.copy(pendingFirstContact = user) }
+                }
+                .onFailure { error ->
+                    emitSnack(
+                        error.message.toUiText(
+                            R.string.discover_chat_check_error,
+                            R.string.discover_chat_check_error
+                        ),
+                        ZibeSnackType.ERROR
+                    )
+                }
+                .onFinally { _uiState.update { it.copy(chatCheckUserId = null) } }
+        }
+    }
+
+    fun confirmFirstContact() {
+        val userId = _uiState.value.pendingFirstContact?.id ?: return
+        _uiState.update { it.copy(pendingFirstContact = null) }
+        emit(UsersUiEvent.NavigateToChat(userId))
+    }
+
+    fun cancelFirstContact() {
+        _uiState.update { it.copy(pendingFirstContact = null) }
+    }
+
+    fun onFavoriteClick(userId: String) {
+        if (_uiState.value.favoriteActionUserId != null) return
+        val user = allUsers.firstOrNull { it.id == userId } ?: return
+        _uiState.update { it.copy(favoriteActionUserId = userId) }
+        viewModelScope.launch {
+            profileRepositoryActions.toggleFavoriteUser(userId)
+                .onSuccess { isFavorite ->
+                    val newFavoriteState = isFavorite == true
+                    favoriteOverrides[userId] = newFavoriteState
+                    allUsers = allUsers.map {
+                        if (it.id == userId) it.copy(isFavorite = newFavoriteState) else it
+                    }
+                    updateVisibleUsers()
+                    emitSnack(
+                        UiText.StringRes(
+                            if (newFavoriteState) {
+                                R.string.favorite_added
+                            } else {
+                                R.string.favorite_removed
+                            },
+                            listOf(user.name)
+                        ),
+                        ZibeSnackType.SUCCESS
+                    )
+                }
+                .onFailure { emitSnack(it.toUsersError(), ZibeSnackType.ERROR) }
+                .onFinally { _uiState.update { it.copy(favoriteActionUserId = null) } }
         }
     }
 
     fun onUserProfileClick(userId: String) {
-        viewModelScope.launch {
-            val list = uiState.value.users
-            val position = list.indexOfFirst { it.id == userId }.coerceAtLeast(0)
-            val ids = ArrayList(list.map { it.id })
+        val visibleUsers = _uiState.value.users
+        val position = visibleUsers.indexOfFirst { it.id == userId }.coerceAtLeast(0)
+        emit(
+            UsersUiEvent.NavigateToProfile(
+                userIds = ArrayList(visibleUsers.map { it.id }),
+                startIndex = position
+            )
+        )
+    }
 
-            _events.emit(
-                UsersUiEvent.NavigateToProfile(
-                    userIds = ids,
-                    startIndex = position
-                )
+    fun formatDistance(meters: Double): String = locationRepository.formatDistance(meters)
+
+    fun onVisibleUsersChanged(userIds: List<String>) {
+        val visibleIds = userIds.filter(String::isNotBlank).toSet()
+        statusJobs.keys.filterNot(visibleIds::contains).forEach { userId ->
+            statusJobs.remove(userId)?.cancel()
+        }
+        visibleIds.filterNot(statusJobs::containsKey).forEach { userId ->
+            statusJobs[userId] = viewModelScope.launch {
+                profileRepositoryProvider.observeUserStatus(userId, NODE_DM)
+                    .collectLatest { status -> applyUserStatus(userId, status) }
+            }
+        }
+        prefetchHasBlockedMe(visibleIds.toList())
+    }
+
+    private fun prefetchHasBlockedMe(userIds: List<String>) {
+        val generation = usersGeneration
+        val toFetch = userIds.filter {
+            it !in hasBlockedMeCache && it !in hasBlockedMeInFlight
+        }
+        if (toFetch.isEmpty()) return
+        hasBlockedMeInFlight += toFetch
+        viewModelScope.launch {
+            runCatchingPreservingCancellation {
+                coroutineScope {
+                    toFetch.associateWith { userId ->
+                        async(Dispatchers.IO) {
+                            hasBlockedMeSemaphore.withPermit {
+                                userDirectoryProvider.hasBlockedUser(userId, localRepositoryProvider.myUid)
+                            }
+                        }
+                    }.mapValues { it.value.await() }
+                }
+            }.onSuccess { results ->
+                if (generation != usersGeneration) return@onSuccess
+                hasBlockedMeCache += results
+                allUsers = allUsers.map { user ->
+                    results[user.id]?.let { user.copy(hasBlockedMe = it) } ?: user
+                }
+                updateVisibleUsers()
+            }.onFailure { emitSnack(it.toUsersError(), ZibeSnackType.ERROR) }
+            hasBlockedMeInFlight -= toFetch.toSet()
+        }
+    }
+
+    private fun applyUserStatus(userId: String, status: UserStatus) {
+        val isOnline = status is UserStatus.Online || status is UserStatus.TypingOrRecording
+        val index = allUsers.indexOfFirst { it.id == userId }
+        if (index == -1 || allUsers[index].isOnline == isOnline) return
+        allUsers = allUsers.toMutableList().apply {
+            this[index] = this[index].copy(isOnline = isOnline)
+        }
+        updateVisibleUsers()
+    }
+
+    private suspend fun readFiltersFromPrefs(): UsersFilters {
+        val applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first()
+        val storedMin = userPreferencesProvider.minAgeFlow.first()
+        val storedMax = userPreferencesProvider.maxAgeFlow.first()
+        return UsersFilters(
+            applyAgeFilter = applyAgeFilter,
+            applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first(),
+            minAge = storedMin.takeIf { it in MIN_AGE..MAX_AGE } ?: MIN_AGE,
+            maxAge = storedMax.takeIf { it in MIN_AGE..MAX_AGE } ?: MAX_AGE
+        )
+    }
+
+    private fun syncFilterState() {
+        _uiState.update {
+            it.copy(
+                applyAgeFilter = currentFilters.applyAgeFilter,
+                applyOnlineFilter = currentFilters.applyOnlineFilter,
+                minAge = currentFilters.minAge,
+                maxAge = currentFilters.maxAge
             )
         }
     }
 
-    fun onSearchQueryChanged(query: String?) {
-        viewModelScope.launch {
-            searchQuery = query.orEmpty()
-            updateVisibleUsers()
-        }
-    }
-
-    private suspend fun readFiltersFromPrefs(): UsersFilters = UsersFilters(
-        applyAgeFilter = userPreferencesProvider.applyAgeFilterFlow.first(),
-        applyOnlineFilter = userPreferencesProvider.applyOnlineFilterFlow.first(),
-        minAge = userPreferencesProvider.minAgeFlow.first(),
-        maxAge = userPreferencesProvider.maxAgeFlow.first()
-    )
-
-    private fun updateVisibleUsers(isLoading: Boolean? = null) {
+    private fun updateVisibleUsers(
+        isLoading: Boolean? = null,
+        isRefreshing: Boolean? = null,
+        error: UiText? = _uiState.value.error
+    ) {
         val query = searchQuery.trim().lowercase()
         val filters = currentFilters
         val filtered = allUsers.filter { user ->
-            if (filters.applyOnlineFilter && !user.isOnline) return@filter false
-            if (filters.applyAgeFilter && user.age !in filters.minAge..filters.maxAge) {
-                return@filter false
-            }
-            if (query.isBlank()) return@filter true
-            user.name.lowercase().contains(query)
+            (!filters.applyOnlineFilter || user.isOnline) &&
+                (!filters.applyAgeFilter || user.age in filters.minAge..filters.maxAge) &&
+                (query.isBlank() || user.name.lowercase().contains(query))
         }
 
         _uiState.update { state ->
             state.copy(
                 isLoading = isLoading ?: state.isLoading,
-                users = filtered.toList()
+                isRefreshing = isRefreshing ?: state.isRefreshing,
+                users = filtered,
+                searchQuery = searchQuery,
+                error = error
             )
         }
     }
 
-    fun formatDistance(meters: Double): String = locationRepository.formatDistance(meters)
+    private fun Throwable.toUsersError(): UiText = message.toUiText(
+        R.string.err_zibe_prefix,
+        R.string.err_zibe
+    )
 
+    private fun emitSnack(uiText: UiText, snackType: ZibeSnackType) {
+        emit(UsersUiEvent.ShowSnack(uiText, snackType))
+    }
+
+    private fun emit(event: UsersUiEvent) {
+        viewModelScope.launch { _events.emit(event) }
+    }
+
+    private companion object {
+        const val MIN_AGE = 18
+        const val MAX_AGE = 99
+    }
 }

@@ -71,10 +71,6 @@ class MainViewModel @Inject constructor(
             .map { it?.groupName.orEmpty() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
-    val hasActiveFilter: StateFlow<Boolean> =
-        userPreferencesProvider.filterSwitchFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
 

@@ -5,13 +5,12 @@ import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.PorterDuff
 import android.Manifest
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
+import android.view.HapticFeedbackConstants
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
@@ -86,7 +85,6 @@ import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.ui.users.UsersToolbarHandler
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -108,9 +106,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private lateinit var materialToolbar: MaterialToolbar
     private lateinit var bottomNavigationView: BottomNavigationView
     private var currentScreen: CurrentScreen = CurrentScreen.OTHER
-    private var usersFragmentSettings: View? = null
-    private var filterButton: ImageView? = null
-    private var refreshButton: ImageView? = null
     private val destinationUiMapper = MainDestinationUiMapper()
     private val searchCoordinator = MainSearchCoordinator { activeSearchHandler() }
     private var badgeDrawableChat: BadgeDrawable? = null
@@ -225,20 +220,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         // Toolbar & Layouts
         val appBarMain = binding.appBarMain
         materialToolbar = appBarMain.materialToolbar
-        usersFragmentSettings = appBarMain.usersFragmentSettings
-        filterButton = appBarMain.filterButton
-        refreshButton = appBarMain.refreshButton
-
-        // Botón de refrescar
-        refreshButton?.setOnClickListener {
-            activeUsersToolbarHandler()?.onRefreshUsers()
-        }
-
-        // Botón de filtro → dispara un evento, el Fragment abre el diálogo
-        filterButton?.setOnClickListener {
-            activeUsersToolbarHandler()?.onFilterUsers()
-        }
-
         // Transiciones suaves
         appBarMain.materialToolbar.layoutTransition = LayoutTransition().apply {
             enableTransitionType(LayoutTransition.CHANGING)
@@ -330,6 +311,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
+            bottomNavigationView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
             mainViewModel.onBottomItemSelected(item.itemId)
             true
         }
@@ -365,7 +347,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                 mainViewModel.destinationUiState.collect { state ->
                     // Visibilidad
                     materialToolbar.isVisible = state.showToolbar
-                    usersFragmentSettings?.isVisible = state.showUsersFragmentSettings
                     binding.appBarMain.accountAvatarHost.isVisible = state.showAccountAvatar
                     bottomNavigationView.isVisible = state.showBottomNav
                     // title
@@ -378,18 +359,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     currentScreen = state.currentScreen
 
                     invalidateOptionsMenu()
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.hasActiveFilter.collect { hasActiveFilter ->
-                    val colorRes = if (hasActiveFilter) DsR.color.accent else DsR.color.blanco
-                    filterButton?.setColorFilter(
-                        this@MainActivity.getColorCompat(colorRes),
-                        PorterDuff.Mode.SRC_IN
-                    )
                 }
             }
         }
@@ -604,9 +573,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     private fun activeSearchHandler(): SearchHandler? =
         activeNavFragment() as? SearchHandler
-
-    private fun activeUsersToolbarHandler(): UsersToolbarHandler? =
-        activeNavFragment() as? UsersToolbarHandler
 
     private fun ensureNavHostController(): NavController {
         val current = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
