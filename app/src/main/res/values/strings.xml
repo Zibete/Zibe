@@ -230,19 +230,12 @@
     <string name="permission_required_badge">Necesario</string>
     <string name="permission_optional_badge">Opcional</string>
     <string name="permission_legal_links">Podés consultar nuestras Condiciones de Servicio y Política de Privacidad.</string>
-    <string name="permission_location_message">
-            Para ofrecerte una mejor experiencia, ZIBE utiliza tu ubicación mientras la app está en uso.
-            Esto nos permite mostrarte personas cercanas y mejorar tus coincidencias.
-        </string>
-
-    <string name="permission_legal_disclaimer">
-            Al tocar “Comenzar”, aceptás nuestras Condiciones de Servicio y la Política de Privacidad.
-        </string>
-
     <string name="permission_rationale_title">Permiso de ubicación</string>
     <string name="permission_rationale_message">
             ZIBE necesita acceder a tu ubicación para funcionar correctamente y mostrarte personas cercanas.
         </string>
+    <string name="notification_rationale_title">Activar notificaciones</string>
+    <string name="notification_rationale_message">Para avisarte sobre mensajes nuevos, permití las notificaciones de ZIBE. Podés cambiar esta opción cuando quieras.</string>
 
     <string name="permission_denied_title">Permiso denegado</string>
     <string name="permission_denied_message">
@@ -289,7 +282,6 @@
     <!-- ============================= -->
     <!-- Action Buttons -->
     <!-- ============================= -->
-    <string name="action_start">Comenzar</string>
     <string name="action_register">Registrarse</string>
     <string name="action_next">Siguiente</string>
     <string name="action_previous">Anterior</string>
@@ -442,6 +434,8 @@
     <string name="discover_only_online">Solo en línea</string>
     <string name="discover_filter_age">Filtrar por edad</string>
     <string name="discover_age_range">De %1$d a %2$d años</string>
+    <string name="discover_min_age">Edad mínima</string>
+    <string name="discover_max_age">Edad máxima</string>
     <string name="discover_apply_filters">Aplicar filtros</string>
     <string name="discover_clear_filters">Limpiar filtros</string>
     <string name="discover_loading">Cargando personas</string>
@@ -539,6 +533,5 @@
     <string name="favorite_added">%1$s ahora está en tus favoritos</string>
     <string name="favorite_removed">%1$s ya no está en tus favoritos</string>
     <string name="empty_chat">Chat vacío</string>
-    <string name="content_description_refresh">Actualizar</string>
 
 </resources>

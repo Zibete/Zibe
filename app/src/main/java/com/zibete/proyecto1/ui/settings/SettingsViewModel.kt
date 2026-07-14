@@ -314,14 +314,31 @@ class SettingsViewModel @Inject constructor(
         ) {
             NotificationPermissionDecision.NONE -> refreshNotificationStatus()
             NotificationPermissionDecision.REQUEST_PERMISSION -> {
-                notificationPermissionStateProvider.markRequested()
-                viewModelScope.launch {
-                    _events.emit(SettingsUiEvent.RequestNotificationPermission)
+                if (shouldShowRationale) {
+                    _uiState.update { it.copy(showNotificationRationaleDialog = true) }
+                } else {
+                    requestNotificationPermission()
                 }
             }
             NotificationPermissionDecision.OPEN_SETTINGS -> viewModelScope.launch {
                 _events.emit(SettingsUiEvent.OpenNotificationSettings)
             }
+        }
+    }
+
+    fun onNotificationRationaleAccepted() {
+        _uiState.update { it.copy(showNotificationRationaleDialog = false) }
+        requestNotificationPermission()
+    }
+
+    fun onNotificationRationaleDismissed() {
+        _uiState.update { it.copy(showNotificationRationaleDialog = false) }
+    }
+
+    private fun requestNotificationPermission() {
+        notificationPermissionStateProvider.markRequested()
+        viewModelScope.launch {
+            _events.emit(SettingsUiEvent.RequestNotificationPermission)
         }
     }
 

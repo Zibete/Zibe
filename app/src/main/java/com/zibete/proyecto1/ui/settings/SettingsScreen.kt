@@ -160,6 +160,21 @@ fun SettingsRoute(
     ) { passwordOrNull ->
         settingsViewModel.deleteAccount(passwordIfNeeded = passwordOrNull)
     }
+
+    if (state.showNotificationRationaleDialog) {
+        ZibeDialog(
+            title = stringResource(R.string.notification_rationale_title),
+            content = {
+                Text(
+                    text = stringResource(R.string.notification_rationale_message),
+                    color = LocalZibeExtendedColors.current.hintText,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            onConfirm = settingsViewModel::onNotificationRationaleAccepted,
+            onCancel = settingsViewModel::onNotificationRationaleDismissed
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -785,5 +800,4 @@ private tailrec fun Context.findActivity(): Activity = when (this) {
     is ContextWrapper -> baseContext.findActivity()
     else -> error("Settings requires an Activity context")
 }
-
 

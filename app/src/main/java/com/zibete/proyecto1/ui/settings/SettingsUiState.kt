@@ -17,6 +17,7 @@ data class SettingsUiState(
     val systemNotificationsEnabled: Boolean = true,
     val messageChannelEnabled: Boolean = true,
     val notificationRuntimePermissionGranted: Boolean = true,
+    val showNotificationRationaleDialog: Boolean = false,
 
     val loadingAction: SettingsAction? = null,
 

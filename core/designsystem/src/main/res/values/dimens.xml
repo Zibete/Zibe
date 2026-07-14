@@ -135,7 +135,6 @@
 
 <!--    <dimen name="profile_photo_height">240dp</dimen>-->
     <dimen name="chat_list_avatar_size">56dp</dimen>
-    <dimen name="user_list_avatar_size">84dp</dimen>
     <dimen name="chat_list_check_height">16dp</dimen>
     <dimen name="chat_list_badge_height">20dp</dimen>
     <dimen name="status_indicator_height">14dp</dimen>

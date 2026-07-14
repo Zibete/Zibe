@@ -1,8 +1,8 @@
 package com.zibete.proyecto1.ui.splash
 
 import android.content.Intent
-import android.os.Bundle
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,9 +27,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
@@ -69,6 +71,9 @@ import jakarta.inject.Inject
 import java.io.Serializable
 import kotlinx.coroutines.launch
 
+private const val PERMISSION_MODE_ARGUMENT = "mode"
+private const val PERMISSION_ROUTE = "$PERMISSION_SCREEN/{$PERMISSION_MODE_ARGUMENT}"
+
 @AndroidEntryPoint
 @Suppress("CustomSplashScreen")
 class SplashActivity : BaseEdgeToEdgeActivity() {
@@ -81,7 +86,6 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
 
     private val splashViewModel: SplashViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
-    private var permissionEducationMode = PermissionEducationMode.COMBINED
 
     // ===============================
     // Google & Facebook
@@ -226,13 +230,25 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                             )
                         }
                         // ======================================
-                        composable(PERMISSION_SCREEN) {
+                        composable(
+                            route = PERMISSION_ROUTE,
+                            arguments = listOf(
+                                navArgument(PERMISSION_MODE_ARGUMENT) {
+                                    type = NavType.StringType
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val permissionEducationMode = PermissionEducationMode.valueOf(
+                                requireNotNull(
+                                    backStackEntry.arguments?.getString(PERMISSION_MODE_ARGUMENT)
+                                )
+                            )
 
                             CustomPermissionScreen(
                                 mode = permissionEducationMode,
                                 onPermissionFlowCompleted = {
                                     navController.navigate(SPLASH_SCREEN) {
-                                        popUpTo(PERMISSION_SCREEN) { inclusive = true }
+                                        popUpTo(PERMISSION_ROUTE) { inclusive = true }
                                     }
                                 },
                                 onLocationDenied = {
@@ -306,8 +322,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                                 }
 
                             is SplashUiEvent.NavigatePermission -> {
-                                permissionEducationMode = event.mode
-                                navController.navigate(PERMISSION_SCREEN)
+                                navController.navigate("$PERMISSION_SCREEN/${event.mode.name}")
                             }
 
                             is SplashUiEvent.NavigateMain -> {
