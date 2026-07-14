@@ -107,7 +107,7 @@ class DiscoverScreenAndroidTest {
         )
 
         composeRule.onNodeWithTag(DISCOVER_SEARCH).performTextReplacement("Ada")
-        composeRule.runOnIdle { assertEquals("Ada", search.get()) }
+        composeRule.waitUntil { search.get() == "Ada" }
         composeRule.onNodeWithTag(DISCOVER_ONLINE_FILTER).performClick()
         composeRule.onNodeWithTag(DISCOVER_FILTERS).performClick()
         composeRule.onNodeWithText("Solo en línea").performClick()
