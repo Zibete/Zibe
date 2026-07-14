@@ -39,6 +39,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTextStyles
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import com.zibete.proyecto1.ui.motion.ZibeHapticFeedback
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,7 +151,8 @@ fun SheetActions(
                 .weight(1f)
                 .fillMaxHeight(),
             enabled = confirmEnabled && !isConfirmLoading,
-            isLoading = isConfirmLoading
+            isLoading = isConfirmLoading,
+            hapticFeedback = ZibeHapticFeedback.Confirm
         )
     }
 }
@@ -205,7 +207,6 @@ fun ZibeBottomSheetPreviewField() {
         )
     }
 }
-
 
 
 
