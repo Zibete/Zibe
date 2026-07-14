@@ -112,6 +112,8 @@ class DiscoverScreenAndroidTest {
         composeRule.onNodeWithTag(DISCOVER_FILTERS).performClick()
         composeRule.onNodeWithText("Solo en línea").performClick()
         composeRule.onNodeWithText("Filtrar por edad").performClick()
+        composeRule.onNodeWithContentDescription("Edad mínima").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Edad máxima").assertIsDisplayed()
         composeRule.onNodeWithText("Aplicar filtros").performClick()
 
         composeRule.runOnIdle {
