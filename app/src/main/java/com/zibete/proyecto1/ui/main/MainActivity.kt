@@ -311,7 +311,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
-            bottomNavigationView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            bottomNavigationView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             mainViewModel.onBottomItemSelected(item.itemId)
             true
         }

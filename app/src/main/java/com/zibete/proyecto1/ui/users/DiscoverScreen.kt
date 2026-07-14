@@ -35,11 +35,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -47,8 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -130,11 +132,15 @@ fun DiscoverScreen(
     val onlineFilterInteraction = remember { MutableInteractionSource() }
     val filtersInteraction = remember { MutableInteractionSource() }
     val listState = rememberLazyListState()
+    val currentVisibleUsersCallback by rememberUpdatedState(onVisibleUserIdsChanged)
 
     LaunchedEffect(listState) {
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.mapNotNull { it.key as? String }
-        }.distinctUntilChanged().collect(onVisibleUserIdsChanged)
+        }.distinctUntilChanged().collect(currentVisibleUsersCallback)
+    }
+    DisposableEffect(Unit) {
+        onDispose { currentVisibleUsersCallback(emptyList()) }
     }
 
     Column(
@@ -149,7 +155,7 @@ fun DiscoverScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(DISCOVER_SEARCH),
-            placeholder = { Text(stringResource(R.string.discover_search_hint)) },
+            label = { Text(stringResource(R.string.discover_search_hint)) },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
@@ -504,6 +510,8 @@ private fun DiscoverFiltersSheet(
     val haptics = LocalHapticFeedback.current
     val onlineInteraction = remember { MutableInteractionSource() }
     val ageInteraction = remember { MutableInteractionSource() }
+    val minAgeDescription = stringResource(R.string.discover_min_age)
+    val maxAgeDescription = stringResource(R.string.discover_max_age)
 
     ZibeBottomSheet(isOpen = isOpen, onCancel = onDismiss) {
         SheetHeader(
@@ -536,14 +544,20 @@ private fun DiscoverFiltersSheet(
             onValueChange = { minAge = it.coerceAtMost(maxAge) },
             valueRange = 18f..99f,
             steps = 80,
-            enabled = ageEnabled
+            enabled = ageEnabled,
+            modifier = Modifier.semantics {
+                contentDescription = minAgeDescription
+            }
         )
         Slider(
             value = maxAge,
             onValueChange = { maxAge = it.coerceAtLeast(minAge) },
             valueRange = 18f..99f,
             steps = 80,
-            enabled = ageEnabled
+            enabled = ageEnabled,
+            modifier = Modifier.semantics {
+                contentDescription = maxAgeDescription
+            }
         )
         if (state.hasActiveFilters) {
             ZibeButtonOutlined(

@@ -29,15 +29,14 @@ import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,8 +64,8 @@ class UsersViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UsersUiState())
     val uiState: StateFlow<UsersUiState> = _uiState.asStateFlow()
 
-    private val _events = MutableSharedFlow<UsersUiEvent>(extraBufferCapacity = 8)
-    val events: SharedFlow<UsersUiEvent> = _events.asSharedFlow()
+    private val _events = Channel<UsersUiEvent>(capacity = Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     private var allUsers: List<UsersRowUiModel> = emptyList()
     private var currentFilters = UsersFilters()
@@ -124,14 +123,17 @@ class UsersViewModel @Inject constructor(
     }
 
     private suspend fun fetchUsersBase(myUid: String): List<UsersRowUiModel> {
+        val accounts = userDirectoryProvider.getAllAccounts()
         val latitude = locationRepository.latitude
         val longitude = locationRepository.longitude
-        return userDirectoryProvider.getAllAccounts()
-            .asSequence()
-            .filter { it.id.isNotBlank() && it.id != myUid }
-            .map { it.toRow(latitude, longitude) }
-            .sortedBy { it.distanceMeters }
-            .toList()
+        return withContext(Dispatchers.Default) {
+            accounts
+                .asSequence()
+                .filter { it.id.isNotBlank() && it.id != myUid }
+                .map { it.toRow(latitude, longitude) }
+                .sortedBy { it.distanceMeters }
+                .toList()
+        }
     }
 
     private fun Users.toRow(latitude: Double, longitude: Double) = UsersRowUiModel(
@@ -408,7 +410,7 @@ class UsersViewModel @Inject constructor(
     }
 
     private fun emit(event: UsersUiEvent) {
-        viewModelScope.launch { _events.emit(event) }
+        _events.trySend(event)
     }
 
     private companion object {
