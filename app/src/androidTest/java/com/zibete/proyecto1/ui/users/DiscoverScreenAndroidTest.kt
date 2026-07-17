@@ -85,7 +85,12 @@ class DiscoverScreenAndroidTest {
             isBlockedByMe = true,
             isNotificationsSilenced = true
         )
-        val offline = testUser(id = "offline", name = "Grace", isOnline = false)
+        val offline = testUser(
+            id = "offline",
+            name = "",
+            isOnline = false,
+            hasBlockedMe = true
+        )
         setDiscoverContent(
             state = UsersUiState(users = listOf(online, offline)),
             formatDistance = { "1,5 km" },
@@ -94,6 +99,7 @@ class DiscoverScreenAndroidTest {
         )
 
         composeRule.onNodeWithText("Ada").assertIsDisplayed()
+        composeRule.onNodeWithText("Perfil eliminado").assertIsDisplayed()
         composeRule.onAllNodesWithText("29 años").assertCountEquals(2)
         composeRule.onNodeWithContentDescription("Foto de perfil de Ada").assertIsDisplayed()
         composeRule.onNodeWithTag("discover_presence_online_online", useUnmergedTree = true).assert(
@@ -109,6 +115,8 @@ class DiscoverScreenAndroidTest {
         composeRule.onNodeWithTag("user_status_tag_favorite", useUnmergedTree = true)
             .assertIsDisplayed()
         composeRule.onNodeWithTag("user_status_tag_blocked_by_me", useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag("user_status_tag_has_blocked_me", useUnmergedTree = true)
             .assertIsDisplayed()
         composeRule.onNodeWithTag("user_status_tag_silenced", useUnmergedTree = true)
             .assertIsDisplayed()
@@ -268,6 +276,7 @@ class DiscoverScreenAndroidTest {
         isOnline: Boolean = true,
         isFavorite: Boolean = false,
         isBlockedByMe: Boolean = false,
+        hasBlockedMe: Boolean = false,
         isNotificationsSilenced: Boolean = false
     ) = UsersRowUiModel(
         id = id,
@@ -279,6 +288,7 @@ class DiscoverScreenAndroidTest {
         description = "Descripción extensa que debe mostrarse en una sola línea con ellipsis",
         isFavorite = isFavorite,
         isBlockedByMe = isBlockedByMe,
+        hasBlockedMe = hasBlockedMe,
         isNotificationsSilenced = isNotificationsSilenced
     )
 }

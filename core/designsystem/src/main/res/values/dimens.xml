@@ -88,6 +88,9 @@
     <dimen name="body_large_size">16sp</dimen>
     <dimen name="body_xl_size">20sp</dimen>
 
+    <dimen name="text_size_row_title">18sp</dimen>
+    <dimen name="text_size_row_description">13sp</dimen>
+
     <dimen name="label_large_size">16sp</dimen>
     <dimen name="label_medium_size">14sp</dimen>
 
