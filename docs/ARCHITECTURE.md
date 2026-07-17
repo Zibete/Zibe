@@ -19,7 +19,7 @@ app --------------------> data -----------------> domain
 - `core:common`: resultados, modelos y utilidades compartidas sin dependencia de
   `app`/`data`. Conserva tipos Android y anotaciones de serialización legacy;
   esa compatibilidad está aislada y no habilita Android dentro de `domain`.
-- `core:designsystem`: tokens, tema, motion y componentes Compose compartidos.
+- `core:designsystem`: tokens, tema y componentes Compose compartidos.
 - `app`: composición Hilt, Activities/Fragments/Compose, navegación, permisos,
   media y adaptadores legacy.
 
@@ -85,12 +85,14 @@ La navegación raíz mantiene cuatro destinos estables en este orden:
 `Descubrir`, `Chats`, `Salas` y `Favoritos`; `Chats` es el inicio. La cuenta se
 abre desde el avatar de la toolbar en un sheet con edición de perfil, ajustes y
 logout. `Descubrir` conserva `UsersFragment` como borde de Navigation/Hilt y
-renderiza su experiencia en Compose con un único `UsersUiState`.
+renderiza su experiencia en Compose con un único `UsersUiState`. La búsqueda y
+el filtro viven en la toolbar compartida; la apertura del sheet de filtros y su
+estado activo se derivan de ese mismo estado de UI.
 
-`core:designsystem` centraliza duraciones, easing, springs, feedback de presión,
-háptica semántica y detección de reduced motion. Las listas no se animan como un
-bloque: el feedback se aplica sólo al elemento interactivo y reutiliza una única
-fuente de interacción para evitar clicks o ripples duplicados.
+Las cards de Descubrir usan el fondo glass, la tipografía y los tags compartidos
+con el perfil individual. La presencia se representa con un indicador sobre el
+avatar y semántica accesible. Las interacciones usan ripple, estados pressed y
+transiciones Material estándar, sin escala geométrica ni háptica personalizada.
 
 ## Source sets y validación
 
