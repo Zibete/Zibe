@@ -84,15 +84,30 @@ micrófono se piden al iniciar su acción.
 La navegación raíz mantiene cuatro destinos estables en este orden:
 `Descubrir`, `Chats`, `Salas` y `Favoritos`; `Chats` es el inicio. La cuenta se
 abre desde el avatar de la toolbar en un sheet con edición de perfil, ajustes y
-logout. `Descubrir` conserva `UsersFragment` como borde de Navigation/Hilt y
+logout. La barra inferior muestra sólo iconos, pero conserva títulos, content
+descriptions y badges como contrato accesible. `Descubrir` conserva
+`UsersFragment` como borde de Navigation/Hilt y
 renderiza su experiencia en Compose con un único `UsersUiState`. La búsqueda y
 el filtro viven en la toolbar compartida; la apertura del sheet de filtros y su
-estado activo se derivan de ese mismo estado de UI.
+estado activo se derivan de ese mismo estado de UI. El contenido del filtro es
+scrollable y sus acciones permanecen fijas fuera del scroll.
 
 Las cards de Descubrir usan el fondo glass, la tipografía y los tags compartidos
 con el perfil individual. La presencia se representa con un indicador sobre el
 avatar y semántica accesible. Las interacciones usan ripple, estados pressed y
 transiciones Material estándar, sin escala geométrica ni háptica personalizada.
+
+La entrada a un DM nuevo desde Descubrir o Perfil se resuelve mediante
+`ResolveDmEntryUseCase`. La decisión tipada distingue una conversación existente
+de un primer contacto y ambos entry points renderizan el mismo
+`FirstContactSheet`. Un failure no navega ni escribe; la cancelación de coroutine
+se preserva. En el pager de perfiles, cada ViewModel queda ligado a su UID y la
+consulta se cancela cuando la página deja de estar activa. Los accesos desde una
+conversación persistida y `NODE_GROUP_DM` mantienen sus flujos directos.
+
+`ChatTopBar` y la status bar de `ChatActivity` son transparentes para dejar
+visible el gradiente de la pantalla. La selección múltiple comparte el mismo
+contenedor transparente y la barra superior no aplica insets de navegación.
 
 ## Source sets y validación
 
