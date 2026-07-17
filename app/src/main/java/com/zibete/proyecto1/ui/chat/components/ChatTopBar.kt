@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -30,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,10 +39,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.bumptech.glide.Glide
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.constants.Constants.UiTags.CHAT_TOP_BAR
+import com.zibete.proyecto1.core.constants.Constants.UiTags.CHAT_TOP_BAR_OVERFLOW
 import com.zibete.proyecto1.ui.components.ZibeMenuDefaults
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import de.hdodenhof.circleimageview.CircleImageView
+
+internal val chatTopBarContainerColor = Color.Transparent
 
 @Composable
 fun ChatTopBar(
@@ -65,13 +69,12 @@ fun ChatTopBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .background(zibeExtendedColors.contentDarkBg)
+            .background(chatTopBarContainerColor)
+            .testTag(CHAT_TOP_BAR)
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 6.dp)
-                .navigationBarsPadding(),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -138,11 +141,16 @@ fun ChatTopBar(
                 }
             } else {
                 Box {
-                    IconButton(onClick = { menuExpanded = true }) {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.testTag(CHAT_TOP_BAR_OVERFLOW)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             tint = zibeExtendedColors.lightText,
-                            contentDescription = null
+                            contentDescription = stringResource(
+                                R.string.content_description_more_options
+                            )
                         )
                     }
                     MaterialTheme(
@@ -262,7 +270,5 @@ private fun ChatTopBarPreviewSelectionMode() {
         )
     }
 }
-
-
 
 

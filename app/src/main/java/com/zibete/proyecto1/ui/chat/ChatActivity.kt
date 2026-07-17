@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.ContentValues
 import android.content.Intent
 import android.Manifest
+import android.graphics.Color
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
@@ -43,6 +44,8 @@ import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+
+internal const val CHAT_STATUS_BAR_COLOR: Int = Color.TRANSPARENT
 
 @AndroidEntryPoint
 class ChatActivity : BaseChatSessionActivity() {
@@ -128,7 +131,7 @@ class ChatActivity : BaseChatSessionActivity() {
 
     private fun setupEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = getColor(DsR.color.zibe_dark_bg)
+        window.statusBarColor = CHAT_STATUS_BAR_COLOR
         window.navigationBarColor = getColor(DsR.color.zibe_dark_bg)
 
         WindowInsetsControllerCompat(window, window.decorView).apply {
