@@ -44,8 +44,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -60,33 +60,34 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_AGE_RANGE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_EMPTY
-import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_ACTIONS
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_CLEAR
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_LIST
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_PULL_REFRESH
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCROLL_TOP
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.ui.components.FirstContactSheet
 import com.zibete.proyecto1.ui.components.SheetActions
 import com.zibete.proyecto1.ui.components.SheetHeader
+import com.zibete.proyecto1.ui.components.UserStatusTag
+import com.zibete.proyecto1.ui.components.UserStatusTagType
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
-import com.zibete.proyecto1.ui.components.UserStatusTag
-import com.zibete.proyecto1.ui.components.UserStatusTagType
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import kotlinx.coroutines.Job
@@ -281,12 +282,19 @@ private fun DiscoverEmpty(hasActiveFilters: Boolean, onClearFilters: () -> Unit)
         contentAlignment = Alignment.Center
     ) {
         Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = dimensionResource(DsR.dimen.screen_padding)),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(stringResource(R.string.discover_empty))
+            Text(
+                text = stringResource(R.string.discover_empty),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
             if (hasActiveFilters) {
-                ZibeButtonOutlined(
+                ZibeButtonPrimary(
                     text = stringResource(R.string.discover_clear_filters),
                     onClick = onClearFilters
                 )
@@ -318,6 +326,7 @@ private fun DiscoverPersonCard(
         if (user.isOnline) R.string.discover_presence_online
         else R.string.discover_presence_offline
     )
+
     Surface(
         onClick = onProfileClick,
         modifier = Modifier
@@ -377,6 +386,7 @@ private fun DiscoverPersonCard(
                         border = BorderStroke(1.dp, colorResource(DsR.color.status_stroke))
                     ) {}
                 }
+
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -448,6 +458,7 @@ private fun DiscoverPersonCard(
                     }
                 }
             }
+
             IconButton(
                 onClick = onChatClick,
                 enabled = !isChatLoading,
@@ -494,8 +505,12 @@ private fun DiscoverFiltersSheet(
     var onlineEnabled by remember(isOpen, state.applyOnlineFilter) {
         mutableStateOf(state.applyOnlineFilter)
     }
-    var minAge by remember(isOpen, state.minAge) { mutableFloatStateOf(state.minAge.toFloat()) }
-    var maxAge by remember(isOpen, state.maxAge) { mutableFloatStateOf(state.maxAge.toFloat()) }
+    var minAge by remember(isOpen, state.minAge) {
+        mutableFloatStateOf(state.minAge.toFloat())
+    }
+    var maxAge by remember(isOpen, state.maxAge) {
+        mutableFloatStateOf(state.maxAge.toFloat())
+    }
     val minAgeDescription = stringResource(R.string.discover_min_age)
     val maxAgeDescription = stringResource(R.string.discover_max_age)
     val colors = LocalZibeExtendedColors.current
@@ -525,14 +540,12 @@ private fun DiscoverFiltersSheet(
         FilterChip(
             selected = onlineEnabled,
             onClick = { onlineEnabled = !onlineEnabled },
-            label = { Text(stringResource(R.string.discover_only_online)) },
-            modifier = Modifier
+            label = { Text(stringResource(R.string.discover_only_online)) }
         )
         FilterChip(
             selected = ageEnabled,
             onClick = { ageEnabled = !ageEnabled },
-            label = { Text(stringResource(R.string.discover_filter_age)) },
-            modifier = Modifier
+            label = { Text(stringResource(R.string.discover_filter_age)) }
         )
         Text(
             text = stringResource(
