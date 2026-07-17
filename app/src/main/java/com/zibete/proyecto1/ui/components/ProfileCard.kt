@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,17 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,18 +21,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieAnimatable
@@ -72,23 +57,6 @@ fun ProfileCard(
     val spacing6 = dimensionResource(DsR.dimen.element_spacing_xxs)
     val spacing12 = dimensionResource(DsR.dimen.element_spacing_small)
     val spacing16 = dimensionResource(DsR.dimen.element_spacing_medium)
-    val tagLocationFg = colorResource(DsR.color.tag_location_fg)
-    val tagLocationBg = colorResource(DsR.color.tag_location_bg)
-    val tagLocationStroke = colorResource(DsR.color.tag_location_stroke)
-    val tagFavoriteFg = colorResource(DsR.color.tag_favorite_fg)
-    val tagFavoriteBg = colorResource(DsR.color.tag_favorite_bg)
-    val tagFavoriteStroke = colorResource(DsR.color.tag_favorite_stroke)
-    val tagBlockedFg = colorResource(DsR.color.tag_blocked_fg)
-    val tagBlockedBg = colorResource(DsR.color.tag_blocked_bg)
-    val tagBlockedStroke = colorResource(DsR.color.tag_blocked_stroke)
-    val tagSilencedFg = colorResource(DsR.color.tag_silenced_fg)
-    val tagSilencedBg = colorResource(DsR.color.tag_silenced_bg)
-    val tagSilencedStroke = colorResource(DsR.color.tag_silenced_stroke)
-
-    val tagGroupMatchFg = zibeColors.tagGroupMatchFg
-    val tagGroupMatchBg = zibeColors.tagGroupMatchBg
-    val tagGroupMatchStroke = zibeColors.tagGroupMatchStroke
-
     val ageText = remember(profile.birthDate) {
         ageCalculator(profile.birthDate).toString()
     }
@@ -139,62 +107,44 @@ fun ProfileCard(
                     verticalArrangement = Arrangement.spacedBy(spacing6)
                 ) {
                     if (distanceLabel.isNotBlank()) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.DISTANCE,
                             text = distanceLabel,
-                            icon = Icons.Filled.LocationOn,
-                            foreground = tagLocationFg,
-                            background = tagLocationBg,
-                            stroke = tagLocationStroke
                         )
                     }
 
                     if (state.isFavorite) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.FAVORITE,
                             text = stringResource(R.string.tag_favorite),
-                            icon = Icons.Filled.Star,
-                            foreground = tagFavoriteFg,
-                            background = tagFavoriteBg,
-                            stroke = tagFavoriteStroke
                         )
                     }
 
                     if (state.isBlockedByMe) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.BLOCKED_BY_ME,
                             text = stringResource(R.string.tag_blocked_by_me),
-                            icon = Icons.Filled.Block,
-                            foreground = tagBlockedFg,
-                            background = tagBlockedBg,
-                            stroke = tagBlockedStroke
                         )
                     }
 
                     if (state.hasBlockedMe) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.HAS_BLOCKED_ME,
                             text = stringResource(R.string.tag_has_blocked_me),
-                            icon = Icons.Filled.Block,
-                            foreground = tagBlockedFg,
-                            background = tagBlockedBg,
-                            stroke = tagBlockedStroke
                         )
                     }
 
                     if (state.isNotificationsSilenced) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.SILENCED,
                             text = stringResource(R.string.tag_silent),
-                            icon = Icons.Filled.NotificationsOff,
-                            foreground = tagSilencedFg,
-                            background = tagSilencedBg,
-                            stroke = tagSilencedStroke
                         )
                     }
 
                     if (state.isGroupMatch) {
-                        ProfileTag(
+                        UserStatusTag(
+                            type = UserStatusTagType.GROUP_MATCH,
                             text = stringResource(R.string.tag_group_match),
-                            icon = Icons.Filled.Groups,
-                            foreground = tagGroupMatchFg,
-                            background = tagGroupMatchBg,
-                            stroke = tagGroupMatchStroke
                         )
                     }
                 }
@@ -276,50 +226,6 @@ private fun FavoriteLottieStar(
     }
 }
 
-@Composable
-private fun ProfileTag(
-    text: String,
-    icon: ImageVector,
-    foreground: Color,
-    background: Color,
-    stroke: Color
-) {
-    val tagTextSize = dimensionResource(DsR.dimen.tag_text_size).value.sp
-    val iconSize = dimensionResource(DsR.dimen.tag_icon_size)
-    val paddingX = dimensionResource(DsR.dimen.element_spacing_xs)
-    val paddingY = dimensionResource(DsR.dimen.layout_margin_xs)
-    val iconSpacing = dimensionResource(DsR.dimen.layout_margin_small)
-    val strokeWidth = dimensionResource(DsR.dimen.popup_menu_stroke)
-    val zibeTypography = LocalZibeTypography.current
-
-    Surface(
-        shape = RoundedCornerShape(15.dp),
-        color = background,
-        contentColor = foreground,
-        border = BorderStroke(strokeWidth, stroke)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = paddingX, vertical = paddingY),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(iconSpacing)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(iconSize),
-                tint = foreground
-            )
-            Text(
-                text = text,
-                style = zibeTypography.label.copy(fontSize = tagTextSize),
-                color = foreground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun ProfileCardPreview() {
@@ -343,7 +249,5 @@ fun ProfileCardPreview() {
         )
     }
 }
-
-
 
 
