@@ -6,12 +6,19 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.view.View
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.performClick
+import androidx.appcompat.R as AppCompatR
+import androidx.core.content.ContextCompat
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.NoActivityResumedException
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
@@ -37,6 +44,9 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_EDIT_PROFILE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_LOGOUT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SETTINGS
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SHEET
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
@@ -45,6 +55,7 @@ import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.testing.waitTag
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
+import com.zibete.proyecto1.ui.users.DiscoverToolbarHandler
 import dagger.hilt.android.testing.HiltAndroidTest
 import io.mockk.every
 import javax.inject.Inject
@@ -55,6 +66,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -138,6 +150,90 @@ class MainNavigationAndroidTest :
             val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
             assertEquals(R.id.navBottomFavorites, bottomNav.selectedItemId)
         }
+    }
+
+    @Test
+    fun discoverToolbarShowsSearchFilterWithoutRefreshOrHamburger() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        selectBottomItem(R.id.navBottomUsers)
+        waitForDestination(R.id.nav_users)
+        waitTag(DISCOVER_SCREEN, composeRule)
+
+        onView(withId(R.id.action_search)).check(matches(isDisplayed()))
+        onView(withId(R.id.action_discover_filter)).check(matches(isDisplayed()))
+        composeRule.onNodeWithTag(ACCOUNT_AVATAR).assertExists()
+
+        launchWithCurrentActivity { activity ->
+            val toolbar = activity.findViewById<MaterialToolbar>(R.id.materialToolbar)
+            assertNull(toolbar.navigationIcon)
+            assertEquals(
+                0,
+                activity.resources.getIdentifier(
+                    "action_refresh",
+                    "id",
+                    activity.packageName
+                )
+            )
+        }
+    }
+
+    @Test
+    fun discoverSearchExpandsDelegatesQueryAndBackClearsIt() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        selectBottomItem(R.id.navBottomUsers)
+        waitForDestination(R.id.nav_users)
+        waitTag(DISCOVER_SCREEN, composeRule)
+
+        onView(withId(R.id.action_search)).perform(click())
+        onView(withId(AppCompatR.id.search_src_text))
+            .check(matches(isDisplayed()))
+            .perform(replaceText("sin resultados"))
+        composeRule.waitUntil {
+            composeRule.onNodeWithText("Limpiar filtros").isDisplayed()
+        }
+
+        launchWithCurrentActivity { activity ->
+            activity.onBackPressedDispatcher.onBackPressed()
+        }
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            !composeRule.onNodeWithText("Limpiar filtros").isDisplayed()
+        }
+    }
+
+    @Test
+    fun discoverFilterOpensSheetAndActiveStateTintsToolbarIcon() {
+        launchMain()
+        waitTag(ACCOUNT_AVATAR, composeRule)
+        selectBottomItem(R.id.navBottomUsers)
+        waitForDestination(R.id.nav_users)
+        waitTag(DISCOVER_SCREEN, composeRule)
+
+        onView(withId(R.id.action_discover_filter)).perform(click())
+        waitTag(DISCOVER_FILTER_SHEET, composeRule)
+        composeRule.onNodeWithText("Solo en línea").performClick()
+        composeRule.onNodeWithText("Aplicar filtros").performClick()
+
+        composeRule.waitUntil {
+            var active = false
+            launchWithCurrentActivity { activity ->
+                val navHost = activity.supportFragmentManager
+                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+                val handler = navHost.childFragmentManager.primaryNavigationFragment
+                    as DiscoverToolbarHandler
+                val toolbar = activity.findViewById<MaterialToolbar>(R.id.materialToolbar)
+                active = handler.hasActiveFilters &&
+                    toolbar.menu.findItem(R.id.action_discover_filter)
+                        .iconTintList?.defaultColor == ContextCompat.getColor(
+                        activity,
+                        DsR.color.accent
+                    )
+            }
+            active
+        }
+        composeRule.onNodeWithTag(DISCOVER_FILTER_SHEET).assertDoesNotExist()
     }
 
     @Test
@@ -317,6 +413,8 @@ class MainNavigationAndroidTest :
         Intents.intended(matcher)
         true
     } catch (_: AssertionError) {
+        false
+    } catch (_: NoActivityResumedException) {
         false
     }
 
