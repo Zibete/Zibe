@@ -32,7 +32,7 @@
         android:elevation="0dp"
         android:theme="@style/ThemeOverlay.Zibe.BottomNav"
         app:itemIconSize="28dp"
-        app:labelVisibilityMode="labeled"
+        app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

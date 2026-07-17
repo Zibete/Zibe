@@ -400,6 +400,7 @@
 
     <string name="enter_your_password">Introduzca su contraseña</string>
     <string name="content_description_back">Volver</string>
+    <string name="content_description_more_options">Más opciones</string>
 
     <string name="send_feedback">Enivar comentarios</string>
     <string name="new_email">Nuevo correo</string>
@@ -427,7 +428,6 @@
     <string name="menu_users">Descubrir</string>
     <string name="menu_chat">Chats</string>
     <string name="account_open">Abrir Cuenta</string>
-    <string name="discover_for_you">Para vos</string>
     <string name="discover_search_hint">Buscar personas</string>
     <string name="discover_filters">Filtros</string>
     <string name="discover_filters_subtitle">Ajustá quiénes aparecen en Descubrir.</string>
