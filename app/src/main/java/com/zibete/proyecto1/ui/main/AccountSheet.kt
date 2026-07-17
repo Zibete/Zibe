@@ -1,5 +1,7 @@
 package com.zibete.proyecto1.ui.main
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -34,7 +37,6 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_LOGOUT
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SETTINGS
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SHEET
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
-import com.zibete.proyecto1.ui.motion.zibePressable
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
@@ -45,14 +47,14 @@ fun AccountAvatarButton(
 ) {
     val description = stringResource(R.string.account_open)
     Surface(
+        onClick = onClick,
         modifier = modifier
             .size(48.dp)
             .testTag(ACCOUNT_AVATAR)
-            .semantics { contentDescription = description }
-            .clip(CircleShape)
-            .zibePressable(role = Role.Button, onClick = onClick),
+            .semantics { contentDescription = description },
         shape = CircleShape,
-        color = LocalZibeExtendedColors.current.cardBackground
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, Color.White)
     ) {
         AsyncImage(
             model = photoUrl,
@@ -153,7 +155,7 @@ private fun AccountActionRow(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .testTag(testTag)
-            .zibePressable(role = Role.Button, onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 4.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
