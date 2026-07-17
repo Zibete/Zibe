@@ -1,56 +1,57 @@
 package com.zibete.proyecto1.di
 
-import com.zibete.proyecto1.testing.TestData
-
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.utils.AppChecksProvider
-import com.zibete.proyecto1.data.GroupRepositoryProvider
-import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryActions
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.PresenceRepositoryActions
+import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
-import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
-import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
-import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
-import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
+import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
+import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.chat.DefaultResolveDmEntryUseCase
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
 import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
+import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
-import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
-import com.zibete.proyecto1.ui.chat.ChatTextProvider
+import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.fakes.FakeAppChecksProvider
-import com.zibete.proyecto1.fakes.FakeNotificationPermissionStateProvider
-import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
 import com.zibete.proyecto1.fakes.FakeExitGroupUseCase
 import com.zibete.proyecto1.fakes.FakeGoogleSignInUseCase
 import com.zibete.proyecto1.fakes.FakeLogoutUseCase
+import com.zibete.proyecto1.fakes.FakeNotificationPermissionStateProvider
 import com.zibete.proyecto1.fakes.FakeSessionBootstrapper
 import com.zibete.proyecto1.fakes.FakeUpdateProfileUseCase
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.fakes.FakeUserRepositoryActions
 import com.zibete.proyecto1.fakes.FakeUserRepositoryProvider
+import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
+import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenarioStore
-import com.zibete.proyecto1.data.SessionRepositoryActions
+import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -168,6 +169,12 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSendChatMessageUseCase(): SendChatMessageUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideResolveDmEntryUseCase(
+        chatRepository: ChatRepositoryContract
+    ): ResolveDmEntryUseCase = DefaultResolveDmEntryUseCase(chatRepository)
 
     @Provides
     @Singleton
