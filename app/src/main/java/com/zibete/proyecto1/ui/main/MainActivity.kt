@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.HapticFeedbackConstants
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
@@ -311,7 +310,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
-            bottomNavigationView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             mainViewModel.onBottomItemSelected(item.itemId)
             true
         }

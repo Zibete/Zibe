@@ -1,6 +1,6 @@
 package com.zibete.proyecto1.ui.users
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -76,10 +75,6 @@ import com.zibete.proyecto1.ui.components.SheetHeader
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
-import com.zibete.proyecto1.ui.motion.ZibeHapticFeedback
-import com.zibete.proyecto1.ui.motion.performZibeFeedback
-import com.zibete.proyecto1.ui.motion.zibePressFeedback
-import com.zibete.proyecto1.ui.motion.zibePressable
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -128,9 +123,6 @@ fun DiscoverScreen(
 ) {
     var showFilters by rememberSaveable { mutableStateOf(false) }
     val colors = LocalZibeExtendedColors.current
-    val haptics = LocalHapticFeedback.current
-    val onlineFilterInteraction = remember { MutableInteractionSource() }
-    val filtersInteraction = remember { MutableInteractionSource() }
     val listState = rememberLazyListState()
     val currentVisibleUsersCallback by rememberUpdatedState(onVisibleUserIdsChanged)
 
@@ -177,30 +169,18 @@ fun DiscoverScreen(
             ) {
                 FilterChip(
                     selected = state.applyOnlineFilter,
-                    onClick = {
-                        haptics.performZibeFeedback(ZibeHapticFeedback.Selection)
-                        onOnlineFilterChanged(!state.applyOnlineFilter)
-                    },
+                    onClick = { onOnlineFilterChanged(!state.applyOnlineFilter) },
                     label = { Text(stringResource(R.string.online)) },
-                    modifier = Modifier
-                        .testTag(DISCOVER_ONLINE_FILTER)
-                        .zibePressFeedback(onlineFilterInteraction),
-                    interactionSource = onlineFilterInteraction
+                    modifier = Modifier.testTag(DISCOVER_ONLINE_FILTER)
                 )
                 FilterChip(
                     selected = state.hasActiveFilters,
-                    onClick = {
-                        haptics.performZibeFeedback(ZibeHapticFeedback.Selection)
-                        showFilters = true
-                    },
+                    onClick = { showFilters = true },
                     label = { Text(stringResource(R.string.discover_filters)) },
                     leadingIcon = {
                         Icon(Icons.Default.FilterList, contentDescription = null)
                     },
-                    modifier = Modifier
-                        .testTag(DISCOVER_FILTERS)
-                        .zibePressFeedback(filtersInteraction),
-                    interactionSource = filtersInteraction
+                    modifier = Modifier.testTag(DISCOVER_FILTERS)
                 )
             }
         }
@@ -344,7 +324,7 @@ private fun DiscoverPersonCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("discover_person_${user.id}")
-            .zibePressable(role = Role.Button, onClick = onProfileClick),
+            .clickable(role = Role.Button, onClick = onProfileClick),
         shape = MaterialTheme.shapes.large,
         color = colors.cardBackground,
         tonalElevation = 1.dp
@@ -507,9 +487,6 @@ private fun DiscoverFiltersSheet(
     }
     var minAge by remember(isOpen, state.minAge) { mutableFloatStateOf(state.minAge.toFloat()) }
     var maxAge by remember(isOpen, state.maxAge) { mutableFloatStateOf(state.maxAge.toFloat()) }
-    val haptics = LocalHapticFeedback.current
-    val onlineInteraction = remember { MutableInteractionSource() }
-    val ageInteraction = remember { MutableInteractionSource() }
     val minAgeDescription = stringResource(R.string.discover_min_age)
     val maxAgeDescription = stringResource(R.string.discover_max_age)
 
@@ -520,23 +497,15 @@ private fun DiscoverFiltersSheet(
         )
         FilterChip(
             selected = onlineEnabled,
-            onClick = {
-                haptics.performZibeFeedback(ZibeHapticFeedback.Selection)
-                onlineEnabled = !onlineEnabled
-            },
+            onClick = { onlineEnabled = !onlineEnabled },
             label = { Text(stringResource(R.string.discover_only_online)) },
-            modifier = Modifier.zibePressFeedback(onlineInteraction),
-            interactionSource = onlineInteraction
+            modifier = Modifier
         )
         FilterChip(
             selected = ageEnabled,
-            onClick = {
-                haptics.performZibeFeedback(ZibeHapticFeedback.Selection)
-                ageEnabled = !ageEnabled
-            },
+            onClick = { ageEnabled = !ageEnabled },
             label = { Text(stringResource(R.string.discover_filter_age)) },
-            modifier = Modifier.zibePressFeedback(ageInteraction),
-            interactionSource = ageInteraction
+            modifier = Modifier
         )
         Text(stringResource(R.string.discover_age_range, minAge.toInt(), maxAge.toInt()))
         Slider(

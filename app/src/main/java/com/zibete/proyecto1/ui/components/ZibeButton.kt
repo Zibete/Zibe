@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
@@ -21,11 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -36,9 +33,6 @@ import androidx.compose.ui.unit.dp
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.theme.ZibeTheme
-import com.zibete.proyecto1.ui.motion.ZibeHapticFeedback
-import com.zibete.proyecto1.ui.motion.performZibeFeedback
-import com.zibete.proyecto1.ui.motion.zibePressFeedback
 
 @Composable
 fun ZibeButtonPrimary(
@@ -51,7 +45,6 @@ fun ZibeButtonPrimary(
     iconSize: Dp = 24.dp,
     enabled: Boolean = true,
     isLoading: Boolean = false,
-    hapticFeedback: ZibeHapticFeedback = ZibeHapticFeedback.None,
     buttonColors: ButtonColors = ButtonDefaults.buttonColors(
         containerColor = colorResource(DsR.color.zibe_btn_primary),
         contentColor = colorResource(DsR.color.white)
@@ -61,19 +54,13 @@ fun ZibeButtonPrimary(
     val buttonElevation = dimensionResource(DsR.dimen.zibe_btn_elevation)
     val pressedElevation = dimensionResource(DsR.dimen.zibe_btn_elevation_pressed)
     val spacingSmall = dimensionResource(DsR.dimen.element_spacing_small)
-    val interactionSource = remember { MutableInteractionSource() }
-    val haptics = LocalHapticFeedback.current
 
     Button(
-        onClick = {
-            haptics.performZibeFeedback(hapticFeedback)
-            onClick()
-        },
+        onClick = onClick,
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = buttonHeight)
-            .zibePressFeedback(interactionSource, enabled),
+            .heightIn(min = buttonHeight),
         shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
         elevation = ButtonDefaults.buttonElevation(
@@ -81,8 +68,7 @@ fun ZibeButtonPrimary(
             pressedElevation = pressedElevation,
             disabledElevation = 0.dp
         ),
-        colors = buttonColors,
-        interactionSource = interactionSource
+        colors = buttonColors
     ) {
         if (isLoading) {
             ZibeCircularProgress(
@@ -125,8 +111,7 @@ fun ZibeButtonSecondary(
     iconRes: Int? = null,
     iconTint: Color? = null,
     enabled: Boolean = true,
-    isLoading: Boolean = false,
-    hapticFeedback: ZibeHapticFeedback = ZibeHapticFeedback.None
+    isLoading: Boolean = false
 ) {
     ZibeButtonPrimary(
         text = text,
@@ -136,7 +121,6 @@ fun ZibeButtonSecondary(
         iconTint = iconTint,
         enabled = enabled,
         isLoading = isLoading,
-        hapticFeedback = hapticFeedback,
         buttonColors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondary,
             contentColor = MaterialTheme.colorScheme.onSurface
@@ -153,30 +137,22 @@ fun ZibeButtonOutlined(
     iconTint: Color? = null,
     enabled: Boolean = true,
     isLoading: Boolean = false,
-    hapticFeedback: ZibeHapticFeedback = ZibeHapticFeedback.None,
     buttonColors: ButtonColors = ButtonDefaults.outlinedButtonColors(
         contentColor = MaterialTheme.colorScheme.onSurface
     )
 ) {
     val spacingSmall = dimensionResource(DsR.dimen.element_spacing_small)
     val buttonHeight = dimensionResource(DsR.dimen.zibe_btn_height)
-    val interactionSource = remember { MutableInteractionSource() }
-    val haptics = LocalHapticFeedback.current
 
     OutlinedButton(
-        onClick = {
-            haptics.performZibeFeedback(hapticFeedback)
-            onClick()
-        },
+        onClick = onClick,
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = buttonHeight)
-            .zibePressFeedback(interactionSource, enabled),
+            .heightIn(min = buttonHeight),
         shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-        colors = buttonColors,
-        interactionSource = interactionSource
+        colors = buttonColors
     ) {
         if (isLoading) {
             ZibeCircularProgress(
@@ -285,5 +261,4 @@ fun ZibeButtonOutlinedPreview() {
         )
     }
 }
-
 
