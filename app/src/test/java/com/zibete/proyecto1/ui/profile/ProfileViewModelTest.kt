@@ -200,7 +200,7 @@ class ProfileViewModelTest {
         coEvery { profileProvider.getDmPhotoList(OTHER_UID, NODE_DM) } returns
             ZibeResult.Success(emptyList())
         coEvery { locationRepository.getDistanceToUser(OTHER_UID) } returns
-            ZibeResult.Success("")
+            ZibeResult.Success(DISTANCE_LABEL)
         coEvery { groupRepository.isGroupMatch(OTHER_UID, any()) } returns
             ZibeResult.Success(false)
         coEvery { chatRepository.hasConversation(OTHER_UID, NODE_DM) } returns
@@ -219,7 +219,9 @@ class ProfileViewModelTest {
             snackBarManager = snackBarManager
         )
         vm.loadProfile()
-        awaitState(vm) { it.content is ProfileContent.Ready }
+        awaitState(vm) {
+            it.content is ProfileContent.Ready && it.distanceLabel == DISTANCE_LABEL
+        }
         return Harness(vm, gate, snackBarManager)
     }
 
@@ -246,6 +248,7 @@ class ProfileViewModelTest {
     )
 
     private companion object {
+        const val DISTANCE_LABEL = "1 km"
         const val OTHER_UID = "profile-uid"
     }
 }
