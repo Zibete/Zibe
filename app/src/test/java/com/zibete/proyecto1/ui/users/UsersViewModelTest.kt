@@ -9,7 +9,6 @@ import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserDirectoryProvider
-import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
@@ -294,39 +293,6 @@ class UsersViewModelTest {
         assertEquals(1, navigation.startIndex)
     }
 
-    @Test
-    fun `favorite success updates row emits success and releases action`() = runTest {
-        val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.profile.toggleFavoriteUser(NEAR_UID) } returns
-            ZibeResult.Success(true)
-        val event = async { awaitEvent(harness.vm) }
-        runCurrent()
-
-        harness.vm.onFavoriteClick(NEAR_UID)
-
-        val snack = event.await() as UsersUiEvent.ShowSnack
-        assertEquals(ZibeSnackType.SUCCESS, snack.snackType)
-        val state = awaitState(harness.vm) { it.favoriteActionUserId == null }
-        assertTrue(state.users.single().isFavorite)
-        coVerify(exactly = 1) { harness.profile.toggleFavoriteUser(NEAR_UID) }
-    }
-
-    @Test
-    fun `favorite failure preserves row emits error and releases action`() = runTest {
-        val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.profile.toggleFavoriteUser(NEAR_UID) } returns
-            ZibeResult.Failure(IllegalStateException("falló favorito"))
-        val event = async { awaitEvent(harness.vm) }
-        runCurrent()
-
-        harness.vm.onFavoriteClick(NEAR_UID)
-
-        val snack = event.await() as UsersUiEvent.ShowSnack
-        assertEquals(ZibeSnackType.ERROR, snack.snackType)
-        val state = awaitState(harness.vm) { it.favoriteActionUserId == null }
-        assertFalse(state.users.single().isFavorite)
-    }
-
     private suspend fun loadedHarness(vararg users: Users): Harness {
         val harness = harness(users = users.toList())
         harness.vm.loadUsers()
@@ -344,7 +310,6 @@ class UsersViewModelTest {
         val location = mockk<LocationRepositoryProvider>()
         val local = mockk<LocalRepositoryProvider>()
         val chat = mockk<ChatRepositoryContract>()
-        val profile = mockk<ProfileRepositoryActions>()
 
         coEvery { directory.getAllAccounts() } returns users
         coEvery { directory.getFavoriteUserIds(MY_UID) } returns emptySet()
@@ -366,10 +331,9 @@ class UsersViewModelTest {
             localRepositoryProvider = local,
             userDirectoryProvider = directory,
             chatRepository = chat,
-            profileRepositoryActions = profile,
             profileRepositoryProvider = mockk<ProfileRepositoryProvider>(relaxed = true)
         )
-        return Harness(vm, scenario, directory, chat, profile)
+        return Harness(vm, scenario, directory, chat)
     }
 
     private suspend fun awaitState(
@@ -403,8 +367,7 @@ class UsersViewModelTest {
         val vm: UsersViewModel,
         val scenario: TestScenario,
         val directory: UserDirectoryProvider,
-        val chat: ChatRepositoryContract,
-        val profile: ProfileRepositoryActions
+        val chat: ChatRepositoryContract
     )
 
     private companion object {

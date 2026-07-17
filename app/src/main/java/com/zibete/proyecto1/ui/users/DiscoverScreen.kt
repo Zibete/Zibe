@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.users
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -48,11 +48,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +64,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.zibete.proyecto1.R
+import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_EMPTY
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTERS
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_LIST
@@ -75,6 +77,8 @@ import com.zibete.proyecto1.ui.components.SheetHeader
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeButtonOutlined
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
+import com.zibete.proyecto1.ui.components.UserStatusTag
+import com.zibete.proyecto1.ui.components.UserStatusTagType
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -95,7 +99,6 @@ fun DiscoverRoute(
         onRetry = viewModel::loadUsers,
         onProfileClick = viewModel::onUserProfileClick,
         onChatClick = viewModel::onUserChatClick,
-        onFavoriteClick = viewModel::onFavoriteClick,
         onVisibleUserIdsChanged = viewModel::onVisibleUsersChanged,
         onConfirmFirstContact = viewModel::confirmFirstContact,
         onCancelFirstContact = viewModel::cancelFirstContact
@@ -116,7 +119,6 @@ fun DiscoverScreen(
     onRetry: () -> Unit,
     onProfileClick: (String) -> Unit,
     onChatClick: (String) -> Unit,
-    onFavoriteClick: (String) -> Unit,
     onConfirmFirstContact: () -> Unit,
     onCancelFirstContact: () -> Unit,
     onVisibleUserIdsChanged: (List<String>) -> Unit = {}
@@ -220,10 +222,8 @@ fun DiscoverScreen(
                             user = user,
                             distance = formatDistance(user.distanceMeters),
                             isChatLoading = state.chatCheckUserId == user.id,
-                            isFavoriteLoading = state.favoriteActionUserId == user.id,
                             onProfileClick = { onProfileClick(user.id) },
-                            onChatClick = { onChatClick(user.id) },
-                            onFavoriteClick = { onFavoriteClick(user.id) }
+                            onChatClick = { onChatClick(user.id) }
                         )
                     }
                     item { Spacer(Modifier.height(8.dp)) }
@@ -309,166 +309,166 @@ private fun DiscoverPersonCard(
     user: UsersRowUiModel,
     distance: String,
     isChatLoading: Boolean,
-    isFavoriteLoading: Boolean,
     onProfileClick: () -> Unit,
-    onChatClick: () -> Unit,
-    onFavoriteClick: () -> Unit
+    onChatClick: () -> Unit
 ) {
     val colors = LocalZibeExtendedColors.current
-    val chatDescription = stringResource(R.string.discover_start_chat, user.name)
-    val favoriteDescription = stringResource(
-        if (user.isFavorite) R.string.discover_remove_favorite else R.string.discover_add_favorite,
-        user.name
+    val displayName = user.name.ifBlank { stringResource(R.string.deleted_profile_fallback) }
+    val chatDescription = stringResource(R.string.discover_start_chat, displayName)
+    val presenceDescription = stringResource(
+        if (user.isOnline) R.string.discover_presence_online
+        else R.string.discover_presence_offline
     )
     Surface(
+        onClick = onProfileClick,
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("discover_person_${user.id}")
-            .clickable(role = Role.Button, onClick = onProfileClick),
-        shape = MaterialTheme.shapes.large,
-        color = colors.cardBackground,
-        tonalElevation = 1.dp
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .testTag("discover_person_${user.id}"),
+        shape = RoundedCornerShape(20.dp),
+        color = colorResource(discoverPersonCardColorRes),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            AsyncImage(
-                model = user.photoUrl,
-                contentDescription = null,
-                placeholder = painterResource(R.mipmap.logo_zibe_icon),
-                error = painterResource(R.mipmap.logo_zibe_icon),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = user.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.lightText,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+        Box(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(70.dp)
+                        .testTag("discover_avatar_${user.id}")
+                ) {
+                    AsyncImage(
+                        model = user.photoUrl,
+                        contentDescription = stringResource(
+                            R.string.discover_avatar_description,
+                            displayName
+                        ),
+                        placeholder = painterResource(R.mipmap.logo_zibe_icon),
+                        error = painterResource(R.mipmap.logo_zibe_icon),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .border(
+                                width = 2.dp,
+                                color = colorResource(DsR.color.white),
+                                shape = CircleShape
+                            )
+                            .padding(2.dp)
+                            .clip(CircleShape)
                     )
-                    if (user.age > 0) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(14.dp)
+                            .shadow(4.dp, CircleShape, clip = false)
+                            .testTag(
+                                if (user.isOnline) "discover_presence_online_${user.id}"
+                                else "discover_presence_offline_${user.id}"
+                            )
+                            .semantics { stateDescription = presenceDescription },
+                        shape = CircleShape,
+                        color = colorResource(
+                            if (user.isOnline) DsR.color.status_online
+                            else DsR.color.status_offline
+                        ),
+                        border = BorderStroke(1.dp, colorResource(DsR.color.status_stroke))
+                    ) {}
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.lightText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
                         Text(
                             text = stringResource(R.string.label_age, user.age),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.hintText
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colors.lightText,
+                            maxLines = 1
                         )
                     }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val statusText = if (user.isOnline) {
-                        stringResource(R.string.online)
-                    } else {
-                        stringResource(R.string.offline)
-                    }
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (user.isOnline) colors.statusOnline else colors.statusOffline,
-                        modifier = Modifier.semantics {
-                            stateDescription = statusText
+                    Spacer(Modifier.height(6.dp))
+                    FlowRow(
+                        modifier = Modifier.padding(end = 48.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (distance.isNotBlank()) {
+                            UserStatusTag(
+                                type = UserStatusTagType.DISTANCE,
+                                text = distance
+                            )
                         }
-                    )
-                    if (distance.isNotBlank()) {
-                        Text(
-                            text = distance,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.hintText
-                        )
-                    }
-                }
-                if (user.description.isNotBlank()) {
-                    Text(
-                        text = user.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.hintText,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (user.isFavorite) {
-                        DiscoverStatusBadge(stringResource(R.string.tag_favorite))
-                    }
-                    if (user.isBlockedByMe) {
-                        DiscoverStatusBadge(stringResource(R.string.tag_blocked_by_me))
-                    }
-                    if (user.hasBlockedMe) {
-                        DiscoverStatusBadge(stringResource(R.string.tag_has_blocked_me))
-                    }
-                    if (user.isNotificationsSilenced) {
-                        DiscoverStatusBadge(stringResource(R.string.tag_silent))
-                    }
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    IconButton(
-                        onClick = onFavoriteClick,
-                        enabled = !isFavoriteLoading,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .semantics { contentDescription = favoriteDescription }
-                    ) {
-                        Icon(
-                            imageVector = if (user.isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
-                            contentDescription = null,
-                            tint = if (user.isFavorite) colors.accent else colors.hintText
-                        )
-                    }
-                    IconButton(
-                        onClick = onChatClick,
-                        enabled = !isChatLoading,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .semantics { contentDescription = chatDescription }
-                    ) {
-                        if (isChatLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(22.dp))
-                        } else {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = null,
-                                tint = colors.accent
+                        if (user.isFavorite) {
+                            UserStatusTag(
+                                type = UserStatusTagType.FAVORITE,
+                                text = stringResource(R.string.tag_favorite)
+                            )
+                        }
+                        if (user.isBlockedByMe) {
+                            UserStatusTag(
+                                type = UserStatusTagType.BLOCKED_BY_ME,
+                                text = stringResource(R.string.tag_blocked_by_me)
+                            )
+                        }
+                        if (user.hasBlockedMe) {
+                            UserStatusTag(
+                                type = UserStatusTagType.HAS_BLOCKED_ME,
+                                text = stringResource(R.string.tag_has_blocked_me)
+                            )
+                        }
+                        if (user.isNotificationsSilenced) {
+                            UserStatusTag(
+                                type = UserStatusTagType.SILENCED,
+                                text = stringResource(R.string.tag_silent)
                             )
                         }
                     }
+                    if (user.description.isNotBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = user.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.lightText.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = 48.dp)
+                        )
+                    }
+                }
+            }
+            IconButton(
+                onClick = onChatClick,
+                enabled = !isChatLoading,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(48.dp)
+                    .semantics { contentDescription = chatDescription }
+            ) {
+                if (isChatLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = null,
+                        tint = colors.accent
+                    )
                 }
             }
         }
     }
 }
 
-@Composable
-private fun DiscoverStatusBadge(text: String) {
-    val colors = LocalZibeExtendedColors.current
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = colors.accent.copy(alpha = 0.15f)
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = colors.lightText,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-        )
-    }
-}
+internal val discoverPersonCardColorRes: Int = DsR.color.glass_bg_light
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
