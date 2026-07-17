@@ -123,6 +123,34 @@ class UsersViewModelTest {
     }
 
     @Test
+    fun `toolbar filter request and dismissal update sheet state`() = runTest {
+        val harness = harness()
+
+        harness.vm.onFilterRequested()
+        assertTrue(harness.vm.uiState.value.isFilterSheetOpen)
+
+        harness.vm.onFilterDismissed()
+        assertFalse(harness.vm.uiState.value.isFilterSheetOpen)
+    }
+
+    @Test
+    fun `clear all criteria clears toolbar query and persisted filters`() = runTest {
+        val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
+        harness.vm.onSearchQueryChanged("sin resultados")
+        harness.vm.applyFilters(true, true, 22, 35)
+        runCurrent()
+
+        harness.vm.clearAllCriteria()
+        runCurrent()
+
+        val state = harness.vm.uiState.value
+        assertEquals("", state.searchQuery)
+        assertFalse(state.hasActiveFilters)
+        assertEquals(18, state.minAge)
+        assertEquals(99, state.maxAge)
+    }
+
+    @Test
     fun `online filter keeps online users and persists preference`() = runTest {
         val harness = loadedHarness(
             user(NEAR_UID, "Online", 25, online = true),

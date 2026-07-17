@@ -432,7 +432,9 @@ private fun DiscoverPersonCard(
                             color = colors.lightText.copy(alpha = 0.9f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(end = 48.dp)
+                            modifier = Modifier
+                                .padding(end = 48.dp)
+                                .testTag("discover_description_${user.id}")
                         )
                     }
                 }
@@ -443,10 +445,15 @@ private fun DiscoverPersonCard(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(48.dp)
+                    .testTag("discover_chat_${user.id}")
                     .semantics { contentDescription = chatDescription }
             ) {
                 if (isChatLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .testTag("discover_chat_loading_${user.id}")
+                    )
                 } else {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,

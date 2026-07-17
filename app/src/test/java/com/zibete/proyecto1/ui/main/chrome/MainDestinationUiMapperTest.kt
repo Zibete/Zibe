@@ -45,4 +45,16 @@ class MainDestinationUiMapperTest {
         assertTrue(state.showBack)
         assertEquals(R.id.navBottomGroups, state.selectedBottomNavItemId)
     }
+
+    @Test
+    fun `discover enables toolbar search and filter only for its destination`() {
+        val discover = mapper.map(R.id.nav_users).menuConfig
+
+        assertTrue(discover.showSearch)
+        assertTrue(discover.showDiscoverFilter)
+
+        listOf(R.id.nav_chat_list, R.id.nav_group_select, R.id.nav_favorites).forEach { id ->
+            assertFalse(mapper.map(id).menuConfig.showDiscoverFilter)
+        }
+    }
 }
