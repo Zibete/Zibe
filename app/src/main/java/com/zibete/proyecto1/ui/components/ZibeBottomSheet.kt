@@ -47,6 +47,7 @@ fun ZibeBottomSheet(
     onCancel: () -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
     showCancelButton: Boolean = true, // Added for flexibility in redesign
+    contentModifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
@@ -68,7 +69,7 @@ fun ZibeBottomSheet(
             content = {
                 val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
                 Column(
-                    modifier = Modifier
+                    modifier = contentModifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                         .navigationBarsPadding()
@@ -205,5 +206,4 @@ fun ZibeBottomSheetPreviewField() {
         )
     }
 }
-
 

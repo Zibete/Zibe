@@ -220,6 +220,19 @@ class UsersViewModel @Inject constructor(
         )
     }
 
+    fun clearAllCriteria() {
+        searchQuery = ""
+        clearFilters()
+    }
+
+    fun onFilterRequested() {
+        _uiState.update { it.copy(isFilterSheetOpen = true) }
+    }
+
+    fun onFilterDismissed() {
+        _uiState.update { it.copy(isFilterSheetOpen = false) }
+    }
+
     fun onUserChatClick(userId: String) {
         if (_uiState.value.chatCheckUserId != null) return
         val user = allUsers.firstOrNull { it.id == userId } ?: return

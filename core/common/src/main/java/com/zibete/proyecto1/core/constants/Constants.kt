@@ -35,6 +35,8 @@ object Constants {
         const val DISCOVER_FILTERS = "discover_filters"
         const val DISCOVER_LIST = "discover_list"
         const val DISCOVER_EMPTY = "discover_empty"
+        const val DISCOVER_FILTER_SHEET = "discover_filter_sheet"
+        const val DISCOVER_SCROLL_TOP = "discover_scroll_top"
         const val FIRST_DM_SHEET = "first_dm_sheet"
         const val ACCOUNT_AVATAR = "account_avatar"
         const val ACCOUNT_SHEET = "account_sheet"
