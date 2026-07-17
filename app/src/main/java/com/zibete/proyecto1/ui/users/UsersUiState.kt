@@ -11,6 +11,7 @@ data class UsersUiState(
     val applyOnlineFilter: Boolean = false,
     val minAge: Int = 18,
     val maxAge: Int = 99,
+    val isFilterSheetOpen: Boolean = false,
     val error: UiText? = null,
     val pendingFirstContact: UsersRowUiModel? = null,
     val chatCheckUserId: String? = null

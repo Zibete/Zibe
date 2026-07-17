@@ -34,9 +34,17 @@
     <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_search_rounded_24"
+        android:orderInCategory="10"
         android:title="@string/Buscar"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
+
+    <item
+        android:id="@+id/action_discover_filter"
+        android:icon="@drawable/ic_filter_list_24"
+        android:orderInCategory="20"
+        android:title="@string/discover_filters"
+        app:showAsAction="always" />
 
     <!-- ChatGroupFragment -->
 

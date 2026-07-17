@@ -82,6 +82,7 @@ import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
 import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
+import com.zibete.proyecto1.ui.users.DiscoverToolbarHandler
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -574,6 +575,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private fun activeSearchHandler(): SearchHandler? =
         activeNavFragment() as? SearchHandler
 
+    private fun activeDiscoverToolbarHandler(): DiscoverToolbarHandler? =
+        activeNavFragment() as? DiscoverToolbarHandler
+
     private fun ensureNavHostController(): NavController {
         val current = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
         if (current is NavHostFragment) {
@@ -694,6 +698,16 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         menu.findItem(R.id.action_unhide_chats)?.isVisible = menuConfig.showUnhideChats
         menu.findItem(R.id.action_favorites)?.isVisible = menuConfig.showFavorites
         menu.findItem(R.id.action_search)?.isVisible = menuConfig.showSearch
+        menu.findItem(R.id.action_discover_filter)?.let { filterItem ->
+            filterItem.isVisible = menuConfig.showDiscoverFilter
+            filterItem.icon?.mutate()?.setTint(
+                if (activeDiscoverToolbarHandler()?.hasActiveFilters == true) {
+                    getColorCompat(DsR.color.accent)
+                } else {
+                    getColorCompat(DsR.color.white)
+                }
+            )
+        }
         menu.findItem(R.id.action_exit_group)?.isVisible = menuConfig.showExitGroup
     }
 
@@ -706,6 +720,11 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_discover_filter) {
+            activeDiscoverToolbarHandler()?.onFilterRequested()
+            return true
+        }
+
         // 1) delegás al VM
         mainViewModel.onToolbarItemSelected(item.itemId)
 
@@ -718,6 +737,10 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
+                    if (searchCoordinator.isSearchOpen()) {
+                        searchCoordinator.collapseAndClear()
+                        return
+                    }
                     if (dismissImeIfVisible()) return
                     if (navController.currentDestination?.id == R.id.settingsFragment) {
                         if (navController.popBackStack()) return

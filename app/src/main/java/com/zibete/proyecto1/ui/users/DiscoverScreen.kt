@@ -1,5 +1,6 @@
 package com.zibete.proyecto1.ui.users
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,15 +23,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,12 +38,13 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -66,11 +68,10 @@ import coil.compose.AsyncImage
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_EMPTY
-import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTERS
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_LIST
-import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_ONLINE_FILTER
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
-import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SEARCH
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCROLL_TOP
 import com.zibete.proyecto1.core.constants.Constants.UiTags.FIRST_DM_SHEET
 import com.zibete.proyecto1.ui.components.SheetActions
 import com.zibete.proyecto1.ui.components.SheetHeader
@@ -80,7 +81,9 @@ import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.UserStatusTag
 import com.zibete.proyecto1.ui.components.UserStatusTagType
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 @Composable
 fun DiscoverRoute(
@@ -91,10 +94,10 @@ fun DiscoverRoute(
         state = state,
         errorMessage = state.error?.asString(),
         formatDistance = viewModel::formatDistance,
-        onSearchChanged = viewModel::onSearchQueryChanged,
-        onOnlineFilterChanged = viewModel::onOnlineFilterChanged,
         onApplyFilters = viewModel::applyFilters,
         onClearFilters = viewModel::clearFilters,
+        onClearAllCriteria = viewModel::clearAllCriteria,
+        onDismissFilters = viewModel::onFilterDismissed,
         onRefresh = viewModel::loadUsers,
         onRetry = viewModel::loadUsers,
         onProfileClick = viewModel::onUserProfileClick,
@@ -111,10 +114,10 @@ fun DiscoverScreen(
     state: UsersUiState,
     errorMessage: String?,
     formatDistance: (Double) -> String,
-    onSearchChanged: (String) -> Unit,
-    onOnlineFilterChanged: (Boolean) -> Unit,
     onApplyFilters: (Boolean, Boolean, Int, Int) -> Unit,
     onClearFilters: () -> Unit,
+    onClearAllCriteria: () -> Unit,
+    onDismissFilters: () -> Unit,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onProfileClick: (String) -> Unit,
@@ -123,9 +126,16 @@ fun DiscoverScreen(
     onCancelFirstContact: () -> Unit,
     onVisibleUserIdsChanged: (List<String>) -> Unit = {}
 ) {
-    var showFilters by rememberSaveable { mutableStateOf(false) }
     val colors = LocalZibeExtendedColors.current
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var scrollToTopJob by remember { mutableStateOf<Job?>(null) }
+    val showScrollToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 1 ||
+                (listState.firstVisibleItemIndex == 1 && listState.firstVisibleItemScrollOffset > 100)
+        }
+    }
     val currentVisibleUsersCallback by rememberUpdatedState(onVisibleUserIdsChanged)
 
     LaunchedEffect(listState) {
@@ -137,112 +147,93 @@ fun DiscoverScreen(
         onDispose { currentVisibleUsersCallback(emptyList()) }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .testTag(DISCOVER_SCREEN)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        OutlinedTextField(
-            value = state.searchQuery,
-            onValueChange = onSearchChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(DISCOVER_SEARCH),
-            label = { Text(stringResource(R.string.discover_search_hint)) },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = null)
-            },
-            singleLine = true,
-            shape = MaterialTheme.shapes.large
-        )
-        Spacer(Modifier.height(12.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Text(
                 text = stringResource(R.string.discover_for_you),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = colors.lightText
+                color = colors.lightText,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize()
             ) {
-                FilterChip(
-                    selected = state.applyOnlineFilter,
-                    onClick = { onOnlineFilterChanged(!state.applyOnlineFilter) },
-                    label = { Text(stringResource(R.string.online)) },
-                    modifier = Modifier.testTag(DISCOVER_ONLINE_FILTER)
-                )
-                FilterChip(
-                    selected = state.hasActiveFilters,
-                    onClick = { showFilters = true },
-                    label = { Text(stringResource(R.string.discover_filters)) },
-                    leadingIcon = {
-                        Icon(Icons.Default.FilterList, contentDescription = null)
-                    },
-                    modifier = Modifier.testTag(DISCOVER_FILTERS)
-                )
+                when {
+                    state.isLoading -> DiscoverLoading()
+                    errorMessage != null && state.users.isEmpty() -> DiscoverError(
+                        message = errorMessage,
+                        onRetry = onRetry
+                    )
+                    state.users.isEmpty() -> DiscoverEmpty(
+                        hasActiveFilters = state.hasActiveFilters || state.searchQuery.isNotBlank(),
+                        onClearFilters = onClearAllCriteria
+                    )
+                    else -> LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag(DISCOVER_LIST),
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    ) {
+                        items(
+                            items = state.users,
+                            key = { it.id },
+                            contentType = { "person" }
+                        ) { user ->
+                            DiscoverPersonCard(
+                                user = user,
+                                distance = formatDistance(user.distanceMeters),
+                                isChatLoading = state.chatCheckUserId == user.id,
+                                onProfileClick = { onProfileClick(user.id) },
+                                onChatClick = { onChatClick(user.id) }
+                            )
+                        }
+                    }
+                }
             }
         }
-        Spacer(Modifier.height(8.dp))
-
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize()
+        AnimatedVisibility(
+            visible = showScrollToTop,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
         ) {
-            when {
-                state.isLoading -> DiscoverLoading()
-                errorMessage != null && state.users.isEmpty() -> DiscoverError(
-                    message = errorMessage,
-                    onRetry = onRetry
+            FloatingActionButton(
+                onClick = {
+                    if (scrollToTopJob?.isActive == true) return@FloatingActionButton
+                    scrollToTopJob = coroutineScope.launch { listState.animateScrollToItem(0) }
+                },
+                modifier = Modifier.testTag(DISCOVER_SCROLL_TOP),
+                shape = RoundedCornerShape(20.dp),
+                containerColor = colors.accent,
+                contentColor = colors.lightText
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = stringResource(R.string.action_scroll_to_top)
                 )
-                state.users.isEmpty() -> DiscoverEmpty(
-                    hasActiveFilters = state.hasActiveFilters || state.searchQuery.isNotBlank(),
-                    onClearFilters = {
-                        onSearchChanged("")
-                        onClearFilters()
-                    }
-                )
-                else -> LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .testTag(DISCOVER_LIST),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = state.users,
-                        key = { it.id },
-                        contentType = { "person" }
-                    ) { user ->
-                        DiscoverPersonCard(
-                            user = user,
-                            distance = formatDistance(user.distanceMeters),
-                            isChatLoading = state.chatCheckUserId == user.id,
-                            onProfileClick = { onProfileClick(user.id) },
-                            onChatClick = { onChatClick(user.id) }
-                        )
-                    }
-                    item { Spacer(Modifier.height(8.dp)) }
-                }
             }
         }
     }
 
     DiscoverFiltersSheet(
-        isOpen = showFilters,
+        isOpen = state.isFilterSheetOpen,
         state = state,
-        onDismiss = { showFilters = false },
+        onDismiss = onDismissFilters,
         onApply = { ageEnabled, onlineEnabled, minAge, maxAge ->
             onApplyFilters(ageEnabled, onlineEnabled, minAge, maxAge)
-            showFilters = false
+            onDismissFilters()
         },
         onClear = {
             onClearFilters()
-            showFilters = false
+            onDismissFilters()
         }
     )
 
@@ -490,7 +481,11 @@ private fun DiscoverFiltersSheet(
     val minAgeDescription = stringResource(R.string.discover_min_age)
     val maxAgeDescription = stringResource(R.string.discover_max_age)
 
-    ZibeBottomSheet(isOpen = isOpen, onCancel = onDismiss) {
+    ZibeBottomSheet(
+        isOpen = isOpen,
+        onCancel = onDismiss,
+        contentModifier = Modifier.testTag(DISCOVER_FILTER_SHEET)
+    ) {
         SheetHeader(
             title = stringResource(R.string.discover_filters),
             subtitle = stringResource(R.string.discover_filters_subtitle)

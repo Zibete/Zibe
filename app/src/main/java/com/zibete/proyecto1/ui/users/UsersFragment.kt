@@ -22,14 +22,20 @@ import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.profile.ProfileActivity
+import com.zibete.proyecto1.ui.search.SearchHandler
 import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @AndroidEntryPoint
-class UsersFragment : BaseChatSessionFragment() {
+class UsersFragment : BaseChatSessionFragment(), SearchHandler, DiscoverToolbarHandler {
     private val usersViewModel: UsersViewModel by viewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
+
+    override val hasActiveFilters: Boolean
+        get() = usersViewModel.uiState.value.hasActiveFilters
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,6 +69,22 @@ class UsersFragment : BaseChatSessionFragment() {
                 }
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                usersViewModel.uiState
+                    .map { it.hasActiveFilters }
+                    .distinctUntilChanged()
+                    .collect { requireActivity().invalidateOptionsMenu() }
+            }
+        }
+    }
+
+    override fun onSearchQueryChanged(query: String?) {
+        usersViewModel.onSearchQueryChanged(query.orEmpty())
+    }
+
+    override fun onFilterRequested() {
+        usersViewModel.onFilterRequested()
     }
 
     private fun openChat(userId: String) {

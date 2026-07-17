@@ -9,6 +9,7 @@ data class ToolbarMenuConfig(
     val showUnhideChats: Boolean = false,
     val showFavorites: Boolean = false,
     val showSearch: Boolean = false,
+    val showDiscoverFilter: Boolean = false,
     val showExitGroup: Boolean = false
 )
 
@@ -39,7 +40,9 @@ class MainDestinationUiMapper {
                 showSettings = true,
                 showUnblockUsers = true,
                 showUnhideChats = true,
-                showFavorites = true
+                showFavorites = true,
+                showSearch = true,
+                showDiscoverFilter = true
             )
         )
 
