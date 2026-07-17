@@ -32,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.navigation.NavigationBarView
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getChatId
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
@@ -118,6 +119,10 @@ class MainNavigationAndroidTest :
             val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
             assertEquals(R.id.navBottomChat, bottomNav.selectedItemId)
             assertEquals(
+                NavigationBarView.LABEL_VISIBILITY_UNLABELED,
+                bottomNav.labelVisibilityMode
+            )
+            assertEquals(
                 listOf(
                     R.id.navBottomUsers,
                     R.id.navBottomChat,
@@ -126,6 +131,19 @@ class MainNavigationAndroidTest :
                 ),
                 (0 until bottomNav.menu.size()).map { bottomNav.menu.getItem(it).itemId }
             )
+            (0 until bottomNav.menu.size()).forEach { index ->
+                val item = bottomNav.menu.getItem(index)
+                assertFalse(item.title.isNullOrBlank())
+                assertFalse(item.titleCondensed.isNullOrBlank())
+                assertFalse(item.contentDescription.isNullOrBlank())
+                val matchingLabels = arrayListOf<View>()
+                bottomNav.findViewsWithText(
+                    matchingLabels,
+                    item.title,
+                    View.FIND_VIEWS_WITH_TEXT
+                )
+                assertTrue(matchingLabels.none(View::isShown))
+            }
             assertNull(
                 activity.findViewById<View>(
                     activity.resources.getIdentifier("drawerLayout", "id", activity.packageName)

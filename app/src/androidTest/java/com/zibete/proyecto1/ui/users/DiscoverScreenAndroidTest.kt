@@ -1,5 +1,9 @@
 package com.zibete.proyecto1.ui.users
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -13,11 +17,20 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_AGE_RANGE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_EMPTY
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_ACTIONS
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_CLEAR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_LIST
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_PULL_REFRESH
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCROLL_TOP
 import com.zibete.proyecto1.core.constants.Constants.UiTags.FIRST_DM_SHEET
 import com.zibete.proyecto1.model.UserStatus
@@ -28,6 +41,7 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -48,14 +62,27 @@ class DiscoverScreenAndroidTest {
     }
 
     @Test
-    fun emptyStateKeepsForYouWithoutInlineSearchOrFilters() {
+    fun emptyStateStartsDirectlyWithoutSecondaryHeaderOrInlineControls() {
         setDiscoverContent(state = UsersUiState())
 
-        composeRule.onNodeWithText("Para vos").assertIsDisplayed()
+        composeRule.onNodeWithText("Para vos").assertDoesNotExist()
         composeRule.onNodeWithTag(DISCOVER_EMPTY).assertIsDisplayed()
         composeRule.onNodeWithText("Buscar personas").assertDoesNotExist()
         composeRule.onNodeWithText("Filtros").assertDoesNotExist()
         composeRule.onNodeWithText("Solo en línea").assertDoesNotExist()
+    }
+
+    @Test
+    fun pullToRefreshStillDelegatesAfterRemovingSecondaryHeader() {
+        val refreshed = AtomicBoolean(false)
+        setDiscoverContent(
+            state = UsersUiState(users = listOf(testUser())),
+            onRefresh = { refreshed.set(true) }
+        )
+
+        composeRule.onNodeWithTag(DISCOVER_PULL_REFRESH).performTouchInput { swipeDown() }
+
+        composeRule.waitUntil { refreshed.get() }
     }
 
     @Test
@@ -157,6 +184,91 @@ class DiscoverScreenAndroidTest {
         composeRule.onNodeWithText("Filtrar por edad").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Edad mínima").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Edad máxima").assertIsDisplayed()
+        composeRule.onNodeWithTag(DISCOVER_FILTER_ACTIONS).assertIsDisplayed()
+        composeRule.onNodeWithText("Cancelar").assertIsDisplayed()
+        composeRule.onNodeWithText("Aplicar filtros").assertIsDisplayed()
+    }
+
+    @Test
+    fun filterRangeUsesExplicitLightTextAndActionsRemainVisibleAtLargeFontScale() {
+        setDiscoverContent(
+            state = UsersUiState(
+                isFilterSheetOpen = true,
+                applyAgeFilter = true,
+                minAge = 25,
+                maxAge = 40
+            ),
+            fontScale = 1.5f
+        )
+
+        val textLayouts = mutableListOf<TextLayoutResult>()
+        composeRule.onNodeWithTag(DISCOVER_AGE_RANGE)
+            .assertIsDisplayed()
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+                action(textLayouts)
+            }
+
+        composeRule.runOnIdle {
+            assertEquals(Color.White, textLayouts.single().layoutInput.style.color)
+        }
+        composeRule.onNodeWithText("Cancelar").assertIsDisplayed()
+        composeRule.onNodeWithText("Aplicar filtros").assertIsDisplayed()
+    }
+
+    @Test
+    fun filterSheetApplyDelegatesCurrentValuesAndDismisses() {
+        val applied = AtomicReference<List<Any>>()
+        val dismissed = AtomicBoolean(false)
+        setDiscoverContent(
+            state = UsersUiState(isFilterSheetOpen = true),
+            onApplyFilters = { age, online, min, max ->
+                applied.set(listOf(age, online, min, max))
+            },
+            onDismissFilters = { dismissed.set(true) }
+        )
+
+        composeRule.onNodeWithText("Aplicar filtros").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(false, false, 18, 99), applied.get())
+            assertTrue(dismissed.get())
+        }
+    }
+
+    @Test
+    fun filterSheetCancelDismissesWithoutApplying() {
+        val applied = AtomicBoolean(false)
+        val dismissed = AtomicBoolean(false)
+        setDiscoverContent(
+            state = UsersUiState(isFilterSheetOpen = true),
+            onApplyFilters = { _, _, _, _ -> applied.set(true) },
+            onDismissFilters = { dismissed.set(true) }
+        )
+
+        composeRule.onNodeWithText("Cancelar").performClick()
+        composeRule.runOnIdle {
+            assertFalse(applied.get())
+            assertTrue(dismissed.get())
+        }
+    }
+
+    @Test
+    fun filterSheetClearDelegatesAndDismisses() {
+        val cleared = AtomicBoolean(false)
+        val dismissed = AtomicBoolean(false)
+        setDiscoverContent(
+            state = UsersUiState(
+                isFilterSheetOpen = true,
+                applyAgeFilter = true
+            ),
+            onClearFilters = { cleared.set(true) },
+            onDismissFilters = { dismissed.set(true) }
+        )
+
+        composeRule.onNodeWithTag(DISCOVER_FILTER_CLEAR).performClick()
+        composeRule.runOnIdle {
+            assertTrue(cleared.get())
+            assertTrue(dismissed.get())
+        }
     }
 
     @Test
@@ -243,29 +355,36 @@ class DiscoverScreenAndroidTest {
         onClearFilters: () -> Unit = {},
         onClearAllCriteria: () -> Unit = {},
         onDismissFilters: () -> Unit = {},
+        onRefresh: () -> Unit = {},
         onRetry: () -> Unit = {},
         onProfileClick: (String) -> Unit = {},
         onChatClick: (String) -> Unit = {},
         onConfirmFirstContact: () -> Unit = {},
-        onCancelFirstContact: () -> Unit = {}
+        onCancelFirstContact: () -> Unit = {},
+        fontScale: Float = 1f
     ) {
         composeRule.setContent {
-            ZibeTheme {
-                DiscoverScreen(
-                    state = state,
-                    errorMessage = errorMessage,
-                    formatDistance = formatDistance,
-                    onApplyFilters = onApplyFilters,
-                    onClearFilters = onClearFilters,
-                    onClearAllCriteria = onClearAllCriteria,
-                    onDismissFilters = onDismissFilters,
-                    onRefresh = {},
-                    onRetry = onRetry,
-                    onProfileClick = onProfileClick,
-                    onChatClick = onChatClick,
-                    onConfirmFirstContact = onConfirmFirstContact,
-                    onCancelFirstContact = onCancelFirstContact
-                )
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale)
+            ) {
+                ZibeTheme {
+                    DiscoverScreen(
+                        state = state,
+                        errorMessage = errorMessage,
+                        formatDistance = formatDistance,
+                        onApplyFilters = onApplyFilters,
+                        onClearFilters = onClearFilters,
+                        onClearAllCriteria = onClearAllCriteria,
+                        onDismissFilters = onDismissFilters,
+                        onRefresh = onRefresh,
+                        onRetry = onRetry,
+                        onProfileClick = onProfileClick,
+                        onChatClick = onChatClick,
+                        onConfirmFirstContact = onConfirmFirstContact,
+                        onCancelFirstContact = onCancelFirstContact
+                    )
+                }
             }
         }
     }

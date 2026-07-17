@@ -3,13 +3,13 @@ package com.zibete.proyecto1.ui.users
 import com.zibete.proyecto1.MainDispatcherRule
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
-import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.chat.DmEntryDecision
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
 import com.zibete.proyecto1.fakes.FakeUserPreferencesActions
 import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.model.Users
@@ -244,8 +244,8 @@ class UsersViewModelTest {
     @Test
     fun `existing conversation navigates directly to chat`() = runTest {
         val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.chat.hasConversation(NEAR_UID, NODE_DM) } returns
-            ZibeResult.Success(true)
+        coEvery { harness.gate(NEAR_UID) } returns
+            ZibeResult.Success(DmEntryDecision.OpenExisting)
         val event = async { awaitEvent(harness.vm) }
         runCurrent()
 
@@ -259,8 +259,8 @@ class UsersViewModelTest {
     @Test
     fun `new conversation requires confirmation before navigation`() = runTest {
         val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.chat.hasConversation(NEAR_UID, NODE_DM) } returns
-            ZibeResult.Success(false)
+        coEvery { harness.gate(NEAR_UID) } returns
+            ZibeResult.Success(DmEntryDecision.RequireFirstContactConfirmation)
 
         harness.vm.onUserChatClick(NEAR_UID)
 
@@ -281,8 +281,8 @@ class UsersViewModelTest {
     @Test
     fun `first contact can be cancelled without navigation`() = runTest {
         val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.chat.hasConversation(NEAR_UID, NODE_DM) } returns
-            ZibeResult.Success(false)
+        coEvery { harness.gate(NEAR_UID) } returns
+            ZibeResult.Success(DmEntryDecision.RequireFirstContactConfirmation)
         harness.vm.onUserChatClick(NEAR_UID)
         awaitState(harness.vm) { it.pendingFirstContact != null }
 
@@ -294,7 +294,7 @@ class UsersViewModelTest {
     @Test
     fun `conversation check failure emits error and releases pending action`() = runTest {
         val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
-        coEvery { harness.chat.hasConversation(NEAR_UID, NODE_DM) } returns
+        coEvery { harness.gate(NEAR_UID) } returns
             ZibeResult.Failure(IllegalStateException("falló chat"))
         val event = async { awaitEvent(harness.vm) }
         runCurrent()
@@ -305,6 +305,28 @@ class UsersViewModelTest {
         assertEquals(ZibeSnackType.ERROR, snack.snackType)
         awaitState(harness.vm) { it.chatCheckUserId == null }
         assertNull(harness.vm.uiState.value.pendingFirstContact)
+    }
+
+    @Test
+    fun `double chat tap performs one gate lookup and keeps loading until resolved`() = runTest {
+        val harness = loadedHarness(user(NEAR_UID, "Cerca", 25))
+        val resolution = CompletableDeferred<ZibeResult<DmEntryDecision>>()
+        coEvery { harness.gate(NEAR_UID) } coAnswers { resolution.await() }
+
+        harness.vm.onUserChatClick(NEAR_UID)
+        harness.vm.onUserChatClick(NEAR_UID)
+        runCurrent()
+
+        assertEquals(NEAR_UID, harness.vm.uiState.value.chatCheckUserId)
+        coVerify(exactly = 1) { harness.gate(NEAR_UID) }
+
+        resolution.complete(
+            ZibeResult.Success(DmEntryDecision.RequireFirstContactConfirmation)
+        )
+        val state = awaitState(harness.vm) {
+            it.chatCheckUserId == null && it.pendingFirstContact?.id == NEAR_UID
+        }
+        assertEquals(NEAR_UID, state.pendingFirstContact?.id)
     }
 
     @Test
@@ -339,7 +361,7 @@ class UsersViewModelTest {
         val directory = mockk<UserDirectoryProvider>()
         val location = mockk<LocationRepositoryProvider>()
         val local = mockk<LocalRepositoryProvider>()
-        val chat = mockk<ChatRepositoryContract>()
+        val gate = mockk<ResolveDmEntryUseCase>()
 
         coEvery { directory.getAllAccounts() } returns users
         coEvery { directory.getFavoriteUserIds(MY_UID) } returns emptySet()
@@ -360,10 +382,10 @@ class UsersViewModelTest {
             locationRepository = location,
             localRepositoryProvider = local,
             userDirectoryProvider = directory,
-            chatRepository = chat,
+            resolveDmEntry = gate,
             profileRepositoryProvider = mockk<ProfileRepositoryProvider>(relaxed = true)
         )
-        return Harness(vm, scenario, directory, chat)
+        return Harness(vm, scenario, directory, gate)
     }
 
     private suspend fun awaitState(
@@ -397,7 +419,7 @@ class UsersViewModelTest {
         val vm: UsersViewModel,
         val scenario: TestScenario,
         val directory: UserDirectoryProvider,
-        val chat: ChatRepositoryContract
+        val gate: ResolveDmEntryUseCase
     )
 
     private companion object {
