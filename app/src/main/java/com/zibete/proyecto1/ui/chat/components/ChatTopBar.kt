@@ -119,7 +119,7 @@ fun ChatTopBar(
                 Text(
                     text = status,
                     style = MaterialTheme.typography.bodySmall,
-                    color = zibeExtendedColors.hintText,
+                    color = colorResource(DsR.color.white),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -270,5 +270,3 @@ private fun ChatTopBarPreviewSelectionMode() {
         )
     }
 }
-
-
