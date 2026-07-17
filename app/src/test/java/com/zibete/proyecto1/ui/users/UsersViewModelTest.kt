@@ -264,7 +264,9 @@ class UsersViewModelTest {
 
         harness.vm.onUserChatClick(NEAR_UID)
 
-        val pending = awaitState(harness.vm) { it.pendingFirstContact != null }
+        val pending = awaitState(harness.vm) {
+            it.pendingFirstContact != null && it.chatCheckUserId == null
+        }
         assertEquals(NEAR_UID, pending.pendingFirstContact?.id)
         assertNull(pending.chatCheckUserId)
 
