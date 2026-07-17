@@ -52,8 +52,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -81,6 +83,7 @@ import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
 import com.zibete.proyecto1.ui.components.UserStatusTag
 import com.zibete.proyecto1.ui.components.UserStatusTagType
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeTypography
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -304,6 +307,13 @@ private fun DiscoverPersonCard(
     onChatClick: () -> Unit
 ) {
     val colors = LocalZibeExtendedColors.current
+    val typography = LocalZibeTypography.current
+    val titleTextSize = with(LocalDensity.current) {
+        dimensionResource(discoverPersonTitleTextSizeRes).toSp()
+    }
+    val descriptionTextSize = with(LocalDensity.current) {
+        dimensionResource(discoverPersonDescriptionTextSizeRes).toSp()
+    }
     val displayName = user.name.ifBlank { stringResource(R.string.deleted_profile_fallback) }
     val chatDescription = stringResource(R.string.discover_start_chat, displayName)
     val presenceDescription = stringResource(
@@ -373,16 +383,17 @@ private fun DiscoverPersonCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = displayName,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = typography.h2.copy(fontSize = titleTextSize),
                             fontWeight = FontWeight.SemiBold,
                             color = colors.lightText,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
+                        Spacer(Modifier.size(8.dp))
                         Text(
                             text = stringResource(R.string.label_age, user.age),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = typography.h2.copy(fontSize = titleTextSize),
                             color = colors.lightText,
                             maxLines = 1
                         )
@@ -428,7 +439,7 @@ private fun DiscoverPersonCard(
                         Spacer(Modifier.height(6.dp))
                         Text(
                             text = user.description,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = typography.body.copy(fontSize = descriptionTextSize),
                             color = colors.lightText.copy(alpha = 0.9f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -467,6 +478,8 @@ private fun DiscoverPersonCard(
 }
 
 internal val discoverPersonCardColorRes: Int = DsR.color.glass_bg_light
+internal val discoverPersonTitleTextSizeRes: Int = DsR.dimen.text_size_row_title
+internal val discoverPersonDescriptionTextSizeRes: Int = DsR.dimen.text_size_row_description
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
