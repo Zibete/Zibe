@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
@@ -45,9 +46,11 @@ import com.zibete.proyecto1.ui.theme.ZibeTheme
 fun ZibeBottomSheet(
     isOpen: Boolean,
     onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
     showCancelButton: Boolean = true, // Added for flexibility in redesign
     contentModifier: Modifier = Modifier,
+    footer: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val zibeColors = LocalZibeExtendedColors.current
@@ -65,20 +68,51 @@ fun ZibeBottomSheet(
                 isAppearanceLightStatusBars = false,
                 isAppearanceLightNavigationBars = false
             ),
-            modifier = Modifier,
+            modifier = modifier,
             content = {
                 val inputPadding = dimensionResource(DsR.dimen.zibe_input_padding)
-                Column(
-                    modifier = contentModifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .navigationBarsPadding()
-                        .imePadding()
-                        .padding(horizontal = dimensionResource(DsR.dimen.screen_padding))
-                        .padding(bottom = dimensionResource(DsR.dimen.element_spacing_xl)),
-                    verticalArrangement = Arrangement.spacedBy(inputPadding),
-                    content = content
-                )
+                val screenPadding = dimensionResource(DsR.dimen.screen_padding)
+                val bottomPadding = dimensionResource(DsR.dimen.element_spacing_xl)
+                if (footer == null) {
+                    Column(
+                        modifier = contentModifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .navigationBarsPadding()
+                            .imePadding()
+                            .padding(horizontal = screenPadding)
+                            .padding(bottom = bottomPadding),
+                        verticalArrangement = Arrangement.spacedBy(inputPadding),
+                        content = content
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .imePadding()
+                    ) {
+                        Column(
+                            modifier = contentModifier
+                                .fillMaxWidth()
+                                .weight(1f, fill = false)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = screenPadding)
+                                .padding(bottom = inputPadding),
+                            verticalArrangement = Arrangement.spacedBy(inputPadding),
+                            content = content
+                        )
+                        HorizontalDivider(color = zibeColors.lightText.copy(alpha = 0.12f))
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = screenPadding)
+                                .padding(bottom = bottomPadding)
+                        ) {
+                            footer()
+                        }
+                    }
+                }
             }
         )
     }
@@ -118,15 +152,16 @@ fun SheetHeader(
 
 @Composable
 fun SheetActions(
-    confirmText: String = stringResource(R.string.action_accept),
-    cancelText: String = stringResource(R.string.action_cancel),
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    confirmText: String = stringResource(R.string.action_accept),
+    cancelText: String = stringResource(R.string.action_cancel),
     confirmEnabled: Boolean = true,
     isConfirmLoading: Boolean = false
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
             .padding(top = dimensionResource(DsR.dimen.element_spacing_small)),
@@ -206,4 +241,3 @@ fun ZibeBottomSheetPreviewField() {
         )
     }
 }
-

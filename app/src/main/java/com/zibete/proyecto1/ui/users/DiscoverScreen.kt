@@ -35,6 +35,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,12 +70,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.designsystem.R as DsR
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_AGE_RANGE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_EMPTY
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_ACTIONS
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_CLEAR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_LIST
+import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_PULL_REFRESH
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCROLL_TOP
-import com.zibete.proyecto1.core.constants.Constants.UiTags.FIRST_DM_SHEET
+import com.zibete.proyecto1.ui.components.FirstContactSheet
 import com.zibete.proyecto1.ui.components.SheetActions
 import com.zibete.proyecto1.ui.components.SheetHeader
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
@@ -155,49 +160,42 @@ fun DiscoverScreen(
             .fillMaxSize()
             .testTag(DISCOVER_SCREEN)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = stringResource(R.string.discover_for_you),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.lightText,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            PullToRefreshBox(
-                isRefreshing = state.isRefreshing,
-                onRefresh = onRefresh,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                when {
-                    state.isLoading -> DiscoverLoading()
-                    errorMessage != null && state.users.isEmpty() -> DiscoverError(
-                        message = errorMessage,
-                        onRetry = onRetry
-                    )
-                    state.users.isEmpty() -> DiscoverEmpty(
-                        hasActiveFilters = state.hasActiveFilters || state.searchQuery.isNotBlank(),
-                        onClearFilters = onClearAllCriteria
-                    )
-                    else -> LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .testTag(DISCOVER_LIST),
-                        contentPadding = PaddingValues(bottom = 80.dp)
-                    ) {
-                        items(
-                            items = state.users,
-                            key = { it.id },
-                            contentType = { "person" }
-                        ) { user ->
-                            DiscoverPersonCard(
-                                user = user,
-                                distance = formatDistance(user.distanceMeters),
-                                isChatLoading = state.chatCheckUserId == user.id,
-                                onProfileClick = { onProfileClick(user.id) },
-                                onChatClick = { onChatClick(user.id) }
-                            )
-                        }
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag(DISCOVER_PULL_REFRESH)
+        ) {
+            when {
+                state.isLoading -> DiscoverLoading()
+                errorMessage != null && state.users.isEmpty() -> DiscoverError(
+                    message = errorMessage,
+                    onRetry = onRetry
+                )
+                state.users.isEmpty() -> DiscoverEmpty(
+                    hasActiveFilters = state.hasActiveFilters || state.searchQuery.isNotBlank(),
+                    onClearFilters = onClearAllCriteria
+                )
+                else -> LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag(DISCOVER_LIST),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(
+                        items = state.users,
+                        key = { it.id },
+                        contentType = { "person" }
+                    ) { user ->
+                        DiscoverPersonCard(
+                            user = user,
+                            distance = formatDistance(user.distanceMeters),
+                            isChatLoading = state.chatCheckUserId == user.id,
+                            onProfileClick = { onProfileClick(user.id) },
+                            onChatClick = { onChatClick(user.id) }
+                        )
                     }
                 }
             }
@@ -241,7 +239,7 @@ fun DiscoverScreen(
     )
 
     FirstContactSheet(
-        user = state.pendingFirstContact,
+        isOpen = state.pendingFirstContact != null,
         onConfirm = onConfirmFirstContact,
         onCancel = onCancelFirstContact
     )
@@ -500,11 +498,25 @@ private fun DiscoverFiltersSheet(
     var maxAge by remember(isOpen, state.maxAge) { mutableFloatStateOf(state.maxAge.toFloat()) }
     val minAgeDescription = stringResource(R.string.discover_min_age)
     val maxAgeDescription = stringResource(R.string.discover_max_age)
+    val colors = LocalZibeExtendedColors.current
+    val typography = LocalZibeTypography.current
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ZibeBottomSheet(
         isOpen = isOpen,
         onCancel = onDismiss,
-        contentModifier = Modifier.testTag(DISCOVER_FILTER_SHEET)
+        sheetState = sheetState,
+        contentModifier = Modifier.testTag(DISCOVER_FILTER_SHEET),
+        footer = {
+            SheetActions(
+                confirmText = stringResource(R.string.discover_apply_filters),
+                onConfirm = {
+                    onApply(ageEnabled, onlineEnabled, minAge.toInt(), maxAge.toInt())
+                },
+                onCancel = onDismiss,
+                modifier = Modifier.testTag(DISCOVER_FILTER_ACTIONS)
+            )
+        }
     ) {
         SheetHeader(
             title = stringResource(R.string.discover_filters),
@@ -522,7 +534,16 @@ private fun DiscoverFiltersSheet(
             label = { Text(stringResource(R.string.discover_filter_age)) },
             modifier = Modifier
         )
-        Text(stringResource(R.string.discover_age_range, minAge.toInt(), maxAge.toInt()))
+        Text(
+            text = stringResource(
+                R.string.discover_age_range,
+                minAge.toInt(),
+                maxAge.toInt()
+            ),
+            style = typography.body,
+            color = colors.lightText,
+            modifier = Modifier.testTag(DISCOVER_AGE_RANGE)
+        )
         Slider(
             value = minAge,
             onValueChange = { minAge = it.coerceAtMost(maxAge) },
@@ -547,43 +568,9 @@ private fun DiscoverFiltersSheet(
             ZibeButtonOutlined(
                 text = stringResource(R.string.discover_clear_filters),
                 onClick = onClear,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        SheetActions(
-            confirmText = stringResource(R.string.discover_apply_filters),
-            onConfirm = {
-                onApply(ageEnabled, onlineEnabled, minAge.toInt(), maxAge.toInt())
-            },
-            onCancel = onDismiss
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FirstContactSheet(
-    user: UsersRowUiModel?,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit
-) {
-    ZibeBottomSheet(
-        isOpen = user != null,
-        onCancel = onCancel
-    ) {
-        Column(
-            modifier = Modifier.testTag(FIRST_DM_SHEET),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            SheetHeader(
-                title = stringResource(R.string.discover_first_dm_title),
-                subtitle = stringResource(R.string.discover_first_dm_message)
-            )
-            SheetActions(
-                confirmText = stringResource(R.string.discover_first_dm_confirm),
-                cancelText = stringResource(R.string.action_cancel),
-                onConfirm = onConfirm,
-                onCancel = onCancel
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(DISCOVER_FILTER_CLEAR)
             )
         }
     }
