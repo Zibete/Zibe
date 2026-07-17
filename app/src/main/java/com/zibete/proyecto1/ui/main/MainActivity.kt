@@ -1,6 +1,7 @@
 package com.zibete.proyecto1.ui.main
 
 import android.animation.LayoutTransition
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -25,6 +26,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.IntentCompat
 import androidx.core.view.get
 import androidx.core.view.isVisible
+import androidx.core.view.MenuItemCompat
 import androidx.core.view.size
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -700,12 +702,15 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         menu.findItem(R.id.action_search)?.isVisible = menuConfig.showSearch
         menu.findItem(R.id.action_discover_filter)?.let { filterItem ->
             filterItem.isVisible = menuConfig.showDiscoverFilter
-            filterItem.icon?.mutate()?.setTint(
-                if (activeDiscoverToolbarHandler()?.hasActiveFilters == true) {
-                    getColorCompat(DsR.color.accent)
-                } else {
-                    getColorCompat(DsR.color.white)
-                }
+            MenuItemCompat.setIconTintList(
+                filterItem,
+                ColorStateList.valueOf(
+                    if (activeDiscoverToolbarHandler()?.hasActiveFilters == true) {
+                        getColorCompat(DsR.color.accent)
+                    } else {
+                        getColorCompat(DsR.color.white)
+                    }
+                )
             )
         }
         menu.findItem(R.id.action_exit_group)?.isVisible = menuConfig.showExitGroup
