@@ -44,6 +44,8 @@ import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.chat.DefaultSendChatMessageUseCase
+import com.zibete.proyecto1.domain.chat.DefaultResolveDmEntryUseCase
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
 import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
@@ -133,6 +135,11 @@ abstract class AppBindingsModule {
     abstract fun bindSendChatMessageUseCase(
         impl: DefaultSendChatMessageUseCase
     ): SendChatMessageUseCase
+
+    @Binds
+    abstract fun bindResolveDmEntryUseCase(
+        impl: DefaultResolveDmEntryUseCase
+    ): ResolveDmEntryUseCase
 
     @Binds
     abstract fun bindChatTextProvider(

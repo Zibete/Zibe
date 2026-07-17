@@ -4,6 +4,10 @@ import com.zibete.proyecto1.core.ui.UiText
 
 sealed class ChatSessionUiEvent {
 
+    data class OpenDirectMessage(
+        val userId: String
+    ) : ChatSessionUiEvent()
+
     // ------- HIDE -------
     data class ConfirmHideChat(
         val name: String,
@@ -76,5 +80,4 @@ sealed class ChatSessionUiEvent {
     data object CloseChat
         : ChatSessionUiEvent()
 }
-
 

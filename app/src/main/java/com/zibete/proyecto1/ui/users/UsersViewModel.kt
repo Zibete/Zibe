@@ -9,11 +9,10 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.TimeUtils.ageCalculator
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.onFailure
-import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
-import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserDirectoryProvider
@@ -22,6 +21,8 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.UserStatus
+import com.zibete.proyecto1.domain.chat.DmEntryDecision
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -49,7 +50,7 @@ class UsersViewModel @Inject constructor(
     private val locationRepository: LocationRepositoryProvider,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val userDirectoryProvider: UserDirectoryProvider,
-    private val chatRepository: ChatRepositoryContract,
+    private val resolveDmEntry: ResolveDmEntryUseCase,
     private val profileRepositoryProvider: ProfileRepositoryProvider
 ) : ViewModel() {
     private data class UsersFilters(
@@ -238,21 +239,32 @@ class UsersViewModel @Inject constructor(
         val user = allUsers.firstOrNull { it.id == userId } ?: return
         _uiState.update { it.copy(chatCheckUserId = userId) }
         viewModelScope.launch {
-            chatRepository.hasConversation(userId, NODE_DM)
-                .onSuccess { hasConversation ->
-                    if (hasConversation == true) emit(UsersUiEvent.NavigateToChat(userId))
-                    else _uiState.update { it.copy(pendingFirstContact = user) }
+            try {
+                when (val result = resolveDmEntry(userId)) {
+                    is ZibeResult.Success -> when (result.data) {
+                        DmEntryDecision.OpenExisting -> emit(UsersUiEvent.NavigateToChat(userId))
+                        DmEntryDecision.RequireFirstContactConfirmation ->
+                            _uiState.update { it.copy(pendingFirstContact = user) }
+                        null -> emitSnack(
+                            UiText.StringRes(R.string.discover_chat_check_error),
+                            ZibeSnackType.ERROR
+                        )
+                    }
+
+                    is ZibeResult.Failure -> {
+                        val error = result.exception
+                        emitSnack(
+                            error.message.toUiText(
+                                R.string.discover_chat_check_error,
+                                R.string.discover_chat_check_error
+                            ),
+                            ZibeSnackType.ERROR
+                        )
+                    }
                 }
-                .onFailure { error ->
-                    emitSnack(
-                        error.message.toUiText(
-                            R.string.discover_chat_check_error,
-                            R.string.discover_chat_check_error
-                        ),
-                        ZibeSnackType.ERROR
-                    )
-                }
-                .onFinally { _uiState.update { it.copy(chatCheckUserId = null) } }
+            } finally {
+                _uiState.update { it.copy(chatCheckUserId = null) }
+            }
         }
     }
 

@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +27,8 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -52,7 +54,9 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
+import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.PhotoHeader
+import com.zibete.proyecto1.ui.components.FirstContactSheet
 import com.zibete.proyecto1.ui.components.ProfileCard
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
@@ -101,14 +105,26 @@ fun ProfileRoute(
         }
     }
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(profileViewModel, isActive) {
+        profileViewModel.onPageActiveChanged(isActive)
+        onDispose {
+            if (isActive) profileViewModel.onPageActiveChanged(false)
+        }
+    }
+
+    LaunchedEffect(profileViewModel, isActive) {
+        if (!isActive) return@LaunchedEffect
         profileViewModel.events.collect { event ->
-            ChatSessionUiHandler.handle(
-                context = context,
-                event = event,
-                scope = scope,
-                snackBarManager = snackBarManager
-            )
+            if (event is ChatSessionUiEvent.OpenDirectMessage) {
+                if (event.userId == profileViewModel.otherUid) onOpenDmChat(event.userId)
+            } else {
+                ChatSessionUiHandler.handle(
+                    context = context,
+                    event = event,
+                    scope = scope,
+                    snackBarManager = snackBarManager
+                )
+            }
         }
     }
 
@@ -118,9 +134,12 @@ fun ProfileRoute(
         photoList = photosFromChat,
         groupName = groupName,
         distanceLabel = state.distanceLabel,
+        isActive = isActive,
         onBack = onBack,
         onRefresh = { profileViewModel.refreshProfile() },
-        onOpenDmChat = onOpenDmChat,
+        onDmChatClick = profileViewModel::onDmChatRequested,
+        onConfirmFirstContact = profileViewModel::confirmFirstContact,
+        onCancelFirstContact = profileViewModel::cancelFirstContact,
         onOpenGroupDmChat = onOpenGroupDmChat,
         onOpenPhoto = onOpenPhoto,
         onToggleFavorite = profileViewModel::onToggleFavorite,
@@ -139,10 +158,13 @@ fun ProfileScreen(
     photoList: List<String>,
     groupName: String,
     distanceLabel: String,
+    isActive: Boolean = true,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onOpenDmChat: (userId: String) -> Unit,
+    onDmChatClick: () -> Unit,
+    onConfirmFirstContact: () -> Unit,
+    onCancelFirstContact: () -> Unit,
     onOpenGroupDmChat: (userId: String) -> Unit,
     onOpenPhoto: (String) -> Unit,
     onToggleNotifications: () -> Unit,
@@ -231,9 +253,12 @@ fun ProfileScreen(
                 val collapseThresholdPx = with(LocalDensity.current) {
                     dimensionResource(DsR.dimen.fab_collapse_scroll_threshold).toPx()
                 }
+                val isFabCollapsed by remember(scrollState, collapseThresholdPx) {
+                    derivedStateOf { scrollState.value > collapseThresholdPx }
+                }
 
                 ZibeCollapsingFabStack(
-                    collapsed = scrollState.value > collapseThresholdPx,
+                    collapsed = isFabCollapsed,
                     primaryText = {
                         Text(
                             text = stringResource(R.string.chat_zibe_app),
@@ -242,13 +267,13 @@ fun ProfileScreen(
                     },
                     primaryIcon = {
                         Icon(
-                            imageVector = Icons.Filled.Send,
+                            imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = stringResource(R.string.chat_zibe_app)
                         )
                     },
                     primaryEnabled = state.canOpenChat,
-                    primaryLoading = state.isActionLoading,
-                    onPrimaryClick = { state.profile?.id?.let(onOpenDmChat) },
+                    primaryLoading = state.isDmEntryLoading,
+                    onPrimaryClick = onDmChatClick,
                     secondaryText = secondaryLabel?.let { label ->
                         {
                             Text(
@@ -372,6 +397,12 @@ fun ProfileScreen(
             }
         }
     }
+
+    FirstContactSheet(
+        isOpen = isActive && state.pendingFirstContactUserId != null,
+        onConfirm = onConfirmFirstContact,
+        onCancel = onCancelFirstContact
+    )
 }
 
 @Preview(showBackground = true)
@@ -399,10 +430,13 @@ fun ProfileScreenPreview() {
             photoList = listOf("url1", "url2"),
             groupName = "Sample Group",
             distanceLabel = sampleState.distanceLabel,
+            isActive = true,
             onBack = {},
             onRefresh = {},
             onToggleFavorite = {},
-            onOpenDmChat = {},
+            onDmChatClick = {},
+            onConfirmFirstContact = {},
+            onCancelFirstContact = {},
             onOpenGroupDmChat = {},
             onOpenPhoto = {},
             onToggleNotifications = {},
@@ -412,5 +446,3 @@ fun ProfileScreenPreview() {
         )
     }
 }
-
-

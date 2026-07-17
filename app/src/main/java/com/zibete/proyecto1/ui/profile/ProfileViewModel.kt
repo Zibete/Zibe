@@ -11,12 +11,13 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrDefault
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onFinally
 import com.zibete.proyecto1.core.utils.onSuccess
-import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.core.utils.onSuccessNotNull
+import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
 import com.zibete.proyecto1.data.GroupRepositoryProvider
@@ -25,8 +26,11 @@ import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.chat.DmEntryDecision
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
+import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,6 +58,7 @@ class ProfileViewModel @Inject constructor(
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val profileRepositoryActions: ProfileRepositoryActions,
     private val userPreferencesProvider: UserPreferencesProvider,
+    private val resolveDmEntry: ResolveDmEntryUseCase,
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
@@ -68,8 +73,6 @@ class ProfileViewModel @Inject constructor(
     )
     val events = _events.asSharedFlow()
 
-    val snackEvents = snackBarManager.events
-
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
@@ -82,6 +85,9 @@ class ProfileViewModel @Inject constructor(
 
     private var loadJob: Job? = null
     private var metaJob: Job? = null
+    private var dmEntryJob: Job? = null
+    private var dmEntryGeneration = 0
+    private var isPageActive = true
 
     fun refreshProfile() = loadProfile(isRefresh = true)
 
@@ -154,6 +160,78 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun onPageActiveChanged(isActive: Boolean) {
+        isPageActive = isActive
+        if (isActive) return
+        dmEntryGeneration += 1
+        dmEntryJob?.cancel()
+        dmEntryJob = null
+        _uiState.update {
+            it.copy(
+                isDmEntryLoading = false,
+                pendingFirstContactUserId = null
+            )
+        }
+    }
+
+    fun onDmChatRequested() {
+        val state = _uiState.value
+        val profileUserId = state.profile?.id ?: return
+        if (!isPageActive || profileUserId != otherUid || !state.canOpenChat) return
+        if (dmEntryJob?.isActive == true) return
+
+        val requestGeneration = ++dmEntryGeneration
+        dmEntryJob = viewModelScope.launch {
+            _uiState.update { it.copy(isDmEntryLoading = true) }
+            try {
+                when (val result = resolveDmEntry(otherUid)) {
+                    is ZibeResult.Success -> when (result.data) {
+                        DmEntryDecision.OpenExisting -> openDirectMessage(otherUid)
+                        DmEntryDecision.RequireFirstContactConfirmation -> {
+                            if (isPageActive && requestGeneration == dmEntryGeneration) {
+                                _uiState.update {
+                                    it.copy(pendingFirstContactUserId = otherUid)
+                                }
+                            }
+                        }
+
+                        null -> showDmEntryError()
+                    }
+
+                    is ZibeResult.Failure -> showDmEntryError()
+                }
+            } finally {
+                if (requestGeneration == dmEntryGeneration) {
+                    dmEntryJob = null
+                    _uiState.update { it.copy(isDmEntryLoading = false) }
+                }
+            }
+        }
+    }
+
+    fun confirmFirstContact() {
+        val userId = _uiState.value.pendingFirstContactUserId ?: return
+        _uiState.update { it.copy(pendingFirstContactUserId = null) }
+        openDirectMessage(userId)
+    }
+
+    fun cancelFirstContact() {
+        _uiState.update { it.copy(pendingFirstContactUserId = null) }
+    }
+
+    private fun openDirectMessage(userId: String) {
+        if (!isPageActive || userId != otherUid) return
+        _events.tryEmit(ChatSessionUiEvent.OpenDirectMessage(userId))
+    }
+
+    private fun showDmEntryError() {
+        if (!isPageActive) return
+        snackBarManager.show(
+            uiText = UiText.StringRes(R.string.discover_chat_check_error),
+            type = ZibeSnackType.ERROR
+        )
+    }
+
     private suspend fun enrichProfileMeta() = supervisorScope {
         val groupNameValue = groupName.value
 
@@ -217,11 +295,15 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun setNotProfileState(content: ProfileContent) {
+        dmEntryGeneration += 1
+        dmEntryJob?.cancel()
+        dmEntryJob = null
         _uiState.update {
             it.copy(
                 content = content,
                 isRefreshing = false,
                 isActionLoading = false,
+                isDmEntryLoading = false,
                 profile = null,
                 distanceLabel = "",
                 isGroupMatch = false,
@@ -230,7 +312,8 @@ class ProfileViewModel @Inject constructor(
                 isNotificationsSilenced = false,
                 hasBlockedMe = false,
                 isHide = false,
-                hasConversation = false
+                hasConversation = false,
+                pendingFirstContactUserId = null
             )
         }
     }
