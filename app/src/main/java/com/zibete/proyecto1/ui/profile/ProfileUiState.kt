@@ -14,6 +14,7 @@ data class ProfileUiState(
     val content: ProfileContent = ProfileContent.Loading,
     val isRefreshing: Boolean = false,
     val isActionLoading: Boolean = false,
+    val isDmEntryLoading: Boolean = false,
     val profile: Users? = null,
     val distanceLabel: String = "",
     val isGroupMatch: Boolean = false,
@@ -22,12 +23,14 @@ data class ProfileUiState(
     val hasBlockedMe: Boolean = false,
     val isNotificationsSilenced: Boolean = false,
     val isHide: Boolean = false,
-    val hasConversation: Boolean = false
+    val hasConversation: Boolean = false,
+    val pendingFirstContactUserId: String? = null
 ) {
     val canOpenChat: Boolean
         get() =
             content is ProfileContent.Ready &&
                     !isActionLoading &&
+                    !isDmEntryLoading &&
+                    pendingFirstContactUserId == null &&
                     profile?.id?.isNotBlank() == true
 }
-

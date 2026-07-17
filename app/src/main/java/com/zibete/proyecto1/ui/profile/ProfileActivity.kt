@@ -11,6 +11,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.core.os.bundleOf
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -24,6 +25,7 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
+import com.zibete.proyecto1.core.constants.Constants.UiTags.PROFILE_PAGER
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.media.PhotoViewerActivity
@@ -104,7 +106,7 @@ class ProfileActivity : BaseChatSessionActivity() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ProfileActivityContent(
+internal fun ProfileActivityContent(
     userIds: List<String>,
     startIndex: Int,
     onBack: () -> Unit,
@@ -134,7 +136,9 @@ private fun ProfileActivityContent(
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag(PROFILE_PAGER)
     ) { page ->
         val userId = userIds[page]
         val profileViewModel = remember(userId) { viewModelProvider(userId) }
