@@ -13,8 +13,7 @@ data class UsersUiState(
     val maxAge: Int = 99,
     val error: UiText? = null,
     val pendingFirstContact: UsersRowUiModel? = null,
-    val chatCheckUserId: String? = null,
-    val favoriteActionUserId: String? = null
+    val chatCheckUserId: String? = null
 ) {
     val hasActiveFilters: Boolean
         get() = applyAgeFilter || applyOnlineFilter

@@ -19,7 +19,6 @@ import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.UserStatus
@@ -51,7 +50,6 @@ class UsersViewModel @Inject constructor(
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val userDirectoryProvider: UserDirectoryProvider,
     private val chatRepository: ChatRepositoryContract,
-    private val profileRepositoryActions: ProfileRepositoryActions,
     private val profileRepositoryProvider: ProfileRepositoryProvider
 ) : ViewModel() {
     private data class UsersFilters(
@@ -75,7 +73,6 @@ class UsersViewModel @Inject constructor(
     private val statusJobs = mutableMapOf<String, Job>()
     private val hasBlockedMeCache = mutableMapOf<String, Boolean>()
     private val hasBlockedMeInFlight = mutableSetOf<String>()
-    private val favoriteOverrides = mutableMapOf<String, Boolean>()
     private val hasBlockedMeSemaphore = Semaphore(4)
     private var usersGeneration = 0
 
@@ -162,7 +159,7 @@ class UsersViewModel @Inject constructor(
         val enrichedById = baseUsers.associate { user ->
             val chatState = chatStates[user.id].orEmpty()
             user.id to user.copy(
-                isFavorite = favoriteOverrides[user.id] ?: favorites.contains(user.id),
+                isFavorite = favorites.contains(user.id),
                 isBlockedByMe = chatState == CHAT_STATE_BLOCKED,
                 hasBlockedMe = hasBlockedMeCache[user.id] ?: false,
                 isNotificationsSilenced = chatState == CHAT_STATE_SILENT
@@ -254,36 +251,6 @@ class UsersViewModel @Inject constructor(
 
     fun cancelFirstContact() {
         _uiState.update { it.copy(pendingFirstContact = null) }
-    }
-
-    fun onFavoriteClick(userId: String) {
-        if (_uiState.value.favoriteActionUserId != null) return
-        val user = allUsers.firstOrNull { it.id == userId } ?: return
-        _uiState.update { it.copy(favoriteActionUserId = userId) }
-        viewModelScope.launch {
-            profileRepositoryActions.toggleFavoriteUser(userId)
-                .onSuccess { isFavorite ->
-                    val newFavoriteState = isFavorite == true
-                    favoriteOverrides[userId] = newFavoriteState
-                    allUsers = allUsers.map {
-                        if (it.id == userId) it.copy(isFavorite = newFavoriteState) else it
-                    }
-                    updateVisibleUsers()
-                    emitSnack(
-                        UiText.StringRes(
-                            if (newFavoriteState) {
-                                R.string.favorite_added
-                            } else {
-                                R.string.favorite_removed
-                            },
-                            listOf(user.name)
-                        ),
-                        ZibeSnackType.SUCCESS
-                    )
-                }
-                .onFailure { emitSnack(it.toUsersError(), ZibeSnackType.ERROR) }
-                .onFinally { _uiState.update { it.copy(favoriteActionUserId = null) } }
-        }
     }
 
     fun onUserProfileClick(userId: String) {
