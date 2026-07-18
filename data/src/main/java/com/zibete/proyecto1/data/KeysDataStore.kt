@@ -12,6 +12,8 @@ object Keys {
     val IN_GROUP = booleanPreferencesKey("inGroup")
     val USER_NAME_GROUP = stringPreferencesKey("userName")
     val GROUP_NAME = stringPreferencesKey("groupName")
+    val ROOM_DISPLAY_NAME = stringPreferencesKey("roomDisplayName")
+    val ROOM_ID = stringPreferencesKey("roomId")
     val USER_TYPE = intPreferencesKey("userType")
     val USER_DATE = stringPreferencesKey("userDate")
     val READ_GROUP_MSG = intPreferencesKey("readGroupMsg")

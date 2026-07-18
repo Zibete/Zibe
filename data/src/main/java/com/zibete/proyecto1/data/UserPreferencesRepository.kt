@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
+import com.zibete.proyecto1.model.RoomSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -25,15 +26,19 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.data
             .map { prefs ->
                 val inGroup = prefs[Keys.IN_GROUP] ?: false
-                val groupName = prefs[Keys.GROUP_NAME].orEmpty()
+                val legacyGroupName = prefs[Keys.GROUP_NAME].orEmpty()
+                val roomKey = prefs[Keys.ROOM_ID].orEmpty().ifBlank { legacyGroupName }
 
-                if (!inGroup || groupName.isBlank()) return@map null
+                if (!inGroup || roomKey.isBlank()) return@map null
 
                 GroupContext(
                     inGroup = true,
-                    groupName = groupName,
+                    groupName = roomKey,
                     userName = prefs[Keys.USER_NAME_GROUP].orEmpty(),
-                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER
+                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER,
+                    roomKey = roomKey,
+                    displayName = prefs[Keys.ROOM_DISPLAY_NAME].orEmpty()
+                        .ifBlank { legacyGroupName }
                 )
             }
             .distinctUntilChanged()
@@ -46,8 +51,8 @@ class UserPreferencesRepository @Inject constructor(
 
     /** groupName reactivo (útil para toolbar o labels sin armar GroupContext) */
     override val groupNameFlow: Flow<String> =
-        dataStore.data
-            .map { it[Keys.GROUP_NAME].orEmpty() }
+        groupContextFlow
+            .map { it?.displayName.orEmpty() }
             .distinctUntilChanged()
 
     override suspend fun setGroupSession(
@@ -58,15 +63,32 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { prefs ->
             prefs[Keys.IN_GROUP] = true
             prefs[Keys.GROUP_NAME] = groupName
+            prefs[Keys.ROOM_ID] = groupName
+            prefs[Keys.ROOM_DISPLAY_NAME] = groupName
             prefs[Keys.USER_NAME_GROUP] = userName
             prefs[Keys.USER_TYPE] = userType
         }
     }
 
+    override suspend fun setRoomSession(session: RoomSession) {
+        dataStore.edit { prefs ->
+            prefs[Keys.IN_GROUP] = true
+            prefs[Keys.GROUP_NAME] = session.roomKey
+            prefs[Keys.ROOM_ID] = session.roomKey
+            prefs[Keys.ROOM_DISPLAY_NAME] = session.displayName
+            prefs[Keys.USER_NAME_GROUP] = session.userName
+            prefs[Keys.USER_TYPE] = session.userType
+        }
+    }
+
+    override suspend fun resetRoomSession() = resetGroupState()
+
     override suspend fun resetGroupState() {
         dataStore.edit { prefs ->
             prefs[Keys.IN_GROUP] = false
             prefs[Keys.GROUP_NAME] = ""
+            prefs[Keys.ROOM_ID] = ""
+            prefs[Keys.ROOM_DISPLAY_NAME] = ""
             prefs[Keys.USER_NAME_GROUP] = ""
             prefs[Keys.USER_TYPE] = PUBLIC_USER
         }

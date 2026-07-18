@@ -26,7 +26,9 @@ data class ChatMessage(
     var audioDurationMs: Long = 0L,
     var senderUid: String = "",
     var type: Int = 0,
-    var seen: Int = 0
+    var seen: Int = 0,
+    var roomKey: String = "",
+    var senderName: String = ""
 ) : Serializable
 
 fun ChatMessage.isDeletedFor(currentUid: String): Boolean =

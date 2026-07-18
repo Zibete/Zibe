@@ -45,6 +45,17 @@ object Constants {
         const val DISCOVER_PULL_REFRESH = "discover_pull_refresh"
         const val DISCOVER_SCROLL_TOP = "discover_scroll_top"
         const val FIRST_DM_SHEET = "first_dm_sheet"
+        const val ROOMS_SCREEN = "rooms_screen"
+        const val ROOMS_LIST = "rooms_list"
+        const val ROOMS_EMPTY = "rooms_empty"
+        const val ROOMS_ERROR = "rooms_error"
+        const val ROOMS_CREATE = "rooms_create"
+        const val ROOMS_CREATE_SHEET = "rooms_create_sheet"
+        const val ROOMS_JOIN_SHEET = "rooms_join_sheet"
+        const val ROOM_HOST = "room_host"
+        const val ROOM_CHAT = "room_chat"
+        const val ROOM_MEMBERS = "room_members"
+        const val ROOM_PRIVATE_CHATS = "room_private_chats"
         const val ACCOUNT_AVATAR = "account_avatar"
         const val ACCOUNT_SHEET = "account_sheet"
         const val ACCOUNT_EDIT_PROFILE = "account_edit_profile"
@@ -77,6 +88,7 @@ object Constants {
     const val EXTRA_CHAT_NODE = "nodeType"
     const val EXTRA_PENDING_DM_TYPE = "extra_pending_dm_type"
     const val EXTRA_PENDING_DM_CHAT_ID = "extra_pending_dm_chat_id"
+    const val EXTRA_PENDING_ROOM_KEY = "extra_pending_room_key"
 
     const val EXTRA_GROUP_NAME = "groupName"
 
@@ -92,6 +104,8 @@ object Constants {
     // Sub-nodos comunes
     const val NODE_DM = "dm"
     const val NODE_GROUP_DM = "group_dm"
+    const val NODE_ROOM = "room"
+    const val NODE_ROOMS = "Rooms"
     const val NODE_CLIENT_DATA = "ClientData"
     const val NODE_STATUS = "Status"
     const val NODE_ACTIVE_VIEW = "ActiveView"
@@ -115,6 +129,7 @@ object Constants {
     object ActiveThreadKeys {
         const val NODE_TYPE = "nodeType"
         const val OTHER_UID = "otherUid"
+        const val ROOM_KEY = "roomKey"
         const val UPDATED_AT = "updatedAt"
     }
 
@@ -139,6 +154,7 @@ object Constants {
         const val SENDER_UID = "senderUid"
         const val CHAT_TYPE = "chatType"
         const val USER_TYPE = "userType"
+        const val CLIENT_MESSAGE_ID = "clientMessageId"
     }
 
     object GroupUserKeys {
@@ -146,6 +162,8 @@ object Constants {
         const val USER_ID = "userId"
         const val USER_NAME = "userName"
         const val JOINED_AT_MS = "joinedAtMs"
+        const val PHOTO_URL = "photoUrl"
+        const val ALIAS_KEY = "aliasKey"
     }
 
     object GroupChatKeys {
@@ -158,6 +176,7 @@ object Constants {
     }
 
     object GroupMetaKeys {
+        const val ROOM_ID = "roomId"
         const val NAME = "name"
         const val DESCRIPTION = "description"
         const val CREATOR_UID = "creatorUid"
@@ -165,6 +184,15 @@ object Constants {
         const val USERS = "users"
         const val CREATED_AT = "createdAt"
         const val TOTAL_MESSAGES = "totalMessages"
+        const val LAST_MESSAGE_AT = "lastMessageAt"
+        const val LAST_MESSAGE_ID = "lastMessageId"
+    }
+
+    object RoomReadKeys {
+        const val UNREAD_COUNT = "unreadCount"
+        const val LAST_READ_AT = "lastReadAt"
+        const val LAST_READ_MESSAGE_ID = "lastReadMessageId"
+        const val LAST_UNREAD_MESSAGE_ID = "lastUnreadMessageId"
     }
 
     object AccountsKeys {
@@ -191,6 +219,8 @@ object Constants {
         const val STATE = "state"
         const val UNREAD_COUNT = "unreadCount"
         const val SEEN = "seen"
+        const val ROOM_KEY = "roomKey"
+        const val LAST_MESSAGE_ID = "lastMessageId"
     }
 
     object SessionKeys {
@@ -252,6 +282,11 @@ object Constants {
         const val OTHER_NAME = "otherName"
         const val CONTENT = "content"
         const val UNREAD_COUNT = "unreadCount"
+        const val ROOM_KEY = "roomKey"
+        const val ROOM_ID = "roomId"
+        const val ROOM_NAME = "roomName"
+        const val MESSAGE_TYPE = "messageType"
+        const val PREVIEW = "preview"
     }
 
     // ==============================
@@ -271,5 +306,7 @@ object Constants {
     const val NODE_GROUPS_USERS = "Users"
     const val NODE_GROUPS_CHAT = "Chat"
     const val NODE_GROUPS_META = "Meta"
+    const val NODE_GROUPS_NAMES = "Names"
+    const val NODE_GROUPS_ALIASES = "Aliases"
 
 }

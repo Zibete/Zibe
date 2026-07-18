@@ -1,15 +1,20 @@
 package com.zibete.proyecto1.domain.session
 
-import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
-import com.zibete.proyecto1.core.constants.EXIT_GROUP_ERR_EXCEPTION
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
-import kotlinx.coroutines.flow.first
+import com.zibete.proyecto1.domain.rooms.LeaveRoomCommand
+import com.zibete.proyecto1.domain.rooms.RoomContractException
+import com.zibete.proyecto1.domain.rooms.RoomOperationResult
+import com.zibete.proyecto1.domain.rooms.RoomSessionNotFoundException
+import com.zibete.proyecto1.domain.rooms.RoomTextValidation
+import com.zibete.proyecto1.domain.rooms.RoomValidationException
+import com.zibete.proyecto1.domain.rooms.RoomValidator
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 
 interface ExitGroupUseCase {
     suspend fun performExitGroupDataCleanup(
@@ -26,30 +31,24 @@ class DefaultExitGroupUseCase @Inject constructor(
     override suspend fun performExitGroupDataCleanup(
         message: String
     ): ZibeResult<Unit> = zibeCatching {
-
-        // 1. Obtenemos el contexto actual.
         val groupContext = userPreferencesProvider.groupContextFlow.first()
-            ?: throw IllegalStateException(EXIT_GROUP_ERR_EXCEPTION)
-
-        val groupName = groupContext.groupName
-
-        // 2. Ejecución de tareas remotas.
-        groupRepository.removeMyGroupChatList().getOrThrow()
-        groupRepository.removeMyPrivateGroupChats().getOrThrow()
-
-        groupRepository.sendGroupMessage(
-            groupName = groupName,
-            userName = groupContext.userName,
-            userType = groupContext.userType,
-            chatType = MSG_INFO,
-            content = message,
+            ?: throw RoomSessionNotFoundException()
+        val eventValidation = RoomValidator.validateEventContent(message)
+        if (eventValidation is RoomTextValidation.Invalid) {
+            throw RoomValidationException(listOf(eventValidation.issue))
+        }
+        val roomKey = groupContext.roomKey.ifBlank { groupContext.groupName }
+        val outcome = groupRepository.leaveRoom(
+            LeaveRoomCommand(
+                roomKey = roomKey,
+                userName = groupContext.userName,
+                userType = groupContext.userType,
+                eventContent = (eventValidation as RoomTextValidation.Valid).value
+            )
         ).getOrThrow()
-
-        groupRepository.removeUserFromGroup(
-            groupName = groupName
-        ).getOrThrow()
-
-        // 3. Limpieza de estado local
-        userPreferencesActions.resetGroupState()
+        if (outcome !is RoomOperationResult.Left || outcome.roomKey != roomKey) {
+            throw RoomContractException("Unexpected leaveRoom outcome: $outcome")
+        }
+        userPreferencesActions.resetRoomSession()
     }
 }

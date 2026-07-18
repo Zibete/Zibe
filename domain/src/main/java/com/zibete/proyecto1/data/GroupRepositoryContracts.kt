@@ -1,13 +1,48 @@
 package com.zibete.proyecto1.data
 
 import com.zibete.proyecto1.core.utils.ZibeResult
-import com.zibete.proyecto1.model.UserGroup
+import com.zibete.proyecto1.domain.rooms.CreateRoomCommand
+import com.zibete.proyecto1.domain.rooms.JoinRoomCommand
+import com.zibete.proyecto1.domain.rooms.LeaveRoomCommand
+import com.zibete.proyecto1.domain.rooms.RoomOperationResult
+import com.zibete.proyecto1.domain.rooms.SwitchRoomCommand
+import com.zibete.proyecto1.model.Conversation
 import com.zibete.proyecto1.model.GroupChatChildEvent
 import com.zibete.proyecto1.model.Groups
+import com.zibete.proyecto1.model.RoomSession
+import com.zibete.proyecto1.model.UserGroup
 import kotlinx.coroutines.flow.Flow
 
 interface GroupRepositoryProvider {
     val myUid: String
+    suspend fun loadRooms(): ZibeResult<List<Groups>>
+    fun observeTotalRoomUnread(): Flow<Int>
+    fun observeRoomPrivateConversations(roomKey: String): Flow<List<Conversation>>
+    suspend fun createRoom(command: CreateRoomCommand): ZibeResult<RoomOperationResult>
+    suspend fun joinRoom(command: JoinRoomCommand): ZibeResult<RoomOperationResult>
+    suspend fun switchRoom(command: SwitchRoomCommand): ZibeResult<RoomOperationResult>
+    suspend fun leaveRoom(command: LeaveRoomCommand): ZibeResult<RoomOperationResult>
+    suspend fun resolveRoomSession(roomKey: String): ZibeResult<RoomSession>
+    suspend fun isRoomAliasInUse(
+        roomKey: String,
+        normalizedAlias: String
+    ): ZibeResult<Boolean>
+    suspend fun markRoomAsRead(roomKey: String, lastReadAt: Long): ZibeResult<Unit>
+    suspend fun sendRoomMessage(
+        roomKey: String,
+        userName: String,
+        userType: Int,
+        chatType: Int,
+        content: String
+    ): ZibeResult<Unit>
+    suspend fun sendRoomPhotoMessage(
+        roomKey: String,
+        userName: String,
+        userType: Int,
+        photoUri: String
+    ): ZibeResult<Unit>
+    suspend fun setActiveRoom(roomKey: String): ZibeResult<Unit>
+    suspend fun clearActiveRoom(roomKey: String): ZibeResult<Unit>
     fun observeGroupChatEvents(groupName: String): Flow<GroupChatChildEvent>
     fun unreadGroupBadgeCount(groupName: String): Flow<Int>
     fun observeUnreadGroupChat(groupName: String): Flow<Int>
@@ -15,43 +50,8 @@ interface GroupRepositoryProvider {
     fun observeGroupUsers(groupName: String): Flow<List<UserGroup>>
     fun observeIsUserInGroup(groupName: String, userId: String): Flow<Boolean>
     suspend fun getGroup(groupName: String): Groups?
-    suspend fun isNickInUse(groupName: String, nick: String): Boolean
-    suspend fun markGroupAsRead(groupName: String)
-    suspend fun sendGroupPhotoMessage(
-        groupName: String,
-        senderName: String,
-        userType: Int,
-        senderUid: String = "",
-        photoUri: String
-    )
-    suspend fun saveUserInGroup(
-        groupName: String,
-        userName: String,
-        userType: Int,
-        userId: String = ""
-    )
-    suspend fun isGroupNameInUse(groupName: String): Boolean
-    suspend fun createGroup(
-        groupName: String,
-        groupDescription: String,
-        groupType: Int,
-        creatorUid: String = ""
-    )
-    suspend fun getAllGroups(): List<Groups>
     suspend fun findUserGroup(userId: String, groupName: String): UserGroup?
     suspend fun isGroupMatch(otherUid: String, groupName: String): ZibeResult<Boolean>
-    suspend fun removeMyGroupChatList(): ZibeResult<Unit>
-    suspend fun removeMyPrivateGroupChats(userId: String = ""): ZibeResult<Unit>
-    suspend fun sendGroupMessage(
-        groupName: String,
-        userName: String,
-        userType: Int,
-        chatType: Int,
-        content: String,
-        senderUid: String = ""
-    ): ZibeResult<Unit>
-
-    suspend fun removeUserFromGroup(groupName: String, userId: String = ""): ZibeResult<Unit>
 }
 
 interface LocationRepositoryProvider {

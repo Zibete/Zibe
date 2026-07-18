@@ -30,6 +30,7 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_RECEIVER_DLT
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT_SENDER_DLT
 import com.zibete.proyecto1.core.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_USERS_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_USERS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.PATH_AUDIOS
@@ -278,6 +279,63 @@ class ChatRepository @Inject constructor(
             "$receiverConversationPath/${ConversationKeys.SEEN}" to receiverConversation.seen
         )
 
+        firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()
+    }
+
+    override suspend fun sendGroupDmMessageWithConversations(
+        senderUid: String,
+        receiverUid: String,
+        roomKey: String,
+        message: ChatMessage,
+        senderConversation: Conversation,
+        receiverConversation: Conversation
+    ): ZibeResult<Unit> = zibeCatching {
+        require(roomKey.isNotBlank()) { "group_dm requires a roomKey" }
+        val chatId = getChatId(senderUid, receiverUid)
+        val messageId = checkNotNull(
+            firebaseRefsContainer.refChatsGroupDm.child(chatId).push().key
+        ) { "Could not generate group_dm message id" }
+        val receiverPath =
+            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$receiverUid/$NODE_GROUP_DM/$senderUid"
+        val messageValue = mapOf(
+            ChatMessageKeys.CONTENT to message.content,
+            ChatMessageKeys.CREATED_AT to ServerValue.TIMESTAMP,
+            ChatMessageKeys.AUDIO_DURATION_MS to message.audioDurationMs,
+            ChatMessageKeys.SENDER_UID to message.senderUid,
+            ChatMessageKeys.TYPE to message.type,
+            ChatMessageKeys.SEEN to message.seen
+        )
+        val senderValue = mapOf(
+            ConversationKeys.LAST_CONTENT to senderConversation.lastContent,
+            ConversationKeys.LAST_MESSAGE_AT to ServerValue.TIMESTAMP,
+            ConversationKeys.USER_ID to senderConversation.userId,
+            ConversationKeys.OTHER_ID to senderConversation.otherId,
+            ConversationKeys.OTHER_NAME to senderConversation.otherName,
+            ConversationKeys.OTHER_PHOTO_URL to senderConversation.otherPhotoUrl,
+            ConversationKeys.STATE to senderConversation.state,
+            ConversationKeys.UNREAD_COUNT to 0,
+            ConversationKeys.SEEN to senderConversation.seen,
+            ConversationKeys.ROOM_KEY to roomKey,
+            ConversationKeys.LAST_MESSAGE_ID to messageId
+        )
+        val updates = mapOf<String, Any>(
+            "/$NODE_CHATS_ROOT/$NODE_GROUP_DM/$chatId/$messageId" to messageValue,
+            "/$NODE_USERS_ROOT/$NODE_USERS_DATA/$senderUid/$NODE_GROUP_DM/$receiverUid" to
+                senderValue,
+            "$receiverPath/${ConversationKeys.LAST_CONTENT}" to
+                receiverConversation.lastContent,
+            "$receiverPath/${ConversationKeys.LAST_MESSAGE_AT}" to ServerValue.TIMESTAMP,
+            "$receiverPath/${ConversationKeys.USER_ID}" to receiverConversation.userId,
+            "$receiverPath/${ConversationKeys.OTHER_ID}" to receiverConversation.otherId,
+            "$receiverPath/${ConversationKeys.OTHER_NAME}" to receiverConversation.otherName,
+            "$receiverPath/${ConversationKeys.OTHER_PHOTO_URL}" to
+                receiverConversation.otherPhotoUrl,
+            "$receiverPath/${ConversationKeys.STATE}" to receiverConversation.state,
+            "$receiverPath/${ConversationKeys.UNREAD_COUNT}" to ServerValue.increment(1),
+            "$receiverPath/${ConversationKeys.SEEN}" to receiverConversation.seen,
+            "$receiverPath/${ConversationKeys.ROOM_KEY}" to roomKey,
+            "$receiverPath/${ConversationKeys.LAST_MESSAGE_ID}" to messageId
+        )
         firebaseRefsContainer.firebaseDatabase.reference.updateChildren(updates).await()
     }
 

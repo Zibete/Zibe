@@ -45,6 +45,14 @@ interface ChatRepositoryContract {
         senderConversation: Conversation,
         receiverConversation: Conversation
     ): ZibeResult<Unit>
+    suspend fun sendGroupDmMessageWithConversations(
+        senderUid: String,
+        receiverUid: String,
+        roomKey: String,
+        message: ChatMessage,
+        senderConversation: Conversation,
+        receiverConversation: Conversation
+    ): ZibeResult<Unit>
     suspend fun uploadMedia(
         localUri: String,
         fileName: String,

@@ -1,13 +1,23 @@
 package com.zibete.proyecto1.data
 
+import com.zibete.proyecto1.model.RoomSession
 import kotlinx.coroutines.flow.Flow
 
 data class GroupContext(
     val inGroup: Boolean,
     val groupName: String,
     val userName: String,
-    val userType: Int
-)
+    val userType: Int,
+    val roomKey: String = groupName,
+    val displayName: String = groupName
+) {
+    fun toRoomSession(): RoomSession = RoomSession(
+        roomKey = roomKey.ifBlank { groupName },
+        displayName = displayName.ifBlank { groupName },
+        userName = userName,
+        userType = userType
+    )
+}
 
 interface UserPreferencesProvider {
     suspend fun isOnboardingDone(): Boolean
@@ -39,4 +49,6 @@ interface UserPreferencesActions {
     suspend fun setGroupNotifications(value: Boolean)
     suspend fun setIndividualNotifications(value: Boolean)
     suspend fun setGroupSession(groupName: String, userName: String, userType: Int)
+    suspend fun setRoomSession(session: RoomSession)
+    suspend fun resetRoomSession()
 }

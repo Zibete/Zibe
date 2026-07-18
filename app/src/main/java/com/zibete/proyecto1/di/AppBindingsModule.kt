@@ -43,6 +43,16 @@ import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
+import com.zibete.proyecto1.domain.rooms.CreateRoomUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultCreateRoomUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultJoinRoomUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultMarkRoomReadUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultResumeRoomSessionUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultSwitchRoomUseCase
+import com.zibete.proyecto1.domain.rooms.JoinRoomUseCase
+import com.zibete.proyecto1.domain.rooms.MarkRoomReadUseCase
+import com.zibete.proyecto1.domain.rooms.ResumeRoomSessionUseCase
+import com.zibete.proyecto1.domain.rooms.SwitchRoomUseCase
 import com.zibete.proyecto1.domain.chat.DefaultSendChatMessageUseCase
 import com.zibete.proyecto1.domain.chat.DefaultResolveDmEntryUseCase
 import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
@@ -227,6 +237,23 @@ abstract class AppBindingsModule {
     abstract fun bindGroupRepositoryProvider(
         impl: GroupRepository
     ): GroupRepositoryProvider
+
+    @Binds
+    abstract fun bindCreateRoomUseCase(impl: DefaultCreateRoomUseCase): CreateRoomUseCase
+
+    @Binds
+    abstract fun bindJoinRoomUseCase(impl: DefaultJoinRoomUseCase): JoinRoomUseCase
+
+    @Binds
+    abstract fun bindSwitchRoomUseCase(impl: DefaultSwitchRoomUseCase): SwitchRoomUseCase
+
+    @Binds
+    abstract fun bindMarkRoomReadUseCase(impl: DefaultMarkRoomReadUseCase): MarkRoomReadUseCase
+
+    @Binds
+    abstract fun bindResumeRoomSessionUseCase(
+        impl: DefaultResumeRoomSessionUseCase
+    ): ResumeRoomSessionUseCase
 
     @Binds
     @Singleton

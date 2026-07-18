@@ -19,16 +19,19 @@ data class ChatGroup(
     var nameUser: String = "",
     var senderUid: String = "",
     var chatType: Int = 0,
-    var userType: Int = 0
+    var userType: Int = 0,
+    var userName: String = ""
 
 ) : Serializable {
+
+    fun resolvedUserName(): String = userName.ifBlank { nameUser }
 
     override fun equals(other: Any?): Boolean =
         other is ChatGroup &&
                 content == other.content &&
                 timestamp == other.timestamp &&
-                nameUser == other.nameUser
+                resolvedUserName() == other.resolvedUserName()
 
     override fun hashCode(): Int =
-        listOf(timestamp, content, nameUser).hashCode()
+        listOf(timestamp, content, resolvedUserName()).hashCode()
 }

@@ -15,6 +15,7 @@ import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
 import com.zibete.proyecto1.core.constants.Constants.MSG_TEXT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.PATH_PHOTOS
 import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
@@ -140,7 +141,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _headerState.value = ChatHeaderState.Loading
 
-            groupName = userPreferencesProvider.groupNameFlow.first()
+            groupName = resolveContextualRoomKey()
 
             setupChat()
 
@@ -162,8 +163,12 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun startGroupUserAvailability() {
-        if (nodeType != NODE_DM) {
+        if (nodeType == NODE_GROUP_DM) {
             viewModelScope.launch {
+                val activeRoomKey = userPreferencesProvider.groupContextFlow.first()
+                    ?.roomKey
+                    .orEmpty()
+                if (activeRoomKey != groupName) return@launch
                 groupRepositoryProvider.observeIsUserInGroup(groupName, otherUid)
                     .collect { isAvailable ->
                         if (!isAvailable) {
@@ -255,6 +260,20 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private suspend fun resolveContextualRoomKey(): String {
+        if (nodeType != NODE_GROUP_DM) return userPreferencesProvider.groupNameFlow.first()
+
+        val persistedRoomKey = chatRepository
+            .getConversation(myUid, otherUid, NODE_GROUP_DM)
+            ?.roomKey
+            .orEmpty()
+        if (persistedRoomKey.isNotBlank()) return persistedRoomKey
+
+        return userPreferencesProvider.groupContextFlow.first()
+            ?.roomKey
+            .orEmpty()
+    }
+
     // Aplica notificaciones / bloqueo solo para chats 1 a 1
     private suspend fun applyChatStateForOneToOne() {
 
@@ -310,15 +329,33 @@ class ChatViewModel @Inject constructor(
             }
         }
 
-        val myUserGroup = groupRepositoryProvider.findUserGroup(myUid, groupName)
-
-        val otherUserGroup = groupRepositoryProvider.findUserGroup(otherUid, groupName)
+        val activeRoomKey = userPreferencesProvider.groupContextFlow.first()
+            ?.roomKey
+            .orEmpty()
+        val isCurrentRoom = activeRoomKey == groupName
+        val myUserGroup = if (isCurrentRoom) {
+            groupRepositoryProvider.findUserGroup(myUid, groupName)
+        } else {
+            null
+        }
+        val otherUserGroup = if (isCurrentRoom) {
+            groupRepositoryProvider.findUserGroup(otherUid, groupName)
+        } else {
+            null
+        }
+        val myConversation = chatRepository.getConversation(myUid, otherUid, NODE_GROUP_DM)
+        val otherConversation = chatRepository.getConversation(otherUid, myUid, NODE_GROUP_DM)
 
         myIdentity = if (myUserGroup?.type == ANONYMOUS_USER) {
             ChatIdentity(
                 userName = myUserGroup.userName,
                 userType = ANONYMOUS_USER,
                 userPhotoUrl = defaultPhotoUrl
+            )
+        } else if (otherConversation != null) {
+            ChatIdentity(
+                userName = otherConversation.otherName,
+                userPhotoUrl = otherConversation.otherPhotoUrl
             )
         } else {
             ChatIdentity(
@@ -332,6 +369,12 @@ class ChatViewModel @Inject constructor(
                 userName = otherUserGroup.userName,
                 userType = ANONYMOUS_USER,
                 userPhotoUrl = defaultPhotoUrl
+            )
+        } else if (myConversation != null) {
+            ChatIdentity(
+                userName = myConversation.otherName,
+                userPhotoUrl = myConversation.otherPhotoUrl,
+                fcmToken = otherFcmToken
             )
         } else {
             ChatIdentity(
@@ -488,7 +531,8 @@ class ChatViewModel @Inject constructor(
                     receiverName = currentOtherName(),
                     receiverPhotoUrl = otherIdentity.userPhotoUrl,
                     senderName = myIdentity.userName,
-                    senderPhotoUrl = myIdentity.userPhotoUrl
+                    senderPhotoUrl = myIdentity.userPhotoUrl,
+                    roomKey = if (nodeType == NODE_GROUP_DM) groupName else ""
                 )
             )
         ) {

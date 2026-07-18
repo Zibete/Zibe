@@ -8,7 +8,9 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_CHATS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_APP_FEEDBACK
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_CHAT
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_ALIASES
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_META
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_NAMES
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_ROOT
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUPS_USERS
 import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
@@ -46,6 +48,8 @@ class FirebaseRefsContainer @Inject constructor(
     val refGroupMeta: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_META)
     val refGroupChat: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_CHAT)
     val refGroupUsers: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_USERS)
+    val refGroupNames: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_NAMES)
+    val refGroupAliases: DatabaseReference = refGroupsRoot.child(NODE_GROUPS_ALIASES)
 
     // ================= Zibe =================
 

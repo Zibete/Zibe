@@ -3,6 +3,7 @@ package com.zibete.proyecto1.domain.chat
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.MSG_DELIVERED
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.utils.getOrThrow
 import com.zibete.proyecto1.core.utils.zibeCatching
@@ -24,7 +25,8 @@ data class SendChatMessageCommand(
     val receiverName: String,
     val receiverPhotoUrl: String,
     val senderName: String,
-    val senderPhotoUrl: String
+    val senderPhotoUrl: String,
+    val roomKey: String = ""
 )
 
 sealed interface SendChatMessageOutcome {
@@ -63,7 +65,9 @@ class DefaultSendChatMessageUseCase @Inject constructor(
             audioDurationMs = command.audioDurationMs,
             senderUid = command.senderUid,
             type = command.messageType,
-            seen = MSG_DELIVERED
+            seen = MSG_DELIVERED,
+            roomKey = command.roomKey,
+            senderName = command.senderName
         )
         val newSenderConversation = Conversation(
             lastContent = command.senderConversationContent,
@@ -74,7 +78,8 @@ class DefaultSendChatMessageUseCase @Inject constructor(
             otherPhotoUrl = command.receiverPhotoUrl,
             state = senderConversation?.state ?: command.nodeType,
             unreadCount = 0,
-            seen = MSG_DELIVERED
+            seen = MSG_DELIVERED,
+            roomKey = command.roomKey
         )
         val newReceiverConversation = Conversation(
             lastContent = command.receiverConversationContent,
@@ -84,13 +89,24 @@ class DefaultSendChatMessageUseCase @Inject constructor(
             otherName = command.senderName,
             otherPhotoUrl = command.senderPhotoUrl,
             state = receiverConversation?.state ?: command.nodeType,
-            unreadCount = (receiverConversation?.unreadCount ?: 0) + 1
+            unreadCount = (receiverConversation?.unreadCount ?: 0) + 1,
+            roomKey = command.roomKey
         )
 
         if (command.nodeType == NODE_DM) {
             chatRepository.sendDmMessageWithConversations(
                 command.senderUid,
                 command.receiverUid,
+                message,
+                newSenderConversation,
+                newReceiverConversation
+            ).getOrThrow()
+        } else if (command.nodeType == NODE_GROUP_DM) {
+            require(command.roomKey.isNotBlank()) { "group_dm requires a roomKey" }
+            chatRepository.sendGroupDmMessageWithConversations(
+                command.senderUid,
+                command.receiverUid,
+                command.roomKey,
                 message,
                 newSenderConversation,
                 newReceiverConversation
