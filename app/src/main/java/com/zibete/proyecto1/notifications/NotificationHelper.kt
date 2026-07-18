@@ -15,7 +15,9 @@ import androidx.core.content.ContextCompat
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_ROOM_KEY
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_ROOM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.data.UnreadSummary
 import com.zibete.proyecto1.ui.splash.SplashActivity
@@ -42,7 +44,7 @@ class NotificationHelper @Inject constructor(
                 "${summary.totalUnread} mensajes de $lastSenderName"
         }
 
-        Log.d(TAG, "Preparing DM notification chatId=$conversationId")
+        Log.d(TAG, "Preparing DM notification chatId=${safeId(conversationId)}")
         showMessageNotification(
             notificationId = conversationId.hashCode(),
             title = title,
@@ -51,23 +53,33 @@ class NotificationHelper @Inject constructor(
         )
     }
 
-    fun showGroupNotification(
-        groupName: String,
-        unreadCount: Int,
+    fun showRoomNotification(
+        roomKey: String,
+        messageId: String,
+        roomName: String,
         lastSenderName: String,
         lastMessage: String
     ) {
-        val title = when {
-            unreadCount <= 1 -> "Nuevo mensaje de $groupName"
-            else -> "$unreadCount mensajes de $groupName"
+        val deduplicationPreferences = context.getSharedPreferences(
+            ROOM_NOTIFICATION_DEDUPLICATION_PREFERENCES,
+            Context.MODE_PRIVATE
+        )
+        if (deduplicationPreferences.getString(roomKey, null) == messageId) {
+            Log.i(TAG, "Skipping duplicate room notification roomKey=${safeId(roomKey)}")
+            return
         }
 
-        showMessageNotification(
-            notificationId = groupName.hashCode(),
-            title = title,
-            text = "$lastSenderName: $lastMessage",
-            openIntent = buildOpenMainIntent(/* luego: extras para abrir grupo */)
+        val posted = showMessageNotification(
+            notificationId = roomKey.hashCode(),
+            title = context.getString(R.string.rooms_notification_title, roomName),
+            text = context.getString(
+                R.string.rooms_notification_text,
+                lastSenderName,
+                lastMessage
+            ),
+            openIntent = buildOpenPendingRoomIntent(roomKey)
         )
+        if (posted) deduplicationPreferences.edit().putString(roomKey, messageId).apply()
     }
 
     fun showMessageNotification(
@@ -75,8 +87,8 @@ class NotificationHelper @Inject constructor(
         title: String,
         text: String,
         openIntent: Intent
-    ) {
-        if (!canPostNotifications(notificationId)) return
+    ): Boolean {
+        if (!canPostNotifications(notificationId)) return false
 
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         ensureChannel(nm)
@@ -96,6 +108,7 @@ class NotificationHelper @Inject constructor(
 
         nm.notify(notificationId, builder.build())
         Log.d(TAG, "NotificationManager.notify executed notificationId=$notificationId")
+        return true
     }
 
     private fun ensureChannel(nm: NotificationManager) {
@@ -138,6 +151,14 @@ class NotificationHelper @Inject constructor(
             putExtra(PayloadKeys.CHAT_ID, chatId)
         }
 
+    private fun buildOpenPendingRoomIntent(roomKey: String): Intent =
+        buildOpenMainIntent().apply {
+            putExtra(EXTRA_PENDING_DM_TYPE, NODE_ROOM)
+            putExtra(EXTRA_PENDING_ROOM_KEY, roomKey)
+            putExtra(PayloadKeys.TYPE, NODE_ROOM)
+            putExtra(PayloadKeys.ROOM_KEY, roomKey)
+        }
+
     private fun pendingIntent(intent: Intent): PendingIntent {
         return PendingIntent.getActivity(
             context,
@@ -149,6 +170,13 @@ class NotificationHelper @Inject constructor(
 
     companion object {
         private const val TAG = "ZibeFCM"
+        private const val ROOM_NOTIFICATION_DEDUPLICATION_PREFERENCES =
+            "room_notification_deduplication"
         const val MESSAGE_CHANNEL_ID = "mensaje"
+
+        private fun safeId(value: String): String = when {
+            value.length <= 4 -> "***"
+            else -> "${value.take(3)}...${value.takeLast(2)}"
+        }
     }
 }

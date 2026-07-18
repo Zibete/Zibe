@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_ROOM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
@@ -119,25 +120,50 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        // =========================
-        // 2) GRUPO (type = groupName en tu payload)
-        // =========================
-        val groupName = nodeType
+        handleRoomMessage(data, nodeType)
+    }
 
-        val groupEnabled = userPreferencesProvider.groupNotificationsFlow.first()
-        if (!groupEnabled) return
+    private suspend fun handleRoomMessage(data: Map<String, String>, nodeType: String) {
+        val roomKey = data[PayloadKeys.ROOM_KEY]
+            ?.takeIf(String::isNotBlank)
+            ?: nodeType.takeIf { it != NODE_ROOM && it.isNotBlank() }
+        if (roomKey.isNullOrBlank()) {
+            Log.w(TAG, "Invalid room FCM payload: missing roomKey")
+            return
+        }
+        val messageId = data[PayloadKeys.MESSAGE_ID]?.takeIf(String::isNotBlank)
+        if (messageId == null) {
+            Log.w(TAG, "Invalid room FCM payload: missing messageId")
+            return
+        }
 
-        val ctx = userPreferencesProvider.groupContextFlow.first()
-        val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
+        val enabled = runCatchingPreservingCancellation {
+            userPreferencesProvider.groupNotificationsFlow.first()
+        }.onFailure {
+            Log.w(TAG, "Could not read room notification preference; skipping notification", it)
+        }.getOrDefault(false)
+        if (!enabled) {
+            Log.i(TAG, "Skipping room notification: group notifications disabled")
+            return
+        }
 
-        if (isInActiveGroup) return
+        val roomName = data[PayloadKeys.ROOM_NAME]
+            ?.takeIf(String::isNotBlank)
+            ?: getString(R.string.menu_groups)
+        val senderName = data[PayloadKeys.SENDER_NAME]
+            ?.takeIf(String::isNotBlank)
+            ?: getString(R.string.app_name)
+        val preview = data[PayloadKeys.PREVIEW]
+            ?.takeIf(String::isNotBlank)
+            ?: getString(R.string.rooms_notification_media_fallback)
 
-//        notificationHelper.showGroupNotification(
-//            groupName = groupName,
-//            unreadCount = data[PayloadKeys.UNREAD_COUNT].orEmpty().toInt(), // viene del push
-//            lastSenderName = data[PayloadKeys.OTHER_NAME] ?: return,
-//            lastMessage = data[PayloadKeys.CONTENT].orEmpty()
-//        )
+        notificationHelper.showRoomNotification(
+            roomKey = roomKey,
+            messageId = messageId,
+            roomName = roomName,
+            lastSenderName = senderName,
+            lastMessage = preview
+        )
     }
 
     private suspend fun handleDmMessage(
@@ -232,17 +258,41 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showPayloadFallback(data: Map<String, String>) {
-        if (data[PayloadKeys.TYPE] != NODE_DM) return
-        val chatId = data[PayloadKeys.CHAT_ID]?.takeIf(String::isNotBlank) ?: return
-        notificationHelper.showChatSummaryNotification(
-            summary = UnreadSummary(totalChats = 1, totalUnread = 1),
-            lastSenderName = data[PayloadKeys.SENDER_NAME]
-                ?.takeIf(String::isNotBlank)
-                ?: "ZIBE",
-            lastMessage = data[PayloadKeys.CONTENT]
-                ?.takeIf(String::isNotBlank)
-                ?: FALLBACK_DM_CONTENT,
-            conversationId = chatId
+        if (data[PayloadKeys.TYPE] == NODE_DM) {
+            val chatId = data[PayloadKeys.CHAT_ID]?.takeIf(String::isNotBlank) ?: return
+            notificationHelper.showChatSummaryNotification(
+                summary = UnreadSummary(totalChats = 1, totalUnread = 1),
+                lastSenderName = data[PayloadKeys.SENDER_NAME]
+                    ?.takeIf(String::isNotBlank)
+                    ?: "ZIBE",
+                lastMessage = data[PayloadKeys.CONTENT]
+                    ?.takeIf(String::isNotBlank)
+                    ?: FALLBACK_DM_CONTENT,
+                conversationId = chatId
+            )
+            return
+        }
+
+        val roomKey = data[PayloadKeys.ROOM_KEY]?.takeIf(String::isNotBlank) ?: return
+        val messageId = data[PayloadKeys.MESSAGE_ID]?.takeIf(String::isNotBlank) ?: return
+        val notificationsEnabled = runBlocking(Dispatchers.IO) {
+            withTimeoutOrNull(FALLBACK_PREFERENCE_TIMEOUT_MS) {
+                userPreferencesProvider.groupNotificationsFlow.first()
+            }
+        } ?: false
+        if (!notificationsEnabled) {
+            Log.w(TAG, "Skipping room fallback notification: preference unavailable or disabled")
+            return
+        }
+        notificationHelper.showRoomNotification(
+            roomKey = roomKey,
+            messageId = messageId,
+            roomName = data[PayloadKeys.ROOM_NAME]?.takeIf(String::isNotBlank)
+                ?: getString(R.string.menu_groups),
+            lastSenderName = data[PayloadKeys.SENDER_NAME]?.takeIf(String::isNotBlank)
+                ?: getString(R.string.app_name),
+            lastMessage = data[PayloadKeys.PREVIEW]?.takeIf(String::isNotBlank)
+                ?: getString(R.string.rooms_notification_media_fallback)
         )
     }
 
@@ -250,6 +300,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         const val TAG = "ZibeFCM"
         const val FALLBACK_DM_CONTENT = "Abri ZIBE para ver el mensaje"
         const val CALLBACK_TIMEOUT_MS = 8_000L
+        const val FALLBACK_PREFERENCE_TIMEOUT_MS = 500L
 
         fun safeId(value: String?): String {
             if (value.isNullOrBlank()) return "missing"
