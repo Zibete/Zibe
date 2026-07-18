@@ -41,6 +41,7 @@ import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_ROOM_KEY
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
@@ -333,7 +334,10 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                                                 Intent.FLAG_ACTIVITY_SINGLE_TOP
                                         putExtra(EXTRA_UI_TEXT, event.uiText)
                                         putExtra(EXTRA_SNACK_TYPE, event.snackType)
-                                        copyPendingDmExtras(from = this@SplashActivity.intent, to = this)
+                                        copyPendingNotificationExtras(
+                                            from = this@SplashActivity.intent,
+                                            to = this
+                                        )
                                     }
                                 startActivity(intent)
                                 finish()
@@ -345,11 +349,13 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
         }
     }
 
-    private fun copyPendingDmExtras(from: Intent, to: Intent) {
+    private fun copyPendingNotificationExtras(from: Intent, to: Intent) {
         val pendingType = from.getRequiredStringExtra(EXTRA_PENDING_DM_TYPE)
             ?: from.getRequiredStringExtra(PayloadKeys.TYPE)
         val pendingChatId = from.getRequiredStringExtra(EXTRA_PENDING_DM_CHAT_ID)
             ?: from.getRequiredStringExtra(PayloadKeys.CHAT_ID)
+        val pendingRoomKey = from.getRequiredStringExtra(EXTRA_PENDING_ROOM_KEY)
+            ?: from.getRequiredStringExtra(PayloadKeys.ROOM_KEY)
 
         pendingType?.let {
             to.putExtra(EXTRA_PENDING_DM_TYPE, it)
@@ -358,6 +364,10 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
         pendingChatId?.let {
             to.putExtra(EXTRA_PENDING_DM_CHAT_ID, it)
             to.putExtra(PayloadKeys.CHAT_ID, it)
+        }
+        pendingRoomKey?.let {
+            to.putExtra(EXTRA_PENDING_ROOM_KEY, it)
+            to.putExtra(PayloadKeys.ROOM_KEY, it)
         }
 
         copyPayloadExtra(from, to, PayloadKeys.MESSAGE_ID)

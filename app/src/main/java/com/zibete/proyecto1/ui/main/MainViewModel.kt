@@ -21,8 +21,9 @@ import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
-import com.zibete.proyecto1.domain.session.LogoutUseCase
+import com.zibete.proyecto1.domain.rooms.ResumeRoomSessionUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
+import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
@@ -36,9 +37,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -49,6 +52,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val exitGroupUseCase: ExitGroupUseCase,
+    private val resumeRoomSessionUseCase: ResumeRoomSessionUseCase,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val conversationOverviewRepository: ConversationOverviewRepository,
     private val groupRepository: GroupRepositoryProvider,
@@ -64,12 +68,11 @@ class MainViewModel @Inject constructor(
 
     val groupContext: StateFlow<GroupContext?> =
         userPreferencesProvider.groupContextFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val groupName: StateFlow<String> =
-        userPreferencesProvider.groupContextFlow
-            .map { it?.groupName.orEmpty() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+        userPreferencesProvider.groupNameFlow
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -104,13 +107,12 @@ class MainViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeGroupBadges() {
 
-        // Badge bottom nav = (unread chat grupo) + (unread privados dentro de grupo)
+        // Badge bottom nav = unread público consolidado por sala + privados de sala.
         viewModelScope.launch {
-            userPreferencesProvider.groupContextFlow
-                .flatMapLatest { ctx ->
-                    if (ctx == null) flowOf(0)
-                    else groupRepository.unreadGroupBadgeCount(ctx.groupName)
-                }
+            combine(
+                groupRepository.observeTotalRoomUnread(),
+                groupRepository.observeUnreadPrivateMessages()
+            ) { publicUnread, privateUnread -> publicUnread + privateUnread }
                 .distinctUntilChanged()
                 .collect { count ->
                     _uiState.update { it.copy(groupBadgeCount = count) }
@@ -135,8 +137,11 @@ class MainViewModel @Inject constructor(
             userPreferencesProvider.groupContextFlow
                 .flatMapLatest { ctx ->
                     if (ctx == null) flowOf(0)
-                    else groupRepository.observeUnreadPrivateMessages()
-                    // ⚠️ Si querés que sea “solo del grupo actual”, tu repo tiene que filtrar por groupName.
+                    else groupRepository.observeRoomPrivateConversations(
+                        ctx.roomKey.ifBlank { ctx.groupName }
+                    ).map { conversations ->
+                        conversations.sumOf { it.unreadCount.coerceAtLeast(0) }
+                    }
                 }
                 .distinctUntilChanged()
                 .collect { count ->
@@ -200,11 +205,27 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch { toFavorites() }
     }
 
-    fun onGroupsTabSelected() {
+    fun onGroupsTabSelected() = toGroupsSelect()
+
+    fun onRoomNotificationOpened(roomKey: String) {
+        if (roomKey.isBlank()) return
         viewModelScope.launch {
-            val ctx = groupContext.value
-            val inGroup = ctx?.inGroup ?: false
-            if (!inGroup) toGroupsSelect() else toGroupHost()
+            val current = userPreferencesProvider.groupContextFlow.first()
+            val currentRoomKey = current?.roomKey?.ifBlank { current.groupName }.orEmpty()
+            if (currentRoomKey.isNotBlank() && currentRoomKey != roomKey) {
+                showSnack(
+                    uiText = UiText.StringRes(R.string.rooms_notification_switch_required),
+                    snackType = ZibeSnackType.WARNING
+                )
+                toGroupsSelect()
+                return@launch
+            }
+            resumeRoomSessionUseCase.execute(roomKey)
+                .onSuccess { toGroupHost() }
+                .onFailure { error ->
+                    showErrorSnack(error)
+                    toGroupsSelect()
+                }
         }
     }
 

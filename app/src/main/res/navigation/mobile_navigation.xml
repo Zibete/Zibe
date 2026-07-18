@@ -20,8 +20,7 @@
     <fragment
         android:id="@+id/nav_group_select"
         android:name="com.zibete.proyecto1.ui.groups.GroupsFragment"
-        android:label="@string/menu_groups"
-        tools:layout="@layout/fragment_groups" />
+        android:label="@string/menu_groups" />
 
     <fragment
         android:id="@+id/nav_favorites"

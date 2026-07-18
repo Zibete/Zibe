@@ -59,10 +59,13 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_ROOM_KEY
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SNACK_TYPE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_UI_TEXT
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_ROOM
+import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
 import com.zibete.proyecto1.core.constants.ERROR_NAV_HOST_FRAGMENT
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.navigation.AppNavigator
@@ -162,7 +165,7 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
     private fun handleLaunchIntent(sourceIntent: Intent = intent) {
         handleIntentExtras(sourceIntent)
-        handlePendingDmOpen(sourceIntent)
+        handlePendingNotificationOpen(sourceIntent)
     }
 
     private fun handleIntentExtras(sourceIntent: Intent) {
@@ -185,27 +188,41 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
         sourceIntent.removeExtra(EXTRA_SNACK_TYPE)
     }
 
-    private fun handlePendingDmOpen(sourceIntent: Intent) {
+    private fun handlePendingNotificationOpen(sourceIntent: Intent) {
         val pendingType = sourceIntent.getStringExtra(EXTRA_PENDING_DM_TYPE)
+            ?: sourceIntent.getStringExtra(PayloadKeys.TYPE)
         val chatId = sourceIntent.getStringExtra(EXTRA_PENDING_DM_CHAT_ID)
-        if (pendingType.isNullOrBlank() && chatId.isNullOrBlank()) return
+            ?: sourceIntent.getStringExtra(PayloadKeys.CHAT_ID)
+        val roomKey = sourceIntent.getStringExtra(EXTRA_PENDING_ROOM_KEY)
+            ?: sourceIntent.getStringExtra(PayloadKeys.ROOM_KEY)
+        if (pendingType.isNullOrBlank() && chatId.isNullOrBlank() && roomKey.isNullOrBlank()) return
 
         sourceIntent.removeExtra(EXTRA_PENDING_DM_TYPE)
         sourceIntent.removeExtra(EXTRA_PENDING_DM_CHAT_ID)
+        sourceIntent.removeExtra(EXTRA_PENDING_ROOM_KEY)
+        sourceIntent.removeExtra(PayloadKeys.TYPE)
+        sourceIntent.removeExtra(PayloadKeys.CHAT_ID)
+        sourceIntent.removeExtra(PayloadKeys.ROOM_KEY)
 
-        if (pendingType != NODE_DM || chatId.isNullOrBlank()) return
+        when (pendingType) {
+            NODE_DM -> {
+                if (chatId.isNullOrBlank()) return
+                val myUid = authSessionProvider.currentUser?.uid ?: return
+                val otherUid = getOtherUid(chatId, myUid)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: return
 
-        val myUid = authSessionProvider.currentUser?.uid ?: return
-        val otherUid = getOtherUid(chatId, myUid)
-            ?.takeIf { it.isNotBlank() }
-            ?: return
-
-        startActivity(
-            Intent(this, ChatActivity::class.java).apply {
-                putExtra(EXTRA_CHAT_ID, otherUid)
-                putExtra(EXTRA_CHAT_NODE, NODE_DM)
+                startActivity(
+                    Intent(this, ChatActivity::class.java).apply {
+                        putExtra(EXTRA_CHAT_ID, otherUid)
+                        putExtra(EXTRA_CHAT_NODE, NODE_DM)
+                    }
+                )
             }
-        )
+            NODE_ROOM -> roomKey
+                ?.takeIf { it.isNotBlank() }
+                ?.let(mainViewModel::onRoomNotificationOpened)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -433,10 +450,16 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                             is MainUiEvent.ConfirmExitGroup -> {
                                 UserMessageUtils.confirm(
                                     context = this@MainActivity,
-                                    title = getString(R.string.action_exit),
-                                    message = "¿Desea abandonar ${mainViewModel.groupName.value}?",
+                                    title = getString(
+                                        R.string.rooms_leave_title,
+                                        mainViewModel.groupName.value
+                                    ),
+                                    message = getString(R.string.rooms_leave_message),
+                                    positiveText = getString(R.string.rooms_leave),
                                     onConfirm = {
-                                        mainViewModel.onExitGroupConfirmed(getString(R.string.msg_user_leaved))
+                                        mainViewModel.onExitGroupConfirmed(
+                                            getString(R.string.rooms_left_event)
+                                        )
                                     }
                                 )
                             }

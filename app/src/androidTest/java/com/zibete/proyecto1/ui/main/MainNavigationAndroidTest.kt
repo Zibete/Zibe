@@ -39,7 +39,10 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_ROOM_KEY
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
+import com.zibete.proyecto1.core.constants.Constants.NODE_ROOM
+import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_AVATAR
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_EDIT_PROFILE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_LOGOUT
@@ -48,8 +51,12 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.ACCOUNT_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEET
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
 import com.zibete.proyecto1.core.designsystem.R as DsR
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.GroupRepositoryProvider
+import com.zibete.proyecto1.model.Groups
+import com.zibete.proyecto1.model.RoomSession
+import com.zibete.proyecto1.model.UserGroup
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
@@ -58,9 +65,12 @@ import com.zibete.proyecto1.ui.chat.ChatActivity
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import com.zibete.proyecto1.ui.users.DiscoverToolbarHandler
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import org.hamcrest.Matchers.allOf
 import org.junit.After
@@ -100,6 +110,7 @@ class MainNavigationAndroidTest :
         )
         every { conversationOverviewRepository.observeUnreadChatList() } returns chatBadgeCount
         every { groupRepositoryProvider.unreadGroupBadgeCount(any()) } returns groupBadgeCount
+        every { groupRepositoryProvider.observeTotalRoomUnread() } returns groupBadgeCount
         every { groupRepositoryProvider.observeUnreadGroupChat(any()) } returns flowOf(0)
         every { groupRepositoryProvider.observeUnreadPrivateMessages() } returns flowOf(0)
         Intents.init()
@@ -294,6 +305,81 @@ class MainNavigationAndroidTest :
                 )
             )
         }
+    }
+
+    @Test
+    fun pendingRoomIntentResumesMembershipAndNavigatesToRoomHost() {
+        val roomKey = "room-notification"
+        coEvery { groupRepositoryProvider.resolveRoomSession(roomKey) } returns
+            ZibeResult.Success(
+                RoomSession(
+                    roomKey = roomKey,
+                    displayName = "Sala desde push",
+                    userName = "Test User",
+                    userType = PUBLIC_USER
+                )
+            )
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_PENDING_DM_TYPE, NODE_ROOM)
+            putExtra(EXTRA_PENDING_ROOM_KEY, roomKey)
+        }
+
+        launchMain(intent = intent)
+
+        waitForDestination(R.id.nav_group_host)
+        coVerify(exactly = 1) { groupRepositoryProvider.resolveRoomSession(roomKey) }
+    }
+
+    @Test
+    fun roomHostBackReturnsToChatThenRequestsSafeExit() {
+        val roomKey = "room-back"
+        val session = RoomSession(
+            roomKey = roomKey,
+            displayName = "Sala Back",
+            userName = "Test User",
+            userType = PUBLIC_USER
+        )
+        coEvery { groupRepositoryProvider.resolveRoomSession(roomKey) } returns
+            ZibeResult.Success(session)
+        coEvery { groupRepositoryProvider.loadRooms() } returns ZibeResult.Success(
+            listOf(
+                Groups(
+                    roomId = roomKey,
+                    name = session.displayName,
+                    description = "Prueba de navegación",
+                    users = 1
+                )
+            )
+        )
+        every { groupRepositoryProvider.observeGroupUsers(roomKey) } returns flowOf(
+            listOf(UserGroup(userId = TestData.UID, userName = session.userName, type = PUBLIC_USER))
+        )
+        every { groupRepositoryProvider.observeGroupChatEvents(roomKey) } returns emptyFlow()
+        every { groupRepositoryProvider.observeRoomPrivateConversations(roomKey) } returns
+            flowOf(emptyList())
+        coEvery { groupRepositoryProvider.setActiveRoom(roomKey) } returns ZibeResult.Success(Unit)
+        coEvery { groupRepositoryProvider.clearActiveRoom(roomKey) } returns ZibeResult.Success(Unit)
+
+        launchMain(
+            intent = Intent(context, MainActivity::class.java).apply {
+                putExtra(EXTRA_PENDING_DM_TYPE, NODE_ROOM)
+                putExtra(EXTRA_PENDING_ROOM_KEY, roomKey)
+            }
+        )
+        waitForDestination(R.id.nav_group_host)
+        composeRule.onNodeWithText("Personas").performClick()
+        composeRule.onNodeWithText("Test User").assertExists()
+
+        pressBack()
+
+        composeRule.onNodeWithText("Todavía no hay mensajes. Iniciá la conversación.")
+            .assertExists()
+
+        pressBack()
+
+        onView(withText(R.string.rooms_leave_message))
+            .inRoot(isDialog())
+            .check(matches(isDisplayed()))
     }
 
     @Test

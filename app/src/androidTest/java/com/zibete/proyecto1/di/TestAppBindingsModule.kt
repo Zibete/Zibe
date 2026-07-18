@@ -29,6 +29,12 @@ import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
+import com.zibete.proyecto1.domain.rooms.DefaultResumeRoomSessionUseCase
+import com.zibete.proyecto1.domain.rooms.CreateRoomUseCase
+import com.zibete.proyecto1.domain.rooms.JoinRoomUseCase
+import com.zibete.proyecto1.domain.rooms.MarkRoomReadUseCase
+import com.zibete.proyecto1.domain.rooms.ResumeRoomSessionUseCase
+import com.zibete.proyecto1.domain.rooms.SwitchRoomUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
@@ -154,6 +160,22 @@ object TestAppBindingsModule {
 
     @Provides
     @Singleton
+    fun provideCreateRoomUseCase(): CreateRoomUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideJoinRoomUseCase(): JoinRoomUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideSwitchRoomUseCase(): SwitchRoomUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideMarkRoomReadUseCase(): MarkRoomReadUseCase = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
     fun provideConversationOverviewRepository(): ConversationOverviewRepository =
         mockk(relaxed = true)
 
@@ -175,6 +197,14 @@ object TestAppBindingsModule {
     fun provideResolveDmEntryUseCase(
         chatRepository: ChatRepositoryContract
     ): ResolveDmEntryUseCase = DefaultResolveDmEntryUseCase(chatRepository)
+
+    @Provides
+    @Singleton
+    fun provideResumeRoomSessionUseCase(
+        groupRepository: GroupRepositoryProvider,
+        userPreferencesActions: UserPreferencesActions
+    ): ResumeRoomSessionUseCase =
+        DefaultResumeRoomSessionUseCase(groupRepository, userPreferencesActions)
 
     @Provides
     @Singleton

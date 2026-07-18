@@ -3,18 +3,29 @@ package com.zibete.proyecto1.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.MSG_INFO
-import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
-import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import com.zibete.proyecto1.core.ui.UiText
-import com.zibete.proyecto1.core.ui.toUiText
-import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
-import com.zibete.proyecto1.data.UserPreferencesActions
+import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.domain.rooms.CreateRoomCommand
+import com.zibete.proyecto1.domain.rooms.CreateRoomUseCase
+import com.zibete.proyecto1.domain.rooms.JoinRoomCommand
+import com.zibete.proyecto1.domain.rooms.JoinRoomUseCase
+import com.zibete.proyecto1.domain.rooms.RoomOperationResult
+import com.zibete.proyecto1.domain.rooms.RoomValidationField
+import com.zibete.proyecto1.domain.rooms.RoomValidationIssue
+import com.zibete.proyecto1.domain.rooms.RoomValidator
+import com.zibete.proyecto1.domain.rooms.SwitchRoomCommand
+import com.zibete.proyecto1.domain.rooms.SwitchRoomUseCase
 import com.zibete.proyecto1.model.Groups
+import com.zibete.proyecto1.model.RoomIdentity
+import com.zibete.proyecto1.model.RoomIdentityType
+import com.zibete.proyecto1.model.RoomSession
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -23,149 +34,387 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class GroupsViewModel @Inject constructor(
     private val groupRepository: GroupRepositoryProvider,
     private val localRepositoryProvider: LocalRepositoryProvider,
-    private val userPreferencesActions: UserPreferencesActions,
+    private val userPreferencesProvider: UserPreferencesProvider,
+    private val createRoomUseCase: CreateRoomUseCase,
+    private val joinRoomUseCase: JoinRoomUseCase,
+    private val switchRoomUseCase: SwitchRoomUseCase
 ) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(GroupsUiState())
+    private val _uiState = MutableStateFlow(
+        GroupsUiState(
+            publicIdentityName = localRepositoryProvider.myUserName,
+            publicIdentityPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
+        )
+    )
     val uiState: StateFlow<GroupsUiState> = _uiState.asStateFlow()
 
     private val _events = MutableSharedFlow<GroupsUiEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<GroupsUiEvent> = _events.asSharedFlow()
 
-    private var allGroups: List<Groups> = emptyList()
-    private var searchQuery: String = ""
-
-    fun loadGroups() = fetchGroups(showLoading = true, isRefresh = false)
-
-    fun refreshGroups() = fetchGroups(showLoading = false, isRefresh = true)
-
-    private fun fetchGroups(showLoading: Boolean, isRefresh: Boolean) {
+    init {
         viewModelScope.launch {
-            if (showLoading) _uiState.update { it.copy(isLoading = true) }
-            if (isRefresh) _uiState.update { it.copy(isRefreshing = true) }
-
-            runCatchingPreservingCancellation { groupRepository.getAllGroups() }
-                .onSuccess { groupsList ->
-                    allGroups = groupsList.sortedBy { it.name.lowercase() }
-                    updateVisibleGroups(isLoading = false, isRefreshing = false)
-                }
-                .onFailure { e ->
-                    onError(
-                        e.message.toUiText(
-                            R.string.err_zibe_prefix,
-                            R.string.err_zibe
-                        )
-                    )
-                }
+            userPreferencesProvider.groupContextFlow.collect { context ->
+                _uiState.update { it.copy(activeSession = context?.toRoomSession()) }
+            }
         }
+    }
+
+    fun loadRooms() = fetchRooms(isRefresh = _uiState.value.rooms.isNotEmpty())
+
+    fun refreshRooms() = fetchRooms(isRefresh = true)
+
+    private fun fetchRooms(isRefresh: Boolean) {
+        val current = _uiState.value
+        if (current.isLoading || current.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoading = !isRefresh && it.rooms.isEmpty(),
+                    isRefreshing = isRefresh,
+                    error = null
+                )
+            }
+            when (val result = groupRepository.loadRooms()) {
+                is ZibeResult.Success -> {
+                    val rooms = result.data
+                    if (rooms == null) {
+                        handleLoadFailure()
+                        return@launch
+                    }
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            rooms = rooms,
+                            visibleRooms = filterRooms(rooms, state.searchQuery),
+                            error = null
+                        )
+                    }
+                }
+
+                is ZibeResult.Failure -> handleLoadFailure()
+            }
+        }
+    }
+
+    private suspend fun handleLoadFailure() {
+        val error = UiText.StringRes(R.string.rooms_error_message)
+        val hadContent = _uiState.value.rooms.isNotEmpty()
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isRefreshing = false,
+                error = if (hadContent) null else error
+            )
+        }
+        if (hadContent) emitSnack(error, ZibeSnackType.ERROR)
     }
 
     fun onSearchQueryChanged(query: String) {
-        viewModelScope.launch {
-            searchQuery = query
-            updateVisibleGroups()
+        _uiState.update {
+            it.copy(
+                searchQuery = query,
+                visibleRooms = filterRooms(it.rooms, query)
+            )
         }
     }
 
-    fun onError(uiText: UiText) {
-        _uiState.update { it.copy(isLoading = false, isRefreshing = false) }
-        viewModelScope.launch {
-            _events.emit(
-                GroupsUiEvent.ShowSnack(
-                    uiText = uiText,
-                    snackType = ZibeSnackType.ERROR
+    fun onCreateRoomRequested() {
+        if (_uiState.value.isSubmitting) return
+        _uiState.update {
+            it.copy(
+                sheet = RoomsSheet.Create,
+                pendingSwitch = null,
+                identityType = RoomIdentityType.PUBLIC,
+                publicIdentityName = localRepositoryProvider.myUserName,
+                publicIdentityPhotoUrl = localRepositoryProvider.myProfilePhotoUrl,
+                alias = "",
+                roomName = "",
+                roomDescription = "",
+                roomNameError = null,
+                roomDescriptionError = null,
+                identityError = null
+            )
+        }
+    }
+
+    fun onRoomSelected(room: Groups) {
+        if (_uiState.value.isSubmitting) return
+        val roomKey = room.resolvedRoomKey()
+        if (_uiState.value.activeSession?.roomKey == roomKey) {
+            viewModelScope.launch { _events.emit(GroupsUiEvent.NavigateToGroupHost) }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                sheet = RoomsSheet.Join(room),
+                pendingSwitch = null,
+                identityType = RoomIdentityType.PUBLIC,
+                publicIdentityName = localRepositoryProvider.myUserName,
+                publicIdentityPhotoUrl = localRepositoryProvider.myProfilePhotoUrl,
+                alias = "",
+                roomNameError = null,
+                roomDescriptionError = null,
+                identityError = null
+            )
+        }
+    }
+
+    fun dismissSheet() {
+        if (_uiState.value.isSubmitting) return
+        _uiState.update {
+            it.copy(
+                sheet = null,
+                pendingSwitch = null,
+                roomNameError = null,
+                roomDescriptionError = null,
+                identityError = null
+            )
+        }
+    }
+
+    fun onIdentitySelected(type: RoomIdentityType) {
+        if (_uiState.value.isSubmitting) return
+        _uiState.update { it.copy(identityType = type, identityError = null) }
+    }
+
+    fun onAliasChanged(alias: String) {
+        _uiState.update { it.copy(alias = alias, identityError = null) }
+    }
+
+    fun onRoomNameChanged(name: String) {
+        _uiState.update { it.copy(roomName = name, roomNameError = null) }
+    }
+
+    fun onRoomDescriptionChanged(description: String) {
+        _uiState.update {
+            it.copy(roomDescription = description, roomDescriptionError = null)
+        }
+    }
+
+    fun submitSheet(joinEventContent: String, leaveEventContent: String) {
+        val state = _uiState.value
+        if (state.isSubmitting) return
+        when (val sheet = state.sheet) {
+            RoomsSheet.Create -> submitCreate(joinEventContent, leaveEventContent)
+            is RoomsSheet.Join -> submitJoin(sheet.room, joinEventContent)
+            null -> Unit
+        }
+    }
+
+    private fun submitCreate(joinEventContent: String, leaveEventContent: String) {
+        val state = _uiState.value
+        val command = CreateRoomCommand(
+            roomName = state.roomName,
+            description = state.roomDescription,
+            identity = selectedIdentity(state),
+            eventContent = joinEventContent,
+            leaveEventContent = leaveEventContent
+        )
+        launchOperation(
+            pendingAction = { current -> PendingRoomSwitch.Create(current, command) }
+        ) { createRoomUseCase.execute(command) }
+    }
+
+    private fun submitJoin(
+        room: Groups,
+        joinEventContent: String
+    ) {
+        val state = _uiState.value
+        val command = JoinRoomCommand(
+            roomKey = room.resolvedRoomKey(),
+            displayName = room.resolvedDisplayName(),
+            identity = selectedIdentity(state),
+            eventContent = joinEventContent
+        )
+        launchOperation(
+            pendingAction = { current -> PendingRoomSwitch.Join(current, command) }
+        ) { joinRoomUseCase.execute(command) }
+    }
+
+    fun confirmSwitch(leaveEventContent: String) {
+        val pending = _uiState.value.pendingSwitch ?: return
+        if (_uiState.value.isSubmitting) return
+        launchOperation(pendingAction = null) {
+            when (pending) {
+                is PendingRoomSwitch.Create -> createRoomUseCase.execute(
+                    pending.command.copy(
+                        replaceActiveRoom = true,
+                        previousSession = pending.currentSession,
+                        leaveEventContent = leaveEventContent
+                    )
                 )
-            )
-        }
-    }
 
-    private fun updateVisibleGroups(
-        isLoading: Boolean? = null,
-        isRefreshing: Boolean? = null
-    ) {
-        val query = searchQuery.trim().lowercase()
-
-        val filtered =
-            if (query.isBlank()) allGroups
-            else allGroups.filter { it.name.lowercase().contains(query) }
-
-        _uiState.update { state ->
-            state.copy(
-                isLoading = isLoading ?: state.isLoading,
-                isRefreshing = isRefreshing ?: state.isRefreshing,
-                groups = allGroups,
-                filteredGroups = filtered,
-                searchQuery = searchQuery
-            )
-        }
-    }
-
-    private suspend fun joinGroupAndNavigate(
-        groupName: String,
-        userName: String,
-        userType: Int,
-        message: String
-    ) {
-        userPreferencesActions.setGroupSession(groupName, userName, userType)
-
-        viewModelScope.launch {
-            groupRepository.saveUserInGroup(groupName, userName, userType)
-            groupRepository.sendGroupMessage(
-                groupName,
-                userName,
-                userType,
-                MSG_INFO,
-                message,
-                groupRepository.myUid
-            )
-            _events.emit(GroupsUiEvent.NavigateToGroupHost)
-        }
-    }
-
-    fun onJoinGroupRequested(groupName: String, nick: String, type: Int, message: String) {
-        viewModelScope.launch {
-            val inUse = groupRepository.isNickInUse(groupName, nick)
-            if (inUse) {
-                _events.emit(GroupsUiEvent.NickInUse(nick))
-            } else {
-                joinGroupAndNavigate(
-                    groupName = groupName,
-                    userName = nick,
-                    userType = type,
-                    message = message
+                is PendingRoomSwitch.Join -> switchRoomUseCase.execute(
+                    SwitchRoomCommand(
+                        previousSession = pending.currentSession,
+                        target = pending.command,
+                        leaveEventContent = leaveEventContent
+                    )
                 )
             }
         }
     }
 
-    fun onCreateNewGroupClicked(groupName: String, groupData: String, message: String) {
+    fun dismissSwitch() {
+        if (_uiState.value.isSubmitting) return
+        _uiState.update { it.copy(pendingSwitch = null) }
+    }
+
+    private fun launchOperation(
+        pendingAction: ((RoomSession) -> PendingRoomSwitch)?,
+        operation: suspend () -> ZibeResult<RoomOperationResult>
+    ) {
         viewModelScope.launch {
-            if (groupRepository.isGroupNameInUse(groupName)) {
-                _events.emit(GroupsUiEvent.GroupNameInUse(groupName))
-                return@launch
+            _uiState.update { it.copy(isSubmitting = true, pendingSwitch = null) }
+            try {
+                handleOperation(operation(), pendingAction)
+            } catch (cancellation: CancellationException) {
+                _uiState.update { it.copy(isSubmitting = false) }
+                throw cancellation
+            }
+        }
+    }
+
+    private suspend fun handleOperation(
+        result: ZibeResult<RoomOperationResult>,
+        pendingAction: ((RoomSession) -> PendingRoomSwitch)?
+    ) {
+        when (result) {
+            is ZibeResult.Failure -> {
+                _uiState.update { it.copy(isSubmitting = false) }
+                emitSnack(UiText.StringRes(R.string.rooms_action_error), ZibeSnackType.ERROR)
             }
 
-            groupRepository.createGroup(
-                groupName = groupName,
-                groupType = PUBLIC_GROUP,
-                groupDescription = groupData
-            )
+            is ZibeResult.Success -> when (val outcome = result.data) {
+                is RoomOperationResult.Created,
+                is RoomOperationResult.Joined,
+                is RoomOperationResult.Switched,
+                is RoomOperationResult.AlreadyActive -> finishAndNavigate()
 
-            joinGroupAndNavigate(
-                groupName = groupName,
-                userName = localRepositoryProvider.myUserName,
-                userType = PUBLIC_USER,
-                message = message
+                is RoomOperationResult.NameInUse -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            roomNameError = UiText.StringRes(
+                                R.string.group_name_in_use,
+                                listOf(outcome.roomName)
+                            )
+                        )
+                    }
+                }
+
+                is RoomOperationResult.AliasInUse -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            identityError = UiText.StringRes(
+                                R.string.group_nick_in_use,
+                                listOf(outcome.alias)
+                            )
+                        )
+                    }
+                }
+
+                is RoomOperationResult.SwitchRequired -> {
+                    val pending = pendingAction?.invoke(outcome.currentSession)
+                    if (pending == null) {
+                        _uiState.update { it.copy(isSubmitting = false) }
+                        emitSnack(
+                            UiText.StringRes(R.string.rooms_action_error),
+                            ZibeSnackType.ERROR
+                        )
+                    } else {
+                        _uiState.update {
+                            it.copy(isSubmitting = false, pendingSwitch = pending)
+                        }
+                    }
+                }
+
+                is RoomOperationResult.ValidationFailed -> {
+                    applyValidationIssues(outcome.issues)
+                }
+
+                is RoomOperationResult.Left, null -> {
+                    _uiState.update { it.copy(isSubmitting = false) }
+                    emitSnack(
+                        UiText.StringRes(R.string.rooms_action_error),
+                        ZibeSnackType.ERROR
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun finishAndNavigate() {
+        _uiState.update {
+            it.copy(
+                isSubmitting = false,
+                sheet = null,
+                pendingSwitch = null,
+                roomNameError = null,
+                roomDescriptionError = null,
+                identityError = null
+            )
+        }
+        _events.emit(GroupsUiEvent.NavigateToGroupHost)
+    }
+
+    private fun applyValidationIssues(issues: List<RoomValidationIssue>) {
+        var nameError: UiText? = null
+        var descriptionError: UiText? = null
+        var identityError: UiText? = null
+        issues.forEach { issue ->
+            when (issue.field) {
+                RoomValidationField.ROOM_NAME ->
+                    nameError = UiText.StringRes(R.string.rooms_invalid_name)
+                RoomValidationField.DESCRIPTION ->
+                    descriptionError = UiText.StringRes(R.string.rooms_invalid_description)
+                RoomValidationField.ALIAS ->
+                    identityError = UiText.StringRes(R.string.rooms_invalid_alias)
+                RoomValidationField.PUBLIC_IDENTITY ->
+                    identityError = UiText.StringRes(R.string.rooms_public_identity_missing)
+                else -> Unit
+            }
+        }
+        _uiState.update {
+            it.copy(
+                isSubmitting = false,
+                roomNameError = nameError,
+                roomDescriptionError = descriptionError,
+                identityError = identityError
             )
         }
     }
 
-    fun myDisplayName(): String = localRepositoryProvider.myUserName
-    fun myPhotoUrl(): String = localRepositoryProvider.myProfilePhotoUrl
+    private fun selectedIdentity(state: GroupsUiState): RoomIdentity =
+        when (state.identityType) {
+            RoomIdentityType.PUBLIC -> RoomIdentity(
+                displayName = state.publicIdentityName,
+                type = RoomIdentityType.PUBLIC,
+                photoUrl = state.publicIdentityPhotoUrl
+            )
+            RoomIdentityType.ANONYMOUS -> RoomIdentity(
+                displayName = state.alias,
+                type = RoomIdentityType.ANONYMOUS
+            )
+        }
+
+    private fun filterRooms(rooms: List<Groups>, query: String): List<Groups> {
+        val normalizedQuery = RoomValidator.normalizeIndexKey(query)
+        if (normalizedQuery.isBlank()) return rooms
+        return rooms.filter { room ->
+            RoomValidator.normalizeIndexKey(room.resolvedDisplayName())
+                .contains(normalizedQuery) ||
+                RoomValidator.normalizeIndexKey(room.description).contains(normalizedQuery)
+        }
+    }
+
+    private suspend fun emitSnack(uiText: UiText, type: ZibeSnackType) {
+        _events.emit(GroupsUiEvent.ShowSnack(uiText, type))
+    }
 }

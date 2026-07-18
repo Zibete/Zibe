@@ -90,8 +90,8 @@ class MainDestinationUiMapper {
             selectedBottomNavItemId = R.id.navBottomGroups,
             menuConfig = ToolbarMenuConfig(
                 showSettings = true,
-                showSearch = true,
-                showUnhideChats = true
+                showUnhideChats = true,
+                showExitGroup = true
             )
         )
 

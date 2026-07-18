@@ -3,6 +3,7 @@ package com.zibete.proyecto1.fakes
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
+import com.zibete.proyecto1.model.RoomSession
 import com.zibete.proyecto1.testing.TestScenario
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -72,7 +73,13 @@ class FakeUserPreferencesActions(
     override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/
     }
 
-    override suspend fun resetGroupState() {}
+    override suspend fun resetGroupState() {
+        mutex.withLock {
+            scenarioProvider().inGroup = false
+            scenarioProvider().groupName = ""
+        }
+    }
+
     override suspend fun clearSessionData() {}
     override suspend fun setApplyAgeFilter(value: Boolean) {}
     override suspend fun setApplyOnlineFilter(value: Boolean) {}
@@ -82,6 +89,19 @@ class FakeUserPreferencesActions(
     override suspend fun setGroupNotifications(value: Boolean) {}
     override suspend fun setIndividualNotifications(value: Boolean) {}
 
-    override suspend fun setGroupSession(groupName: String, userName: String, userType: Int) {}
-}
+    override suspend fun setGroupSession(groupName: String, userName: String, userType: Int) {
+        mutex.withLock {
+            scenarioProvider().inGroup = true
+            scenarioProvider().groupName = groupName
+        }
+    }
 
+    override suspend fun setRoomSession(session: RoomSession) {
+        mutex.withLock {
+            scenarioProvider().inGroup = true
+            scenarioProvider().groupName = session.roomKey
+        }
+    }
+
+    override suspend fun resetRoomSession() = resetGroupState()
+}

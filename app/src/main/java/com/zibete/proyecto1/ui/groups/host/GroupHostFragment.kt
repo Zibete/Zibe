@@ -6,11 +6,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainViewModel
+import com.zibete.proyecto1.ui.theme.ZibeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,15 +23,12 @@ class GroupHostFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Back: si no estás en el chat del grupo, vuelve al tab del chat.
-        // Si ya estás en el chat, deja que el back haga lo normal (según tu navegación en Main).
         requireActivity().onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
                     if (groupHostViewModel.tryHandleBack()) return
-                    mainViewModel.emit(MainUiEvent.ConfirmExitGroup)
+                    requestExitConfirmation()
                 }
             }
         )
@@ -39,15 +38,19 @@ class GroupHostFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setContent {
-                GroupHostRoute(groupHostViewModel = groupHostViewModel)
+    ): View = ComposeView(requireContext()).apply {
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        setContent {
+            ZibeTheme {
+                GroupHostRoute(
+                    groupHostViewModel = groupHostViewModel,
+                    onExitRequested = ::requestExitConfirmation
+                )
             }
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    private fun requestExitConfirmation() {
+        mainViewModel.emit(MainUiEvent.ConfirmExitGroup)
     }
 }

@@ -8,9 +8,13 @@ import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_SESSION_CONFLICT
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
+import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_ROOM_KEY
+import com.zibete.proyecto1.core.constants.Constants.NODE_ROOM
 import com.zibete.proyecto1.core.constants.Constants.UiTags.AUTH_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.ONBOARDING_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
@@ -21,6 +25,7 @@ import com.zibete.proyecto1.testing.waitTag
 import com.zibete.proyecto1.testing.waitText
 import com.zibete.proyecto1.ui.main.MainActivity
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -164,6 +169,57 @@ class SplashToMainAndroidTest :
         composeRule.waitUntil(timeoutMillis = 10_000) {
             try {
                 Intents.intended(hasComponent(MainActivity::class.java.name))
+                true
+            } catch (_: AssertionError) {
+                false
+            }
+        }
+    }
+}
+
+@RunWith(AndroidJUnit4::class)
+@HiltAndroidTest
+class SplashRoomNotificationRoutingAndroidTest :
+    BaseHiltComposeManualLaunchTest<SplashActivity>(SplashActivity::class.java) {
+
+    @Before
+    fun setup() {
+        Intents.init()
+        intending(hasComponent(MainActivity::class.java.name)).respondWith(
+            Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+        )
+    }
+
+    @After
+    fun tearDown() {
+        Intents.release()
+    }
+
+    @Test
+    fun roomNotificationContextIsForwardedToMain() {
+        val roomKey = "room-from-splash"
+        val intent = Intent(context, SplashActivity::class.java).apply {
+            putExtra(EXTRA_PENDING_DM_TYPE, NODE_ROOM)
+            putExtra(EXTRA_PENDING_ROOM_KEY, roomKey)
+        }
+
+        launchWithScenario(
+            scenario = TestScenario(
+                onboardingDone = true,
+                currentUserUid = TestData.UID
+            ),
+            intent = intent
+        )
+
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            try {
+                Intents.intended(
+                    allOf(
+                        hasComponent(MainActivity::class.java.name),
+                        hasExtra(EXTRA_PENDING_DM_TYPE, NODE_ROOM),
+                        hasExtra(EXTRA_PENDING_ROOM_KEY, roomKey)
+                    )
+                )
                 true
             } catch (_: AssertionError) {
                 false
