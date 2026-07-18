@@ -53,7 +53,8 @@ picker, crop y temporales; `ChatActivity` conserva el borde de audio.
 `DefaultSendChatMessageUseCase` valida bloqueo y crea el mensaje. Para DM,
 `ChatRepository` ejecuta un único fan-out raíz atómico que incluye mensaje y los
 dos resúmenes. `ChatRefs` y todos los tipos Firebase quedan privados de `data`.
-Groups conserva el path y comportamiento legacy.
+Los privados originados en Salas reutilizan esa infraestructura sin cambiar su
+semántica `group_dm` y agregan `roomKey` al resumen contextual.
 
 Los estados DM son monotónicos:
 
@@ -67,6 +68,26 @@ solo cuando `activeThread` del receptor coincide y su lease es fresco.
 
 Ver [FIREBASE_SCHEMA.md](FIREBASE_SCHEMA.md) y
 [ADR-0002](adr/0002-dm-delivery-contract.md).
+
+## Salas
+
+Salas moderniza el flujo histórico `Groups` sin una migración destructiva. La
+UI Compose y sus ViewModels viven en `app`; `CreateRoomUseCase`,
+`JoinRoomUseCase`, `SwitchRoomUseCase`, `MarkRoomReadUseCase` y
+`ExitGroupUseCase` coordinan decisiones puras en `domain`; `GroupRepository` es
+el único owner de RTDB, Storage y adaptación legacy en `data`.
+
+Una sala nueva separa `roomKey` técnica e inmutable de `name` visible. Para
+datos históricos, el path `groupName` se adapta como key estable. Las escrituras
+de lifecycle usan fan-out raíz atómico y una única sesión local activa. Cambiar
+de sala publica la salida anterior y el ingreso nuevo en la misma operación.
+
+El host tiene tres áreas estables: Chat público, Participantes y Privados. Solo
+Chat visible publica el lease `activeThread` y marca lectura. El unread se
+conserva por `uid + roomKey`; `readGroupMessages` queda como fallback exclusivo
+para datos legacy. La salida no ejecuta cleanup global de `group_dm`.
+
+Ver [ADR-0003](adr/0003-rooms-contract.md).
 
 ## UI, errores y permisos
 
@@ -125,3 +146,4 @@ notificaciones, background/killed, cámara y audio.
 
 - [ADR-0001: límites modulares](adr/0001-module-boundaries.md)
 - [ADR-0002: contrato DM delivery/receipt/seen](adr/0002-dm-delivery-contract.md)
+- [ADR-0003: contrato Salas y compatibilidad Groups](adr/0003-rooms-contract.md)

@@ -49,12 +49,19 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 │        │  ├─ ActiveView
 │        │  │  └─ activeThread
 │        │  │     ├─ nodeType
-│        │  │     ├─ otherUid
+│        │  │     ├─ otherUid? (dm | group_dm)
+│        │  │     ├─ roomKey? (room)
 │        │  │     └─ updatedAt
 │        │  └─ ChatList
-│        │     └─ readGroupMessages
+│        │     └─ readGroupMessages (fallback legacy)
 │        ├─ ChatList
-│        │  └─ readGroupMessages
+│        │  └─ readGroupMessages (fallback legacy)
+│        ├─ Rooms
+│        │  └─ {roomKey}
+│        │     ├─ unreadCount
+│        │     ├─ lastReadAt
+│        │     ├─ lastReadMessageId
+│        │     └─ lastUnreadMessageId
 │        ├─ FavoriteList
 │        │  └─ {otherUid}: true
 │        ├─ dm
@@ -78,7 +85,9 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 │              ├─ otherPhotoUrl
 │              ├─ state
 │              ├─ unreadCount
-│              └─ seen
+│              ├─ seen
+│              ├─ roomKey? (presente en privados modernos)
+│              └─ lastMessageId? (vínculo atómico moderno)
 ├─ Chats
 │  ├─ dm
 │  │  └─ {chatId}
@@ -99,31 +108,44 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 │           ├─ seen
 │           └─ audioDurationMs? (opcional)
 ├─ Groups
+│  ├─ Names
+│  │  └─ {lowercaseRoomName}: {roomKey}
+│  ├─ Aliases
+│  │  └─ {roomKey}
+│  │     └─ {normalizedAlias}: {uid}
 │  ├─ Meta
-│  │  └─ {groupName}
+│  │  └─ {roomKey}
+│  │     ├─ roomId
 │  │     ├─ name
 │  │     ├─ description
 │  │     ├─ creatorUid
 │  │     ├─ type
 │  │     ├─ users
 │  │     ├─ createdAt
-│  │     └─ totalMessages
+│  │     ├─ totalMessages
+│  │     ├─ lastMessageAt
+│  │     └─ lastMessageId
 │  ├─ Users
-│  │  └─ {groupName}
+│  │  └─ {roomKey}
 │  │     └─ {uid}
 │  │        ├─ userId
 │  │        ├─ userName
 │  │        ├─ type
-│  │        └─ joinedAtMs
+│  │        ├─ joinedAtMs
+│  │        ├─ photoUrl
+│  │        └─ aliasKey
 │  └─ Chat
-│     └─ {groupName}
+│     └─ {roomKey}
 │        └─ {messageId}
 │           ├─ content
 │           ├─ timestamp
 │           ├─ senderUid
 │           ├─ chatType
 │           ├─ userType
-│           └─ userName | nameUser
+│           ├─ userName | nameUser
+│           ├─ clientMessageId
+│           ├─ roomId
+│           └─ roomName
 ├─ Sessions
 │  └─ {uid}
 │     ├─ activeInstallId
@@ -156,6 +178,7 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 |---|---|---|
 | `Users/Data/{uid}/ClientData/Status` | Presencia / última actividad (`lastSeenMs`, `isOnline`). | Actualizaciones frecuentes y livianas — evitar payloads grandes. |
 | `Users/Data/{uid}/ClientData/ActiveView` | Vista activa (qué chat/pantalla está mirando). | `activeThread` incluye `updatedAt`; Functions solo lo acepta durante un lease de 120 segundos y la app lo limpia al salir. |
+| `Users/Data/{uid}/Rooms/{roomKey}` | Lectura pública pendiente por usuario y sala. | El owner puede llevar `unreadCount` a cero de forma monotónica; otro miembro solo puede incrementarlo junto al mensaje atómico que referencia `lastUnreadMessageId`. |
 
 **Listas y contadores**
 
@@ -171,7 +194,7 @@ Este documento define el **contrato de datos** entre la app y Firebase: dónde v
 | Path | Propósito | Invariante |
 |---|---|---|
 | `Users/Data/{uid}/dm/{otherUid}` | Metadata de conversación 1:1 (último mensaje, timestamp, flags). | No duplicar mensajes — es metadata para construir la lista rápido. |
-| `Users/Data/{uid}/group_dm/{otherUid}` | Resumen de conversaciones grupales/relación. | Estructura consistente con la UI que lo consume. |
+| `Users/Data/{uid}/group_dm/{otherUid}` | Resumen de un privado originado en Salas. | Conserva `nodeType=group_dm`, unread independiente y `roomKey` inmutable para filtrar la sección Privados. Los resúmenes legacy sin `roomKey` siguen visibles como fallback. |
 
 > 📌 Documentar en el código cómo se construye `chatId` (si aplica) y qué campos mínimos existen en estos resúmenes.
 
@@ -194,8 +217,8 @@ Android persiste `createdAt`/`lastMessageAt` del fan-out DM con
 | Path | Propósito | Invariante |
 |---|---|---|
 | `Chats/dm/{chatId}/{messageId}` | Mensajes de conversaciones directas. | Append-only — para "borrar", preferir flags o limpieza controlada. |
-| `Chats/group_dm/{chatId}/{messageId}` | Mensajes con estructura de grupo (según implementación actual). | Considerar consolidación con `Groups/Chat/...` a futuro sin romper compatibilidad. |
-| `Groups/Chat/{groupName}/{messageId}` | Mensajes de un grupo identificado por `groupName`. | `groupName` debe ser estable — evitar renames que rompan historial. |
+| `Chats/group_dm/{chatId}/{messageId}` | Mensajes privados iniciados desde una sala. | Append-only, accesibles solo por los dos participantes; no se colapsan dentro de `dm`. |
+| `Groups/Chat/{roomKey}/{messageId}` | Timeline público de la sala. | Append-only; texto, imagen y eventos informativos. No usa estados DM delivered/received/seen. |
 
 #### Contrato de entrega y lectura DM
 
@@ -262,12 +285,30 @@ entorno local no dispone de las herramientas necesarias.
 
 ---
 
-### 👥 Grupos
+### 👥 Salas (`Groups` compatible)
 
 | Path | Propósito | Invariante |
 |---|---|---|
-| `Groups/Meta/{groupName}` | Título, foto, owner, settings del grupo. | Cambios moderados — no alta frecuencia. |
-| `Groups/Users/{groupName}/{uid}` | Membresía / rol / estado del usuario en el grupo. | Escrituras restringidas a owner/admin o lógica definida. |
+| `Groups/Names/{lowercaseRoomName}` | Índice case-insensitive del nombre visible. | Se crea en el mismo fan-out raíz y no se reutiliza silenciosamente. |
+| `Groups/Aliases/{roomKey}/{aliasKey}` | Reserva técnica de identidad. | Anónimo usa alias en minúsculas; perfil real usa una key estable derivada del UID, por lo que dos nombres públicos iguales pueden convivir. El valor siempre es el UID autenticado. |
+| `Groups/Meta/{roomKey}` | Metadata pública autenticada y contadores. | `roomId`, `creatorUid`, `createdAt`, `name` y `type` son inmutables. `users`, `totalMessages` y últimos IDs cambian junto al evento correspondiente. |
+| `Groups/Users/{roomKey}/{uid}` | Membresía e identidad pública dentro de la sala. | Cada usuario solo crea o elimina su propia membresía; un anónimo persiste alias y `photoUrl` vacío sin exponer el perfil real en UI. |
+| `Groups/Chat/{roomKey}/{messageId}` | Chat público reciente e historial compatible. | Solo miembros leen/escriben; `senderUid=auth.uid`, timestamp de servidor y mensaje principal inmutable. |
+| `Users/Data/{uid}/Rooms/{roomKey}` | Cursor/unread por miembro. | Abrir Explorar o Participantes no marca lectura; Chat visible sí. |
+
+Las salas nuevas usan una push key inmutable como `roomKey` y guardan el nombre
+visible por separado. Los datos históricos se conservan en su path original
+`Groups/*/{groupName}`. El adaptador Android trata esa key legacy como
+`roomKey`, tolera campos faltantes y no renombra ni borra datos remotos. El
+contador legacy `readGroupMessages` se consulta únicamente cuando todavía no
+existe el estado moderno por sala; al marcar lectura también puede actualizar ese
+cursor histórico. En Explorar, las salas legacy calculan participantes desde
+`Groups/Users` porque su contador de metadata no era autoritativo.
+
+Crear, ingresar, cambiar de sala y salir son fan-outs raíz. La escritura agrupa
+metadata, índice, alias, membresía, evento público y lectura propia. Salir
+elimina solo membresía, alias, cursor y vista activa propios: no borra
+`Chats/group_dm`, resúmenes privados ni historiales de terceros.
 
 ---
 
@@ -294,6 +335,7 @@ entorno local no dispone de las herramientas necesarias.
 |---|---|---|
 | `profile_photos/` | Fotos de perfil. | Nombres por `uid` + timestamp o hash (evitar colisiones). |
 | `photos/` | Fotos compartidas en chats. | Segmentar por chat/grupo si la regla lo requiere: `photos/{chatId}/...` |
+| `Groups/{roomKey}/photos/` | Imágenes del chat público de Salas. | El cliente verifica membresía antes de subir; la publicación operativa debe conservar reglas Storage equivalentes. |
 | `audios/` | Audios de chat. | Mismo criterio que `photos/`. |
 
 > 📌 Regla de oro: Storage debe asegurar que solo participantes/members puedan leer/crear objetos asociados.
@@ -308,6 +350,22 @@ entorno local no dispone de las herramientas necesarias.
 **Contrato recomendado:**
 - No enviar push si el receptor está en `ActiveView` del chat correspondiente.
 - Persistir payload mínimo y estable (`type` / `chatId` / `groupName` / `messageId`).
+
+Para Salas, `on_group_message_created` lee miembros actuales, excluye al emisor
+y a quien tenga `activeThread={nodeType: room, roomKey, updatedAt}` fresco. El
+payload data-only incluye `type=room`, `roomKey`, `roomName`, `messageId`,
+`senderName`, `messageType` y `preview`; Android decide permiso/preferencia,
+deduplica en forma persistente por `roomKey + messageId`, renderiza la
+notificación y resuelve la membresía antes de abrir el host. Una imagen usa
+preview multimedia seguro. Un `messaging.send()` exitoso no implica lectura ni
+modifica el cursor de la sala.
+
+Publicación posterior requerida (no ejecutada por esta rama):
+
+```bash
+firebase deploy --only database --project zproyecto1
+firebase deploy --only functions:on_group_message_created --project zproyecto1
+```
 
 ---
 
