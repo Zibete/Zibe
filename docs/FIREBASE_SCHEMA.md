@@ -290,9 +290,9 @@ entorno local no dispone de las herramientas necesarias.
 | Path | Propósito | Invariante |
 |---|---|---|
 | `Groups/Names/{lowercaseRoomName}` | Índice case-insensitive del nombre visible. | Se crea en el mismo fan-out raíz y no se reutiliza silenciosamente. |
-| `Groups/Aliases/{roomKey}/{aliasKey}` | Reserva técnica de identidad. | Anónimo usa alias en minúsculas; perfil real usa una key estable derivada del UID, por lo que dos nombres públicos iguales pueden convivir. El valor siempre es el UID autenticado. |
-| `Groups/Meta/{roomKey}` | Metadata pública autenticada y contadores. | `roomId`, `creatorUid`, `createdAt`, `name` y `type` son inmutables. `users`, `totalMessages` y últimos IDs cambian junto al evento correspondiente. |
-| `Groups/Users/{roomKey}/{uid}` | Membresía e identidad pública dentro de la sala. | Cada usuario solo crea o elimina su propia membresía; un anónimo persiste alias y `photoUrl` vacío sin exponer el perfil real en UI. |
+| `Groups/Aliases/{roomKey}/{aliasKey}` | Reserva técnica de identidad. | Anónimo que ingresa usa alias normalizado; perfil real usa una key estable derivada del UID, por lo que dos nombres públicos iguales pueden convivir. El valor siempre es el UID autenticado. |
+| `Groups/Meta/{roomKey}` | Metadata pública autenticada y contadores. | `roomId`, `creatorUid`, `createdAt`, `name` y `type` son inmutables. Una sala nueva exige fundador autenticado con membresía `type=1`; no admite propietario anónimo. `users`, `totalMessages` y últimos IDs cambian junto al evento correspondiente. |
+| `Groups/Users/{roomKey}/{uid}` | Membresía e identidad pública dentro de la sala. | Cada usuario solo crea o elimina su propia membresía. El fundador de una sala nueva es público; ingresos posteriores pueden ser públicos o anónimos. Un anónimo persiste alias y `photoUrl` vacío sin exponer el perfil real en UI. |
 | `Groups/Chat/{roomKey}/{messageId}` | Chat público reciente e historial compatible. | Solo miembros leen/escriben; `senderUid=auth.uid`, timestamp de servidor y mensaje principal inmutable. |
 | `Users/Data/{uid}/Rooms/{roomKey}` | Cursor/unread por miembro. | Abrir Explorar o Participantes no marca lectura; Chat visible sí. |
 
@@ -309,6 +309,14 @@ Crear, ingresar, cambiar de sala y salir son fan-outs raíz. La escritura agrupa
 metadata, índice, alias, membresía, evento público y lectura propia. Salir
 elimina solo membresía, alias, cursor y vista activa propios: no borra
 `Chats/group_dm`, resúmenes privados ni historiales de terceros.
+
+La escritura raíz exacta del cliente se prueba contra Emulator. Las Rules de
+`main` anteriores a Salas no autorizan `Groups/Aliases` ni
+`Users/Data/{uid}/Rooms`, restringen la actualización de metadata al creador y
+evalúan el chat con una membresía preexistente. Por eso rechazan tanto ingreso
+público como anónimo con `PERMISSION_DENIED`. Cliente y Rules de este contrato
+deben publicarse juntos; no se permite convertir el fan-out en escrituras
+parciales como workaround.
 
 ---
 
