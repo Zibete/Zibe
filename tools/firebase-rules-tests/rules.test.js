@@ -1,5 +1,6 @@
 const path = require("node:path");
 const assert = require("node:assert/strict");
+const { execFileSync } = require("node:child_process");
 const { readFileSync } = require("node:fs");
 const { before, after, beforeEach, describe, it } = require("node:test");
 const {
@@ -9,10 +10,15 @@ const {
 } = require("@firebase/rules-unit-testing");
 
 const projectId = "demo-zibe";
-const rules = readFileSync(
-  path.join(__dirname, "..", "..", "database.rules.json"),
-  "utf8"
-);
+const repositoryRoot = path.join(__dirname, "..", "..");
+const rulesGitRef = process.env.ZIBE_RULES_GIT_REF;
+const rules = rulesGitRef
+  ? execFileSync(
+      "git",
+      ["show", `${rulesGitRef}:database.rules.json`],
+      { cwd: repositoryRoot, encoding: "utf8" }
+    )
+  : readFileSync(path.join(repositoryRoot, "database.rules.json"), "utf8");
 
 const uidA = "user_a";
 const uidB = "user_b";
@@ -69,6 +75,7 @@ const roomKey = "room_1";
 const roomName = "Room One";
 const roomNameKey = roomName.toLowerCase();
 const entryMessageId = "entry_1";
+const seededRoomCreatedAt = 1700000000000;
 
 const roomMeta = (overrides = {}) => ({
   roomId: roomKey,
@@ -146,12 +153,16 @@ const seed = async (path, value) => {
   });
 };
 
-const createRoomFanout = async (uid = uidA, overrides = {}) => {
+const createRoomFanout = async (uid = uidA, overrides = {}, identityType = 1) => {
   const now = Date.now();
+  const aliasKey = identityType === 1
+    ? `public-${uid.replaceAll("_", "-")}`
+    : "anonymous-founder";
   const message = roomMessage(uid, entryMessageId, {
     content: `${uid} joined`,
     timestamp: now,
     chatType: 111,
+    userType: identityType,
     nameUser: uid === uidA ? "User A" : "User B",
   });
   const meta = roomMeta({
@@ -163,14 +174,92 @@ const createRoomFanout = async (uid = uidA, overrides = {}) => {
   await authedDb(uid).ref().update({
     [`Groups/Names/${roomNameKey}`]: roomKey,
     [`Groups/Meta/${roomKey}`]: meta,
-    [`Groups/Aliases/${roomKey}/${(uid === uidA ? "User A" : "User B").toLowerCase()}`]: uid,
-    [`Groups/Users/${roomKey}/${uid}`]: roomMember(uid, { joinedAtMs: now }),
+    [`Groups/Aliases/${roomKey}/${aliasKey}`]: uid,
+    [`Groups/Users/${roomKey}/${uid}`]: roomMember(uid, {
+      joinedAtMs: now,
+      type: identityType,
+      aliasKey,
+    }),
     [`Groups/Chat/${roomKey}/${entryMessageId}`]: message,
     [`Users/Data/${uid}/Rooms/${roomKey}`]: roomReadState({
       lastReadAt: now,
       lastReadMessageId: entryMessageId,
     }),
   });
+};
+
+const buildJoinRoomUpdates = ({
+  uid = uidB,
+  identityType = 1,
+  displayName = "User B",
+  aliasKey = "public-user-b",
+  targetRoomKey = roomKey,
+  targetRoomName = roomName,
+  targetRoomDescription = "A public room",
+  previousUsers = 1,
+  previousMessages = 1,
+  receiverUids = [uidA],
+  messageId = "join_user_b",
+  createdAt = seededRoomCreatedAt,
+} = {}) => {
+  const now = Date.now();
+  const updates = {
+    [`Groups/Meta/${targetRoomKey}`]: roomMeta({
+      roomId: targetRoomKey,
+      name: targetRoomName,
+      description: targetRoomDescription,
+      users: previousUsers + 1,
+      createdAt,
+      totalMessages: previousMessages + 1,
+      lastMessageAt: now,
+      lastMessageId: messageId,
+    }),
+    [`Groups/Aliases/${targetRoomKey}/${aliasKey}`]: uid,
+    [`Groups/Users/${targetRoomKey}/${uid}`]: roomMember(uid, {
+      userName: displayName,
+      type: identityType,
+      joinedAtMs: now,
+      photoUrl: identityType === 1 ? "https://example.com/profile.png" : "",
+      aliasKey,
+    }),
+    [`Groups/Chat/${targetRoomKey}/${messageId}`]: roomMessage(uid, messageId, {
+      content: `${displayName} joined`,
+      timestamp: now,
+      nameUser: displayName,
+      userType: identityType,
+      chatType: 111,
+      roomId: targetRoomKey,
+      roomName: targetRoomName,
+    }),
+    [`Users/Data/${uid}/Rooms/${targetRoomKey}`]: roomReadState({
+      lastReadAt: now,
+      lastReadMessageId: messageId,
+    }),
+  };
+  for (const receiverUid of receiverUids) {
+    updates[`Users/Data/${receiverUid}/Rooms/${targetRoomKey}/unreadCount`] = 1;
+    updates[`Users/Data/${receiverUid}/Rooms/${targetRoomKey}/lastUnreadMessageId`] = messageId;
+  }
+  return updates;
+};
+
+const joinRoomFanout = async (options = {}) => {
+  const uid = options.uid ?? uidB;
+  const authUid = options.authUid ?? uid;
+  const updates = buildJoinRoomUpdates(options);
+  const database = options.authenticated === false ? unauthDb() : authedDb(authUid);
+  return database.ref().update(updates);
+};
+
+const joinRoomLikeClient = async (options = {}) => {
+  const uid = options.uid ?? uidB;
+  const targetRoomKey = options.targetRoomKey ?? roomKey;
+  const membership = await authedDb(uid)
+    .ref(`Groups/Users/${targetRoomKey}/${uid}`)
+    .get();
+  if (membership.exists()) return false;
+  await joinRoomFanout(options);
+  return true;
 };
 
 const seedRoom = async ({ withUserB = false } = {}) => {
@@ -180,7 +269,7 @@ const seedRoom = async ({ withUserB = false } = {}) => {
     Meta: {
       [roomKey]: roomMeta({
         users: withUserB ? 2 : 1,
-        createdAt: now,
+        createdAt: seededRoomCreatedAt,
         lastMessageAt: now,
       }),
     },
@@ -550,6 +639,12 @@ describe("Realtime Database Rules", () => {
     );
   });
 
+  it("rejects anonymous room creation without leaving partial data", async () => {
+    await assertFails(createRoomFanout(uidA, {}, 0));
+    const snapshot = await authedDb(uidA).ref(`Groups/Meta/${roomKey}`).get();
+    assert.equal(snapshot.exists(), false);
+  });
+
   it("enforces unique room names and immutable technical metadata", async () => {
     await createRoomFanout();
     await assertFails(
@@ -669,6 +764,207 @@ describe("Realtime Database Rules", () => {
     );
   });
 
+  it("accepts the exact modern public join fan-out produced by the client", async () => {
+    await seedRoom();
+    await assertSucceeds(joinRoomFanout());
+    const membership = await authedDb(uidB)
+      .ref(`Groups/Users/${roomKey}/${uidB}`)
+      .get();
+    assert.equal(membership.child("type").val(), 1);
+  });
+
+  it("accepts the exact modern anonymous join fan-out produced by the client", async () => {
+    await seedRoom();
+    await assertSucceeds(joinRoomFanout({
+      identityType: 0,
+      displayName: "Ghost",
+      aliasKey: "ghost",
+      messageId: "join_ghost",
+    }));
+    const membership = await authedDb(uidB)
+      .ref(`Groups/Users/${roomKey}/${uidB}`)
+      .get();
+    assert.equal(membership.child("type").val(), 0);
+    assert.equal(membership.child("photoUrl").val(), "");
+  });
+
+  it("rejects unauthenticated, spoofed and missing-room join fan-outs", async () => {
+    await seedRoom();
+    await assertFails(joinRoomFanout({ authenticated: false }));
+    await assertFails(joinRoomFanout({ authUid: uidC }));
+    await assertFails(joinRoomFanout({
+      targetRoomKey: "missing_room",
+      targetRoomName: "Missing Room",
+    }));
+  });
+
+  it("accepts the exact join fan-out for valid legacy room metadata", async () => {
+    const legacyKey = "legacy_room";
+    const createdAt = Date.now() - 2000;
+    await seed(`Groups/Meta/${legacyKey}`, {
+      name: "Legacy Room",
+      description: "legacy",
+      creatorUid: uidA,
+      type: 1,
+      users: 1,
+      createdAt,
+      totalMessages: 4,
+    });
+    await seed(`Groups/Users/${legacyKey}/${uidA}`, roomMember(uidA, {
+      joinedAtMs: createdAt,
+    }));
+    await seed(`Users/Data/${uidA}/Rooms/${legacyKey}`, roomReadState({
+      lastReadAt: createdAt,
+    }));
+
+    await assertSucceeds(joinRoomFanout({
+      targetRoomKey: legacyKey,
+      targetRoomName: "Legacy Room",
+      targetRoomDescription: "legacy",
+      previousMessages: 4,
+      messageId: "legacy_join_user_b",
+      createdAt,
+    }));
+    const meta = await authedDb(uidB).ref(`Groups/Meta/${legacyKey}`).get();
+    assert.equal(meta.child("roomId").val(), legacyKey);
+    assert.equal(meta.child("users").val(), 2);
+  });
+
+  it("makes a repeated client join idempotent when membership already exists", async () => {
+    await seedRoom();
+    assert.equal(await joinRoomLikeClient(), true);
+    assert.equal(await joinRoomLikeClient({ messageId: "duplicate_join" }), false);
+    const messages = await authedDb(uidB).ref(`Groups/Chat/${roomKey}`).get();
+    assert.equal(Object.keys(messages.val()).length, 2);
+  });
+
+  it("accepts the exact public leave fan-out produced by the client", async () => {
+    const sourceKey = "public_leave_room";
+    const sourceName = "Public Leave Room";
+    const createdAt = Date.now() - 2000;
+    await seed(`Groups/Meta/${sourceKey}`, roomMeta({
+      roomId: sourceKey,
+      name: sourceName,
+      users: 2,
+      createdAt,
+      lastMessageAt: createdAt,
+    }));
+    await seed(`Groups/Users/${sourceKey}`, {
+      [uidA]: roomMember(uidA, { joinedAtMs: createdAt }),
+      [uidB]: roomMember(uidB, {
+        joinedAtMs: createdAt,
+        aliasKey: "public-user-b",
+      }),
+    });
+    await seed(`Groups/Aliases/${sourceKey}/public-user-b`, uidB);
+    await seed(`Users/Data/${uidA}/Rooms/${sourceKey}`, roomReadState({
+      lastReadAt: createdAt,
+    }));
+    await seed(`Users/Data/${uidB}/Rooms/${sourceKey}`, roomReadState({
+      lastReadAt: createdAt,
+    }));
+
+    const now = Date.now();
+    const leaveMessageId = "leave_public_user_b";
+    await assertSucceeds(authedDb(uidB).ref().update({
+      [`Groups/Meta/${sourceKey}`]: roomMeta({
+        roomId: sourceKey,
+        name: sourceName,
+        users: 1,
+        createdAt,
+        totalMessages: 2,
+        lastMessageAt: now,
+        lastMessageId: leaveMessageId,
+      }),
+      [`Groups/Chat/${sourceKey}/${leaveMessageId}`]: roomMessage(
+        uidB,
+        leaveMessageId,
+        {
+          content: "User B left",
+          timestamp: now,
+          chatType: 111,
+          roomId: sourceKey,
+          roomName: sourceName,
+        }
+      ),
+      [`Groups/Aliases/${sourceKey}/public-user-b`]: null,
+      [`Groups/Users/${sourceKey}/${uidB}`]: null,
+      [`Users/Data/${uidB}/Rooms/${sourceKey}`]: null,
+      [`Users/Data/${uidB}/ClientData/ActiveView/activeThread`]: null,
+      [`Users/Data/${uidA}/Rooms/${sourceKey}/unreadCount`]: 1,
+      [`Users/Data/${uidA}/Rooms/${sourceKey}/lastUnreadMessageId`]: leaveMessageId,
+    }));
+  });
+
+  it("switches rooms through one atomic leave and join fan-out", async () => {
+    const sourceKey = "source_room";
+    const sourceName = "Source Room";
+    const createdAt = Date.now() - 2000;
+    await seedRoom();
+    await seed(`Groups/Meta/${sourceKey}`, roomMeta({
+      roomId: sourceKey,
+      name: sourceName,
+      users: 2,
+      createdAt,
+      lastMessageAt: createdAt,
+    }));
+    await seed(`Groups/Users/${sourceKey}/${uidA}`, roomMember(uidA, {
+      joinedAtMs: createdAt,
+    }));
+    await seed(`Groups/Users/${sourceKey}/${uidB}`, roomMember(uidB, {
+      joinedAtMs: createdAt,
+      aliasKey: "public-user-b",
+    }));
+    await seed(`Groups/Aliases/${sourceKey}/public-user-b`, uidB);
+    await seed(`Users/Data/${uidA}/Rooms/${sourceKey}`, roomReadState({
+      lastReadAt: createdAt,
+    }));
+    await seed(`Users/Data/${uidB}/Rooms/${sourceKey}`, roomReadState({
+      lastReadAt: createdAt,
+    }));
+    const now = Date.now();
+    const leaveMessageId = "leave_source_user_b";
+    const updates = {
+      ...buildJoinRoomUpdates({ messageId: "join_target_user_b" }),
+      [`Groups/Meta/${sourceKey}`]: roomMeta({
+        roomId: sourceKey,
+        name: sourceName,
+        users: 1,
+        createdAt,
+        totalMessages: 2,
+        lastMessageAt: now,
+        lastMessageId: leaveMessageId,
+      }),
+      [`Groups/Chat/${sourceKey}/${leaveMessageId}`]: roomMessage(
+        uidB,
+        leaveMessageId,
+        {
+          content: "User B left",
+          timestamp: now,
+          chatType: 111,
+          roomId: sourceKey,
+          roomName: sourceName,
+        }
+      ),
+      [`Groups/Aliases/${sourceKey}/public-user-b`]: null,
+      [`Groups/Users/${sourceKey}/${uidB}`]: null,
+      [`Users/Data/${uidB}/Rooms/${sourceKey}`]: null,
+      [`Users/Data/${uidB}/ClientData/ActiveView/activeThread`]: null,
+      [`Users/Data/${uidA}/Rooms/${sourceKey}/unreadCount`]: 1,
+      [`Users/Data/${uidA}/Rooms/${sourceKey}/lastUnreadMessageId`]: leaveMessageId,
+    };
+
+    await assertSucceeds(authedDb(uidB).ref().update(updates));
+    assert.equal(
+      (await authedDb(uidB).ref(`Groups/Users/${sourceKey}/${uidB}`).get()).exists(),
+      false
+    );
+    assert.equal(
+      (await authedDb(uidB).ref(`Groups/Users/${roomKey}/${uidB}`).get()).exists(),
+      true
+    );
+  });
+
   it("allows public identities with the same display name when their technical aliases differ", async () => {
     await seedRoom();
     const now = Date.now();
@@ -732,6 +1028,21 @@ describe("Realtime Database Rules", () => {
         [`Users/Data/${uidC}/Rooms/${roomKey}`]: roomReadState(),
       })
     );
+  });
+
+  it("rejects an exact anonymous join fan-out when its alias is already reserved", async () => {
+    await seedRoom();
+    await seed(`Groups/Aliases/${roomKey}/ghost`, uidC);
+    await assertFails(joinRoomFanout({
+      identityType: 0,
+      displayName: "Ghost",
+      aliasKey: "ghost",
+      messageId: "duplicate_alias_join",
+    }));
+    const membership = await authedDb(uidB)
+      .ref(`Groups/Users/${roomKey}/${uidB}`)
+      .get();
+    assert.equal(membership.exists(), false);
   });
 
   it("sends a public room message with atomic counters and receiver unread", async () => {

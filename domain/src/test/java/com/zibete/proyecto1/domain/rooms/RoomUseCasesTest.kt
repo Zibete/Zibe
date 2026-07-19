@@ -74,7 +74,7 @@ class RoomUseCasesTest {
     }
 
     @Test
-    fun `invalid anonymous alias fails locally without remote write`() = runTest {
+    fun `anonymous creator is rejected locally without remote write`() = runTest {
         val useCase = DefaultCreateRoomUseCase(
             repository,
             preferencesProvider,
@@ -83,12 +83,17 @@ class RoomUseCasesTest {
 
         val result = useCase.execute(
             createCommand(
-                identity = RoomIdentity("a", RoomIdentityType.ANONYMOUS)
+                identity = RoomIdentity("Quiet Fox", RoomIdentityType.ANONYMOUS)
             )
         )
 
         val outcome = result.successData() as RoomOperationResult.ValidationFailed
-        assertTrue(outcome.issues.any { it.field == RoomValidationField.ALIAS })
+        assertTrue(
+            outcome.issues.any {
+                it.field == RoomValidationField.PUBLIC_IDENTITY &&
+                    it.error == RoomValidationError.INVALID_VALUE
+            }
+        )
         coVerify(exactly = 0) { repository.createRoom(any()) }
     }
 

@@ -12,6 +12,8 @@ import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.domain.rooms.CreateRoomUseCase
 import com.zibete.proyecto1.domain.rooms.JoinRoomUseCase
+import com.zibete.proyecto1.domain.rooms.RoomFailureReason
+import com.zibete.proyecto1.domain.rooms.RoomOperationException
 import com.zibete.proyecto1.domain.rooms.RoomOperationResult
 import com.zibete.proyecto1.domain.rooms.RoomValidationError
 import com.zibete.proyecto1.domain.rooms.RoomValidationField
@@ -199,13 +201,11 @@ class GroupsViewModelTest {
         harness.vm.onCreateRoomRequested()
         harness.vm.onRoomNameChanged("x")
         harness.vm.onRoomDescriptionChanged("Description")
-        harness.vm.onIdentitySelected(RoomIdentityType.ANONYMOUS)
-        harness.vm.onAliasChanged("x")
         coEvery { harness.createRoom.execute(any()) } returns ZibeResult.Success(
             RoomOperationResult.ValidationFailed(
                 listOf(
                     issue(RoomValidationField.ROOM_NAME),
-                    issue(RoomValidationField.ALIAS)
+                    issue(RoomValidationField.PUBLIC_IDENTITY)
                 )
             )
         )
@@ -218,10 +218,56 @@ class GroupsViewModelTest {
             harness.vm.uiState.value.roomNameError
         )
         assertEquals(
-            UiText.StringRes(R.string.rooms_invalid_alias),
+            UiText.StringRes(R.string.rooms_public_identity_missing),
             harness.vm.uiState.value.identityError
         )
         assertFalse(harness.vm.uiState.value.isSubmitting)
+    }
+
+    @Test
+    fun `create always resets and submits public identity without stale alias`() = runTest {
+        val harness = harness()
+        harness.vm.onRoomSelected(room("target", "Target", "Descripción"))
+        harness.vm.onIdentitySelected(RoomIdentityType.ANONYMOUS)
+        harness.vm.onAliasChanged("Quiet Fox")
+
+        harness.vm.onCreateRoomRequested()
+
+        assertEquals(RoomIdentityType.PUBLIC, harness.vm.uiState.value.identityType)
+        assertEquals("", harness.vm.uiState.value.alias)
+        harness.vm.onRoomNameChanged("Nueva sala")
+        harness.vm.onRoomDescriptionChanged("Descripción")
+        coEvery { harness.createRoom.execute(any()) } returns ZibeResult.Success(
+            RoomOperationResult.Created(
+                RoomSession("new-room", "Nueva sala", MY_NAME, PUBLIC_USER)
+            )
+        )
+
+        harness.vm.submitSheet("joined", "left")
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            harness.createRoom.execute(match {
+                it.identity.type == RoomIdentityType.PUBLIC &&
+                    it.identity.displayName == MY_NAME
+            })
+        }
+    }
+
+    @Test
+    fun `permission failure maps to configuration-safe message`() = runTest {
+        val harness = harness()
+        harness.vm.onRoomSelected(room("target", "Target", "Descripción"))
+        coEvery { harness.joinRoom.execute(any()) } returns ZibeResult.Failure(
+            RoomOperationException(RoomFailureReason.PERMISSION)
+        )
+        val event = async { awaitEvent(harness.vm) }
+        runCurrent()
+
+        harness.vm.submitSheet("joined", "left")
+
+        val snack = event.await() as GroupsUiEvent.ShowSnack
+        assertEquals(UiText.StringRes(R.string.rooms_error_permission), snack.uiText)
     }
 
     @Test

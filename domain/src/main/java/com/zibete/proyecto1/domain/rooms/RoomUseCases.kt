@@ -38,7 +38,12 @@ class DefaultCreateRoomUseCase @Inject constructor(
         } else {
             null
         }
-        val identity = validateIdentity(command.identity)
+        val creatorIdentityIssue = RoomCreationPolicy.validateCreator(command.identity)
+        val identity = if (creatorIdentityIssue == null) {
+            validateIdentity(command.identity)
+        } else {
+            ValidatedIdentity(identity = null, issues = listOf(creatorIdentityIssue))
+        }
         issues += identity.issues
         if (issues.isNotEmpty()) {
             return ZibeResult.Success(RoomOperationResult.ValidationFailed(issues))

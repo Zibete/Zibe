@@ -493,7 +493,10 @@
     <string name="rooms_error_title">No pudimos cargar las salas</string>
     <string name="rooms_error_message">Revisá tu conexión e intentá de nuevo.</string>
     <string name="rooms_create">Crear sala</string>
-    <string name="rooms_create_description">Elegí un nombre, contá de qué se trata y decidí cómo querés presentarte.</string>
+    <string name="rooms_create_description">Elegí un nombre y contá de qué se trata. La sala quedará asociada a tu perfil público.</string>
+    <string name="rooms_creator_identity">Vas a crearla como</string>
+    <string name="rooms_creator_identity_supporting">Tu perfil quedará visible como creador y propietario de la sala.</string>
+    <string name="rooms_public_creator_required">Para crear una sala necesitás usar tu perfil público.</string>
     <string name="rooms_join">Entrar a la sala</string>
     <string name="rooms_join_description">Revisá la sala y elegí la identidad que verán sus participantes.</string>
     <string name="rooms_open">Abrir sala</string>
@@ -518,6 +521,10 @@
     <string name="rooms_invalid_alias">Ingresá un alias válido de entre 3 y 24 caracteres.</string>
     <string name="rooms_public_identity_missing">Completá el nombre público de tu perfil antes de entrar.</string>
     <string name="rooms_action_error">No pudimos completar la acción en la sala. Intentá de nuevo.</string>
+    <string name="rooms_error_permission">La configuración remota todavía no habilita esta acción. Actualizá la app o intentá más tarde.</string>
+    <string name="rooms_error_connection">No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.</string>
+    <string name="rooms_error_not_found">Esta sala ya no está disponible. Actualizá el listado.</string>
+    <string name="rooms_error_session">Tu sesión no es válida para esta acción. Volvé a iniciar sesión.</string>
     <string name="rooms_card_content_description">Sala %1$s, %2$s</string>
     <string name="rooms_last_activity">Actividad %1$s</string>
     <string name="rooms_joined_event">se sumó a la sala</string>

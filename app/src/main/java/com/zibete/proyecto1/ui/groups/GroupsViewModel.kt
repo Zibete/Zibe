@@ -13,6 +13,8 @@ import com.zibete.proyecto1.domain.rooms.CreateRoomUseCase
 import com.zibete.proyecto1.domain.rooms.JoinRoomCommand
 import com.zibete.proyecto1.domain.rooms.JoinRoomUseCase
 import com.zibete.proyecto1.domain.rooms.RoomOperationResult
+import com.zibete.proyecto1.domain.rooms.RoomFailureReason
+import com.zibete.proyecto1.domain.rooms.RoomOperationException
 import com.zibete.proyecto1.domain.rooms.RoomValidationField
 import com.zibete.proyecto1.domain.rooms.RoomValidationIssue
 import com.zibete.proyecto1.domain.rooms.RoomValidator
@@ -211,7 +213,7 @@ class GroupsViewModel @Inject constructor(
         val command = CreateRoomCommand(
             roomName = state.roomName,
             description = state.roomDescription,
-            identity = selectedIdentity(state),
+            identity = publicIdentity(state),
             eventContent = joinEventContent,
             leaveEventContent = leaveEventContent
         )
@@ -287,7 +289,7 @@ class GroupsViewModel @Inject constructor(
         when (result) {
             is ZibeResult.Failure -> {
                 _uiState.update { it.copy(isSubmitting = false) }
-                emitSnack(UiText.StringRes(R.string.rooms_action_error), ZibeSnackType.ERROR)
+                emitSnack(result.exception.toRoomErrorText(), ZibeSnackType.ERROR)
             }
 
             is ZibeResult.Success -> when (val outcome = result.data) {
@@ -403,6 +405,25 @@ class GroupsViewModel @Inject constructor(
                 type = RoomIdentityType.ANONYMOUS
             )
         }
+
+    private fun publicIdentity(state: GroupsUiState): RoomIdentity = RoomIdentity(
+        displayName = state.publicIdentityName,
+        type = RoomIdentityType.PUBLIC,
+        photoUrl = state.publicIdentityPhotoUrl
+    )
+
+    private fun Throwable.toRoomErrorText(): UiText {
+        val reason = (this as? RoomOperationException)?.reason
+        val stringRes = when (reason) {
+            RoomFailureReason.INVALID_IDENTITY -> R.string.rooms_public_creator_required
+            RoomFailureReason.PERMISSION -> R.string.rooms_error_permission
+            RoomFailureReason.CONNECTION -> R.string.rooms_error_connection
+            RoomFailureReason.ROOM_NOT_FOUND -> R.string.rooms_error_not_found
+            RoomFailureReason.SESSION_INVALID -> R.string.rooms_error_session
+            RoomFailureReason.UNEXPECTED, null -> R.string.rooms_action_error
+        }
+        return UiText.StringRes(stringRes)
+    }
 
     private fun filterRooms(rooms: List<Groups>, query: String): List<Groups> {
         val normalizedQuery = RoomValidator.normalizeIndexKey(query)

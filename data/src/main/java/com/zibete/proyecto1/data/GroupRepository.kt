@@ -1,9 +1,12 @@
 package com.zibete.proyecto1.data
 
 import android.net.Uri
+import android.util.Log
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseException
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.ServerValue
@@ -40,7 +43,12 @@ import com.zibete.proyecto1.di.qualifiers.ApplicationScope
 import com.zibete.proyecto1.domain.rooms.CreateRoomCommand
 import com.zibete.proyecto1.domain.rooms.JoinRoomCommand
 import com.zibete.proyecto1.domain.rooms.LeaveRoomCommand
+import com.zibete.proyecto1.domain.rooms.RoomCreationPolicy
+import com.zibete.proyecto1.domain.rooms.RoomFailureReason
+import com.zibete.proyecto1.domain.rooms.RoomMembershipNotFoundException
+import com.zibete.proyecto1.domain.rooms.RoomOperationException
 import com.zibete.proyecto1.domain.rooms.RoomOperationResult
+import com.zibete.proyecto1.domain.rooms.RoomValidationException
 import com.zibete.proyecto1.domain.rooms.RoomValidator
 import com.zibete.proyecto1.domain.rooms.SwitchRoomCommand
 import com.zibete.proyecto1.model.ChatGroup
@@ -249,138 +257,183 @@ class GroupRepository constructor(
 
     override suspend fun createRoom(
         command: CreateRoomCommand
-    ): ZibeResult<RoomOperationResult> = zibeCatching {
-        val roomName = command.roomName.trim()
-        val nameKey = roomName.lowercase(Locale.ROOT)
-        val existingRoomKey = firebaseRefsContainer.refGroupNames.child(nameKey)
-            .get()
-            .await()
-            .getValue(String::class.java)
-        if (!existingRoomKey.isNullOrBlank()) {
-            val existingMember = findUserGroup(myUid, existingRoomKey)
-            val existingRoom = getGroup(existingRoomKey)
-            if (existingMember != null && existingRoom?.creatorUid == myUid) {
-                return@zibeCatching RoomOperationResult.Created(
-                    RoomSession(
-                        roomKey = existingRoomKey,
-                        displayName = existingRoom.resolvedDisplayName(existingRoomKey),
-                        userName = existingMember.resolvedDisplayName(),
-                        userType = existingMember.type
+    ): ZibeResult<RoomOperationResult> {
+        val trace = RoomOperationTrace(
+            operation = "create",
+            identityType = command.identity.type
+        )
+        return executeRoomOperation(trace) {
+            RoomCreationPolicy.validateCreator(command.identity)?.let { issue ->
+                throw RoomValidationException(listOf(issue))
+            }
+            trace.phase = "name_lookup"
+            val roomName = command.roomName.trim()
+            val nameKey = roomName.lowercase(Locale.ROOT)
+            val existingRoomKey = firebaseRefsContainer.refGroupNames.child(nameKey)
+                .get()
+                .await()
+                .getValue(String::class.java)
+            if (!existingRoomKey.isNullOrBlank()) {
+                val existingMember = findUserGroup(myUid, existingRoomKey)
+                val existingRoom = getGroup(existingRoomKey)
+                if (existingMember != null && existingRoom?.creatorUid == myUid) {
+                    return@executeRoomOperation RoomOperationResult.Created(
+                        RoomSession(
+                            roomKey = existingRoomKey,
+                            displayName = existingRoom.resolvedDisplayName(existingRoomKey),
+                            userName = existingMember.resolvedDisplayName(),
+                            userType = existingMember.type
+                        )
+                    )
+                }
+                return@executeRoomOperation RoomOperationResult.NameInUse(roomName)
+            }
+
+            val roomKey = checkNotNull(firebaseRefsContainer.refGroupMeta.push().key) {
+                "Could not generate room id"
+            }
+            trace.roomKey = roomKey
+            val messageId = newRequiredGroupMessageKey(roomKey)
+            val identityName = command.identity.displayName.trim()
+            val identityAliasKey = aliasKey(command.identity)
+            val updates = mutableMapOf<String, Any?>()
+            updates[groupNamePath(nameKey)] = roomKey
+            updates[groupMetaPath(roomKey)] = roomMetaMap(
+                roomKey = roomKey,
+                roomName = roomName,
+                description = command.description.trim(),
+                creatorUid = myUid,
+                users = 1,
+                totalMessages = 1,
+                lastMessageId = messageId,
+                createdAt = ServerValue.TIMESTAMP,
+                lastMessageAt = ServerValue.TIMESTAMP
+            )
+            updates[groupAliasPath(roomKey, identityAliasKey)] = myUid
+            updates[groupMemberPath(roomKey, myUid)] = roomMemberMap(
+                command.identity,
+                identityAliasKey
+            )
+            updates[groupMessagePath(roomKey, messageId)] = roomMessageMap(
+                roomId = roomKey,
+                roomName = roomName,
+                messageId = messageId,
+                identity = command.identity,
+                chatType = com.zibete.proyecto1.core.constants.Constants.MSG_INFO,
+                content = command.eventContent
+            )
+            updates[roomReadPath(myUid, roomKey)] = roomReadStateMap(
+                unreadCount = 0,
+                lastReadAt = ServerValue.TIMESTAMP,
+                lastReadMessageId = messageId,
+                lastUnreadMessageId = ""
+            )
+            command.previousSession?.let { previous ->
+                updates.putAll(
+                    buildLeaveUpdates(
+                        LeaveRoomCommand(
+                            roomKey = previous.roomKey,
+                            userName = previous.userName,
+                            userType = previous.userType,
+                            eventContent = command.leaveEventContent
+                        )
                     )
                 )
             }
-            return@zibeCatching RoomOperationResult.NameInUse(roomName)
-        }
+            trace.phase = "atomic_create_fanout"
+            rootRef().updateChildren(updates).await()
 
-        val roomKey = checkNotNull(firebaseRefsContainer.refGroupMeta.push().key) {
-            "Could not generate room id"
-        }
-        val messageId = newRequiredGroupMessageKey(roomKey)
-        val identityName = command.identity.displayName.trim()
-        val identityAliasKey = aliasKey(command.identity)
-        val updates = mutableMapOf<String, Any?>()
-        updates[groupNamePath(nameKey)] = roomKey
-        updates[groupMetaPath(roomKey)] = roomMetaMap(
-            roomKey = roomKey,
-            roomName = roomName,
-            description = command.description.trim(),
-            creatorUid = myUid,
-            users = 1,
-            totalMessages = 1,
-            lastMessageId = messageId,
-            createdAt = ServerValue.TIMESTAMP,
-            lastMessageAt = ServerValue.TIMESTAMP
-        )
-        updates[groupAliasPath(roomKey, identityAliasKey)] = myUid
-        updates[groupMemberPath(roomKey, myUid)] = roomMemberMap(
-            command.identity,
-            identityAliasKey
-        )
-        updates[groupMessagePath(roomKey, messageId)] = roomMessageMap(
-            roomId = roomKey,
-            roomName = roomName,
-            messageId = messageId,
-            identity = command.identity,
-            chatType = com.zibete.proyecto1.core.constants.Constants.MSG_INFO,
-            content = command.eventContent
-        )
-        updates[roomReadPath(myUid, roomKey)] = roomReadStateMap(
-            unreadCount = 0,
-            lastReadAt = ServerValue.TIMESTAMP,
-            lastReadMessageId = messageId,
-            lastUnreadMessageId = ""
-        )
-        command.previousSession?.let { previous ->
-            updates.putAll(
-                buildLeaveUpdates(
-                    LeaveRoomCommand(
-                        roomKey = previous.roomKey,
-                        userName = previous.userName,
-                        userType = previous.userType,
-                        eventContent = command.leaveEventContent
-                    )
+            RoomOperationResult.Created(
+                RoomSession(
+                    roomKey = roomKey,
+                    displayName = roomName,
+                    userName = identityName,
+                    userType = command.identity.type.legacyValue
                 )
             )
         }
-        rootRef().updateChildren(updates).await()
-
-        RoomOperationResult.Created(
-            RoomSession(
-                roomKey = roomKey,
-                displayName = roomName,
-                userName = identityName,
-                userType = command.identity.type.legacyValue
-            )
-        )
     }
 
     override suspend fun joinRoom(
         command: JoinRoomCommand
-    ): ZibeResult<RoomOperationResult> = zibeCatching {
-        val result = buildJoinUpdates(command)
-        if (result.aliasInUse) {
-            return@zibeCatching RoomOperationResult.AliasInUse(command.identity.displayName)
+    ): ZibeResult<RoomOperationResult> {
+        val trace = RoomOperationTrace(
+            operation = "join",
+            identityType = command.identity.type,
+            roomKey = command.roomKey,
+            phase = "build_join_fanout"
+        )
+        return executeRoomOperation(trace) {
+            val result = buildJoinUpdates(command)
+            if (result.aliasInUse) {
+                return@executeRoomOperation RoomOperationResult.AliasInUse(
+                    command.identity.displayName
+                )
+            }
+            if (!result.existingMembership) {
+                trace.phase = "atomic_join_fanout"
+                rootRef().updateChildren(result.updates).await()
+            }
+            RoomOperationResult.Joined(result.session)
         }
-        if (!result.existingMembership) rootRef().updateChildren(result.updates).await()
-        RoomOperationResult.Joined(result.session)
     }
 
     override suspend fun switchRoom(
         command: SwitchRoomCommand
-    ): ZibeResult<RoomOperationResult> = zibeCatching {
-        val join = buildJoinUpdates(command.target)
-        if (join.aliasInUse) {
-            return@zibeCatching RoomOperationResult.AliasInUse(
-                command.target.identity.displayName
+    ): ZibeResult<RoomOperationResult> {
+        val trace = RoomOperationTrace(
+            operation = "switch",
+            identityType = command.target.identity.type,
+            roomKey = command.target.roomKey,
+            phase = "build_switch_fanout"
+        )
+        return executeRoomOperation(trace) {
+            val join = buildJoinUpdates(command.target)
+            if (join.aliasInUse) {
+                return@executeRoomOperation RoomOperationResult.AliasInUse(
+                    command.target.identity.displayName
+                )
+            }
+            val leave = buildLeaveUpdates(
+                LeaveRoomCommand(
+                    roomKey = command.previousSession.roomKey,
+                    userName = command.previousSession.userName,
+                    userType = command.previousSession.userType,
+                    eventContent = command.leaveEventContent
+                )
+            )
+            val updates = leave.toMutableMap().apply {
+                if (!join.existingMembership) putAll(join.updates)
+            }
+            if (updates.isNotEmpty()) {
+                trace.phase = "atomic_switch_fanout"
+                rootRef().updateChildren(updates).await()
+            }
+            RoomOperationResult.Switched(
+                previousRoomKey = command.previousSession.roomKey,
+                session = join.session
             )
         }
-        val leave = buildLeaveUpdates(
-            LeaveRoomCommand(
-                roomKey = command.previousSession.roomKey,
-                userName = command.previousSession.userName,
-                userType = command.previousSession.userType,
-                eventContent = command.leaveEventContent
-            )
-        )
-        val updates = leave.toMutableMap().apply {
-            if (!join.existingMembership) putAll(join.updates)
-        }
-        if (updates.isNotEmpty()) rootRef().updateChildren(updates).await()
-        RoomOperationResult.Switched(
-            previousRoomKey = command.previousSession.roomKey,
-            session = join.session
-        )
     }
 
     override suspend fun leaveRoom(
         command: LeaveRoomCommand
-    ): ZibeResult<RoomOperationResult> = zibeCatching {
-        if (findUserGroup(myUid, command.roomKey) == null) {
-            clearActiveRoom(command.roomKey).getOrThrow()
-            return@zibeCatching RoomOperationResult.Left(command.roomKey)
+    ): ZibeResult<RoomOperationResult> {
+        val trace = RoomOperationTrace(
+            operation = "leave",
+            identityType = RoomIdentityType.fromLegacy(command.userType),
+            roomKey = command.roomKey,
+            phase = "build_leave_fanout"
+        )
+        return executeRoomOperation(trace) {
+            if (findUserGroup(myUid, command.roomKey) == null) {
+                clearActiveRoom(command.roomKey).getOrThrow()
+                return@executeRoomOperation RoomOperationResult.Left(command.roomKey)
+            }
+            trace.phase = "atomic_leave_fanout"
+            rootRef().updateChildren(buildLeaveUpdates(command)).await()
+            RoomOperationResult.Left(command.roomKey)
         }
-        rootRef().updateChildren(buildLeaveUpdates(command)).await()
-        RoomOperationResult.Left(command.roomKey)
     }
 
     override suspend fun sendRoomMessage(
@@ -427,7 +480,7 @@ class GroupRepository constructor(
         val roomSnapshot = groupMetaRef(command.roomKey).get().await()
         val room = roomSnapshot.getValue(Groups::class.java)
             ?.withLegacyFallback(command.roomKey)
-            ?: throw IllegalStateException("Room does not exist")
+            ?: throw RoomOperationException(RoomFailureReason.ROOM_NOT_FOUND)
         val existingMember = findUserGroup(myUid, command.roomKey)
         if (existingMember != null) {
             return JoinUpdates(
@@ -1002,6 +1055,65 @@ class GroupRepository constructor(
     private fun readGroupMessagesRef(uid: String = myUid): DatabaseReference =
         chatListRef(uid).child(ChatListKeys.READ_GROUP_MESSAGES)
 
+    private data class RoomOperationTrace(
+        val operation: String,
+        val identityType: RoomIdentityType,
+        var roomKey: String = "",
+        var phase: String = "validate"
+    )
+
+    private inline fun <T> executeRoomOperation(
+        trace: RoomOperationTrace,
+        block: () -> T
+    ): ZibeResult<T> = when (val result = zibeCatching(block)) {
+        is ZibeResult.Success -> result
+        is ZibeResult.Failure -> {
+            val mapped = result.exception.toRoomOperationException()
+            Log.d(
+                ROOM_OPERATIONS_TAG,
+                "room_operation_failed operation=${trace.operation} " +
+                    "identity=${trace.identityType.name.lowercase(Locale.ROOT)} " +
+                    "roomKey=${safeRoomKey(trace.roomKey)} phase=${trace.phase} " +
+                    "exception=${result.exception::class.java.simpleName} " +
+                    "firebaseCode=${mapped.reason.firebaseCode}"
+            )
+            ZibeResult.Failure(mapped)
+        }
+    }
+
+    private fun Throwable.toRoomOperationException(): RoomOperationException = when {
+        this is RoomOperationException -> this
+        this is RoomValidationException ->
+            RoomOperationException(RoomFailureReason.INVALID_IDENTITY, this)
+        this is FirebaseNetworkException ->
+            RoomOperationException(RoomFailureReason.CONNECTION, this)
+        this is DatabaseException && message.orEmpty().contains("permission", ignoreCase = true) ->
+            RoomOperationException(RoomFailureReason.PERMISSION, this)
+        this is RoomMembershipNotFoundException ->
+            RoomOperationException(RoomFailureReason.SESSION_INVALID, this)
+        this is IllegalStateException && message.orEmpty().contains(
+            "authenticated user",
+            ignoreCase = true
+        ) -> RoomOperationException(RoomFailureReason.SESSION_INVALID, this)
+        else -> RoomOperationException(RoomFailureReason.UNEXPECTED, this)
+    }
+
+    private val RoomFailureReason.firebaseCode: String
+        get() = when (this) {
+            RoomFailureReason.INVALID_IDENTITY -> "invalid_identity"
+            RoomFailureReason.PERMISSION -> "permission_denied"
+            RoomFailureReason.CONNECTION -> "network_error"
+            RoomFailureReason.ROOM_NOT_FOUND -> "room_not_found"
+            RoomFailureReason.SESSION_INVALID -> "session_invalid"
+            RoomFailureReason.UNEXPECTED -> "unknown"
+        }
+
+    private fun safeRoomKey(roomKey: String): String = when {
+        roomKey.isBlank() -> "pending"
+        roomKey.length <= 7 -> "${roomKey.take(2)}..."
+        else -> "${roomKey.take(4)}...${roomKey.takeLast(3)}"
+    }
+
     private fun chatListRef(uid: String = myUid) =
         firebaseRefsContainer.refData.child(uid)
             .child(NODE_CHAT_LIST)
@@ -1015,6 +1127,10 @@ class GroupRepository constructor(
 
         ref.putFile(photoUri).await()
         return ref.downloadUrl.await().toString()
+    }
+
+    private companion object {
+        const val ROOM_OPERATIONS_TAG = "ZibeRooms"
     }
 
     private fun DataSnapshot.numberAsInt(): Int = (value as? Number)?.toInt() ?: 0

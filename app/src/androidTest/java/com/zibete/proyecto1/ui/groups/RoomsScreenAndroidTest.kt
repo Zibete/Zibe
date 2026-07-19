@@ -41,7 +41,10 @@ class RoomsScreenAndroidTest {
 
         composeRule.onNodeWithTag(RoomsTestTags.CREATE_SHEET).assertIsDisplayed()
         composeRule.onNodeWithText("Nombre de la sala").assertIsDisplayed()
-        composeRule.onNodeWithText("Usar un alias").assertIsDisplayed()
+        composeRule.onNodeWithText("Vas a crearla como").assertIsDisplayed()
+        composeRule.onNodeWithText("Public User").assertIsDisplayed()
+        composeRule.onNodeWithText("Usar un alias").assertDoesNotExist()
+        composeRule.onNodeWithTag(RoomsTestTags.CREATE_CONFIRM).assertIsDisplayed()
     }
 
     @Test
@@ -53,6 +56,7 @@ class RoomsScreenAndroidTest {
         composeRule.onNodeWithTag(RoomsTestTags.JOIN_SHEET).assertIsDisplayed()
         composeRule.onNodeWithText("Usar mi perfil").assertIsDisplayed()
         composeRule.onNodeWithText("Usar un alias").assertIsDisplayed()
+        composeRule.onNodeWithTag(RoomsTestTags.JOIN_CONFIRM).assertIsDisplayed()
     }
 
     @Test
@@ -130,7 +134,7 @@ class RoomsScreenAndroidTest {
                     GroupsUiState(
                         rooms = listOf(room()),
                         visibleRooms = listOf(room()),
-                        publicIdentityName = "Ada"
+                        publicIdentityName = "Public User"
                     )
                 )
             }

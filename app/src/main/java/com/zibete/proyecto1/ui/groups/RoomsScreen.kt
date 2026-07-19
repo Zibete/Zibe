@@ -1,7 +1,7 @@
 package com.zibete.proyecto1.ui.groups
 
-import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,19 +22,20 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,11 +43,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -64,10 +67,11 @@ import com.zibete.proyecto1.ui.components.SheetActions
 import com.zibete.proyecto1.ui.components.SheetHeader
 import com.zibete.proyecto1.ui.components.ZibeBottomSheet
 import com.zibete.proyecto1.ui.components.ZibeButtonPrimary
-import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeDialog
 import com.zibete.proyecto1.ui.components.ZibeInputField
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
+import com.zibete.proyecto1.ui.theme.LocalZibeTextStyles
+import com.zibete.proyecto1.core.designsystem.R as DsR
 
 object RoomsTestTags {
     const val SCREEN = "rooms_screen"
@@ -78,6 +82,8 @@ object RoomsTestTags {
     const val CREATE_ACTION = "rooms_create_action"
     const val CREATE_SHEET = "rooms_create_sheet"
     const val JOIN_SHEET = "rooms_join_sheet"
+    const val CREATE_CONFIRM = "rooms_create_confirm"
+    const val JOIN_CONFIRM = "rooms_join_confirm"
 
     fun room(roomKey: String) = "room_$roomKey"
 }
@@ -129,7 +135,6 @@ fun RoomsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.gradientZibe)
             .testTag(RoomsTestTags.SCREEN)
     ) {
         PullToRefreshBox(
@@ -144,8 +149,7 @@ fun RoomsScreen(
                     onRetry = onRetry
                 )
                 state.visibleRooms.isEmpty() -> RoomsEmpty(
-                    isSearchEmpty = state.searchQuery.isNotBlank(),
-                    onCreateRoom = onCreateRoom
+                    isSearchEmpty = state.searchQuery.isNotBlank()
                 )
                 else -> LazyColumn(
                     state = listState,
@@ -153,19 +157,19 @@ fun RoomsScreen(
                         .fillMaxSize()
                         .testTag(RoomsTestTags.LIST),
                     contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 12.dp,
-                        end = 16.dp,
+                        start = 8.dp,
+                        top = 4.dp,
+                        end = 8.dp,
                         bottom = 104.dp
                     ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(
                         items = state.visibleRooms,
                         key = { it.resolvedRoomKey() },
                         contentType = { "room" }
                     ) { room ->
-                        RoomCard(
+                        GlassRoomCard(
                             room = room,
                             isActive = state.activeSession?.roomKey == room.resolvedRoomKey(),
                             onClick = { onRoomSelected(room) }
@@ -176,24 +180,23 @@ fun RoomsScreen(
         }
 
         AnimatedVisibility(
-            visible = state.rooms.isNotEmpty() &&
+            visible = !state.isLoading && state.error == null &&
                 state.sheet == null && state.pendingSwitch == null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
         ) {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = onCreateRoom,
                 modifier = Modifier.testTag(RoomsTestTags.CREATE_ACTION),
                 containerColor = colors.accent,
-                contentColor = colors.lightText,
-                icon = {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                },
-                text = {
-                    Text(stringResource(R.string.rooms_create))
-                }
-            )
+                contentColor = colors.lightText
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(R.string.rooms_create)
+                )
+            }
         }
     }
 
@@ -201,8 +204,6 @@ fun RoomsScreen(
         RoomsSheet.Create -> CreateRoomSheet(
             state = state,
             onDismiss = onDismissSheet,
-            onIdentitySelected = onIdentitySelected,
-            onAliasChanged = onAliasChanged,
             onRoomNameChanged = onRoomNameChanged,
             onRoomDescriptionChanged = onRoomDescriptionChanged,
             onSubmit = onSubmitSheet
@@ -243,8 +244,9 @@ fun RoomsScreen(
 }
 
 @Composable
-private fun RoomCard(room: Groups, isActive: Boolean, onClick: () -> Unit) {
+internal fun GlassRoomCard(room: Groups, isActive: Boolean, onClick: () -> Unit) {
     val colors = LocalZibeExtendedColors.current
+    val textStyles = LocalZibeTextStyles.current
     val roomName = room.resolvedDisplayName()
     val participants = if (room.users == 1) {
         stringResource(R.string.rooms_one_participant)
@@ -256,99 +258,95 @@ private fun RoomCard(room: Groups, isActive: Boolean, onClick: () -> Unit) {
         roomName,
         participants
     )
-    val relativeActivity = remember(room.lastActivityAt) {
-        DateUtils.getRelativeTimeSpanString(
-            room.lastActivityAt,
-            System.currentTimeMillis(),
-            DateUtils.MINUTE_IN_MILLIS
-        ).toString()
-    }
-    ZibeCard(
+    val activeDescription = stringResource(R.string.rooms_active)
+    val shape = RoundedCornerShape(20.dp)
+    val glow = Brush.linearGradient(
+        listOf(
+            colorResource(DsR.color.zibe_gradient_end),
+            colorResource(DsR.color.zibe_pink),
+            colorResource(DsR.color.zibe_purple)
+        )
+    )
+    Card(
         onClick = onClick,
         modifier = Modifier
+            .fillMaxWidth()
             .testTag(RoomsTestTags.room(room.resolvedRoomKey()))
             .semantics { contentDescription = cardDescription },
-        containerColor = colors.cardBackground.copy(alpha = 0.96f)
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(2.dp, glow)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            colorResource(DsR.color.glass_bg_light),
+                            colorResource(DsR.color.glass_indicator_light)
+                        )
+                    )
+                )
+                .padding(12.dp)
         ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = colors.accent.copy(alpha = 0.14f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = roomName,
+                    modifier = Modifier.weight(1f),
+                    style = textStyles.brandSubtitle,
+                    color = colors.lightText,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (isActive) {
+                    Surface(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .semantics {
+                                contentDescription = activeDescription
+                            },
+                        shape = CircleShape,
+                        color = colors.accent
+                    ) {}
+                }
+                if (room.unreadCount > 0) RoomUnreadBadge(room.unreadCount)
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 6.dp),
+                color = colorResource(DsR.color.glass_stroke_light)
+            )
+            Text(
+                text = room.description,
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.lightText,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.MeetingRoom,
+                    Icons.Default.Groups,
                     contentDescription = null,
-                    tint = colors.accent,
-                    modifier = Modifier.padding(10.dp)
+                    tint = colors.lightText,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text(
+                    text = participants,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.lightText
                 )
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = roomName,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colors.lightText,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (room.unreadCount > 0) RoomUnreadBadge(room.unreadCount)
-                }
-                if (isActive) {
-                    Text(
-                        text = stringResource(R.string.rooms_active),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = colors.accent,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = room.description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.hintText,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(14.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            RoomMetadata(Icons.Default.Groups, participants)
-            if (room.lastActivityAt > 0L) {
-                RoomMetadata(
-                    Icons.Default.Schedule,
-                    stringResource(R.string.rooms_last_activity, relativeActivity)
-                )
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
-        ) {
-            Text(
-                text = stringResource(if (isActive) R.string.rooms_open else R.string.rooms_join),
-                style = MaterialTheme.typography.labelLarge,
-                color = colors.accent
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = colors.accent,
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }
@@ -398,7 +396,7 @@ private fun RoomsLoading() {
 }
 
 @Composable
-private fun RoomsEmpty(isSearchEmpty: Boolean, onCreateRoom: () -> Unit) {
+private fun RoomsEmpty(isSearchEmpty: Boolean) {
     val colors = LocalZibeExtendedColors.current
     Box(
         modifier = Modifier.fillMaxSize().padding(32.dp).testTag(RoomsTestTags.EMPTY),
@@ -434,14 +432,6 @@ private fun RoomsEmpty(isSearchEmpty: Boolean, onCreateRoom: () -> Unit) {
                 color = colors.hintText,
                 textAlign = TextAlign.Center
             )
-            if (!isSearchEmpty) {
-                Spacer(Modifier.height(20.dp))
-                ZibeButtonPrimary(
-                    text = stringResource(R.string.rooms_create),
-                    onClick = onCreateRoom,
-                    modifier = Modifier.fillMaxWidth(0.72f)
-                )
-            }
         }
     }
 }
@@ -492,8 +482,6 @@ private fun RoomsError(message: String, onRetry: () -> Unit) {
 private fun CreateRoomSheet(
     state: GroupsUiState,
     onDismiss: () -> Unit,
-    onIdentitySelected: (RoomIdentityType) -> Unit,
-    onAliasChanged: (String) -> Unit,
     onRoomNameChanged: (String) -> Unit,
     onRoomDescriptionChanged: (String) -> Unit,
     onSubmit: () -> Unit
@@ -501,14 +489,17 @@ private fun CreateRoomSheet(
     ZibeBottomSheet(
         isOpen = true,
         onCancel = onDismiss,
+        openFullyExpanded = true,
         modifier = Modifier.testTag(RoomsTestTags.CREATE_SHEET),
         footer = {
             SheetActions(
                 onConfirm = onSubmit,
                 onCancel = onDismiss,
+                modifier = Modifier.testTag(RoomsTestTags.CREATE_CONFIRM),
                 confirmText = stringResource(R.string.rooms_create),
                 confirmEnabled = state.roomName.isNotBlank() &&
-                    state.roomDescription.isNotBlank() && state.hasValidIdentityInput(),
+                    state.roomDescription.isNotBlank() &&
+                    state.publicIdentityName.isNotBlank(),
                 isConfirmLoading = state.isSubmitting
             )
         }
@@ -532,11 +523,7 @@ private fun CreateRoomSheet(
             singleLine = false,
             error = state.roomDescriptionError?.asString()
         )
-        RoomIdentitySelector(
-            state = state,
-            onIdentitySelected = onIdentitySelected,
-            onAliasChanged = onAliasChanged
-        )
+        PublicCreatorIdentity(state)
     }
 }
 
@@ -558,11 +545,13 @@ private fun JoinRoomSheet(
     ZibeBottomSheet(
         isOpen = true,
         onCancel = onDismiss,
+        openFullyExpanded = true,
         modifier = Modifier.testTag(RoomsTestTags.JOIN_SHEET),
         footer = {
             SheetActions(
                 onConfirm = onSubmit,
                 onCancel = onDismiss,
+                modifier = Modifier.testTag(RoomsTestTags.JOIN_CONFIRM),
                 confirmText = stringResource(R.string.rooms_join),
                 confirmEnabled = state.hasValidIdentityInput(),
                 isConfirmLoading = state.isSubmitting
@@ -581,6 +570,21 @@ private fun JoinRoomSheet(
             onAliasChanged = onAliasChanged
         )
     }
+}
+
+@Composable
+private fun PublicCreatorIdentity(state: GroupsUiState) {
+    val colors = LocalZibeExtendedColors.current
+    Text(
+        text = stringResource(R.string.rooms_creator_identity),
+        style = MaterialTheme.typography.titleMedium,
+        color = colors.lightText,
+        fontWeight = FontWeight.SemiBold
+    )
+    PublicIdentitySummary(
+        state = state,
+        supportingText = stringResource(R.string.rooms_creator_identity_supporting)
+    )
 }
 
 @Composable
@@ -616,30 +620,10 @@ private fun RoomIdentitySelector(
         )
     }
     if (state.identityType == RoomIdentityType.PUBLIC) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AsyncImage(
-                model = state.publicIdentityPhotoUrl,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp).clip(CircleShape)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = state.publicIdentityName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.lightText,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = stringResource(R.string.rooms_identity_public_supporting),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colors.hintText
-                )
-            }
-        }
+        PublicIdentitySummary(
+            state = state,
+            supportingText = stringResource(R.string.rooms_identity_public_supporting)
+        )
     } else {
         Text(
             text = stringResource(R.string.rooms_identity_anonymous_supporting),
@@ -665,6 +649,35 @@ private fun RoomIdentitySelector(
                 text = it.asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.snackRed
+            )
+        }
+    }
+}
+
+@Composable
+private fun PublicIdentitySummary(state: GroupsUiState, supportingText: String) {
+    val colors = LocalZibeExtendedColors.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        AsyncImage(
+            model = state.publicIdentityPhotoUrl,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp).clip(CircleShape)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = state.publicIdentityName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.lightText,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = supportingText,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.hintText
             )
         }
     }

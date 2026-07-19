@@ -47,7 +47,10 @@ fun ZibeBottomSheet(
     isOpen: Boolean,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+    openFullyExpanded: Boolean = false,
+    sheetState: SheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = openFullyExpanded
+    ),
     showCancelButton: Boolean = true, // Added for flexibility in redesign
     contentModifier: Modifier = Modifier,
     footer: (@Composable () -> Unit)? = null,

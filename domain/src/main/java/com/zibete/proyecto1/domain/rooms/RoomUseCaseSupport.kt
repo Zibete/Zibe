@@ -13,6 +13,29 @@ class RoomSessionNotFoundException : IllegalStateException("No active room sessi
 class RoomValidationException(val issues: List<RoomValidationIssue>) :
     IllegalArgumentException("Invalid room command: $issues")
 
+enum class RoomFailureReason {
+    INVALID_IDENTITY,
+    PERMISSION,
+    CONNECTION,
+    ROOM_NOT_FOUND,
+    SESSION_INVALID,
+    UNEXPECTED
+}
+
+class RoomOperationException(
+    val reason: RoomFailureReason,
+    cause: Throwable? = null
+) : IllegalStateException("Room operation failed: $reason", cause)
+
+object RoomCreationPolicy {
+    fun validateCreator(identity: RoomIdentity): RoomValidationIssue? =
+        if (identity.type == RoomIdentityType.PUBLIC) null
+        else RoomValidationIssue(
+            field = RoomValidationField.PUBLIC_IDENTITY,
+            error = RoomValidationError.INVALID_VALUE
+        )
+}
+
 internal fun ZibeResult.Failure.rethrowCancellation(): ZibeResult.Failure {
     if (exception is CancellationException) throw exception
     return this
