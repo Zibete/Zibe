@@ -1,132 +1,108 @@
 from __future__ import annotations
 
-from typing import Any
-
-from firebase_admin import db
 from firebase_functions import https_fn
 
 if __package__:
     from .rooms_v2 import (
-        MODE_REAL,
-        ROLE_MEMBER,
-        ROLE_OWNER,
-        ROOT,
-        _active_membership,
-        _fanout,
         _fail,
-        _increment_member_count,
+        _normalize_room_name,
         _now_ms,
         _payload,
-        _room,
+        _public_id,
+        _room_name_key,
+        _safe_id,
+        _transaction,
         _uid,
+        _validated,
     )
-    from .rooms_v2_core import can_moderate_target
+    from .rooms_v2_core import validate_description, validate_room_name
+    from .rooms_v2_state import (
+        close_room_state,
+        edit_room_state,
+        remove_member_state,
+        remove_public_message_state,
+        report_message_state,
+        resolve_report_state,
+        set_moderator_state,
+        transfer_owner_state,
+    )
 else:
     from rooms_v2 import (
-        MODE_REAL,
-        ROLE_MEMBER,
-        ROLE_OWNER,
-        ROOT,
-        _active_membership,
-        _fanout,
         _fail,
-        _increment_member_count,
+        _normalize_room_name,
         _now_ms,
         _payload,
-        _room,
+        _public_id,
+        _room_name_key,
+        _safe_id,
+        _transaction,
         _uid,
+        _validated,
     )
-    from rooms_v2_core import can_moderate_target
-
-ROLE_MODERATOR = "moderator"
-
-
-def _public_member(room_id: str, identity_id: str) -> dict:
-    value = db.reference(f"{ROOT}/publicMembers/{room_id}/{identity_id}").get()
-    if not isinstance(value, dict):
-        _fail(https_fn.FunctionsErrorCode.NOT_FOUND, "Member identity not found.")
-    return value
-
-
-def _identity_owner(room_id: str, identity_id: str) -> dict:
-    value = db.reference(f"{ROOT}/private/identityOwners/{room_id}/{identity_id}").get()
-    if not isinstance(value, dict) or not str(value.get("uid") or "").strip():
-        _fail(https_fn.FunctionsErrorCode.NOT_FOUND, "Member ownership mapping not found.")
-    return value
+    from rooms_v2_core import validate_description, validate_room_name
+    from rooms_v2_state import (
+        close_room_state,
+        edit_room_state,
+        remove_member_state,
+        remove_public_message_state,
+        report_message_state,
+        resolve_report_state,
+        set_moderator_state,
+        transfer_owner_state,
+    )
 
 
-def _require_role(membership: dict, *allowed: str) -> str:
-    role = str(membership.get("role") or "").lower()
-    if role not in allowed:
-        _fail(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "Insufficient room role.")
-    return role
+def _bounded_text(value: object, *, field: str, minimum: int, maximum: int) -> str:
+    text = " ".join(str(value or "").strip().split())
+    if len(text) < minimum or len(text) > maximum:
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            f"{field} must contain {minimum}-{maximum} characters.",
+            room_code="INVALID_INPUT",
+        )
+    return text
 
 
-def _identity_id(value: object) -> str:
-    identity_id = str(value or "").strip()
-    if not identity_id or len(identity_id) > 120 or any(char in ".#$[]/" for char in identity_id):
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Invalid identityId.")
-    return identity_id
-
-
-def _deactivate_member(
-    *,
-    actor_identity_id: str,
-    target_uid: str,
-    room_id: str,
-    target_identity_id: str,
-    target_membership: dict,
-    target_public: dict,
-    target_owner: dict,
-    ban: bool,
-) -> None:
+@https_fn.on_call(region="us-central1")
+def edit_room_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    name = _validated(validate_room_name, data.get("name"))
+    description = _validated(validate_description, data.get("description"))
+    normalized_name = _normalize_room_name(name)
     now = _now_ms()
-    identity_key = str(target_owner.get("identityKey") or "").strip()
-    inactive_membership = dict(target_membership)
-    inactive_membership["active"] = False
-    inactive_public = dict(target_public)
-    inactive_public["active"] = False
-    updates: dict[str, Any] = {
-        f"membershipIndexByUser/{target_uid}/{room_id}": inactive_membership,
-        f"publicMembers/{room_id}/{target_identity_id}": inactive_public,
-        f"private/identityOwners/{room_id}/{target_identity_id}/active": False,
-        f"publicRooms/{room_id}/updatedAt": now,
-    }
-    if identity_key:
-        updates[f"private/userIdentity/{target_uid}/{room_id}/{identity_key}/active"] = False
-        if identity_key.startswith("anon_"):
-            alias_hash = identity_key.removeprefix("anon_")
-            claim = db.reference(f"{ROOT}/private/aliasClaims/{room_id}/{alias_hash}").get()
-            if (
-                isinstance(claim, dict)
-                and claim.get("uid") == target_uid
-                and claim.get("identityId") == target_identity_id
-            ):
-                updates[f"private/aliasClaims/{room_id}/{alias_hash}/active"] = False
-    if ban:
-        updates[f"private/bans/{room_id}/{target_uid}"] = {
-            "byIdentityId": actor_identity_id,
-            "createdAt": now,
-        }
-    _fanout(updates)
-    _increment_member_count(room_id, -1)
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: edit_room_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            name=name,
+            normalized_name=normalized_name,
+            new_name_key=_room_name_key(normalized_name),
+            description=description,
+            now=now,
+            audit_id=audit_id,
+        )
+    )
+    return {"ok": True, "roomId": room_id}
 
 
 @https_fn.on_call(region="us-central1")
 def close_room_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
-    room_id = str(_payload(request).get("roomId") or "").strip()
-    _require_role(_active_membership(uid, room_id), ROLE_OWNER)
-    room = _room(room_id)
-    if str(room.get("status") or "").lower() == "closed":
-        return {"ok": True, "roomId": room_id, "status": "closed"}
+    room_id = _safe_id(_payload(request).get("roomId"), field="roomId")
     now = _now_ms()
-    _fanout(
-        {
-            f"publicRooms/{room_id}/status": "closed",
-            f"publicRooms/{room_id}/closedAt": now,
-            f"publicRooms/{room_id}/updatedAt": now,
-        }
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: close_room_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            now=now,
+            audit_id=audit_id,
+        )
     )
     return {"ok": True, "roomId": room_id, "status": "closed"}
 
@@ -135,100 +111,91 @@ def close_room_v2(request: https_fn.CallableRequest) -> dict:
 def transfer_room_owner_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
     data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    target_identity_id = _identity_id(data.get("targetIdentityId"))
-    actor = _active_membership(uid, room_id)
-    _require_role(actor, ROLE_OWNER)
-    actor_identity_id = str(actor.get("identityId") or "").strip()
-    if target_identity_id == actor_identity_id:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Owner is already this identity.")
-
-    target_public = _public_member(room_id, target_identity_id)
-    if target_public.get("active") is not True:
-        _fail(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "Target member is inactive.")
-    if str(target_public.get("mode") or "").lower() != MODE_REAL:
-        _fail(
-            https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
-            "Ownership can only be transferred to an active real-profile identity.",
-        )
-    target_owner = _identity_owner(room_id, target_identity_id)
-    target_uid = str(target_owner["uid"])
-    if target_uid == uid:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Target belongs to the current owner account.")
-    target_membership = _active_membership(target_uid, room_id)
-    actor_updated = dict(actor)
-    actor_updated["role"] = ROLE_MEMBER
-    target_updated = dict(target_membership)
-    target_updated["role"] = ROLE_OWNER
-    _fanout(
-        {
-            f"membershipIndexByUser/{uid}/{room_id}": actor_updated,
-            f"membershipIndexByUser/{target_uid}/{room_id}": target_updated,
-            f"publicMembers/{room_id}/{actor_identity_id}/role": ROLE_MEMBER,
-            f"publicMembers/{room_id}/{target_identity_id}/role": ROLE_OWNER,
-            f"publicRooms/{room_id}/ownerIdentityId": target_identity_id,
-            f"publicRooms/{room_id}/updatedAt": _now_ms(),
-        }
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    target_identity_id = _safe_id(
+        data.get("targetIdentityId"),
+        field="targetIdentityId",
     )
-    return {"ok": True, "roomId": room_id, "ownerIdentityId": target_identity_id}
+    now = _now_ms()
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: transfer_owner_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            target_identity_id=target_identity_id,
+            now=now,
+            audit_id=audit_id,
+        )
+    )
+    return {
+        "ok": True,
+        "roomId": room_id,
+        "ownerIdentityId": target_identity_id,
+    }
 
 
 @https_fn.on_call(region="us-central1")
 def set_room_moderator_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
     data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    target_identity_id = _identity_id(data.get("targetIdentityId"))
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    target_identity_id = _safe_id(
+        data.get("targetIdentityId"),
+        field="targetIdentityId",
+    )
     enabled = data.get("enabled")
     if not isinstance(enabled, bool):
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "enabled must be boolean.")
-    _require_role(_active_membership(uid, room_id), ROLE_OWNER)
-    target_public = _public_member(room_id, target_identity_id)
-    if target_public.get("active") is not True:
-        _fail(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "Target member is inactive.")
-    if str(target_public.get("role") or "").lower() == ROLE_OWNER:
-        _fail(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "Owner role cannot be changed here.")
-    target_uid = str(_identity_owner(room_id, target_identity_id)["uid"])
-    target_membership = _active_membership(target_uid, room_id)
-    new_role = ROLE_MODERATOR if enabled else ROLE_MEMBER
-    updated = dict(target_membership)
-    updated["role"] = new_role
-    _fanout(
-        {
-            f"membershipIndexByUser/{target_uid}/{room_id}": updated,
-            f"publicMembers/{room_id}/{target_identity_id}/role": new_role,
-            f"publicRooms/{room_id}/updatedAt": _now_ms(),
-        }
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "enabled must be boolean.",
+            room_code="INVALID_INPUT",
+        )
+    now = _now_ms()
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: set_moderator_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            target_identity_id=target_identity_id,
+            enabled=enabled,
+            now=now,
+            audit_id=audit_id,
+        )
     )
-    return {"ok": True, "roomId": room_id, "targetIdentityId": target_identity_id, "role": new_role}
+    return {
+        "ok": True,
+        "roomId": room_id,
+        "targetIdentityId": target_identity_id,
+        "role": "moderator" if enabled else "member",
+    }
 
 
-def _remove_room_member(request: https_fn.CallableRequest, *, ban: bool) -> dict:
+def _remove_member(
+    request: https_fn.CallableRequest,
+    *,
+    ban: bool,
+) -> dict:
     uid = _uid(request)
     data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    target_identity_id = _identity_id(data.get("targetIdentityId"))
-    actor = _active_membership(uid, room_id)
-    actor_role = _require_role(actor, ROLE_OWNER, ROLE_MODERATOR)
-    actor_identity_id = str(actor.get("identityId") or "").strip()
-    if target_identity_id == actor_identity_id:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Use leave for the current identity.")
-    target_public = _public_member(room_id, target_identity_id)
-    if target_public.get("active") is not True:
-        _fail(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "Target member is inactive.")
-    if not can_moderate_target(actor_role, str(target_public.get("role") or "")):
-        _fail(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "Role hierarchy forbids this action.")
-    target_owner = _identity_owner(room_id, target_identity_id)
-    target_uid = str(target_owner["uid"])
-    _deactivate_member(
-        actor_identity_id=actor_identity_id,
-        target_uid=target_uid,
-        room_id=room_id,
-        target_identity_id=target_identity_id,
-        target_membership=_active_membership(target_uid, room_id),
-        target_public=target_public,
-        target_owner=target_owner,
-        ban=ban,
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    target_identity_id = _safe_id(
+        data.get("targetIdentityId"),
+        field="targetIdentityId",
+    )
+    now = _now_ms()
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: remove_member_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            target_identity_id=target_identity_id,
+            ban=ban,
+            now=now,
+            audit_id=audit_id,
+        )
     )
     return {
         "ok": True,
@@ -240,9 +207,93 @@ def _remove_room_member(request: https_fn.CallableRequest, *, ban: bool) -> dict
 
 @https_fn.on_call(region="us-central1")
 def kick_room_member_v2(request: https_fn.CallableRequest) -> dict:
-    return _remove_room_member(request, ban=False)
+    return _remove_member(request, ban=False)
 
 
 @https_fn.on_call(region="us-central1")
 def ban_room_member_v2(request: https_fn.CallableRequest) -> dict:
-    return _remove_room_member(request, ban=True)
+    return _remove_member(request, ban=True)
+
+
+@https_fn.on_call(region="us-central1")
+def remove_room_message_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    message_id = _safe_id(data.get("messageId"), field="messageId")
+    now = _now_ms()
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: remove_public_message_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            message_id=message_id,
+            now=now,
+            audit_id=audit_id,
+        )
+    )
+    return {"ok": True, "roomId": room_id, "messageId": message_id}
+
+
+@https_fn.on_call(region="us-central1")
+def report_room_message_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    message_id = _safe_id(data.get("messageId"), field="messageId")
+    conversation_value = data.get("conversationId")
+    conversation_id = (
+        _safe_id(conversation_value, field="conversationId")
+        if conversation_value not in (None, "")
+        else None
+    )
+    reason = _bounded_text(
+        data.get("reason"),
+        field="reason",
+        minimum=3,
+        maximum=500,
+    )
+    report_id = _public_id("report")
+    now = _now_ms()
+    _transaction(
+        lambda current: report_message_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            message_id=message_id,
+            conversation_id=conversation_id,
+            reason=reason,
+            report_id=report_id,
+            now=now,
+        )
+    )
+    return {"ok": True, "roomId": room_id, "reportId": report_id}
+
+
+@https_fn.on_call(region="us-central1")
+def resolve_room_report_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    report_id = _safe_id(data.get("reportId"), field="reportId")
+    resolution = _bounded_text(
+        data.get("resolution"),
+        field="resolution",
+        minimum=1,
+        maximum=500,
+    )
+    now = _now_ms()
+    audit_id = _public_id("audit")
+    _transaction(
+        lambda current: resolve_report_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            report_id=report_id,
+            resolution=resolution,
+            now=now,
+            audit_id=audit_id,
+        )
+    )
+    return {"ok": True, "roomId": room_id, "reportId": report_id}
