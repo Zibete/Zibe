@@ -21,7 +21,7 @@
         "$roomId": {
           ".read": "auth != null && root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('active').val() == true",
           ".write": false,
-          ".indexOn": ["sentAt"]
+          ".indexOn": ["seq"]
         }
       },
       "membershipIndexByUser": {
@@ -30,8 +30,33 @@
           ".write": false
         }
       },
+      "conversationIndexByUser": {
+        "$uid": {
+          "$roomId": {
+            ".read": "auth != null && auth.uid == $uid && root.child('RoomsV2/membershipIndexByUser').child($uid).child($roomId).child('active').val() == true",
+            ".write": false
+          }
+        }
+      },
+      "privateMessages": {
+        "$conversationId": {
+          ".read": "auth != null && root.child('RoomsV2/private/conversationReaders').child($conversationId).child(auth.uid).val() == true",
+          ".write": false,
+          ".indexOn": ["seq"]
+        }
+      },
+      "reports": {
+        "$roomId": {
+          ".read": "auth != null && root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('active').val() == true && (root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('role').val() == 'owner' || root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('role').val() == 'moderator')",
+          ".write": false,
+          ".indexOn": ["createdAt"]
+        }
+      },
       "private": {
         ".read": false,
+        ".write": false
+      },
+      "$other": {
         ".write": false
       }
     }
