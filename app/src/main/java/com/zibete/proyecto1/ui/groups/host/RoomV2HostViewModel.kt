@@ -76,7 +76,7 @@ class RoomV2HostViewModel @Inject constructor(
     private fun observeRoom() {
         viewModelScope.launch {
             roomsRepository.observeRoom(roomId)
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { room ->
                     _uiState.update {
                         it.copy(
@@ -98,7 +98,7 @@ class RoomV2HostViewModel @Inject constructor(
             roomsRepository.observeMemberships()
                 .map { memberships -> memberships.firstOrNull { it.roomId == roomId } }
                 .distinctUntilChanged()
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { membership ->
                     _uiState.update { it.copy(membership = membership) }
                 }
@@ -108,7 +108,7 @@ class RoomV2HostViewModel @Inject constructor(
     private fun observeParticipants() {
         viewModelScope.launch {
             chatRepository.observeParticipants(roomId)
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { participants ->
                     _uiState.update { it.copy(participants = participants) }
                 }
@@ -118,7 +118,7 @@ class RoomV2HostViewModel @Inject constructor(
     private fun observeConversations() {
         viewModelScope.launch {
             chatRepository.observeConversations(roomId)
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { conversations ->
                     _uiState.update { it.copy(conversations = conversations) }
                     val selected = selectedConversationId.value
@@ -132,14 +132,13 @@ class RoomV2HostViewModel @Inject constructor(
     private fun observeMessages() {
         viewModelScope.launch {
             selectedConversationId
-                .distinctUntilChanged()
                 .flatMapLatest { conversationId ->
                     chatRepository.observeMessages(
                         RoomV2Thread(roomId = roomId, conversationId = conversationId),
                         limit = 100,
                     )
                 }
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { messages ->
                     _uiState.update { it.copy(messages = messages) }
                     val latestSeq = messages.lastOrNull()?.seq ?: 0L
@@ -163,7 +162,7 @@ class RoomV2HostViewModel @Inject constructor(
                         null -> flowOf(emptyList())
                     }
                 }
-                .catch(::handleStreamFailure)
+                .catch { failure -> handleStreamFailure(failure) }
                 .collect { reports ->
                     _uiState.update { it.copy(reports = reports) }
                 }

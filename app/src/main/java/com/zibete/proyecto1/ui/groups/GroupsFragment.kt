@@ -16,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
+import com.zibete.proyecto1.ui.groups.host.ROOM_V2_ID_ARG
 import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.search.SearchHandler
