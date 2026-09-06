@@ -1,0 +1,26 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "python313",
+      "ignore": ["venv", ".venv", "__pycache__", "tests", ".git", "*.log"]
+    }
+  ],
+  "database": {
+    "rules": "build/generated/firebase/database.rooms-combined.rules.json"
+  },
+  "storage": {
+    "rules": "storage.local.rules"
+  },
+  "emulators": {
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "database": { "host": "127.0.0.1", "port": 9000 },
+    "storage": { "host": "127.0.0.1", "port": 9199 },
+    "functions": { "host": "127.0.0.1", "port": 5001 },
+    "hub": { "host": "127.0.0.1", "port": 4400 },
+    "logging": { "host": "127.0.0.1", "port": 4500 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
+  }
+}
