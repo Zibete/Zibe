@@ -16,7 +16,6 @@
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_chat_list" />
 
-
     <fragment
         android:id="@+id/nav_group_select"
         android:name="com.zibete.proyecto1.ui.groups.GroupsFragment"
@@ -33,7 +32,7 @@
         android:name="com.zibete.proyecto1.ui.editprofile.EditProfileComposeFragment"
         android:label="@string/menu_edit_profile"
         app:popUpTo="@id/editProfileFragment"
-        app:popUpToInclusive="true"/>
+        app:popUpToInclusive="true" />
 
     <fragment
         android:id="@+id/settingsFragment"
@@ -44,5 +43,14 @@
         android:id="@+id/nav_group_host"
         android:name="com.zibete.proyecto1.ui.groups.host.GroupHostFragment"
         android:label="@string/menu_groups" />
+
+    <fragment
+        android:id="@+id/nav_room_v2_host"
+        android:name="com.zibete.proyecto1.ui.groups.host.RoomV2HostFragment"
+        android:label="@string/menu_groups">
+        <argument
+            android:name="roomId"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

@@ -58,6 +58,7 @@
     <string name="rooms_v2_close_title">¿Cerrar esta sala?</string>
     <string name="rooms_v2_close_message">Nadie podrá volver a entrar ni enviar mensajes. El historial se conserva.</string>
     <string name="rooms_v2_open_private">Abrir privado</string>
+    <string name="rooms_v2_back_to_privates">Volver a privados</string>
     <string name="rooms_v2_block_private">Bloquear privado</string>
     <string name="rooms_v2_unblock_private">Desbloquear privado</string>
     <string name="rooms_v2_private_closed">Conversación cerrada</string>
@@ -72,6 +73,7 @@
     <string name="rooms_v2_make_moderator">Designar moderador</string>
     <string name="rooms_v2_remove_moderator">Quitar moderador</string>
     <string name="rooms_v2_remove_message">Eliminar mensaje</string>
+    <string name="rooms_v2_message_removed">Mensaje eliminado</string>
     <string name="rooms_v2_transfer_owner">Transferir propiedad</string>
     <string name="rooms_v2_notifications">Notificaciones</string>
 </resources>
