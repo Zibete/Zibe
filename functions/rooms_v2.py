@@ -1,60 +1,85 @@
 from __future__ import annotations
 
+import hashlib
 import secrets
 import time
-from typing import Any
+import unicodedata
+from typing import Any, Callable
 
 from firebase_admin import db
 from firebase_functions import https_fn
 
 if __package__:
     from .rooms_v2_core import (
-        MembershipProjection,
         RoomsV2ValidationError,
-        new_public_id,
         private_alias_key,
-        resolve_alias_claim,
-        resolve_message_claim,
         validate_alias,
         validate_client_message_id,
         validate_description,
         validate_message,
         validate_room_name,
+    )
+    from .rooms_v2_state import (
+        MODE_ANONYMOUS,
+        MODE_REAL,
+        RoomsV2StateError,
+        create_room_state,
+        join_room_state,
+        leave_room_state,
+        mark_read_state,
+        send_public_text_state,
+        set_notifications_state,
+        set_visible_thread_state,
     )
 else:
     from rooms_v2_core import (
-        MembershipProjection,
         RoomsV2ValidationError,
-        new_public_id,
         private_alias_key,
-        resolve_alias_claim,
-        resolve_message_claim,
         validate_alias,
         validate_client_message_id,
         validate_description,
         validate_message,
         validate_room_name,
     )
+    from rooms_v2_state import (
+        MODE_ANONYMOUS,
+        MODE_REAL,
+        RoomsV2StateError,
+        create_room_state,
+        join_room_state,
+        leave_room_state,
+        mark_read_state,
+        send_public_text_state,
+        set_notifications_state,
+        set_visible_thread_state,
+    )
 
 ROOT = "RoomsV2"
-STATUS_OPEN = "open"
-MODE_REAL = "real"
-MODE_ANONYMOUS = "anonymous"
-ROLE_OWNER = "owner"
-ROLE_MEMBER = "member"
+VISIBLE_THREAD_LEASE_MS = 120_000
+MAX_ID_CHARS = 120
 
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def _fail(code: https_fn.FunctionsErrorCode, message: str) -> None:
-    raise https_fn.HttpsError(code, message)
+def _fail(
+    code: https_fn.FunctionsErrorCode,
+    message: str,
+    *,
+    room_code: str | None = None,
+) -> None:
+    details = {"roomV2Code": room_code} if room_code else None
+    raise https_fn.HttpsError(code, message, details)
 
 
 def _uid(request: https_fn.CallableRequest) -> str:
     if request.auth is None or not request.auth.uid:
-        _fail(https_fn.FunctionsErrorCode.UNAUTHENTICATED, "Authentication is required.")
+        _fail(
+            https_fn.FunctionsErrorCode.UNAUTHENTICATED,
+            "Authentication is required.",
+            room_code="UNAUTHENTICATED",
+        )
     return request.auth.uid
 
 
@@ -62,15 +87,38 @@ def _payload(request: https_fn.CallableRequest) -> dict[str, Any]:
     if request.data is None:
         return {}
     if not isinstance(request.data, dict):
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Expected an object payload.")
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "Expected an object payload.",
+            room_code="INVALID_INPUT",
+        )
     return request.data
 
 
-def _validated(fn, value: object):
+def _validated(fn: Callable, value: object):
     try:
         return fn(value)
     except RoomsV2ValidationError as exc:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, str(exc))
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            str(exc),
+            room_code="INVALID_INPUT",
+        )
+
+
+def _safe_id(value: object, *, field: str = "id") -> str:
+    text = str(value or "").strip()
+    if (
+        not text
+        or len(text) > MAX_ID_CHARS
+        or any(char in ".#$[]/" or ord(char) < 32 for char in text)
+    ):
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            f"Invalid {field}.",
+            room_code="INVALID_INPUT",
+        )
+    return text
 
 
 def _profile_name(uid: str) -> str:
@@ -80,89 +128,78 @@ def _profile_name(uid: str) -> str:
         _fail(
             https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
             "A real public profile is required.",
+            room_code="CONFLICT",
         )
     return name[:80]
 
 
-def _room(room_id: str) -> dict:
-    value = db.reference(f"{ROOT}/publicRooms/{room_id}").get()
-    if not isinstance(value, dict):
-        _fail(https_fn.FunctionsErrorCode.NOT_FOUND, "Room not found.")
-    return value
+def _normalize_room_name(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value)
+    without_marks = "".join(c for c in decomposed if not unicodedata.combining(c))
+    return " ".join(without_marks.lower().split())
 
 
-def _active_membership(uid: str, room_id: str) -> dict:
-    value = db.reference(f"{ROOT}/membershipIndexByUser/{uid}/{room_id}").get()
-    if not isinstance(value, dict) or value.get("active") is not True:
-        _fail(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "Active membership is required.")
-    return value
+def _room_name_key(normalized_name: str) -> str:
+    return hashlib.sha256(normalized_name.encode("utf-8")).hexdigest()
 
 
-def _ensure_room_open(room: dict) -> None:
-    if str(room.get("status") or "").lower() != STATUS_OPEN:
-        _fail(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, "Room is closed.")
+def _public_id(prefix: str) -> str:
+    token = secrets.token_urlsafe(16).replace("=", "").replace("/", "_").replace("+", "-")
+    return f"{prefix}_{token}"
 
 
-def _ensure_not_banned(uid: str, room_id: str) -> None:
-    if db.reference(f"{ROOT}/private/bans/{room_id}/{uid}").get() is not None:
-        _fail(https_fn.FunctionsErrorCode.PERMISSION_DENIED, "This account cannot join the room.")
-
-
-def _membership_projection(
-    *,
-    room_id: str,
-    identity_id: str,
-    display_name: str,
-    mode: str,
-    role: str,
-    joined_at: int,
-    active: bool = True,
-    last_read_at: int = 0,
-) -> dict:
-    return MembershipProjection(
-        room_id=room_id,
-        identity_id=identity_id,
-        display_name=display_name,
-        mode=mode,
-        role=role,
-        active=active,
-        joined_at=joined_at,
-        last_read_at=last_read_at,
-    ).as_dict()
-
-
-def _public_member(projection: dict) -> dict:
-    return {
-        "identityId": projection["identityId"],
-        "displayName": projection["displayName"],
-        "mode": projection["mode"],
-        "role": projection["role"],
-        "active": projection["active"],
-        "joinedAt": projection["joinedAt"],
+def _state_error(exc: RoomsV2StateError) -> None:
+    mapping = {
+        "UNAUTHENTICATED": https_fn.FunctionsErrorCode.UNAUTHENTICATED,
+        "PERMISSION_DENIED": https_fn.FunctionsErrorCode.PERMISSION_DENIED,
+        "ALIAS_TAKEN": https_fn.FunctionsErrorCode.ALREADY_EXISTS,
+        "ROOM_NAME_TAKEN": https_fn.FunctionsErrorCode.ALREADY_EXISTS,
+        "ROOM_CLOSED": https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+        "IDENTITY_CHANGE_REQUIRED": https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+        "OWNER_ACTION_REQUIRED": https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+        "NOT_FOUND": https_fn.FunctionsErrorCode.NOT_FOUND,
+        "INVALID_INPUT": https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+        "CONFLICT": https_fn.FunctionsErrorCode.ABORTED,
     }
+    _fail(
+        mapping.get(exc.code, https_fn.FunctionsErrorCode.INTERNAL),
+        str(exc),
+        room_code=exc.code,
+    )
 
 
-def _fanout(updates: dict[str, Any]) -> None:
-    # Admin SDK multi-path update is atomic within RTDB.
-    db.reference(ROOT).update(updates)
+def _transaction(mutator: Callable[[object], dict]) -> dict:
+    try:
+        value = db.reference(ROOT).transaction(mutator)
+    except RoomsV2StateError as exc:
+        _state_error(exc)
+    if not isinstance(value, dict):
+        _fail(
+            https_fn.FunctionsErrorCode.INTERNAL,
+            "RoomsV2 transaction returned an invalid state.",
+            room_code="INTERNAL",
+        )
+    return value
 
 
-def _increment_member_count(room_id: str, delta: int) -> None:
-    ref = db.reference(f"{ROOT}/publicRooms/{room_id}/memberCount")
-
-    def update(current: object) -> int:
-        try:
-            value = int(current or 0)
-        except (TypeError, ValueError):
-            value = 0
-        return max(0, value + delta)
-
-    ref.transaction(update)
+def _peek(root: dict, *parts: str) -> Any:
+    cursor: Any = root
+    for part in parts:
+        if not isinstance(cursor, dict):
+            return None
+        cursor = cursor.get(part)
+    return cursor
 
 
-def _resolve_existing_identity(uid: str, room_id: str, identity_key: str) -> dict | None:
-    value = db.reference(f"{ROOT}/private/userIdentity/{uid}/{room_id}/{identity_key}").get()
-    return value if isinstance(value, dict) else None
+def _membership(root: dict, uid: str, room_id: str) -> dict:
+    value = _peek(root, "membershipIndexByUser", uid, room_id)
+    if not isinstance(value, dict):
+        _fail(
+            https_fn.FunctionsErrorCode.INTERNAL,
+            "Membership projection missing after transaction.",
+            room_code="INTERNAL",
+        )
+    return value
 
 
 @https_fn.on_call(region="us-central1")
@@ -171,215 +208,234 @@ def create_room_v2(request: https_fn.CallableRequest) -> dict:
     data = _payload(request)
     name = _validated(validate_room_name, data.get("name"))
     description = _validated(validate_description, data.get("description"))
+    operation_id = _validated(validate_client_message_id, data.get("operationId"))
     display_name = _profile_name(uid)
+    normalized_name = _normalize_room_name(name)
+    name_key = _room_name_key(normalized_name)
+    room_id = _public_id("room")
+    identity_id = _public_id("id")
     now = _now_ms()
-    room_id = new_public_id("room", secrets.token_urlsafe(12))
-    identity_id = new_public_id("id", secrets.token_urlsafe(12))
-    projection = _membership_projection(
-        room_id=room_id,
-        identity_id=identity_id,
-        display_name=display_name,
-        mode=MODE_REAL,
-        role=ROLE_OWNER,
-        joined_at=now,
+
+    state = _transaction(
+        lambda current: create_room_state(
+            current,
+            uid=uid,
+            display_name=display_name,
+            name=name,
+            normalized_name=normalized_name,
+            name_key=name_key,
+            description=description,
+            operation_id=operation_id,
+            room_id=room_id,
+            identity_id=identity_id,
+            now=now,
+            public_profile_id=uid,
+        )
     )
-    room = {
-        "roomId": room_id,
-        "name": name,
-        "description": description,
-        "status": STATUS_OPEN,
-        "ownerIdentityId": identity_id,
-        "memberCount": 1,
-        "pendingCount": 0,
-        "createdAt": now,
-        "updatedAt": now,
-    }
-    private_identity = {
-        "identityId": identity_id,
-        "mode": MODE_REAL,
-        "displayName": display_name,
-        "active": True,
-        "createdAt": now,
-    }
-    _fanout(
-        {
-            f"publicRooms/{room_id}": room,
-            f"publicMembers/{room_id}/{identity_id}": _public_member(projection),
-            f"membershipIndexByUser/{uid}/{room_id}": projection,
-            f"private/userIdentity/{uid}/{room_id}/real": private_identity,
-            f"private/identityOwners/{room_id}/{identity_id}": {
-                "uid": uid,
-                "identityKey": "real",
-                "active": True,
-            },
-        }
+    operation = _peek(state, "private", "createOperations", uid, operation_id)
+    committed_room_id = (
+        str(operation.get("roomId") or "")
+        if isinstance(operation, dict)
+        else room_id
     )
-    return {"membership": projection}
+    return {"membership": _membership(state, uid, committed_room_id)}
 
 
 @https_fn.on_call(region="us-central1")
 def join_room_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
     data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    if not room_id or len(room_id) > 120:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Invalid roomId.")
-    room = _room(room_id)
-    _ensure_room_open(room)
-    _ensure_not_banned(uid, room_id)
-
-    current = db.reference(f"{ROOT}/membershipIndexByUser/{uid}/{room_id}").get()
-    if isinstance(current, dict) and current.get("active") is True:
-        return {"membership": current}
-
+    room_id = _safe_id(data.get("roomId"), field="roomId")
     mode = str(data.get("mode") or MODE_REAL).strip().lower()
     now = _now_ms()
 
     if mode == MODE_REAL:
         display_name = _profile_name(uid)
         identity_key = "real"
-        existing = _resolve_existing_identity(uid, room_id, identity_key)
-        identity_id = str((existing or {}).get("identityId") or "").strip()
-        if not identity_id:
-            identity_id = new_public_id("id", secrets.token_urlsafe(12))
+        public_profile_id: str | None = uid
+        alias_claim_key: str | None = None
     elif mode == MODE_ANONYMOUS:
         display_name, normalized_alias = _validated(validate_alias, data.get("alias"))
-        alias_hash = private_alias_key(normalized_alias)
-        identity_key = f"anon_{alias_hash}"
-        existing = _resolve_existing_identity(uid, room_id, identity_key)
-        candidate_identity_id = str((existing or {}).get("identityId") or "").strip()
-        if not candidate_identity_id:
-            candidate_identity_id = new_public_id("anon", secrets.token_urlsafe(12))
-        claim_ref = db.reference(f"{ROOT}/private/aliasClaims/{room_id}/{alias_hash}")
-
-        def claim_alias(current_claim: object) -> dict:
-            resolved, _ = resolve_alias_claim(
-                current_claim,
-                uid=uid,
-                candidate_identity_id=candidate_identity_id,
-            )
-            return resolved
-
-        claim = claim_ref.transaction(claim_alias)
-        if not isinstance(claim, dict) or claim.get("uid") != uid:
-            _fail(https_fn.FunctionsErrorCode.ALREADY_EXISTS, "Alias is already active in this room.")
-        identity_id = str(claim.get("identityId") or "").strip()
-        if not identity_id:
-            _fail(https_fn.FunctionsErrorCode.INTERNAL, "Alias claim has no identity.")
+        alias_claim_key = private_alias_key(normalized_alias)
+        identity_key = f"anon_{alias_claim_key}"
+        public_profile_id = None
     else:
-        _fail(https_fn.FunctionsErrorCode.INVALID_ARGUMENT, "Unknown identity mode.")
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "Unknown identity mode.",
+            room_code="INVALID_INPUT",
+        )
 
-    joined_at = int((existing or {}).get("createdAt") or now)
-    projection = _membership_projection(
-        room_id=room_id,
-        identity_id=identity_id,
-        display_name=display_name,
-        mode=mode,
-        role=ROLE_MEMBER,
-        joined_at=joined_at,
+    candidate_identity_id = _public_id("anon" if mode == MODE_ANONYMOUS else "id")
+    state = _transaction(
+        lambda current: join_room_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            mode=mode,
+            display_name=display_name,
+            identity_key=identity_key,
+            candidate_identity_id=candidate_identity_id,
+            now=now,
+            public_profile_id=public_profile_id,
+            alias_claim_key=alias_claim_key,
+        )
     )
-    private_identity = {
-        "identityId": identity_id,
-        "mode": mode,
-        "displayName": display_name,
-        "active": True,
-        "createdAt": joined_at,
-    }
-    _fanout(
-        {
-            f"publicMembers/{room_id}/{identity_id}": _public_member(projection),
-            f"membershipIndexByUser/{uid}/{room_id}": projection,
-            f"private/userIdentity/{uid}/{room_id}/{identity_key}": private_identity,
-            f"private/identityOwners/{room_id}/{identity_id}": {
-                "uid": uid,
-                "identityKey": identity_key,
-                "active": True,
-            },
-            f"publicRooms/{room_id}/updatedAt": now,
-        }
-    )
-    _increment_member_count(room_id, 1)
-    return {"membership": projection}
+    return {"membership": _membership(state, uid, room_id)}
 
 
 @https_fn.on_call(region="us-central1")
 def leave_room_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
-    data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    membership = _active_membership(uid, room_id)
-    if str(membership.get("role") or "").lower() == ROLE_OWNER:
-        _fail(
-            https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
-            "The owner must transfer ownership or close the room before leaving.",
-        )
-    identity_id = str(membership.get("identityId") or "").strip()
-    owner_map = db.reference(f"{ROOT}/private/identityOwners/{room_id}/{identity_id}").get()
-    identity_key = str((owner_map or {}).get("identityKey") or "").strip()
+    room_id = _safe_id(_payload(request).get("roomId"), field="roomId")
     now = _now_ms()
-    updated_membership = dict(membership)
-    updated_membership["active"] = False
-    public_member = db.reference(f"{ROOT}/publicMembers/{room_id}/{identity_id}").get()
-    updated_public_member = dict(public_member) if isinstance(public_member, dict) else _public_member(updated_membership)
-    updated_public_member["active"] = False
-    updates: dict[str, Any] = {
-        f"membershipIndexByUser/{uid}/{room_id}": updated_membership,
-        f"publicMembers/{room_id}/{identity_id}": updated_public_member,
-        f"private/identityOwners/{room_id}/{identity_id}/active": False,
-        f"publicRooms/{room_id}/updatedAt": now,
-    }
-    if identity_key:
-        updates[f"private/userIdentity/{uid}/{room_id}/{identity_key}/active"] = False
-        if identity_key.startswith("anon_"):
-            alias_hash = identity_key.removeprefix("anon_")
-            claim = db.reference(f"{ROOT}/private/aliasClaims/{room_id}/{alias_hash}").get()
-            if isinstance(claim, dict) and claim.get("uid") == uid and claim.get("identityId") == identity_id:
-                updates[f"private/aliasClaims/{room_id}/{alias_hash}/active"] = False
-    _fanout(updates)
-    _increment_member_count(room_id, -1)
+    _transaction(
+        lambda current: leave_room_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            now=now,
+        )
+    )
     return {"ok": True, "roomId": room_id}
+
+
+@https_fn.on_call(region="us-central1")
+def set_room_notifications_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    enabled = data.get("enabled")
+    if not isinstance(enabled, bool):
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "enabled must be boolean.",
+            room_code="INVALID_INPUT",
+        )
+    _transaction(
+        lambda current: set_notifications_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            enabled=enabled,
+        )
+    )
+    return {"ok": True, "roomId": room_id, "enabled": enabled}
 
 
 @https_fn.on_call(region="us-central1")
 def send_room_v2_text(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
     data = _payload(request)
-    room_id = str(data.get("roomId") or "").strip()
-    room = _room(room_id)
-    _ensure_room_open(room)
-    membership = _active_membership(uid, room_id)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
     text = _validated(validate_message, data.get("text"))
-    client_message_id = _validated(validate_client_message_id, data.get("clientMessageId"))
-    candidate_message_id = new_public_id("msg", secrets.token_urlsafe(12))
-    claim_ref = db.reference(f"{ROOT}/private/messageClaims/{uid}/{room_id}/{client_message_id}")
-
-    def claim_message(current: object) -> dict:
-        resolved, _ = resolve_message_claim(current, candidate_message_id=candidate_message_id)
-        return resolved
-
-    claim = claim_ref.transaction(claim_message)
-    message_id = str((claim or {}).get("messageId") or "").strip()
-    if not message_id:
-        _fail(https_fn.FunctionsErrorCode.INTERNAL, "Message claim failed.")
-    existing = db.reference(f"{ROOT}/publicMessages/{room_id}/{message_id}").get()
-    if isinstance(existing, dict):
-        return existing
-
-    sent_at = _now_ms()
-    message = {
-        "messageId": message_id,
-        "roomId": room_id,
-        "authorIdentityId": membership["identityId"],
-        "authorDisplayName": membership["displayName"],
-        "authorMode": membership["mode"],
-        "text": text,
-        "sentAt": sent_at,
-    }
-    _fanout(
-        {
-            f"publicMessages/{room_id}/{message_id}": message,
-            f"publicRooms/{room_id}/updatedAt": sent_at,
-            f"private/messageClaims/{uid}/{room_id}/{client_message_id}/messageId": message_id,
-        }
+    client_message_id = _validated(
+        validate_client_message_id,
+        data.get("clientMessageId"),
     )
+    candidate_message_id = _public_id("msg")
+    now = _now_ms()
+
+    state = _transaction(
+        lambda current: send_public_text_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            text=text,
+            client_message_id=client_message_id,
+            candidate_message_id=candidate_message_id,
+            now=now,
+            visible_lease_ms=VISIBLE_THREAD_LEASE_MS,
+        )
+    )
+    claim = _peek(
+        state,
+        "private",
+        "messageClaims",
+        uid,
+        f"room_{room_id}",
+        client_message_id,
+    )
+    message_id = (
+        str(claim.get("messageId") or "")
+        if isinstance(claim, dict)
+        else candidate_message_id
+    )
+    message = _peek(state, "publicMessages", room_id, message_id)
+    if not isinstance(message, dict):
+        _fail(
+            https_fn.FunctionsErrorCode.INTERNAL,
+            "Message missing after transaction.",
+            room_code="INTERNAL",
+        )
     return message
+
+
+@https_fn.on_call(region="us-central1")
+def mark_room_thread_read_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    conversation_value = data.get("conversationId")
+    conversation_id = (
+        _safe_id(conversation_value, field="conversationId")
+        if conversation_value not in (None, "")
+        else None
+    )
+    try:
+        visible_seq = int(data.get("visibleSeq") or 0)
+    except (TypeError, ValueError):
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "visibleSeq must be an integer.",
+            room_code="INVALID_INPUT",
+        )
+    now = _now_ms()
+    _transaction(
+        lambda current: mark_read_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            conversation_id=conversation_id,
+            visible_seq=visible_seq,
+            now=now,
+        )
+    )
+    return {"ok": True, "roomId": room_id, "visibleSeq": visible_seq}
+
+
+@https_fn.on_call(region="us-central1")
+def set_room_visible_thread_v2(request: https_fn.CallableRequest) -> dict:
+    uid = _uid(request)
+    data = _payload(request)
+    room_id = _safe_id(data.get("roomId"), field="roomId")
+    conversation_value = data.get("conversationId")
+    conversation_id = (
+        _safe_id(conversation_value, field="conversationId")
+        if conversation_value not in (None, "")
+        else None
+    )
+    visible = data.get("visible")
+    if not isinstance(visible, bool):
+        _fail(
+            https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+            "visible must be boolean.",
+            room_code="INVALID_INPUT",
+        )
+    now = _now_ms()
+    _transaction(
+        lambda current: set_visible_thread_state(
+            current,
+            uid=uid,
+            room_id=room_id,
+            conversation_id=conversation_id,
+            visible=visible,
+            now=now,
+        )
+    )
+    return {
+        "ok": True,
+        "roomId": room_id,
+        "conversationId": conversation_id,
+        "visible": visible,
+    }
