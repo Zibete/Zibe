@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Fixtures privados del smoke local; no define el contrato de adjuntos de Salas.
+    match /LocalTest/{uid}/{fileName} {
+      function ownsFixture() {
+        return bucket == 'demo-zibe-rooms.appspot.com'
+          && request.auth != null
+          && request.auth.token.aud == 'demo-zibe-rooms'
+          && request.auth.uid == uid
+          && fileName.matches('[A-Za-z0-9][A-Za-z0-9_.-]{0,79}');
+      }
+      allow read, delete: if ownsFixture();
+      allow create, update: if ownsFixture()
+        && request.resource.size <= 1024 * 1024
+        && request.resource.contentType in [
+          'text/plain', 'image/png', 'application/octet-stream'
+        ];
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

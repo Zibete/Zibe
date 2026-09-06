@@ -8,6 +8,11 @@ import time
 from firebase_functions import db_fn
 from firebase_admin import initialize_app, messaging, db
 
+if __package__:
+    from . import local_runtime
+else:
+    import local_runtime
+
 # ============================================================
 # CONFIG / CONSTANTS
 # ============================================================
@@ -84,7 +89,14 @@ ROOM_KEY_MAX_LENGTH = 120
 # INIT ADMIN SDK
 # ============================================================
 
-initialize_app()
+if local_runtime.is_local_runtime():
+    local_runtime.initialize_local_admin(initialize_app)
+    if __package__:
+        from .local_probe import local_backend_probe
+    else:
+        from local_probe import local_backend_probe
+else:
+    initialize_app()
 logger = logging.getLogger(__name__)
 
 # ============================================================
@@ -459,6 +471,9 @@ def _send_push(
         return None
 
     safe_data = {str(k): str(v) for k, v in data_payload.items() if v is not None}
+
+    if local_runtime.is_local_runtime():
+        return local_runtime.record_local_push(db, token=token, data_payload=safe_data)
 
     message_kwargs = {
         "token": token,

@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.functions)
     implementation(libs.datastore.preferences)
     implementation(libs.credentials)
     implementation(libs.credentials.play.services)

@@ -1,8 +1,13 @@
 package com.zibete.proyecto1.core.utils
 
-import com.google.firebase.appcheck.AppCheckProviderFactory
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 
 object AppCheckProviderFactoryProvider {
-    fun get(): AppCheckProviderFactory = DebugAppCheckProviderFactory.getInstance()
+    fun initialize() {
+        FirebaseAppCheck.getInstance().apply {
+            installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())
+            getAppCheckToken(false)
+        }
+    }
 }

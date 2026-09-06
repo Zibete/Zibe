@@ -85,7 +85,8 @@ fun AuthScreen(
     onDeleteAccount: () -> Unit,
     authEvents: SharedFlow<AuthUiEvent>,
     onNavigateToSplash: (uiText: UiText?, snackType: ZibeSnackType?) -> Unit,
-    appNavigator: AppNavigator
+    appNavigator: AppNavigator,
+    externalSignInEnabled: Boolean = true
 ) {
     // Inputs
     var email by rememberSaveable { mutableStateOf("") }
@@ -191,35 +192,35 @@ fun AuthScreen(
                 )
 
                 if (!state.deleteAccount) {
-                    // GOOGLE
-                    ZibeButtonPrimary(
-                        text = stringResource(R.string.continue_with_google),
-                        iconRes = R.drawable.ic_google,
-                        iconTint = Color.Unspecified,
-                        iconSize = 40.dp,
-                        onClick = onGoogleClick
-                    )
+                    if (externalSignInEnabled) {
+                        ZibeButtonPrimary(
+                            text = stringResource(R.string.continue_with_google),
+                            iconRes = R.drawable.ic_google,
+                            iconTint = Color.Unspecified,
+                            iconSize = 40.dp,
+                            onClick = onGoogleClick
+                        )
 
-                    Spacer(modifier = Modifier.height(spacingXs))
+                        Spacer(modifier = Modifier.height(spacingXs))
 
-                    // FACEBOOK
-                    ZibeButtonPrimary(
-                        text = stringResource(R.string.continue_with_facebook),
-                        iconRes = R.drawable.ic_facebook,
-                        iconTint = Color.Unspecified,
-                        iconSize = 40.dp,
-                        onClick = onFacebookClick
-                    )
+                        ZibeButtonPrimary(
+                            text = stringResource(R.string.continue_with_facebook),
+                            iconRes = R.drawable.ic_facebook,
+                            iconTint = Color.Unspecified,
+                            iconSize = 40.dp,
+                            onClick = onFacebookClick
+                        )
 
-                    Spacer(modifier = Modifier.height(spacingXs))
+                        Spacer(modifier = Modifier.height(spacingXs))
 
-                    Text(
-                        text = stringResource(R.string.auth_or_use_account),
-                        style = LocalZibeTypography.current.label,
-                        color = lightText
-                    )
+                        Text(
+                            text = stringResource(R.string.auth_or_use_account),
+                            style = LocalZibeTypography.current.label,
+                            color = lightText
+                        )
 
-                    Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
+                        Spacer(modifier = Modifier.height(dimensionResource(DsR.dimen.element_spacing_medium)))
+                    }
 
                     // EMAIL
                     ZibeInputFieldDark(
@@ -429,7 +430,5 @@ fun AuthScreenDeleteAccountPreview() {
         )
     }
 }
-
-
 
 

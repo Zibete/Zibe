@@ -351,6 +351,17 @@ describe("Realtime Database Rules", () => {
     );
   });
 
+  it("allows atomic owner session cleanup while denying another account", async () => {
+    const session = authedDb(uidA).ref(`Sessions/${uidA}`);
+    await assertSucceeds(session.update({ activeInstallId: "local-install", fcmToken: "local-token" }));
+    const cleanup = { activeInstallId: null, fcmToken: null };
+    await assertFails(authedDb(uidB).ref(`Sessions/${uidA}`).update(cleanup));
+    await assertSucceeds(session.update(cleanup));
+    await assertSucceeds(session.child("activeInstallId").get()).then((snapshot) => {
+      assert.equal(snapshot.exists(), false);
+    });
+  });
+
   it("allows valid dm message creation with seen 1", async () => {
     await assertSucceeds(authedDb(uidA).ref(messagePath).set(dmMessage()));
   });

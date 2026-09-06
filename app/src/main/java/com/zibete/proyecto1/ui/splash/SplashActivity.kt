@@ -37,6 +37,7 @@ import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import com.zibete.proyecto1.BuildConfig
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_DELETE_ACCOUNT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
@@ -111,7 +112,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
         )
 
         // Configurar Facebook
-        setupFacebookSignIn(authViewModel)
+        if (!BuildConfig.IS_LOCAL_BACKEND) setupFacebookSignIn(authViewModel)
 
         setContent {
             ZibeTheme {
@@ -153,6 +154,7 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             AuthScreen(
+                                externalSignInEnabled = !BuildConfig.IS_LOCAL_BACKEND,
                                 state = uiState,
                                 onLogin = { email, password ->
                                     authViewModel.onEmailLogin(email, password)

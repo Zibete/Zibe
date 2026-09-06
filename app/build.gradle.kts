@@ -10,6 +10,9 @@ if (localPropertiesFile.exists()) {
 val facebookAppId = localProperties.getProperty("FACEBOOK_APP_ID")?.trim().orEmpty()
 val facebookClientToken = localProperties.getProperty("FACEBOOK_CLIENT_TOKEN")?.trim().orEmpty()
 val fbLoginProtocolScheme = "fb${facebookAppId.lowercase()}"
+val localInstrumentation = providers.gradleProperty("roomsLocalTests")
+    .orElse("false").get().toBooleanStrict()
+val instrumentationBuildType = if (localInstrumentation) "local" else "debug"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -32,13 +35,18 @@ android {
         versionName = "1.10"
 
         multiDexEnabled = true
-        testInstrumentationRunner = "com.zibete.proyecto1.HiltTestRunner"
+        testInstrumentationRunner = if (instrumentationBuildType == "local") {
+            "androidx.test.runner.AndroidJUnitRunner"
+        } else {
+            "com.zibete.proyecto1.HiltTestRunner"
+        }
 
         val webClientId = (localProperties.getProperty("WEB_CLIENT_ID")
             ?: System.getenv("WEB_CLIENT_ID")
             ?: "").trim()
 
         buildConfigField("String", "WEB_CLIENT_ID", "\"$webClientId\"")
+        buildConfigField("boolean", "IS_LOCAL_BACKEND", "false")
         resValue("string", "facebook_app_id", facebookAppId)
         resValue("string", "facebook_client_token", facebookClientToken)
         resValue("string", "fb_login_protocol_scheme", fbLoginProtocolScheme)
@@ -47,6 +55,9 @@ android {
     testOptions {
         animationsDisabled = true
     }
+
+    testBuildType = instrumentationBuildType
+    if (localInstrumentation) sourceSets.getByName("androidTest").setRoot("src/androidTestSharedLocal")
 
     buildFeatures {
         viewBinding = true
@@ -61,6 +72,17 @@ android {
     }
 
     buildTypes {
+        create("local") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".local"
+            versionNameSuffix = "-local"
+            matchingFallbacks += "debug"
+            buildConfigField("boolean", "IS_LOCAL_BACKEND", "true")
+            buildConfigField("String", "WEB_CLIENT_ID", "\"\"")
+            resValue("string", "facebook_app_id", "0")
+            resValue("string", "facebook_client_token", "local-disabled")
+            resValue("string", "fb_login_protocol_scheme", "zibe-local-disabled")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -76,6 +98,12 @@ android {
             "StateFlowValueCalledInComposition"
         )
     }
+}
+
+// The local app creates FirebaseOptions itself before Application/Hilt starts.
+// No production google-services.json is an input to this variant.
+tasks.matching { it.name == "processLocalGoogleServices" }.configureEach {
+    enabled = false
 }
 
 kotlin {
@@ -133,6 +161,8 @@ dependencies {
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
+    "localImplementation"(libs.compose.ui.tooling)
+    "localImplementation"(libs.compose.ui.test.manifest)
 
     // -------------------------------
     // LIFECYCLE
@@ -189,6 +219,8 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.functions)
+    implementation(libs.firebase.appcheck)
     releaseImplementation(libs.firebase.appcheck.play.integrity)
     debugImplementation(libs.firebase.appcheck.debug)
 

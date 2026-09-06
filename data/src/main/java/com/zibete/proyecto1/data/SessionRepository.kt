@@ -1,24 +1,58 @@
 package com.zibete.proyecto1.data
 
-import com.google.firebase.installations.FirebaseInstallations
-import com.google.firebase.messaging.FirebaseMessaging
+import android.content.Context
+import android.content.pm.PackageManager
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
-import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import com.google.firebase.installations.FirebaseInstallations
+import com.google.firebase.messaging.FirebaseMessaging
 import com.zibete.proyecto1.core.constants.Constants.SessionKeys
-import com.zibete.proyecto1.data.SessionConflictSubscription
-import kotlinx.coroutines.tasks.await
+import com.zibete.proyecto1.di.firebase.FirebaseRefsContainer
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.tasks.await
 
 @Singleton
 class SessionRepository @Inject constructor(
-    private val firebaseRefsContainer: FirebaseRefsContainer
+    private val firebaseRefsContainer: FirebaseRefsContainer,
+    @param:ApplicationContext private val context: Context
 ) : SessionRepositoryActions, SessionRepositoryProvider {
 
     // LOCAL INFO
-    override suspend fun getLocalInstallId(): String = FirebaseInstallations.getInstance().id.await()
-    override suspend fun getLocalFcmToken(): String? = FirebaseMessaging.getInstance().token.await()
+    private val isLocalBackend: Boolean
+        get() {
+            val local = context.packageManager.getApplicationInfo(
+                context.packageName,
+                PackageManager.GET_META_DATA
+            ).metaData?.getBoolean(LOCAL_BACKEND_METADATA) == true
+            val projectId = firebaseRefsContainer.firebaseDatabase.app.options.projectId
+            if (local || context.packageName.endsWith(".local") || projectId?.startsWith("demo-") == true) {
+                check(local) { "Local session metadata is missing; remote device registration refused" }
+                check(context.packageName.endsWith(".local")) { "Local session requires an isolated app" }
+                check(projectId == "demo-zibe-rooms") {
+                    "Local session requires the demo backend"
+                }
+            }
+            return local
+        }
+
+    override suspend fun getLocalInstallId(): String = if (isLocalBackend) {
+        synchronized(this) {
+            val preferences = context.getSharedPreferences("local_backend_session", Context.MODE_PRIVATE)
+            preferences.getString("installation_id", null) ?: UUID.randomUUID().toString().also { id ->
+                check(preferences.edit().putString("installation_id", id).commit()) {
+                    "Could not persist the local installation identity"
+                }
+            }
+        }
+    } else {
+        FirebaseInstallations.getInstance().id.await()
+    }
+
+    override suspend fun getLocalFcmToken(): String? =
+        if (isLocalBackend) null else FirebaseMessaging.getInstance().token.await()
 
     // ============================================================
     // READ
@@ -68,7 +102,12 @@ class SessionRepository @Inject constructor(
 
     override suspend fun clearSession(uid: String) {
         refSession(uid)
-            .removeValue()
+            .updateChildren(
+                mapOf(
+                    SessionKeys.ACTIVE_INSTALL_ID to null,
+                    SessionKeys.FCM_TOKEN to null
+                )
+            )
             .await()
     }
 
@@ -112,4 +151,8 @@ class SessionRepository @Inject constructor(
 
     private fun refFcmToken(uid: String) =
         refSession(uid).child(SessionKeys.FCM_TOKEN)
+
+    private companion object {
+        const val LOCAL_BACKEND_METADATA = "com.zibete.proyecto1.LOCAL_BACKEND"
+    }
 }
