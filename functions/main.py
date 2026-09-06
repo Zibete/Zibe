@@ -1,23 +1,44 @@
 """Firebase Functions entrypoint.
 
-Legacy functions stay byte-for-byte in ``legacy_main.py`` while RoomsV2 is developed
-behind isolated paths and callable endpoints. The module object is aliased to the legacy
-module so existing tests that patch ``functions.main`` continue patching the globals used
-by the legacy trigger functions.
+The previous implementation lives unchanged in ``legacy_main.py``. Its functions are
+rebound to this module's globals so Firebase discovery still sees them in ``main.py`` and
+existing tests can keep patching helpers on ``functions.main``. RoomsV2 exports are then
+added without changing any legacy trigger path.
 """
 
 from __future__ import annotations
 
-import sys
+import inspect
+import types
 
 try:
     from . import legacy_main as _legacy_main
 except ImportError:
     import legacy_main as _legacy_main
 
-# Older unit tests provide a deliberately tiny firebase_functions stub without https_fn.
-# Skip V2 registration only in that synthetic environment; real Functions discovery and
-# the emulator expose https_fn and therefore attach the new callables below.
+for _name, _value in vars(_legacy_main).items():
+    if _name.startswith("__"):
+        continue
+    if inspect.isfunction(_value):
+        _clone = types.FunctionType(
+            _value.__code__,
+            globals(),
+            name=_value.__name__,
+            argdefs=_value.__defaults__,
+            closure=_value.__closure__,
+        )
+        _clone.__kwdefaults__ = _value.__kwdefaults__
+        _clone.__annotations__ = dict(getattr(_value, "__annotations__", {}))
+        _clone.__dict__.update(getattr(_value, "__dict__", {}))
+        _clone.__doc__ = _value.__doc__
+        _clone.__module__ = __name__
+        _clone.__qualname__ = _value.__qualname__
+        globals()[_name] = _clone
+    else:
+        globals()[_name] = _value
+
+# Existing unit tests intentionally stub only db_fn. In that synthetic environment
+# https_fn is absent; skip only the new callable registration there.
 try:
     from firebase_functions import https_fn as _https_fn  # noqa: F401
 except ImportError:
@@ -27,10 +48,3 @@ else:
         from .rooms_v2 import create_room_v2, join_room_v2, leave_room_v2, send_room_v2_text
     except ImportError:
         from rooms_v2 import create_room_v2, join_room_v2, leave_room_v2, send_room_v2_text
-
-    _legacy_main.create_room_v2 = create_room_v2
-    _legacy_main.join_room_v2 = join_room_v2
-    _legacy_main.leave_room_v2 = leave_room_v2
-    _legacy_main.send_room_v2_text = send_room_v2_text
-
-sys.modules[__name__] = _legacy_main
