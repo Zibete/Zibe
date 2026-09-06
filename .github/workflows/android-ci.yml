@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: ["main"]
   push:
-    branches: ["main"]
+    branches: ["main", "feature/rooms-end-to-end"]
   workflow_dispatch:
 
 concurrency:
@@ -65,11 +65,11 @@ jobs:
 
       - name: Functions contract tests
         run: |
-          python -m py_compile functions/main.py
+          python -m py_compile functions/main.py functions/rooms_v2.py functions/rooms_v2_state.py functions/rooms_v2_private.py functions/rooms_v2_moderation.py functions/rooms_v2_notifications.py functions/rooms_v2_notification_core.py
           python -m unittest discover functions/tests
 
-      - name: 🧪 Firebase RTDB rules tests (emulator)
-        run: npm run test:rules
+      - name: 🧪 Firebase RTDB rules tests (legacy + V2 + combined)
+        run: npm run test:rules:all
 
       - name: ✅ Unit tests (JVM)
         run: ./gradlew testDebugUnitTest
@@ -142,8 +142,9 @@ jobs:
           {
             echo "## Android CI"
             echo ""
-            echo "**Comandos (local):**"
-            echo "\`python scripts/check_architecture.py && python -m py_compile functions/main.py && python -m unittest discover functions/tests && npm ci && npm run test:rules && ./gradlew testDebugUnitTest :app:generateDebugAndroidTestLintModel :app:compileDebugAndroidTestKotlin lintDebug :app:assembleDebug :app:compileReleaseKotlin\`"
+            echo "**Rooms branch validation:** Python compile/unit, legacy+V2+combined Rules, JVM, lint, debug build, release Kotlin, 16 KB alignment."
             echo ""
-            echo "**Artifacts:** unit-test-reports / lint-reports"
+            echo "**AVD instrumentation remains local and is not claimed by this workflow.**"
+            echo ""
+            echo "**Artifacts:** unit-test-reports / lint-reports / debug-apk"
           } >> "$GITHUB_STEP_SUMMARY"
