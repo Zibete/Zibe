@@ -2,6 +2,7 @@ import unittest
 
 from functions.rooms_v2_core import (
     RoomsV2ValidationError,
+    can_moderate_target,
     normalize_alias,
     private_alias_key,
     resolve_alias_claim,
@@ -55,6 +56,13 @@ class RoomsV2CoreTest(unittest.TestCase):
         second, created = resolve_message_claim(first, candidate_message_id="msg-two")
         self.assertFalse(created)
         self.assertEqual("msg-one", second["messageId"])
+
+    def test_moderation_policy_respects_role_hierarchy(self):
+        self.assertTrue(can_moderate_target("owner", "moderator"))
+        self.assertTrue(can_moderate_target("moderator", "member"))
+        self.assertFalse(can_moderate_target("moderator", "moderator"))
+        self.assertFalse(can_moderate_target("moderator", "owner"))
+        self.assertFalse(can_moderate_target("member", "member"))
 
     def test_client_message_id_is_firebase_path_safe(self):
         self.assertEqual("android-001", validate_client_message_id("android-001"))

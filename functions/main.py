@@ -46,5 +46,19 @@ except ImportError:
 else:
     try:
         from .rooms_v2 import create_room_v2, join_room_v2, leave_room_v2, send_room_v2_text
+        from .rooms_v2_moderation import (
+            ban_room_member_v2,
+            close_room_v2,
+            kick_room_member_v2,
+            set_room_moderator_v2,
+            transfer_room_owner_v2,
+        )
     except ImportError:
         from rooms_v2 import create_room_v2, join_room_v2, leave_room_v2, send_room_v2_text
+        from rooms_v2_moderation import (
+            ban_room_member_v2,
+            close_room_v2,
+            kick_room_member_v2,
+            set_room_moderator_v2,
+            transfer_room_owner_v2,
+        )

@@ -80,6 +80,41 @@ class FirebaseRoomsV2Repository(
         Unit
     }
 
+    override suspend fun closeRoom(roomId: String): Result<Unit> = catching {
+        call("close_room_v2", mapOf("roomId" to roomId))
+        Unit
+    }
+
+    override suspend fun transferOwnership(roomId: String, targetIdentityId: String): Result<Unit> = catching {
+        call(
+            "transfer_room_owner_v2",
+            mapOf("roomId" to roomId, "targetIdentityId" to targetIdentityId),
+        )
+        Unit
+    }
+
+    override suspend fun setModerator(
+        roomId: String,
+        targetIdentityId: String,
+        enabled: Boolean,
+    ): Result<Unit> = catching {
+        call(
+            "set_room_moderator_v2",
+            mapOf("roomId" to roomId, "targetIdentityId" to targetIdentityId, "enabled" to enabled),
+        )
+        Unit
+    }
+
+    override suspend fun removeMember(
+        roomId: String,
+        targetIdentityId: String,
+        ban: Boolean,
+    ): Result<Unit> = catching {
+        val function = if (ban) "ban_room_member_v2" else "kick_room_member_v2"
+        call(function, mapOf("roomId" to roomId, "targetIdentityId" to targetIdentityId))
+        Unit
+    }
+
     override suspend fun sendText(
         roomId: String,
         text: String,

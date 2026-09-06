@@ -57,6 +57,10 @@ interface RoomsV2Repository {
     suspend fun createRoom(request: CreateRoomV2Request): Result<RoomV2Membership>
     suspend fun joinRoom(request: JoinRoomV2Request): Result<RoomV2Membership>
     suspend fun leaveRoom(roomId: String): Result<Unit>
+    suspend fun closeRoom(roomId: String): Result<Unit>
+    suspend fun transferOwnership(roomId: String, targetIdentityId: String): Result<Unit>
+    suspend fun setModerator(roomId: String, targetIdentityId: String, enabled: Boolean): Result<Unit>
+    suspend fun removeMember(roomId: String, targetIdentityId: String, ban: Boolean): Result<Unit>
     suspend fun sendText(
         roomId: String,
         text: String,

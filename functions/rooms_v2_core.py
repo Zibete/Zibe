@@ -101,6 +101,16 @@ def new_public_id(prefix: str, token: str) -> str:
     return f"{prefix}_{cleaned}"
 
 
+def can_moderate_target(actor_role: str, target_role: str) -> bool:
+    actor = str(actor_role or "").lower()
+    target = str(target_role or "").lower()
+    if target == "owner":
+        return False
+    if actor == "owner":
+        return True
+    return actor == "moderator" and target == "member"
+
+
 def resolve_alias_claim(current: object, *, uid: str, candidate_identity_id: str) -> tuple[dict, bool]:
     if isinstance(current, dict):
         current_uid = str(current.get("uid") or "").strip()
