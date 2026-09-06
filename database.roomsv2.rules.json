@@ -1,0 +1,39 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "RoomsV2": {
+      "publicRooms": {
+        ".read": "auth != null",
+        ".write": false,
+        ".indexOn": ["updatedAt"],
+        "$roomId": {
+          "$other": { ".validate": false }
+        }
+      },
+      "publicMembers": {
+        "$roomId": {
+          ".read": "auth != null && root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('active').val() == true",
+          ".write": false
+        }
+      },
+      "publicMessages": {
+        "$roomId": {
+          ".read": "auth != null && root.child('RoomsV2/membershipIndexByUser').child(auth.uid).child($roomId).child('active').val() == true",
+          ".write": false,
+          ".indexOn": ["sentAt"]
+        }
+      },
+      "membershipIndexByUser": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": false
+        }
+      },
+      "private": {
+        ".read": false,
+        ".write": false
+      }
+    }
+  }
+}

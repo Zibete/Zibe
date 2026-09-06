@@ -2,7 +2,8 @@
   "name": "zibe-firebase-rules",
   "private": true,
   "scripts": {
-    "test:rules": "firebase emulators:exec --only database --project demo-zibe \"node --test tools/firebase-rules-tests/rules.test.js\""
+    "test:rules": "firebase emulators:exec --only database --project demo-zibe \"node --test tools/firebase-rules-tests/rules.test.js\"",
+    "test:rules:v2": "firebase emulators:exec --config firebase.roomsv2.local.json --only database --project demo-zibe-rooms-v2-rules \"node --test tools/firebase-rules-tests/rooms-v2.rules.test.js\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.1",
