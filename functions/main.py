@@ -38,7 +38,7 @@ for _name, _value in vars(_legacy_main).items():
         globals()[_name] = _value
 
 # Existing unit tests intentionally stub only db_fn. In that synthetic environment
-# https_fn is absent; skip only the new callable registration there.
+# https_fn is absent; skip only the new callable/trigger registration there.
 try:
     from firebase_functions import https_fn as _https_fn  # noqa: F401
 except ImportError:
@@ -65,6 +65,10 @@ else:
             set_room_moderator_v2,
             transfer_room_owner_v2,
         )
+        from .rooms_v2_notifications import (
+            on_room_v2_private_message_created,
+            on_room_v2_public_message_created,
+        )
         from .rooms_v2_private import (
             block_room_private_v2,
             open_room_private_v2,
@@ -90,6 +94,10 @@ else:
             resolve_room_report_v2,
             set_room_moderator_v2,
             transfer_room_owner_v2,
+        )
+        from rooms_v2_notifications import (
+            on_room_v2_private_message_created,
+            on_room_v2_public_message_created,
         )
         from rooms_v2_private import (
             block_room_private_v2,
