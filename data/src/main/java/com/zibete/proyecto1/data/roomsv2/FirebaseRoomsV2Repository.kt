@@ -156,18 +156,19 @@ class FirebaseRoomsV2Repository(
         limit: Int,
     ): Flow<List<RoomV2Message>> {
         val roomId = safeId(thread.roomId)
-        val query = if (thread.conversationId == null) {
+        val conversationId = thread.conversationId
+        val query = if (conversationId == null) {
             database.reference.child("$ROOT/publicMessages/$roomId")
                 .orderByChild("seq")
                 .limitToLast(limit.coerceIn(1, MAX_MESSAGE_LIMIT))
         } else {
             database.reference.child(
-                "$ROOT/privateMessages/${safeId(thread.conversationId)}",
+                "$ROOT/privateMessages/${safeId(conversationId)}",
             ).orderByChild("seq").limitToLast(limit.coerceIn(1, MAX_MESSAGE_LIMIT))
         }
         return valueFlow(query) { snapshot ->
             snapshot.children
-                .mapNotNull { message(roomId, it, thread.conversationId) }
+                .mapNotNull { message(roomId, it, conversationId) }
                 .sortedBy { it.seq }
         }
     }
@@ -192,10 +193,11 @@ class FirebaseRoomsV2Repository(
     ): ZibeResult<List<RoomV2Message>> = catching {
         if (beforeSeq <= 0L) return@catching emptyList()
         val roomId = safeId(thread.roomId)
-        val base = if (thread.conversationId == null) {
+        val conversationId = thread.conversationId
+        val base = if (conversationId == null) {
             database.reference.child("$ROOT/publicMessages/$roomId")
         } else {
-            database.reference.child("$ROOT/privateMessages/${safeId(thread.conversationId)}")
+            database.reference.child("$ROOT/privateMessages/${safeId(conversationId)}")
         }
         base.orderByChild("seq")
             .endAt((beforeSeq - 1).toDouble())
@@ -203,7 +205,7 @@ class FirebaseRoomsV2Repository(
             .get()
             .await()
             .children
-            .mapNotNull { message(roomId, it, thread.conversationId) }
+            .mapNotNull { message(roomId, it, conversationId) }
             .sortedBy { it.seq }
     }
 
@@ -226,18 +228,19 @@ class FirebaseRoomsV2Repository(
         text: String,
         clientMessageId: String,
     ): ZibeResult<RoomV2Message> = catching {
+        val conversationId = thread.conversationId
         val payload = mutableMapOf<String, Any?>(
             "roomId" to safeId(thread.roomId),
             "text" to text,
             "clientMessageId" to safeId(clientMessageId),
         )
-        val function = if (thread.conversationId == null) {
+        val function = if (conversationId == null) {
             "send_room_v2_text"
         } else {
-            payload["conversationId"] = safeId(thread.conversationId)
+            payload["conversationId"] = safeId(conversationId)
             "send_room_private_v2_text"
         }
-        messageFromMap(call(function, payload), thread.conversationId)
+        messageFromMap(call(function, payload), conversationId)
             ?: throw contractFailure("$function returned an invalid message")
     }
 
