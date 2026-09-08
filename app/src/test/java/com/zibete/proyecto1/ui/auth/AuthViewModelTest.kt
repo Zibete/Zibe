@@ -7,7 +7,9 @@ import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.navigation.NavAppEvent
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.core.validation.EmailValidator
+import com.zibete.proyecto1.data.auth.AuthCredentialRequest
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
 import com.zibete.proyecto1.data.auth.AuthUser
@@ -19,7 +21,8 @@ import com.zibete.proyecto1.fakes.FakeEmailValidator
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import io.mockk.every
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -100,6 +103,52 @@ class AuthViewModelTest {
         // Como estamos en runTest, esto debería funcionar bien si el evento se emite.
         val navEvent = appNavigator.events.first()
         assertIs<NavAppEvent.FinishFlowNavigateToSplash>(navEvent)
+    }
+
+    @Test
+    fun `onFacebookAccessToken usa credencial Facebook y navega a Splash`() = runTest {
+        val scenario = TestScenario(currentUserUid = TestData.UID, shouldFail = false)
+        val authSessionActions = mockk<AuthSessionActions>()
+        val credential = AuthCredentialRequest.Facebook("facebook-test-token")
+        coEvery {
+            authSessionActions.signInWithCredential(credential)
+        } returns ZibeResult.Success(Unit)
+        val vm = buildVm(
+            scenario = scenario,
+            authSessionActions = authSessionActions
+        )
+
+        vm.onFacebookAccessToken(credential.accessToken)
+
+        val navEvent = appNavigator.events.first()
+        coVerify(exactly = 1) {
+            authSessionActions.signInWithCredential(credential)
+        }
+        assertIs<NavAppEvent.FinishFlowNavigateToSplash>(navEvent)
+        assertFalse(vm.uiState.value.isLoadingLogin)
+    }
+
+    @Test
+    fun `onFacebookAccessToken fallido muestra snack de error`() = runTest {
+        val scenario = TestScenario(shouldFail = true)
+        val authSessionActions = mockk<AuthSessionActions>()
+        val credential = AuthCredentialRequest.Facebook("facebook-test-token")
+        coEvery {
+            authSessionActions.signInWithCredential(credential)
+        } returns ZibeResult.Failure(RuntimeException("facebook login failed"))
+        val vm = buildVm(
+            scenario = scenario,
+            authSessionActions = authSessionActions
+        )
+
+        vm.onFacebookAccessToken(credential.accessToken)
+
+        val snack = snackBarManager.events.first()
+        coVerify(exactly = 1) {
+            authSessionActions.signInWithCredential(credential)
+        }
+        assertEquals(ZibeSnackType.ERROR, snack.type)
+        assertFalse(vm.uiState.value.isLoadingLogin)
     }
 
     @Test
