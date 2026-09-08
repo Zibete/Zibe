@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.ui.profile
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -9,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
@@ -17,24 +17,21 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.PROFILE_PAGER
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.ChatRepositoryContract
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.domain.chat.DmEntryDecision
 import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
-import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.theme.ZibeTheme
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import java.util.concurrent.CopyOnWriteArrayList
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
@@ -149,7 +146,6 @@ class ProfileActivityContentAndroidTest {
                     startIndex = 0,
                     onBack = {},
                     onOpenDmChat = { openedUserIds.add(it) },
-                    onOpenGroupDmChat = {},
                     onOpenPhoto = {},
                     viewModelProvider = viewModels::getValue
                 )
@@ -163,7 +159,6 @@ class ProfileActivityContentAndroidTest {
         gateResult: CompletableDeferred<ZibeResult<DmEntryDecision>>
     ): ProfileViewModel {
         val chatRepository = mockk<ChatRepositoryContract>(relaxed = true)
-        val groupRepository = mockk<GroupRepositoryProvider>(relaxed = true)
         val locationRepository = mockk<LocationRepositoryProvider>()
         val profileProvider = mockk<ProfileRepositoryProvider>()
         val gate = mockk<ResolveDmEntryUseCase>()
@@ -183,7 +178,6 @@ class ProfileActivityContentAndroidTest {
         coEvery { profileProvider.getDmPhotoList(userId, NODE_DM) } returns
             ZibeResult.Success(emptyList())
         coEvery { locationRepository.getDistanceToUser(userId) } returns ZibeResult.Success("")
-        coEvery { groupRepository.isGroupMatch(userId, any()) } returns ZibeResult.Success(false)
         coEvery { chatRepository.hasConversation(userId, NODE_DM) } returns
             ZibeResult.Success(false)
         coEvery { gate(userId) } coAnswers { gateResult.await() }
@@ -191,11 +185,9 @@ class ProfileActivityContentAndroidTest {
         return ProfileViewModel(
             savedStateHandle = SavedStateHandle(mapOf(EXTRA_USER_ID to userId)),
             chatRepository = chatRepository,
-            groupRepositoryProvider = groupRepository,
             locationRepository = locationRepository,
             profileRepositoryProvider = profileProvider,
             profileRepositoryActions = mockk<ProfileRepositoryActions>(relaxed = true),
-            userPreferencesProvider = FakeUserPreferencesProvider { TestScenario() },
             resolveDmEntry = gate,
             snackBarManager = SnackBarManager()
         )

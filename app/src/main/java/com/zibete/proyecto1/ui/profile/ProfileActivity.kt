@@ -24,7 +24,6 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_START_INDEX
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_USER_IDS
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
-import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.UiTags.PROFILE_PAGER
 import com.zibete.proyecto1.ui.base.BaseChatSessionActivity
 import com.zibete.proyecto1.ui.chat.ChatActivity
@@ -66,14 +65,6 @@ class ProfileActivity : BaseChatSessionActivity() {
                             }
                         )
                     },
-                    onOpenGroupDmChat = { userId ->
-                        startActivity(
-                            Intent(this, ChatActivity::class.java).apply {
-                                putExtra(EXTRA_CHAT_ID, userId)
-                                putExtra(EXTRA_CHAT_NODE, NODE_GROUP_DM)
-                            }
-                        )
-                    },
                     onOpenPhoto = { url ->
                         PhotoViewerActivity.startSingle(this, url)
                     },
@@ -111,7 +102,6 @@ internal fun ProfileActivityContent(
     startIndex: Int,
     onBack: () -> Unit,
     onOpenDmChat: (String) -> Unit,
-    onOpenGroupDmChat: (String) -> Unit,
     onOpenPhoto: (String) -> Unit,
     viewModelProvider: (String) -> ProfileViewModel
 ) {
@@ -123,7 +113,6 @@ internal fun ProfileActivityContent(
             isActive = true,
             onBack = onBack,
             onOpenDmChat = onOpenDmChat,
-            onOpenGroupDmChat = onOpenGroupDmChat,
             onOpenPhoto = onOpenPhoto
         )
         return
@@ -147,7 +136,6 @@ internal fun ProfileActivityContent(
             isActive = pagerState.currentPage == page,
             onBack = onBack,
             onOpenDmChat = onOpenDmChat,
-            onOpenGroupDmChat = onOpenGroupDmChat,
             onOpenPhoto = onOpenPhoto
         )
     }
