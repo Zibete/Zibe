@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build:rules:combined": "python tools/firebase-rules-tests/merge_rooms_rules.py",
-    "test:rules": "firebase emulators:exec --only database --project demo-zibe \"node --test tools/firebase-rules-tests/rules.test.js\"",
+    "test:rules": "firebase emulators:exec --config firebase.legacy.local.json --only database --project demo-zibe \"node --test tools/firebase-rules-tests/rules.test.js\"",
     "test:rules:v2": "firebase emulators:exec --config firebase.roomsv2.local.json --only database --project demo-zibe-rooms-v2-rules \"node --test tools/firebase-rules-tests/rooms-v2.rules.test.js\"",
     "test:rules:combined": "npm run build:rules:combined && firebase emulators:exec --config firebase.rooms-combined.local.json --only database --project demo-zibe-rooms \"node --test tools/firebase-rules-tests/rooms-combined.rules.test.js\"",
     "test:rules:all": "npm run test:rules && npm run test:rules:v2 && npm run test:rules:combined"
