@@ -527,6 +527,7 @@ else:
             open_room_private_v2,
             send_room_private_v2_text,
         )
+        from .rooms_v2_profile import resolve_room_identity_profile_v2
     except ImportError:
         from rooms_v2 import (
             create_room_v2,
@@ -557,3 +558,4 @@ else:
             open_room_private_v2,
             send_room_private_v2_text,
         )
+        from rooms_v2_profile import resolve_room_identity_profile_v2
