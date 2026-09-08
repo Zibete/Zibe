@@ -24,6 +24,7 @@
     <string name="rooms_v2_participants">%1$d participantes</string>
     <string name="rooms_v2_unread">%1$d sin leer</string>
     <string name="rooms_v2_public_identity">Vas a entrar como %1$s</string>
+    <string name="rooms_public_identity_missing">Completá tu perfil antes de entrar con tu identidad.</string>
 
     <string name="rooms_v2_error_alias_taken">Ese alias ya está en uso en esta sala.</string>
     <string name="rooms_v2_error_room_name_taken">Ya existe una sala con ese nombre.</string>
