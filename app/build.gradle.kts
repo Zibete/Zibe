@@ -174,7 +174,6 @@ dependencies {
     implementation(libs.coil.compose)
 
     implementation(libs.compressor)
-    implementation(libs.badge.tab.layout)
     implementation(libs.ucrop)
 
     // -------------------------------
@@ -204,7 +203,6 @@ dependencies {
     implementation(libs.google.id)
 
     implementation(libs.graphics.path)
-    implementation(libs.floating.action.button)
 
     implementation(libs.lottie)
     implementation(libs.lottie.compose)
