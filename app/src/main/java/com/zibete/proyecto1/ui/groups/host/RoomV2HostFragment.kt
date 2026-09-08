@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 class RoomV2HostFragment : androidx.fragment.app.Fragment() {
 
     private val viewModel: RoomV2HostViewModel by viewModels()
+    private val profileViewModel: RoomV2ContextProfileViewModel by viewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,7 +59,10 @@ class RoomV2HostFragment : androidx.fragment.app.Fragment() {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         setContent {
             ZibeTheme {
-                RoomV2HostRoute(viewModel = viewModel)
+                RoomV2HostWithProfileRoute(
+                    viewModel = viewModel,
+                    profileViewModel = profileViewModel,
+                )
             }
         }
     }

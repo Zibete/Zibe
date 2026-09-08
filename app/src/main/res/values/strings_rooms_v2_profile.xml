@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rooms_v2_profiles_action">Ver perfiles</string>
+    <string name="rooms_v2_profiles_title">Perfiles de la sala</string>
+    <string name="rooms_v2_profile_title">Perfil</string>
+    <string name="rooms_v2_profile_loading">Cargando perfil…</string>
+    <string name="rooms_v2_profile_error_title">No pudimos cargar el perfil</string>
+    <string name="rooms_v2_profile_age">%1$d años</string>
+    <string name="rooms_v2_profile_no_description">Sin descripción.</string>
+</resources>
