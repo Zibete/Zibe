@@ -12,7 +12,8 @@
     }
   ],
   "database": {
-    "rules": "database.rules.json"
+    "rules": "build/generated/firebase/database.rooms-combined.rules.json",
+    "predeploy": "python tools/firebase-rules-tests/merge_rooms_rules.py"
   },
   "emulators": {
     "database": {
