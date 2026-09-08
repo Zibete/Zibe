@@ -5,7 +5,6 @@ import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryActions
 import com.zibete.proyecto1.data.LocationRepositoryProvider
@@ -139,11 +138,6 @@ object TestAppBindingsModule {
             override val myEmail: String = "test@example.com"
         }
     }
-
-    @Provides
-    @Singleton
-    fun provideGroupRepositoryProvider(): GroupRepositoryProvider =
-        mockk(relaxed = true)
 
     @Provides
     @Singleton

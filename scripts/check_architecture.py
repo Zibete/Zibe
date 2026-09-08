@@ -23,7 +23,6 @@ PRESENTATION_FORBIDDEN = (
     "com.zibete.proyecto1.di.firebase.",
     "com.zibete.proyecto1.data.ChatRefs",
     "com.zibete.proyecto1.data.ChatRepository",
-    "com.zibete.proyecto1.data.GroupRepository",
     "com.zibete.proyecto1.data.LocationRepository",
     "com.zibete.proyecto1.data.PresenceRepository",
     "com.zibete.proyecto1.data.SessionRepository",
