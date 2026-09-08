@@ -29,6 +29,8 @@ data class RoomV2HostUiState(
     val draft: String = "",
     val isLoading: Boolean = true,
     val isSubmitting: Boolean = false,
+    val isLoadingEarlier: Boolean = false,
+    val hasEarlierMessages: Boolean = false,
     val showLeaveConfirm: Boolean = false,
     val error: UiText? = null,
 ) {

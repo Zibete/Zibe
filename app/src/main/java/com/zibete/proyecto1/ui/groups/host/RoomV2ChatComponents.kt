@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -30,6 +29,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -39,9 +39,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +65,7 @@ import com.zibete.proyecto1.ui.chat.components.ChatMessageTextField
 import com.zibete.proyecto1.ui.components.ZibeMenuDefaults
 import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 data class RoomV2TopBarState(
     val title: String,
@@ -273,18 +276,51 @@ fun RoomV2MessageTimeline(
     myIdentityId: String?,
     participants: List<RoomV2Identity>,
     canRemove: Boolean,
+    threadKey: String,
+    isLoadingEarlier: Boolean,
+    hasEarlierMessages: Boolean,
     modifier: Modifier = Modifier,
+    onLoadEarlier: () -> Unit,
     onMessageLongPress: (RoomV2Message, Boolean) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val participantsById = remember(participants) { participants.associateBy { it.identityId } }
     val timeline = remember(messages) { buildRoomTimeline(messages) }
+    val latestSeq = messages.lastOrNull()?.seq ?: 0L
+    var initialScrollDone by remember(threadKey) { mutableStateOf(false) }
+    var previousLatestSeq by remember(threadKey) { mutableLongStateOf(0L) }
 
-    LaunchedEffect(timeline.size) {
-        if (timeline.isNotEmpty()) {
+    LaunchedEffect(threadKey, latestSeq, timeline.size) {
+        if (timeline.isEmpty()) return@LaunchedEffect
+        if (!initialScrollDone) {
             delay(40)
             listState.scrollToItem(timeline.lastIndex)
+            initialScrollDone = true
+        } else if (latestSeq > previousLatestSeq) {
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val nearBottom = lastVisible >= (timeline.lastIndex - 2).coerceAtLeast(0)
+            if (nearBottom) {
+                listState.animateScrollToItem(timeline.lastIndex)
+            }
         }
+        previousLatestSeq = latestSeq
+    }
+
+    LaunchedEffect(listState, threadKey, hasEarlierMessages, isLoadingEarlier) {
+        snapshotFlow {
+            listState.firstVisibleItemIndex to listState.isScrollInProgress
+        }
+            .distinctUntilChanged()
+            .collect { (firstVisible, scrolling) ->
+                if (
+                    scrolling &&
+                    firstVisible <= 2 &&
+                    hasEarlierMessages &&
+                    !isLoadingEarlier
+                ) {
+                    onLoadEarlier()
+                }
+            }
     }
 
     if (messages.isEmpty()) {
@@ -303,6 +339,21 @@ fun RoomV2MessageTimeline(
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
+        if (isLoadingEarlier) {
+            item(key = "history_loading_$threadKey") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                }
+            }
+        }
         items(timeline, key = { it.key }) { item ->
             when (item) {
                 is RoomV2TimelineItem.Date -> ChatInfoRow(text = item.label)
@@ -345,6 +396,7 @@ private fun RoomV2MessageRow(
         Brush.linearGradient(listOf(colors.pinkBubble, Color(0xFFFF6F91)))
     }
     val hasActions = canRemove || !isMine
+    val resolvedMode = identity?.mode ?: message.authorMode
 
     Row(
         modifier = Modifier
@@ -356,7 +408,7 @@ private fun RoomV2MessageRow(
         if (!isMine) {
             RoomV2IdentityAvatar(
                 displayName = message.authorDisplayName,
-                mode = identity?.mode ?: message.authorMode,
+                mode = resolvedMode,
                 modifier = Modifier
                     .size(38.dp)
                     .padding(bottom = 2.dp),
@@ -368,27 +420,25 @@ private fun RoomV2MessageRow(
             modifier = Modifier.widthIn(max = 310.dp),
             horizontalAlignment = if (isMine) Alignment.End else Alignment.Start,
         ) {
-            if (!isMine) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = message.authorDisplayName,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.lightText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (message.authorMode == RoomV2IdentityMode.ANONYMOUS) {
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = message.authorDisplayName,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.lightText,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        text = stringResource(R.string.rooms_v2_anonymous_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.lightText.copy(alpha = 0.65f),
                     )
-                    if (message.authorMode == RoomV2IdentityMode.ANONYMOUS) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.rooms_v2_anonymous_badge),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = colors.lightText.copy(alpha = 0.65f),
-                        )
-                    }
                 }
-                Spacer(modifier = Modifier.height(2.dp))
             }
+            Spacer(modifier = Modifier.height(2.dp))
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Box(
@@ -420,6 +470,17 @@ private fun RoomV2MessageRow(
                     maxLines = 1,
                 )
             }
+        }
+
+        if (isMine) {
+            Spacer(modifier = Modifier.width(6.dp))
+            RoomV2IdentityAvatar(
+                displayName = message.authorDisplayName,
+                mode = resolvedMode,
+                modifier = Modifier
+                    .size(38.dp)
+                    .padding(bottom = 2.dp),
+            )
         }
     }
 }

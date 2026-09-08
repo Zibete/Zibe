@@ -47,6 +47,8 @@ class RoomV2HostViewModel @Inject constructor(
     private val roomId = savedStateHandle.get<String>(ROOM_V2_ID_ARG).orEmpty().trim()
     private val selectedConversationId = MutableStateFlow<String?>(null)
     private var screenVisible = false
+    private var accumulatedMessages: List<RoomV2Message> = emptyList()
+    private var loadingEarlierThread: RoomV2Thread? = null
 
     private val _uiState = MutableStateFlow(RoomV2HostUiState(roomId = roomId))
     val uiState: StateFlow<RoomV2HostUiState> = _uiState.asStateFlow()
@@ -132,16 +134,33 @@ class RoomV2HostViewModel @Inject constructor(
     private fun observeMessages() {
         viewModelScope.launch {
             selectedConversationId
-                .flatMapLatest { conversationId ->
-                    chatRepository.observeMessages(
-                        RoomV2Thread(roomId = roomId, conversationId = conversationId),
-                        limit = 100,
-                    )
+                .map { conversationId ->
+                    RoomV2Thread(roomId = roomId, conversationId = conversationId)
+                }
+                .distinctUntilChanged()
+                .flatMapLatest { thread ->
+                    accumulatedMessages = emptyList()
+                    _uiState.update {
+                        it.copy(
+                            messages = emptyList(),
+                            isLoadingEarlier = false,
+                            hasEarlierMessages = false,
+                        )
+                    }
+                    chatRepository.observeMessages(thread, limit = INITIAL_MESSAGE_LIMIT)
                 }
                 .catch { failure -> handleStreamFailure(failure) }
-                .collect { messages ->
-                    _uiState.update { it.copy(messages = messages) }
-                    val latestSeq = messages.lastOrNull()?.seq ?: 0L
+                .collect { liveMessages ->
+                    val merged = mergeRoomV2Messages(accumulatedMessages, liveMessages)
+                    accumulatedMessages = merged
+                    _uiState.update { state ->
+                        state.copy(
+                            messages = merged,
+                            hasEarlierMessages = hasEarlierRoomV2Messages(merged),
+                            isLoadingEarlier = loadingEarlierThread == state.currentThread,
+                        )
+                    }
+                    val latestSeq = merged.lastOrNull()?.seq ?: 0L
                     if (latestSeq > 0L && screenVisible && isThreadVisible(_uiState.value)) {
                         markRead(_uiState.value.currentThread, latestSeq)
                     }
@@ -217,6 +236,64 @@ class RoomV2HostViewModel @Inject constructor(
                 is ZibeResult.Failure -> {
                     _uiState.update { it.copy(isSubmitting = false) }
                     showFailure(result.exception)
+                }
+            }
+        }
+    }
+
+    fun loadEarlierMessages() {
+        val state = _uiState.value
+        val thread = state.currentThread
+        val beforeSeq = state.messages.firstOrNull()?.seq ?: return
+        if (
+            !isThreadVisible(state) ||
+            !state.hasEarlierMessages ||
+            loadingEarlierThread == thread
+        ) {
+            return
+        }
+
+        loadingEarlierThread = thread
+        _uiState.update { current ->
+            if (current.currentThread == thread) current.copy(isLoadingEarlier = true) else current
+        }
+
+        viewModelScope.launch {
+            when (val result = chatRepository.loadEarlierMessages(thread, beforeSeq)) {
+                is ZibeResult.Success -> {
+                    if (_uiState.value.currentThread != thread) {
+                        if (loadingEarlierThread == thread) loadingEarlierThread = null
+                        return@launch
+                    }
+                    val merged = mergeRoomV2Messages(result.data, accumulatedMessages)
+                    accumulatedMessages = merged
+                    if (loadingEarlierThread == thread) loadingEarlierThread = null
+                    _uiState.update { current ->
+                        if (current.currentThread != thread) {
+                            current
+                        } else {
+                            current.copy(
+                                messages = merged,
+                                isLoadingEarlier = false,
+                                hasEarlierMessages = result.data.isNotEmpty() &&
+                                    hasEarlierRoomV2Messages(merged),
+                            )
+                        }
+                    }
+                }
+
+                is ZibeResult.Failure -> {
+                    if (loadingEarlierThread == thread) loadingEarlierThread = null
+                    _uiState.update { current ->
+                        if (current.currentThread == thread) {
+                            current.copy(isLoadingEarlier = false)
+                        } else {
+                            current
+                        }
+                    }
+                    if (_uiState.value.currentThread == thread) {
+                        showFailure(result.exception)
+                    }
                 }
             }
         }
@@ -386,6 +463,7 @@ class RoomV2HostViewModel @Inject constructor(
         val beforeThread = before.currentThread
         val beforeVisible = screenVisible && isThreadVisible(before)
 
+        accumulatedMessages = emptyList()
         selectedConversationId.value = conversationId
         _uiState.update {
             it.copy(
@@ -393,6 +471,8 @@ class RoomV2HostViewModel @Inject constructor(
                 selectedConversationId = conversationId,
                 messages = emptyList(),
                 draft = "",
+                isLoadingEarlier = false,
+                hasEarlierMessages = false,
             )
         }
 
@@ -463,5 +543,9 @@ class RoomV2HostViewModel @Inject constructor(
 
     private fun emit(event: RoomV2HostEvent) {
         viewModelScope.launch { _events.emit(event) }
+    }
+
+    private companion object {
+        const val INITIAL_MESSAGE_LIMIT = 100
     }
 }

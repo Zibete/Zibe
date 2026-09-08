@@ -63,6 +63,7 @@ fun RoomV2HostRoute(
         onTabSelected = viewModel::onTabSelected,
         onDraftChanged = viewModel::onDraftChanged,
         onSend = viewModel::sendCurrentText,
+        onLoadEarlier = viewModel::loadEarlierMessages,
         onOpenPrivate = viewModel::openPrivate,
         onOpenProfile = onOpenProfile,
         onConversationSelected = viewModel::selectConversation,
@@ -88,6 +89,7 @@ fun RoomV2HostScreen(
     onTabSelected: (RoomV2HostTab) -> Unit,
     onDraftChanged: (String) -> Unit,
     onSend: () -> Unit,
+    onLoadEarlier: () -> Unit,
     onOpenPrivate: (RoomV2Identity) -> Unit,
     onOpenProfile: (RoomV2Identity) -> Unit,
     onConversationSelected: (String) -> Unit,
@@ -227,9 +229,13 @@ fun RoomV2HostScreen(
                             myIdentityId = state.myIdentityId,
                             participants = state.participants,
                             canRemove = state.canModerate,
+                            threadKey = "public:${state.roomId}",
+                            isLoadingEarlier = state.isLoadingEarlier,
+                            hasEarlierMessages = state.hasEarlierMessages,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(padding),
+                            onLoadEarlier = onLoadEarlier,
                             onMessageLongPress = { message, isMine ->
                                 messageActionTarget = message to isMine
                             },
@@ -253,6 +259,7 @@ fun RoomV2HostScreen(
                                 .fillMaxSize()
                                 .padding(padding),
                             onConversationSelected = onConversationSelected,
+                            onLoadEarlier = onLoadEarlier,
                             onMessageLongPress = { message, isMine ->
                                 messageActionTarget = message to isMine
                             },
@@ -541,7 +548,7 @@ private fun ParticipantRow(
                 color = colors.lightText.copy(alpha = 0.7f),
             )
         }
-        if (!isMe || canModerateTarget || state.isOwner) {
+        if (!isMe) {
             Box {
                 IconButton(onClick = { menuExpanded = true }) {
                     Icon(
@@ -562,7 +569,7 @@ private fun ParticipantRow(
                         modifier = Modifier.background(colors.contentDarkBg),
                         containerColor = Color.Transparent,
                     ) {
-                        if (!isMe && identity.mode == RoomV2IdentityMode.REAL) {
+                        if (identity.mode == RoomV2IdentityMode.REAL) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.rooms_v2_view_profile)) },
                                 onClick = {
@@ -571,15 +578,13 @@ private fun ParticipantRow(
                                 },
                             )
                         }
-                        if (!isMe) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.rooms_v2_open_private)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onOpenPrivate(identity)
-                                },
-                            )
-                        }
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rooms_v2_open_private)) },
+                            onClick = {
+                                menuExpanded = false
+                                onOpenPrivate(identity)
+                            },
+                        )
                         if (canModerateTarget) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.rooms_v2_kick)) },
@@ -596,7 +601,7 @@ private fun ParticipantRow(
                                 },
                             )
                         }
-                        if (state.isOwner && !isMe && identity.role != RoomV2Role.OWNER) {
+                        if (state.isOwner && identity.role != RoomV2Role.OWNER) {
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -655,6 +660,7 @@ private fun PrivatesPane(
     state: RoomV2HostUiState,
     modifier: Modifier,
     onConversationSelected: (String) -> Unit,
+    onLoadEarlier: () -> Unit,
     onMessageLongPress: (RoomV2Message, Boolean) -> Unit,
 ) {
     val conversation = state.currentConversation
@@ -665,7 +671,11 @@ private fun PrivatesPane(
             myIdentityId = state.myIdentityId,
             participants = state.participants,
             canRemove = false,
+            threadKey = "private:${conversation.conversationId}",
+            isLoadingEarlier = state.isLoadingEarlier,
+            hasEarlierMessages = state.hasEarlierMessages,
             modifier = modifier,
+            onLoadEarlier = onLoadEarlier,
             onMessageLongPress = onMessageLongPress,
         )
         return
