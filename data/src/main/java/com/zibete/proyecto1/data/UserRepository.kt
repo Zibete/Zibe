@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import com.zibete.proyecto1.core.common.R as CoreR
@@ -13,11 +12,9 @@ import com.zibete.proyecto1.core.constants.Constants.ActiveThreadKeys
 import com.zibete.proyecto1.core.constants.Constants.ActiveViewKeys
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
-import com.zibete.proyecto1.core.constants.Constants.ChatListKeys
 import com.zibete.proyecto1.core.constants.Constants.ConversationKeys
 import com.zibete.proyecto1.core.constants.Constants.DEFAULT_PROFILE_PHOTO_PATH
 import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
-import com.zibete.proyecto1.core.constants.Constants.NODE_CHAT_LIST
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
@@ -114,13 +111,6 @@ class UserRepository constructor(
         firebaseRefsContainer.refData.child(uid)
             .child(NODE_CLIENT_DATA)
             .child(NODE_ACTIVE_VIEW)
-
-    private fun chatListRef(uid: String = myUid) =
-        firebaseRefsContainer.refData.child(uid)
-            .child(NODE_CHAT_LIST)
-
-    private fun readGroupMessagesRef(uid: String = myUid): DatabaseReference =
-        chatListRef(uid).child(ChatListKeys.READ_GROUP_MESSAGES)
 
     private fun activeThreadRef(uid: String = myUid) =
         activeViewRef(uid).child(ActiveViewKeys.ACTIVE_THREAD)
@@ -454,19 +444,4 @@ class UserRepository constructor(
     override suspend fun clearActiveThread(): ZibeResult<Unit> = zibeCatching {
         activeThreadRef().removeValue().await()
     }
-
-    suspend fun setReadGroupMessages(readCount: Int) {
-        readGroupMessagesRef()
-            .setValue(readCount)
-            .await()
-    }
-
-    suspend fun getReadGroupMessages(): Int {
-        return readGroupMessagesRef()
-            .get()
-            .await()
-            .getValue(Int::class.java) ?: 0
-    }
-
-
 }
