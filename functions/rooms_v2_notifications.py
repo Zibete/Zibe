@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any
 
-from firebase_admin import db
+from firebase_admin import db, messaging
 from firebase_functions import db_fn
 
 if __package__:
-    from .legacy_main import _get_user_token, _safe_id, _send_push
     from .rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
         safe_text_preview,
     )
 else:
-    from legacy_main import _get_user_token, _safe_id, _send_push
     from rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
@@ -22,10 +21,47 @@ else:
     )
 
 ROOT = "RoomsV2"
+NODE_SESSIONS = "Sessions"
+KEY_FCM_TOKEN = "fcmToken"
 PUBLIC_MESSAGE_PATH = "/RoomsV2/publicMessages/{roomId}/{messageId}"
 PRIVATE_MESSAGE_PATH = "/RoomsV2/privateMessages/{conversationId}/{messageId}"
 VISIBLE_THREAD_LEASE_MS = 120_000
 PREVIEW_MAX_CHARS = 160
+logger = logging.getLogger(__name__)
+
+
+def _safe_id(value: object, *, head: int = 6, tail: int = 4) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    if len(text) <= head + tail + 3:
+        return text
+    return f"{text[:head]}...{text[-tail:]}"
+
+
+def _get_user_token(uid: str) -> str | None:
+    if not uid:
+        return None
+    value = db.reference(f"{NODE_SESSIONS}/{uid}/{KEY_FCM_TOKEN}").get()
+    token = str(value).strip() if value is not None else ""
+    return token or None
+
+
+def _send_push(*, token: str, data_payload: dict[str, object]) -> str | None:
+    if not token:
+        return None
+    safe_data = {
+        str(key): str(value)
+        for key, value in data_payload.items()
+        if value is not None
+    }
+    return messaging.send(
+        messaging.Message(
+            token=token,
+            data=safe_data,
+            android=messaging.AndroidConfig(priority="high"),
+        )
+    )
 
 
 def _event_data(event: db_fn.Event) -> dict | None:
@@ -87,12 +123,11 @@ def on_room_v2_public_message_created(
         return
 
     state = _read_rooms_state()
-    now_ms = int(time.time() * 1000)
     recipients = public_room_recipients(
         state,
         room_id=room_id,
         sender_identity_id=sender_identity_id,
-        now_ms=now_ms,
+        now_ms=int(time.time() * 1000),
         lease_ms=VISIBLE_THREAD_LEASE_MS,
     )
     payload = {
@@ -106,17 +141,9 @@ def on_room_v2_public_message_created(
         if not token:
             continue
         try:
-            _send_push(
-                token=token,
-                data_payload=payload,
-                include_notification=False,
-            )
+            _send_push(token=token, data_payload=payload)
         except Exception:
-            # Keep a single invalid/unavailable recipient from blocking the others.
-            # Identifier logging remains redacted through the legacy helper.
-            import logging
-
-            logging.getLogger(__name__).exception(
+            logger.exception(
                 "RoomsV2 public push failed roomId=%s messageId=%s receiver=%s",
                 _safe_id(room_id),
                 _safe_id(message_id),
@@ -160,15 +187,9 @@ def on_room_v2_private_message_created(
         **_base_payload(message, message_id=message_id),
     }
     try:
-        _send_push(
-            token=token,
-            data_payload=payload,
-            include_notification=False,
-        )
+        _send_push(token=token, data_payload=payload)
     except Exception:
-        import logging
-
-        logging.getLogger(__name__).exception(
+        logger.exception(
             "RoomsV2 private push failed roomId=%s conversation=%s messageId=%s receiver=%s",
             _safe_id(room_id),
             _safe_id(conversation_id),
