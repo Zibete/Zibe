@@ -1,10 +1,8 @@
 package com.zibete.proyecto1.di
 
-import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.UserRepository
-import com.zibete.proyecto1.testing.fakeGroupRepository
 import com.zibete.proyecto1.testing.fakeLocationRepository
 import com.zibete.proyecto1.testing.fakePresenceRepository
 import com.zibete.proyecto1.testing.fakeUserRepository
@@ -24,10 +22,6 @@ object TestRepositoriesModule {
     @Provides
     @Singleton
     fun provideUserRepository(): UserRepository = fakeUserRepository()
-
-    @Provides
-    @Singleton
-    fun provideGroupRepository(): GroupRepository = fakeGroupRepository()
 
     @Provides
     @Singleton
