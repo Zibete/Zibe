@@ -1,31 +1,31 @@
 package com.zibete.proyecto1.ui.groups.host
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,11 +35,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Conversation
@@ -48,23 +48,29 @@ import com.zibete.proyecto1.domain.roomsv2.RoomV2IdentityMode
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Message
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Report
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Role
+import com.zibete.proyecto1.ui.components.ZibeMenuDefaults
+import com.zibete.proyecto1.ui.theme.LocalZibeExtendedColors
 
 @Composable
-fun RoomV2HostRoute(viewModel: RoomV2HostViewModel = hiltViewModel()) {
+fun RoomV2HostRoute(
+    viewModel: RoomV2HostViewModel,
+    onOpenProfile: (RoomV2Identity) -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     RoomV2HostScreen(
         state = state,
+        onBack = viewModel::onBackRequested,
         onTabSelected = viewModel::onTabSelected,
         onDraftChanged = viewModel::onDraftChanged,
         onSend = viewModel::sendCurrentText,
         onOpenPrivate = viewModel::openPrivate,
+        onOpenProfile = onOpenProfile,
         onConversationSelected = viewModel::selectConversation,
-        onBackToPrivates = viewModel::backToPrivateList,
+        onNotificationsChanged = viewModel::setNotifications,
+        onBlockPrivate = viewModel::blockCurrentPrivate,
         onLeaveRequested = viewModel::onLeaveRequested,
         onDismissLeave = viewModel::dismissLeave,
         onConfirmLeave = viewModel::confirmLeave,
-        onNotificationsChanged = viewModel::setNotifications,
-        onBlockPrivate = viewModel::blockCurrentPrivate,
         onCloseRoom = viewModel::closeRoom,
         onTransferOwnership = viewModel::transferOwnership,
         onSetModerator = viewModel::setModerator,
@@ -78,17 +84,18 @@ fun RoomV2HostRoute(viewModel: RoomV2HostViewModel = hiltViewModel()) {
 @Composable
 fun RoomV2HostScreen(
     state: RoomV2HostUiState,
+    onBack: () -> Unit,
     onTabSelected: (RoomV2HostTab) -> Unit,
     onDraftChanged: (String) -> Unit,
     onSend: () -> Unit,
     onOpenPrivate: (RoomV2Identity) -> Unit,
+    onOpenProfile: (RoomV2Identity) -> Unit,
     onConversationSelected: (String) -> Unit,
-    onBackToPrivates: () -> Unit,
+    onNotificationsChanged: (Boolean) -> Unit,
+    onBlockPrivate: (Boolean) -> Unit,
     onLeaveRequested: () -> Unit,
     onDismissLeave: () -> Unit,
     onConfirmLeave: () -> Unit,
-    onNotificationsChanged: (Boolean) -> Unit,
-    onBlockPrivate: (Boolean) -> Unit,
     onCloseRoom: () -> Unit,
     onTransferOwnership: (String) -> Unit,
     onSetModerator: (String, Boolean) -> Unit,
@@ -97,78 +104,171 @@ fun RoomV2HostScreen(
     onReportMessage: (RoomV2Message, String) -> Unit,
     onResolveReport: (String, String) -> Unit,
 ) {
+    val colors = LocalZibeExtendedColors.current
+    val room = state.room
+    val currentPrivate = state.currentConversation
+    var showCloseConfirm by remember { mutableStateOf(false) }
+    var messageActionTarget by remember { mutableStateOf<Pair<RoomV2Message, Boolean>?>(null) }
     var reportTarget by remember { mutableStateOf<RoomV2Message?>(null) }
     var reportReason by remember { mutableStateOf("") }
     var resolutionTarget by remember { mutableStateOf<RoomV2Report?>(null) }
     var resolutionText by remember { mutableStateOf("") }
 
-    Scaffold { padding ->
+    val privateUnread = state.conversations.sumOf { it.unreadCount }
+    val topTitle = if (
+        state.selectedTab == RoomV2HostTab.PRIVATES && currentPrivate != null
+    ) {
+        currentPrivate.otherIdentity.displayName
+    } else {
+        room?.name.orEmpty()
+    }
+    val topSubtitle = when {
+        state.selectedTab == RoomV2HostTab.PRIVATES && currentPrivate != null -> {
+            stringResource(R.string.rooms_v2_private_context, room?.name.orEmpty())
+        }
+        state.selectedTab == RoomV2HostTab.REPORTS -> {
+            stringResource(R.string.rooms_v2_moderation)
+        }
+        else -> stringResource(R.string.rooms_v2_participants, room?.memberCount ?: 0)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.gradientZibe),
+    ) {
         when {
-            state.isLoading && state.room == null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
+            state.isLoading && room == null -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
 
-            state.error != null && state.room == null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp)
-                    .padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(state.error.asString())
+            state.error != null && room == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = state.error.asString(),
+                        color = colors.lightText,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
             }
 
-            else -> Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-            ) {
-                RoomHeader(
-                    state = state,
-                    onLeaveRequested = onLeaveRequested,
-                    onNotificationsChanged = onNotificationsChanged,
-                    onCloseRoom = onCloseRoom,
-                )
-                HostTabs(state = state, onTabSelected = onTabSelected)
-                when (state.selectedTab) {
-                    RoomV2HostTab.CHAT -> ThreadContent(
-                        state = state,
-                        onDraftChanged = onDraftChanged,
-                        onSend = onSend,
-                        onReport = { reportTarget = it },
-                        onRemove = onRemoveMessage,
-                    )
+            room != null -> {
+                val composerVisible = state.selectedTab == RoomV2HostTab.CHAT ||
+                    (state.selectedTab == RoomV2HostTab.PRIVATES && currentPrivate != null)
+                val composerEnabled = when {
+                    state.selectedTab == RoomV2HostTab.CHAT -> true
+                    currentPrivate == null -> false
+                    else -> !currentPrivate.closed && !currentPrivate.blocked
+                }
 
-                    RoomV2HostTab.PEOPLE -> PeopleContent(
-                        state = state,
-                        onOpenPrivate = onOpenPrivate,
-                        onTransferOwnership = onTransferOwnership,
-                        onSetModerator = onSetModerator,
-                        onRemoveMember = onRemoveMember,
-                    )
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    topBar = {
+                        RoomV2TopBar(
+                            state = RoomV2TopBarState(
+                                title = topTitle,
+                                subtitle = topSubtitle,
+                                notificationsEnabled = state.membership?.notificationsEnabled ?: true,
+                                selectedTab = state.selectedTab,
+                                privateUnreadCount = privateUnread,
+                                reportCount = state.reports.count {
+                                    it.status.equals("open", ignoreCase = true)
+                                },
+                                canModerate = state.canModerate,
+                                isOwner = state.isOwner,
+                                privateBlocked = currentPrivate?.blocked,
+                            ),
+                            onBack = onBack,
+                            onChat = { onTabSelected(RoomV2HostTab.CHAT) },
+                            onPeople = { onTabSelected(RoomV2HostTab.PEOPLE) },
+                            onPrivates = { onTabSelected(RoomV2HostTab.PRIVATES) },
+                            onReports = { onTabSelected(RoomV2HostTab.REPORTS) },
+                            onToggleNotifications = {
+                                onNotificationsChanged(
+                                    !(state.membership?.notificationsEnabled ?: true)
+                                )
+                            },
+                            onLeave = onLeaveRequested,
+                            onCloseRoom = { showCloseConfirm = true },
+                            onTogglePrivateBlock = if (currentPrivate != null) {
+                                onBlockPrivate
+                            } else {
+                                null
+                            },
+                        )
+                    },
+                    bottomBar = {
+                        if (composerVisible) {
+                            Column {
+                                if (currentPrivate?.closed == true || currentPrivate?.blocked == true) {
+                                    PrivateStateBanner(currentPrivate)
+                                }
+                                RoomV2TextComposer(
+                                    draft = state.draft,
+                                    submitting = state.isSubmitting,
+                                    enabled = composerEnabled,
+                                    onDraftChanged = onDraftChanged,
+                                    onSend = onSend,
+                                )
+                            }
+                        }
+                    },
+                ) { padding ->
+                    when (state.selectedTab) {
+                        RoomV2HostTab.CHAT -> RoomV2MessageTimeline(
+                            messages = state.messages,
+                            myIdentityId = state.myIdentityId,
+                            participants = state.participants,
+                            canRemove = state.canModerate,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            onMessageLongPress = { message, isMine ->
+                                messageActionTarget = message to isMine
+                            },
+                        )
 
-                    RoomV2HostTab.PRIVATES -> PrivateContent(
-                        state = state,
-                        onConversationSelected = onConversationSelected,
-                        onBackToPrivates = onBackToPrivates,
-                        onDraftChanged = onDraftChanged,
-                        onSend = onSend,
-                        onBlockPrivate = onBlockPrivate,
-                        onReport = { reportTarget = it },
-                    )
+                        RoomV2HostTab.PEOPLE -> PeoplePane(
+                            state = state,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            onOpenPrivate = onOpenPrivate,
+                            onOpenProfile = onOpenProfile,
+                            onTransferOwnership = onTransferOwnership,
+                            onSetModerator = onSetModerator,
+                            onRemoveMember = onRemoveMember,
+                        )
 
-                    RoomV2HostTab.REPORTS -> ReportsContent(
-                        reports = state.reports,
-                        onResolve = { report ->
-                            resolutionTarget = report
-                            resolutionText = ""
-                        },
-                    )
+                        RoomV2HostTab.PRIVATES -> PrivatesPane(
+                            state = state,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            onConversationSelected = onConversationSelected,
+                            onMessageLongPress = { message, isMine ->
+                                messageActionTarget = message to isMine
+                            },
+                        )
+
+                        RoomV2HostTab.REPORTS -> ReportsPane(
+                            reports = state.reports,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding),
+                            onResolve = { report ->
+                                resolutionTarget = report
+                                resolutionText = ""
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -178,22 +278,86 @@ fun RoomV2HostScreen(
         AlertDialog(
             onDismissRequest = onDismissLeave,
             title = {
-                Text(
-                    stringResource(
-                        R.string.rooms_v2_leave_title,
-                        state.room?.name.orEmpty(),
-                    )
-                )
+                Text(stringResource(R.string.rooms_v2_leave_title, room?.name.orEmpty()))
             },
             text = { Text(stringResource(R.string.rooms_v2_leave_message)) },
             confirmButton = {
-                Button(onClick = onConfirmLeave, enabled = !state.isSubmitting) {
+                TextButton(onClick = onConfirmLeave, enabled = !state.isSubmitting) {
                     Text(stringResource(R.string.rooms_v2_leave))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissLeave, enabled = !state.isSubmitting) {
                     Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (showCloseConfirm) {
+        AlertDialog(
+            onDismissRequest = { showCloseConfirm = false },
+            title = { Text(stringResource(R.string.rooms_v2_close_title)) },
+            text = { Text(stringResource(R.string.rooms_v2_close_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCloseConfirm = false
+                        onCloseRoom()
+                    },
+                    enabled = !state.isSubmitting,
+                ) {
+                    Text(stringResource(R.string.rooms_v2_close))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCloseConfirm = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+
+    messageActionTarget?.let { (message, isMine) ->
+        AlertDialog(
+            onDismissRequest = { messageActionTarget = null },
+            title = { Text(message.authorDisplayName) },
+            text = {
+                Text(
+                    if (message.removed) {
+                        stringResource(R.string.rooms_v2_message_removed)
+                    } else {
+                        message.text
+                    }
+                )
+            },
+            confirmButton = {
+                if (!isMine && !message.removed) {
+                    TextButton(
+                        onClick = {
+                            messageActionTarget = null
+                            reportTarget = message
+                        }
+                    ) {
+                        Text(stringResource(R.string.rooms_v2_report))
+                    }
+                }
+            },
+            dismissButton = {
+                Row {
+                    if (state.canModerate && !message.removed && message.conversationId == null) {
+                        TextButton(
+                            onClick = {
+                                messageActionTarget = null
+                                onRemoveMessage(message.messageId)
+                            }
+                        ) {
+                            Text(stringResource(R.string.rooms_v2_remove_message))
+                        }
+                    }
+                    TextButton(onClick = { messageActionTarget = null }) {
+                        Text(stringResource(R.string.close))
+                    }
                 }
             },
         )
@@ -207,7 +371,7 @@ fun RoomV2HostScreen(
             },
             title = { Text(stringResource(R.string.rooms_v2_report)) },
             text = {
-                OutlinedTextField(
+                androidx.compose.material3.OutlinedTextField(
                     value = reportReason,
                     onValueChange = { reportReason = it },
                     modifier = Modifier.fillMaxWidth(),
@@ -217,7 +381,7 @@ fun RoomV2HostScreen(
                 )
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         onReportMessage(message, reportReason)
                         reportTarget = null
@@ -249,7 +413,7 @@ fun RoomV2HostScreen(
             },
             title = { Text(stringResource(R.string.rooms_v2_resolve)) },
             text = {
-                OutlinedTextField(
+                androidx.compose.material3.OutlinedTextField(
                     value = resolutionText,
                     onValueChange = { resolutionText = it },
                     modifier = Modifier.fillMaxWidth(),
@@ -259,7 +423,7 @@ fun RoomV2HostScreen(
                 )
             },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         onResolveReport(report.reportId, resolutionText)
                         resolutionTarget = null
@@ -271,12 +435,10 @@ fun RoomV2HostScreen(
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        resolutionTarget = null
-                        resolutionText = ""
-                    }
-                ) {
+                TextButton(onClick = {
+                    resolutionTarget = null
+                    resolutionText = ""
+                }) {
                     Text(stringResource(android.R.string.cancel))
                 }
             },
@@ -285,376 +447,29 @@ fun RoomV2HostScreen(
 }
 
 @Composable
-private fun RoomHeader(
+private fun PeoplePane(
     state: RoomV2HostUiState,
-    onLeaveRequested: () -> Unit,
-    onNotificationsChanged: (Boolean) -> Unit,
-    onCloseRoom: () -> Unit,
-) {
-    val room = state.room ?: return
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(18.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = room.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (room.description.isNotBlank()) {
-                        Text(
-                            text = room.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                TextButton(onClick = onLeaveRequested, enabled = !state.isSubmitting) {
-                    Text(stringResource(R.string.rooms_v2_leave))
-                }
-            }
-            state.membership?.let { membership ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        stringResource(
-                            R.string.rooms_v2_identity_as,
-                            membership.identity.displayName,
-                        ),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(stringResource(R.string.rooms_v2_notifications))
-                    Switch(
-                        checked = membership.notificationsEnabled,
-                        onCheckedChange = onNotificationsChanged,
-                        enabled = !state.isSubmitting,
-                    )
-                }
-            }
-            if (state.isOwner) {
-                TextButton(onClick = onCloseRoom, enabled = !state.isSubmitting) {
-                    Text(stringResource(R.string.rooms_v2_close))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HostTabs(
-    state: RoomV2HostUiState,
-    onTabSelected: (RoomV2HostTab) -> Unit,
-) {
-    val tabs = buildList {
-        add(RoomV2HostTab.CHAT)
-        add(RoomV2HostTab.PEOPLE)
-        add(RoomV2HostTab.PRIVATES)
-        if (state.canModerate) add(RoomV2HostTab.REPORTS)
-    }
-    val selectedIndex = tabs.indexOf(state.selectedTab).coerceAtLeast(0)
-    TabRow(selectedTabIndex = selectedIndex) {
-        tabs.forEach { tab ->
-            Tab(
-                selected = state.selectedTab == tab,
-                onClick = { onTabSelected(tab) },
-                text = {
-                    Text(
-                        when (tab) {
-                            RoomV2HostTab.CHAT -> stringResource(R.string.rooms_v2_chat)
-                            RoomV2HostTab.PEOPLE -> stringResource(R.string.rooms_v2_people)
-                            RoomV2HostTab.PRIVATES -> stringResource(R.string.rooms_v2_privates)
-                            RoomV2HostTab.REPORTS -> stringResource(R.string.rooms_v2_reports)
-                        }
-                    )
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ThreadContent(
-    state: RoomV2HostUiState,
-    onDraftChanged: (String) -> Unit,
-    onSend: () -> Unit,
-    onReport: (RoomV2Message) -> Unit,
-    onRemove: (String) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        MessageList(
-            messages = state.messages,
-            myIdentityId = state.myIdentityId,
-            canRemove = state.canModerate,
-            modifier = Modifier.weight(1f),
-            onReport = onReport,
-            onRemove = onRemove,
-        )
-        MessageComposer(
-            draft = state.draft,
-            submitting = state.isSubmitting,
-            onDraftChanged = onDraftChanged,
-            onSend = onSend,
-        )
-    }
-}
-
-@Composable
-private fun PrivateContent(
-    state: RoomV2HostUiState,
-    onConversationSelected: (String) -> Unit,
-    onBackToPrivates: () -> Unit,
-    onDraftChanged: (String) -> Unit,
-    onSend: () -> Unit,
-    onBlockPrivate: (Boolean) -> Unit,
-    onReport: (RoomV2Message) -> Unit,
-) {
-    val conversation = state.currentConversation
-    if (conversation == null) {
-        if (state.conversations.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.rooms_v2_no_privates))
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.conversations, key = { it.conversationId }) { item ->
-                    ConversationRow(item = item, onClick = {
-                        onConversationSelected(item.conversationId)
-                    })
-                }
-            }
-        }
-        return
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = onBackToPrivates) {
-                Text(stringResource(R.string.rooms_v2_back_to_privates))
-            }
-            Text(
-                conversation.otherIdentity.displayName,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            TextButton(
-                onClick = { onBlockPrivate(!conversation.blocked) },
-                enabled = !state.isSubmitting,
-            ) {
-                Text(
-                    stringResource(
-                        if (conversation.blocked) R.string.rooms_v2_unblock_private
-                        else R.string.rooms_v2_block_private,
-                    )
-                )
-            }
-        }
-        if (conversation.closed || conversation.blocked) {
-            Text(
-                text = stringResource(
-                    if (conversation.blocked) R.string.rooms_v2_private_blocked
-                    else R.string.rooms_v2_private_closed,
-                ),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
-        MessageList(
-            messages = state.messages,
-            myIdentityId = state.myIdentityId,
-            canRemove = false,
-            modifier = Modifier.weight(1f),
-            onReport = onReport,
-            onRemove = {},
-        )
-        MessageComposer(
-            draft = state.draft,
-            submitting = state.isSubmitting,
-            enabled = !conversation.closed && !conversation.blocked,
-            onDraftChanged = onDraftChanged,
-            onSend = onSend,
-        )
-    }
-}
-
-@Composable
-private fun ConversationRow(item: RoomV2Conversation, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(item.otherIdentity.displayName, fontWeight = FontWeight.Bold)
-                Text(
-                    item.lastText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            if (item.unreadCount > 0) {
-                Badge { Text(item.unreadCount.coerceAtMost(99).toString()) }
-            }
-            if (item.closed) AssistChip(onClick = onClick, label = {
-                Text(stringResource(R.string.rooms_v2_private_closed))
-            })
-        }
-    }
-}
-
-@Composable
-private fun MessageList(
-    messages: List<RoomV2Message>,
-    myIdentityId: String?,
-    canRemove: Boolean,
     modifier: Modifier,
-    onReport: (RoomV2Message) -> Unit,
-    onRemove: (String) -> Unit,
-) {
-    if (messages.isEmpty()) {
-        Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.rooms_v2_no_messages))
-        }
-        return
-    }
-    LazyColumn(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        items(messages, key = { it.messageId }) { message ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                colors = CardDefaults.cardColors(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            message.authorDisplayName,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        if (message.authorMode == RoomV2IdentityMode.ANONYMOUS) {
-                            Text(
-                                stringResource(R.string.rooms_v2_anonymous_badge),
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        }
-                    }
-                    Text(
-                        if (message.removed) {
-                            stringResource(R.string.rooms_v2_message_removed)
-                        } else {
-                            message.text
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    if (!message.removed && message.authorIdentityId != myIdentityId) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TextButton(onClick = { onReport(message) }) {
-                                Text(stringResource(R.string.rooms_v2_report))
-                            }
-                            if (canRemove) {
-                                TextButton(onClick = { onRemove(message.messageId) }) {
-                                    Text(stringResource(R.string.rooms_v2_remove_message))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MessageComposer(
-    draft: String,
-    submitting: Boolean,
-    enabled: Boolean = true,
-    onDraftChanged: (String) -> Unit,
-    onSend: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        OutlinedTextField(
-            value = draft,
-            onValueChange = onDraftChanged,
-            modifier = Modifier.weight(1f),
-            placeholder = { Text(stringResource(R.string.rooms_v2_message_hint)) },
-            enabled = enabled && !submitting,
-            maxLines = 4,
-        )
-        Button(
-            onClick = onSend,
-            enabled = enabled && !submitting && draft.isNotBlank(),
-        ) {
-            Text(stringResource(R.string.rooms_v2_send))
-        }
-    }
-}
-
-@Composable
-private fun PeopleContent(
-    state: RoomV2HostUiState,
     onOpenPrivate: (RoomV2Identity) -> Unit,
+    onOpenProfile: (RoomV2Identity) -> Unit,
     onTransferOwnership: (String) -> Unit,
     onSetModerator: (String, Boolean) -> Unit,
     onRemoveMember: (String, Boolean) -> Unit,
 ) {
+    val colors = LocalZibeExtendedColors.current
     if (state.participants.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.rooms_v2_no_participants))
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.rooms_v2_no_participants),
+                color = colors.lightText.copy(alpha = 0.8f),
+            )
         }
         return
     }
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(state.participants, key = { it.identityId }) { identity ->
@@ -662,6 +477,7 @@ private fun PeopleContent(
                 state = state,
                 identity = identity,
                 onOpenPrivate = onOpenPrivate,
+                onOpenProfile = onOpenProfile,
                 onTransferOwnership = onTransferOwnership,
                 onSetModerator = onSetModerator,
                 onRemoveMember = onRemoveMember,
@@ -675,10 +491,13 @@ private fun ParticipantRow(
     state: RoomV2HostUiState,
     identity: RoomV2Identity,
     onOpenPrivate: (RoomV2Identity) -> Unit,
+    onOpenProfile: (RoomV2Identity) -> Unit,
     onTransferOwnership: (String) -> Unit,
     onSetModerator: (String, Boolean) -> Unit,
     onRemoveMember: (String, Boolean) -> Unit,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val colors = LocalZibeExtendedColors.current
     val isMe = identity.identityId == state.myIdentityId
     val canModerateTarget = when (state.myRole) {
         RoomV2Role.OWNER -> identity.role != RoomV2Role.OWNER
@@ -686,76 +505,128 @@ private fun ParticipantRow(
         RoomV2Role.MEMBER,
         null -> false
     }
-    Card(
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
+            .background(
+                colors.contentDarkBg.copy(alpha = 0.66f),
+                RoundedCornerShape(18.dp),
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    identity.displayName,
-                    modifier = Modifier.weight(1f),
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    when (identity.role) {
-                        RoomV2Role.OWNER -> stringResource(R.string.rooms_v2_owner_badge)
-                        RoomV2Role.MODERATOR -> stringResource(R.string.rooms_v2_moderator_badge)
-                        RoomV2Role.MEMBER -> ""
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-            if (!isMe) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    TextButton(onClick = { onOpenPrivate(identity) }) {
-                        Text(stringResource(R.string.rooms_v2_open_private))
-                    }
-                    if (canModerateTarget) {
-                        TextButton(onClick = { onRemoveMember(identity.identityId, false) }) {
-                            Text(stringResource(R.string.rooms_v2_kick))
-                        }
-                        TextButton(onClick = { onRemoveMember(identity.identityId, true) }) {
-                            Text(stringResource(R.string.rooms_v2_ban))
-                        }
-                    }
+        RoomV2IdentityAvatar(
+            displayName = identity.displayName,
+            mode = identity.mode,
+            modifier = Modifier.padding(2.dp),
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = if (isMe) {
+                    stringResource(R.string.rooms_v2_you_name, identity.displayName)
+                } else {
+                    identity.displayName
+                },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.lightText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = identitySubtitle(identity),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.lightText.copy(alpha = 0.7f),
+            )
+        }
+        if (!isMe || canModerateTarget || state.isOwner) {
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.content_description_more_options),
+                        tint = colors.lightText,
+                    )
                 }
-                if (state.isOwner && identity.role != RoomV2Role.OWNER) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                MaterialTheme(
+                    shapes = MaterialTheme.shapes.copy(
+                        extraSmall = RoundedCornerShape(ZibeMenuDefaults.Corner)
+                    )
+                ) {
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        offset = ZibeMenuDefaults.Offset,
+                        modifier = Modifier.background(colors.contentDarkBg),
+                        containerColor = Color.Transparent,
                     ) {
-                        TextButton(
-                            onClick = {
-                                onSetModerator(
-                                    identity.identityId,
-                                    identity.role != RoomV2Role.MODERATOR,
-                                )
-                            }
-                        ) {
-                            Text(
-                                stringResource(
-                                    if (identity.role == RoomV2Role.MODERATOR) {
-                                        R.string.rooms_v2_remove_moderator
-                                    } else {
-                                        R.string.rooms_v2_make_moderator
-                                    }
-                                )
+                        if (!isMe && identity.mode == RoomV2IdentityMode.REAL) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.rooms_v2_view_profile)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenProfile(identity)
+                                },
                             )
                         }
-                        if (identity.mode == RoomV2IdentityMode.REAL) {
-                            TextButton(onClick = { onTransferOwnership(identity.identityId) }) {
-                                Text(stringResource(R.string.rooms_v2_transfer_owner))
+                        if (!isMe) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.rooms_v2_open_private)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenPrivate(identity)
+                                },
+                            )
+                        }
+                        if (canModerateTarget) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.rooms_v2_kick)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onRemoveMember(identity.identityId, false)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.rooms_v2_ban)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onRemoveMember(identity.identityId, true)
+                                },
+                            )
+                        }
+                        if (state.isOwner && !isMe && identity.role != RoomV2Role.OWNER) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (identity.role == RoomV2Role.MODERATOR) {
+                                                R.string.rooms_v2_remove_moderator
+                                            } else {
+                                                R.string.rooms_v2_make_moderator
+                                            }
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onSetModerator(
+                                        identity.identityId,
+                                        identity.role != RoomV2Role.MODERATOR,
+                                    )
+                                },
+                            )
+                            if (identity.mode == RoomV2IdentityMode.REAL) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(stringResource(R.string.rooms_v2_transfer_owner))
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onTransferOwnership(identity.identityId)
+                                    },
+                                )
                             }
                         }
                     }
@@ -766,47 +637,190 @@ private fun ParticipantRow(
 }
 
 @Composable
-private fun ReportsContent(
-    reports: List<RoomV2Report>,
-    onResolve: (RoomV2Report) -> Unit,
+private fun identitySubtitle(identity: RoomV2Identity): String {
+    val role = when (identity.role) {
+        RoomV2Role.OWNER -> stringResource(R.string.rooms_v2_owner_badge)
+        RoomV2Role.MODERATOR -> stringResource(R.string.rooms_v2_moderator_badge)
+        RoomV2Role.MEMBER -> stringResource(R.string.rooms_v2_member_badge)
+    }
+    return if (identity.mode == RoomV2IdentityMode.ANONYMOUS) {
+        "$role · ${stringResource(R.string.rooms_v2_anonymous_badge)}"
+    } else {
+        role
+    }
+}
+
+@Composable
+private fun PrivatesPane(
+    state: RoomV2HostUiState,
+    modifier: Modifier,
+    onConversationSelected: (String) -> Unit,
+    onMessageLongPress: (RoomV2Message, Boolean) -> Unit,
 ) {
-    if (reports.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(R.string.rooms_v2_no_reports))
+    val conversation = state.currentConversation
+    val colors = LocalZibeExtendedColors.current
+    if (conversation != null) {
+        RoomV2MessageTimeline(
+            messages = state.messages,
+            myIdentityId = state.myIdentityId,
+            participants = state.participants,
+            canRemove = false,
+            modifier = modifier,
+            onMessageLongPress = onMessageLongPress,
+        )
+        return
+    }
+
+    if (state.conversations.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.rooms_v2_no_privates),
+                color = colors.lightText.copy(alpha = 0.8f),
+            )
         }
         return
     }
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(state.conversations, key = { it.conversationId }) { item ->
+            ConversationRow(item = item, onClick = {
+                onConversationSelected(item.conversationId)
+            })
+        }
+    }
+}
+
+@Composable
+private fun ConversationRow(item: RoomV2Conversation, onClick: () -> Unit) {
+    val colors = LocalZibeExtendedColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.contentDarkBg.copy(alpha = 0.66f), RoundedCornerShape(18.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RoomV2IdentityAvatar(
+            displayName = item.otherIdentity.displayName,
+            mode = item.otherIdentity.mode,
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 2.dp),
+        ) {
+            TextButton(
+                onClick = onClick,
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        item.otherIdentity.displayName,
+                        color = colors.lightText,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        item.lastText.ifBlank {
+                            stringResource(R.string.rooms_v2_private_empty_preview)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.lightText.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+        if (item.unreadCount > 0) {
+            Badge { Text(item.unreadCount.coerceAtMost(99).toString()) }
+        }
+    }
+}
+
+@Composable
+private fun PrivateStateBanner(conversation: RoomV2Conversation) {
+    val colors = LocalZibeExtendedColors.current
+    Text(
+        text = stringResource(
+            if (conversation.blocked) {
+                R.string.rooms_v2_private_blocked
+            } else {
+                R.string.rooms_v2_private_closed
+            }
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.contentDarkBg.copy(alpha = 0.78f))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = colors.lightText,
+    )
+}
+
+@Composable
+private fun ReportsPane(
+    reports: List<RoomV2Report>,
+    modifier: Modifier,
+    onResolve: (RoomV2Report) -> Unit,
+) {
+    val colors = LocalZibeExtendedColors.current
+    if (reports.isEmpty()) {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.rooms_v2_no_reports),
+                color = colors.lightText.copy(alpha = 0.8f),
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(reports, key = { it.reportId }) { report ->
-            Card(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(report.reason, fontWeight = FontWeight.Bold)
-                    HorizontalDivider()
-                    Text(report.evidence.authorDisplayName)
-                    Text(
-                        if (report.evidence.removed) {
-                            stringResource(R.string.rooms_v2_message_removed)
-                        } else {
-                            report.evidence.text
-                        },
+                    .background(
+                        colors.contentDarkBg.copy(alpha = 0.72f),
+                        RoundedCornerShape(18.dp),
                     )
-                    if (report.status.equals("open", ignoreCase = true)) {
-                        TextButton(onClick = { onResolve(report) }) {
-                            Text(stringResource(R.string.rooms_v2_resolve))
-                        }
-                    } else if (report.resolution.isNotBlank()) {
-                        Text(report.resolution, style = MaterialTheme.typography.bodySmall)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(report.reason, color = colors.lightText, fontWeight = FontWeight.Bold)
+                HorizontalDivider(color = colors.lightText.copy(alpha = 0.16f))
+                Text(
+                    report.evidence.authorDisplayName,
+                    color = colors.lightText.copy(alpha = 0.8f),
+                )
+                Text(
+                    if (report.evidence.removed) {
+                        stringResource(R.string.rooms_v2_message_removed)
+                    } else {
+                        report.evidence.text
+                    },
+                    color = colors.lightText,
+                )
+                if (report.status.equals("open", ignoreCase = true)) {
+                    TextButton(onClick = { onResolve(report) }) {
+                        Text(stringResource(R.string.rooms_v2_resolve))
                     }
+                } else if (report.resolution.isNotBlank()) {
+                    Text(
+                        report.resolution,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.lightText.copy(alpha = 0.75f),
+                    )
                 }
             }
         }

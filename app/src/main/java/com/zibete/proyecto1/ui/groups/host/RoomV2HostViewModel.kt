@@ -256,12 +256,23 @@ class RoomV2HostViewModel @Inject constructor(
         switchContext(RoomV2HostTab.PRIVATES, null)
     }
 
+    fun onBackRequested() {
+        if (!tryHandleBack()) {
+            emit(RoomV2HostEvent.NavigateBack)
+        }
+    }
+
     fun tryHandleBack(): Boolean {
+        val state = _uiState.value
         if (
-            _uiState.value.selectedTab == RoomV2HostTab.PRIVATES &&
-            _uiState.value.selectedConversationId != null
+            state.selectedTab == RoomV2HostTab.PRIVATES &&
+            state.selectedConversationId != null
         ) {
             backToPrivateList()
+            return true
+        }
+        if (state.selectedTab != RoomV2HostTab.CHAT) {
+            switchContext(RoomV2HostTab.CHAT, null)
             return true
         }
         return false
