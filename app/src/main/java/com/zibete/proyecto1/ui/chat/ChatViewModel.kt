@@ -4,12 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_BLOCKED
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_HIDE
 import com.zibete.proyecto1.core.constants.Constants.CHAT_STATE_SILENT
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_ID
-import com.zibete.proyecto1.core.constants.Constants.EXTRA_CHAT_NODE
 import com.zibete.proyecto1.core.constants.Constants.MSG_AUDIO
 import com.zibete.proyecto1.core.constants.Constants.MSG_PHOTO
 import com.zibete.proyecto1.core.constants.Constants.MSG_SEEN
@@ -26,10 +24,8 @@ import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
 import com.zibete.proyecto1.data.ConversationOverviewRepository
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.SessionRepositoryProvider
-import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserRepositoryActions
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
@@ -44,8 +40,9 @@ import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.isDeletedFor
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
+import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,13 +55,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val textProvider: ChatTextProvider,
-    private val groupRepositoryProvider: GroupRepositoryProvider,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val userRepositoryActions: UserRepositoryActions,
     private val conversationOverviewRepository: ConversationOverviewRepository,
@@ -74,7 +69,6 @@ class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepositoryContract,
     private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val sessionRepositoryProvider: SessionRepositoryProvider,
-    private val userPreferencesProvider: UserPreferencesProvider
 ) : ViewModel() {
 
     private val dmSeenRequests = Channel<Unit>(capacity = Channel.CONFLATED)
@@ -91,63 +85,46 @@ class ChatViewModel @Inject constructor(
     val myUid get() = localRepositoryProvider.myUid
 
     val otherUid: String = savedStateHandle[EXTRA_CHAT_ID] ?: ""
-    val nodeType: String = savedStateHandle[EXTRA_CHAT_NODE] ?: NODE_DM
+    val nodeType: String = NODE_DM
 
     data class ChatIdentity(
         val userName: String,
         val userType: Int = PUBLIC_USER,
         val userPhotoUrl: String,
-        val fcmToken: String = ""
+        val fcmToken: String = "",
     )
 
     private var myIdentity = ChatIdentity(userName = "", userPhotoUrl = "")
     private var otherIdentity = ChatIdentity(userName = "", userPhotoUrl = "")
     val myPhotoUrl: String get() = myIdentity.userPhotoUrl
-    private var groupName: String = ""
 
-    // ------------------------------------------------------------------------------------------------------------------------
     private val _events = MutableSharedFlow<ChatSessionUiEvent>()
     val events: SharedFlow<ChatSessionUiEvent> = _events.asSharedFlow()
 
-    // ------------------------------------------------------------------------------------------------------------------------
     private val _headerState = MutableStateFlow<ChatHeaderState>(ChatHeaderState.Loading)
-
-    // ------------------------------------------------------------------------------------------------------------------------
     private var otherProfile: Users? = null
 
-    // ------------------------------------------------------------------------------------------------------------------------
-    // Estado de conexión del otro usuario
     val userStatus: StateFlow<UserStatus> = profileRepositoryProvider
-        .observeUserStatus(otherUid, nodeType)
+        .observeUserStatus(otherUid, NODE_DM)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserStatus.Offline)
 
-    // ------------------------------------------------------------------------------------------------------------------------
-    // Referencias del chat (para mensajes, storage, etc.)
     private val _chatRefs = MutableStateFlow<ChatThread?>(null)
-
-    // ------------------------------------------------------------------------------------------------------------------------
     private val _chatState = MutableStateFlow(ChatState())
+
     val uiState: StateFlow<ChatUiState> = combine(_headerState, _chatState) { header, chat ->
         ChatUiState(header = header, chat = chat)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        ChatUiState()
+        ChatUiState(),
     )
-    // ------------------------------------------------------------------------------------------------------------------------
 
     fun init() {
         viewModelScope.launch {
             _headerState.value = ChatHeaderState.Loading
 
-            groupName = userPreferencesProvider.groupNameFlow.first()
-
             setupChat()
-
-            startGroupUserAvailability()
-
             startChatListeners()
-
             markMessagesAsSeenOnOpen()
 
             launch {
@@ -161,53 +138,18 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun startGroupUserAvailability() {
-        if (nodeType != NODE_DM) {
-            viewModelScope.launch {
-                groupRepositoryProvider.observeIsUserInGroup(groupName, otherUid)
-                    .collect { isAvailable ->
-                        if (!isAvailable) {
-                            _events.emit(
-                                ChatSessionUiEvent.OtherUserNoLongerAvailable(
-                                    userName = currentOtherName(),
-                                    onConfirm = {
-                                        viewModelScope.launch {
-                                            _events.emit(ChatSessionUiEvent.CloseChat)
-                                        }
-                                    }
-                                )
-                            )
-                        }
-                    }
-            }
-        }
-    }
-
     private fun startChatListeners() {
         viewModelScope.launch {
             val refs = requireChatThread()
             chatRepository.observeChatMessages(refs).collect { event ->
                 _chatState.update { state -> state.reduce(event, myUid) }
-
-                if (nodeType == NODE_DM) {
-                    requestDmSeenSyncIfNeeded(event)
-                } else {
-                    markIncomingMessageAsSeenIfNeeded(refs, event)
-                }
+                requestDmSeenSyncIfNeeded(event)
             }
         }
     }
 
     private fun markMessagesAsSeenOnOpen() {
-        if (nodeType == NODE_DM) {
-            dmSeenRequests.trySend(Unit)
-            return
-        }
-
-        viewModelScope.launch {
-            chatRepository.markChatAsSeen(requireChatThread())
-                .onFailure { onFailure(it) }
-        }
+        dmSeenRequests.trySend(Unit)
     }
 
     private fun requestDmSeenSyncIfNeeded(event: ChatChildEvent) {
@@ -224,46 +166,20 @@ class ChatViewModel @Inject constructor(
         dmSeenRequests.trySend(Unit)
     }
 
-    private suspend fun markIncomingMessageAsSeenIfNeeded(
-        refs: ChatThread,
-        event: ChatChildEvent
-    ) {
-        val item = when (event) {
-            is ChatChildEvent.Added -> event.item
-            is ChatChildEvent.Changed -> event.item
-            is ChatChildEvent.Removed -> return
-        }
-
-        if (item.message.senderUid == myUid) return
-        if (item.message.seen >= MSG_SEEN) return
-        if (item.message.isDeletedFor(myUid)) return
-
-        chatRepository.markMessageAsSeenIfNeeded(refs, item.id, item.message)
-            .onFailure { onFailure(it) }
-    }
-
     private suspend fun setupChat() {
         _headerState.value = ChatHeaderState.Loading
-
-        _chatRefs.value = chatRepository.chatThread(otherUid, nodeType)
-
-        if (nodeType == NODE_DM) {
-            loadChatPublicProfiles()
-            applyChatStateForOneToOne()
-        } else {
-            loadChatFromGroup()
-        }
+        _chatRefs.value = chatRepository.chatThread(otherUid, NODE_DM)
+        loadChatPublicProfiles()
+        applyChatStateForOneToOne()
     }
 
-    // Aplica notificaciones / bloqueo solo para chats 1 a 1
     private suspend fun applyChatStateForOneToOne() {
-
         profileRepositoryProvider.getMyChatState(otherUid)
             .onSuccess { state ->
                 _headerState.update { current ->
                     (current as? ChatHeaderState.Loaded)?.copy(
                         notificationsEnabled = state != CHAT_STATE_SILENT,
-                        isBlocked = state == CHAT_STATE_BLOCKED
+                        isBlocked = state == CHAT_STATE_BLOCKED,
                     ) ?: current
                 }
             }
@@ -279,75 +195,21 @@ class ChatViewModel @Inject constructor(
 
         myIdentity = ChatIdentity(
             userName = localRepositoryProvider.myUserName,
-            userPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
+            userPhotoUrl = localRepositoryProvider.myProfilePhotoUrl,
         )
 
         otherIdentity = ChatIdentity(
             userName = profile.name,
             userPhotoUrl = profile.photoUrl,
-            fcmToken = otherFcmToken
+            fcmToken = otherFcmToken,
         )
 
         _headerState.value = ChatHeaderState.Loaded(
             name = currentOtherName(),
             status = textProvider.loading,
-            photoUrl = otherIdentity.userPhotoUrl
+            photoUrl = otherIdentity.userPhotoUrl,
         )
     }
-
-    private suspend fun loadChatFromGroup() {
-        val profile = userRepositoryProvider.getAccount(otherUid) ?: return
-
-        otherProfile = profile
-
-        val otherFcmToken = sessionRepositoryProvider.getFcmToken(profile.id) ?: return
-
-        val defaultPhotoUrl = when (val result = userRepositoryProvider.getDefaultProfilePhotoUrl()) {
-            is ZibeResult.Success -> result.data.orEmpty()
-            is ZibeResult.Failure -> {
-                onFailure(result.exception)
-                ""
-            }
-        }
-
-        val myUserGroup = groupRepositoryProvider.findUserGroup(myUid, groupName)
-
-        val otherUserGroup = groupRepositoryProvider.findUserGroup(otherUid, groupName)
-
-        myIdentity = if (myUserGroup?.type == ANONYMOUS_USER) {
-            ChatIdentity(
-                userName = myUserGroup.userName,
-                userType = ANONYMOUS_USER,
-                userPhotoUrl = defaultPhotoUrl
-            )
-        } else {
-            ChatIdentity(
-                userName = localRepositoryProvider.myUserName,
-                userPhotoUrl = localRepositoryProvider.myProfilePhotoUrl
-            )
-        }
-
-        otherIdentity = if (otherUserGroup?.type == ANONYMOUS_USER) {
-            ChatIdentity(
-                userName = otherUserGroup.userName,
-                userType = ANONYMOUS_USER,
-                userPhotoUrl = defaultPhotoUrl
-            )
-        } else {
-            ChatIdentity(
-                userName = profile.name,
-                userPhotoUrl = profile.photoUrl,
-                fcmToken = otherFcmToken
-            )
-        }
-
-        _headerState.value = ChatHeaderState.Loaded(
-            name = currentOtherName(),
-            status = textProvider.loading,
-            photoUrl = otherIdentity.userPhotoUrl
-        )
-    }
-
 
     private fun mapStatusToText(status: UserStatus): String =
         when (status) {
@@ -356,7 +218,6 @@ class ChatViewModel @Inject constructor(
             is UserStatus.LastSeen -> status.text
             is UserStatus.Offline -> textProvider.offline
         }
-
 
     fun onSendMessage(text: String) {
         sendMessage(MSG_TEXT, text)
@@ -371,7 +232,7 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 pendingPhotoUri = uri,
                 photoReady = true,
-                pendingFileUrl = null
+                pendingFileUrl = null,
             )
         }
     }
@@ -404,7 +265,6 @@ class ChatViewModel @Inject constructor(
         _chatState.update { it.copy(showPhotoPicker = false) }
     }
 
-
     fun onSendPhoto(url: String) = sendMessage(MSG_PHOTO, url)
 
     fun onSendAudio(url: String, audioDurationMs: Long) =
@@ -414,7 +274,7 @@ class ChatViewModel @Inject constructor(
         _chatState.update {
             it.copy(
                 photoReady = state,
-                pendingFileUrl = url
+                pendingFileUrl = url,
             )
         }
     }
@@ -424,20 +284,16 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 pendingPhotoUri = null,
                 photoReady = false,
-                pendingFileUrl = null
+                pendingFileUrl = null,
             )
         }
     }
-
-    // =========================================================================
-    //  MENSAJES
-    // =========================================================================
 
     fun uploadMedia(
         fileName: String,
         uri: String,
         path: String,
-        onComplete: (String?) -> Unit
+        onComplete: (String?) -> Unit,
     ) {
         viewModelScope.launch {
             val thread = _chatRefs.first { it != null }!!
@@ -453,7 +309,7 @@ class ChatViewModel @Inject constructor(
     private fun sendMessage(
         msgType: Int,
         content: String,
-        audioDurationMs: Long = 0L
+        audioDurationMs: Long = 0L,
     ) {
         if (content.isEmpty()) return
         viewModelScope.launch { sendMessageInternal(msgType, content, audioDurationMs) }
@@ -462,9 +318,8 @@ class ChatViewModel @Inject constructor(
     private suspend fun sendMessageInternal(
         msgType: Int,
         content: String,
-        audioDurationMs: Long
+        audioDurationMs: Long,
     ) {
-
         val lastMessageAt = now()
 
         val (myMsg, otherMsg) = when (msgType) {
@@ -478,7 +333,7 @@ class ChatViewModel @Inject constructor(
                 SendChatMessageCommand(
                     senderUid = myUid,
                     receiverUid = otherUid,
-                    nodeType = nodeType,
+                    nodeType = NODE_DM,
                     messageType = msgType,
                     content = content,
                     audioDurationMs = audioDurationMs,
@@ -488,7 +343,7 @@ class ChatViewModel @Inject constructor(
                     receiverName = currentOtherName(),
                     receiverPhotoUrl = otherIdentity.userPhotoUrl,
                     senderName = myIdentity.userName,
-                    senderPhotoUrl = myIdentity.userPhotoUrl
+                    senderPhotoUrl = myIdentity.userPhotoUrl,
                 )
             )
         ) {
@@ -496,11 +351,13 @@ class ChatViewModel @Inject constructor(
                 onFailure(result.exception)
                 return
             }
+
             is ZibeResult.Success -> when (result.data) {
                 SendChatMessageOutcome.BlockedByRecipient -> {
                     _events.emit(ChatSessionUiEvent.ShowBlockedByOther(currentOtherName()))
                     return
                 }
+
                 SendChatMessageOutcome.Sent -> Unit
                 null -> {
                     onFailure(IllegalStateException("Missing send message outcome"))
@@ -513,7 +370,7 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 photoReady = false,
                 textReady = false,
-                pendingFileUrl = null
+                pendingFileUrl = null,
             )
         }
     }
@@ -521,21 +378,21 @@ class ChatViewModel @Inject constructor(
     fun onError(message: UiText) {
         _events.tryEmit(
             ChatSessionUiEvent.ShowErrorDialog(
-                uiText = message
+                uiText = message,
             )
         )
     }
 
     fun onSendPhotoClicked() {
         viewModelScope.launch {
-            val otherChatWith = chatRepository.getConversation(otherUid, myUid, nodeType)
-            val otherState = otherChatWith?.state ?: nodeType
+            val otherChatWith = chatRepository.getConversation(otherUid, myUid, NODE_DM)
+            val otherState = otherChatWith?.state ?: NODE_DM
             val otherName = otherProfile?.name
 
             if (otherState == CHAT_STATE_BLOCKED) {
                 _events.emit(
                     ChatSessionUiEvent.ShowBlockedByOther(
-                        userName = otherName.orEmpty()
+                        userName = otherName.orEmpty(),
                     )
                 )
             } else {
@@ -548,37 +405,32 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { userRepositoryActions.setUserActivityStatus(status) }
     }
 
-    // --- Acciones de menú ----------
-
     fun onToggleNotificationsClicked() {
-
         viewModelScope.launch {
-            val chatWith = chatRepository.getConversation(myUid, otherUid, nodeType)
+            val chatWith = chatRepository.getConversation(myUid, otherUid, NODE_DM)
             val currentState = chatWith?.state
             val userName = currentOtherName()
 
             val newState = if (currentState == CHAT_STATE_SILENT) {
-                nodeType // Siempre va a ser !incógnito acá x ahora
+                NODE_DM
             } else {
                 CHAT_STATE_SILENT
             }
 
-            conversationOverviewRepository.updateChatState(otherUid, userName, nodeType, newState)
+            conversationOverviewRepository.updateChatState(otherUid, userName, NODE_DM, newState)
             val isNotificationsSilenced = newState == CHAT_STATE_SILENT
-            val enabled = newState != CHAT_STATE_SILENT // UI: enabled = TRUE si NO está en silent
+            val enabled = newState != CHAT_STATE_SILENT
 
-            // Actualizar header
             _headerState.update { current ->
                 (current as? ChatHeaderState.Loaded)?.copy(
-                    notificationsEnabled = enabled
+                    notificationsEnabled = enabled,
                 ) ?: current
             }
 
-            // Emitir evento para mostrar snack
             _events.emit(
                 ChatSessionUiEvent.ShowToggleNotificationSuccess(
                     name = userName,
-                    isNotificationsSilenced = isNotificationsSilenced
+                    isNotificationsSilenced = isNotificationsSilenced,
                 )
             )
         }
@@ -596,7 +448,7 @@ class ChatViewModel @Inject constructor(
                 _events.emit(
                     ChatSessionUiEvent.ShowToggleBlockSuccess(
                         otherIdentity.userName,
-                        isBlockedByMe
+                        isBlockedByMe,
                     )
                 )
             }
@@ -604,10 +456,10 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onMessageSelectionChanged(item: ChatMessageItem, isSelected: Boolean) {
-        _chatState.update { s ->
-            val set = s.selectedIds.toMutableSet()
-            if (isSelected) set.add(item.id) else set.remove(item.id)
-            s.copy(selectedIds = set)
+        _chatState.update { state ->
+            val selected = state.selectedIds.toMutableSet()
+            if (isSelected) selected.add(item.id) else selected.remove(item.id)
+            state.copy(selectedIds = selected)
         }
     }
 
@@ -625,19 +477,20 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             chatRepository.deleteMessages(
                 thread = requireChatThread(),
-                selectedIds = selectedIds
+                selectedIds = selectedIds,
             ).onSuccess { deleteResult ->
-                val deleteResult = deleteResult ?: return@onSuccess
+                val result = deleteResult ?: return@onSuccess
                 val selectedSet = selectedIds.toSet()
                 _chatState.update { state ->
                     state.copy(
                         messages = state.messages.filterNot { it.id in selectedSet },
-                        selectedIds = emptySet()
+                        selectedIds = emptySet(),
                     )
                 }
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
-                if (deleteResult.chatRemoved)
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
+                if (result.chatRemoved) {
                     _events.emit(ChatSessionUiEvent.CloseChat)
+                }
             }.onFailure { onFailure(it) }
         }
     }
@@ -646,13 +499,13 @@ class ChatViewModel @Inject constructor(
         if (isActionLoading()) return
         val userName = currentOtherName()
         viewModelScope.launch {
-            if (_chatState.value.messages.isEmpty())
+            if (_chatState.value.messages.isEmpty()) {
                 _events.emit(
                     ChatSessionUiEvent.ShowErrorDialog(
-                        UiText.StringRes(R.string.msg_no_messages_to_hide)
+                        UiText.StringRes(R.string.msg_no_messages_to_hide),
                     )
                 )
-            else
+            } else {
                 _events.emit(
                     ChatSessionUiEvent.ConfirmHideChat(
                         name = userName,
@@ -660,9 +513,10 @@ class ChatViewModel @Inject constructor(
                             setActionLoading(true)
                             hideConversation(otherUid, userName, NODE_DM)
                             setActionLoading(false)
-                        }
+                        },
                     )
                 )
+            }
         }
     }
 
@@ -672,13 +526,13 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val chatRefs = chatRepository.chatThread(otherUid, NODE_DM)
             val count = chatRepository.getMessageCount(chatRefs)
-            if (_chatState.value.messages.isEmpty())
+            if (_chatState.value.messages.isEmpty()) {
                 _events.emit(
                     ChatSessionUiEvent.ShowErrorDialog(
-                        UiText.StringRes(R.string.msg_no_messages_to_delete)
+                        UiText.StringRes(R.string.msg_no_messages_to_delete),
                     )
                 )
-            else
+            } else {
                 _events.emit(
                     ChatSessionUiEvent.DeleteClickedChoiceMode(
                         name = userName,
@@ -686,9 +540,10 @@ class ChatViewModel @Inject constructor(
                         onConfirm = { shouldDeleteMessages ->
                             if (shouldDeleteMessages) onConfirmDelete(chatRefs, userName)
                             else onConfirmHide()
-                        }
+                        },
                     )
                 )
+            }
         }
     }
 
@@ -703,7 +558,7 @@ class ChatViewModel @Inject constructor(
                             deleteMessages(chatRefs)
                             setActionLoading(false)
                         }
-                    }
+                    },
                 )
             )
         }
@@ -714,7 +569,7 @@ class ChatViewModel @Inject constructor(
             userId,
             userName,
             nodeType,
-            CHAT_STATE_HIDE
+            CHAT_STATE_HIDE,
         ).onSuccess {
             _events.emit(ChatSessionUiEvent.ShowChatHiddenSuccess(userName))
         }.onFailure { onFailure(it) }
@@ -723,35 +578,31 @@ class ChatViewModel @Inject constructor(
     private suspend fun deleteMessages(chatRefs: ChatThread) {
         chatRepository.deleteConversationForMe(chatRefs)
             .onSuccess { deleteResult ->
-                val deleteResult = deleteResult ?: return@onSuccess
+                val result = deleteResult ?: return@onSuccess
                 _chatState.update {
                     it.copy(
                         messages = emptyList(),
-                        selectedIds = emptySet()
+                        selectedIds = emptySet(),
                     )
                 }
-                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+                _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
             }.onFailure { onFailure(it) }
     }
 
-    private suspend fun onFailure(e: Throwable) {
+    private suspend fun onFailure(error: Throwable) {
         _events.emit(
             ChatSessionUiEvent.ShowErrorDialog(
                 UiText.StringRes(
                     R.string.err_zibe_prefix,
-                    listOf(e.message ?: "")
+                    listOf(error.message ?: ""),
                 )
             )
         )
     }
 
     private fun currentOtherName(): String {
-        return if (nodeType == NODE_DM) {
-            val fromProfile = otherProfile?.name
-            if (!fromProfile.isNullOrBlank()) fromProfile else otherIdentity.userName
-        } else {
-            otherIdentity.userName
-        }
+        val fromProfile = otherProfile?.name
+        return if (!fromProfile.isNullOrBlank()) fromProfile else otherIdentity.userName
     }
 
     private var activeThreadJob: Job? = null
@@ -760,7 +611,7 @@ class ChatViewModel @Inject constructor(
         activeThreadJob?.cancel()
         activeThreadJob = viewModelScope.launch {
             while (true) {
-                conversationOverviewRepository.setActiveThread(otherUid, nodeType)
+                conversationOverviewRepository.setActiveThread(otherUid, NODE_DM)
                     .onFailure { onFailure(it) }
                 delay(ACTIVE_THREAD_HEARTBEAT_MS)
             }
