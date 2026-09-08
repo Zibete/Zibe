@@ -53,7 +53,8 @@ picker, crop y temporales; `ChatActivity` conserva el borde de audio.
 `DefaultSendChatMessageUseCase` valida bloqueo y crea el mensaje. Para DM,
 `ChatRepository` ejecuta un único fan-out raíz atómico que incluye mensaje y los
 dos resúmenes. `ChatRefs` y todos los tipos Firebase quedan privados de `data`.
-Groups conserva el path y comportamiento legacy.
+Salas usa RoomsV2 como contrato vigente; los paths `/Groups/*`, `group_dm`,
+`NODE_GROUP_DM` y `readGroupMessages` fueron retirados del runtime limpio.
 
 Los estados DM son monotónicos:
 
@@ -103,7 +104,8 @@ de un primer contacto y ambos entry points renderizan el mismo
 `FirstContactSheet`. Un failure no navega ni escribe; la cancelación de coroutine
 se preserva. En el pager de perfiles, cada ViewModel queda ligado a su UID y la
 consulta se cancela cuando la página deja de estar activa. Los accesos desde una
-conversación persistida y `NODE_GROUP_DM` mantienen sus flujos directos.
+conversación DM persistida mantienen su flujo directo; los privados contextuales
+de sala se resuelven exclusivamente mediante RoomsV2.
 
 `ChatTopBar` y la status bar de `ChatActivity` son transparentes para dejar
 visible el gradiente de la pantalla. La selección múltiple comparte el mismo
