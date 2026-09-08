@@ -5,6 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.activityViewModels
@@ -59,10 +63,16 @@ class RoomV2HostFragment : androidx.fragment.app.Fragment() {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         setContent {
             ZibeTheme {
-                RoomV2HostWithProfileRoute(
-                    viewModel = viewModel,
-                    profileViewModel = profileViewModel,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding(),
+                ) {
+                    RoomV2HostWithProfileRoute(
+                        viewModel = viewModel,
+                        profileViewModel = profileViewModel,
+                    )
+                }
             }
         }
     }

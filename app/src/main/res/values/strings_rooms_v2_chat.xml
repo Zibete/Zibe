@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rooms_v2_reports_with_count">Reportes (%1$d)</string>
+    <string name="rooms_v2_private_context">Privado en %1$s</string>
+    <string name="rooms_v2_moderation">Moderación</string>
+    <string name="rooms_v2_you_name">Vos · %1$s</string>
+    <string name="rooms_v2_member_badge">Miembro</string>
+    <string name="rooms_v2_view_profile">Ver perfil</string>
+    <string name="rooms_v2_private_empty_preview">Conversación privada</string>
+</resources>

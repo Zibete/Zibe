@@ -97,15 +97,13 @@ class MainDestinationUiMapper {
 
         R.id.nav_room_v2_host -> MainDestinationUiState(
             currentScreen = CurrentScreen.GROUPS,
-            showToolbar = true,
-            showBottomNav = true,
-            showAccountAvatar = true,
-            showBack = true,
+            showToolbar = false,
+            showBottomNav = false,
+            showAccountAvatar = false,
+            showBack = false,
             title = CurrentScreen.GROUPS.titleRes,
             selectedBottomNavItemId = R.id.navBottomGroups,
-            menuConfig = ToolbarMenuConfig(
-                showSettings = true
-            )
+            menuConfig = ToolbarMenuConfig()
         )
 
         R.id.nav_favorites -> MainDestinationUiState(
