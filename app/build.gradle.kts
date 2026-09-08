@@ -193,7 +193,6 @@ dependencies {
     releaseImplementation(libs.firebase.appcheck.play.integrity)
     debugImplementation(libs.firebase.appcheck.debug)
 
-    implementation(libs.firebase.ui.auth)
     implementation(libs.facebook.login)
 
     // -------------------------------
