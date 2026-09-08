@@ -185,16 +185,12 @@ object Constants {
     const val CHAT_STATE_SILENT = "silent"
     const val CHAT_STATE_HIDE = "hide"
 
-    const val PUBLIC_GROUP = 1
-    const val PRIVATE_GROUP = 2
-    const val ANONYMOUS_USER = 0
     const val PUBLIC_USER = 1
 
     const val EMPTY = "Empty"
 
     const val PAYLOAD_GROUPS_USERS = "payload_users"
     const val PAYLOAD_GROUPS_DATA = "payload_data"
-    const val PAYLOAD_GROUPS_CATEGORY = "payload_category"
 
     object PayloadKeys {
         const val TYPE = "type"
