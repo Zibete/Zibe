@@ -12,6 +12,19 @@ def _peek(root: dict, *parts: str) -> Any:
     return cursor
 
 
+def room_notification_name(
+    state: dict,
+    *,
+    room_id: str,
+    fallback: str = "Sala",
+) -> str:
+    room = _peek(state, "publicRooms", room_id)
+    if not isinstance(room, dict):
+        return fallback
+    name = " ".join(str(room.get("name") or "").strip().split())
+    return name[:80] or fallback
+
+
 def _fresh_visible_thread(
     state: dict,
     uid: str,
