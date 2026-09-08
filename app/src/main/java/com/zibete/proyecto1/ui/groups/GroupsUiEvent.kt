@@ -12,5 +12,6 @@ sealed interface GroupsUiEvent {
 
     data class NickInUse(val nick: String) : GroupsUiEvent
     data class GroupNameInUse(val name: String) : GroupsUiEvent
-    object NavigateToGroupHost : GroupsUiEvent
+    data class PromptJoinRoom(val roomName: String) : GroupsUiEvent
+    data class NavigateToRoom(val roomId: String) : GroupsUiEvent
 }

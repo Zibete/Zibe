@@ -5,31 +5,32 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.zibete.proyecto1.R
 import com.zibete.proyecto1.adapters.AdapterGroups
+import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.core.utils.SimpleWatcher
 import com.zibete.proyecto1.databinding.DialogGoGroupBinding
 import com.zibete.proyecto1.databinding.DialogGoNewGroupBinding
 import com.zibete.proyecto1.databinding.FragmentGroupsBinding
-import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.base.BaseChatSessionFragment
 import com.zibete.proyecto1.ui.components.ZibeSnackType
-import com.zibete.proyecto1.core.constants.Constants.ANONYMOUS_USER
-import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
-import com.zibete.proyecto1.core.ui.UiText
+import com.zibete.proyecto1.ui.groups.host.ROOM_V2_ID_ARG
 import com.zibete.proyecto1.ui.main.MainUiEvent
 import com.zibete.proyecto1.ui.main.MainViewModel
 import com.zibete.proyecto1.ui.search.SearchHandler
-import com.zibete.proyecto1.core.utils.SimpleWatcher
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -121,10 +122,18 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
                             )
                         }
 
-                        is GroupsUiEvent.NavigateToGroupHost -> {
+                        is GroupsUiEvent.PromptJoinRoom -> {
+                            showJoinGroupDialog(event.roomName)
+                        }
+
+                        is GroupsUiEvent.NavigateToRoom -> {
                             joinGroupDialog?.dismiss()
                             joinGroupDialog = null
-                            mainViewModel.toGroupHost()
+                            findNavController().navigate(
+                                R.id.nav_room_v2_host,
+                                bundleOf(ROOM_V2_ID_ARG to event.roomId),
+                                navOptions { launchSingleTop = true },
+                            )
                         }
                     }
                 }
@@ -137,8 +146,8 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         rvGroups.apply {
             layoutManager = this@GroupsFragment.layoutManager
             setHasFixedSize(true)
-            adapter = AdapterGroups { _ ->
-                showRoomsComingSoonDialog()
+            adapter = AdapterGroups { group ->
+                groupsViewModel.onGroupSelected(group.name)
             }.also { adapterGroups = it }
         }
     }
@@ -151,24 +160,17 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
     }
 
     private fun setupFab() = with(binding) {
-        fabNewGroup.setOnClickListener { showRoomsComingSoonDialog() }
+        fabNewGroup.setOnClickListener { showCreateGroupDialog() }
     }
 
-    private fun showRoomsComingSoonDialog() =
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.rooms_coming_soon_title)
-            .setMessage(R.string.rooms_coming_soon_message)
-            .setPositiveButton(R.string.action_understood, null)
-            .show()
-
-    private fun showJoinGroupDialog(group: Groups) {
+    private fun showJoinGroupDialog(roomName: String) {
         val dialogBinding = DialogGoGroupBinding.inflate(layoutInflater)
 
         val displayName = groupsViewModel.myDisplayName()
         val photoUrl = groupsViewModel.myPhotoUrl()
 
         dialogBinding.nameUser.text = displayName
-        dialogBinding.tvChat.text = group.name
+        dialogBinding.tvChat.text = roomName
         Glide.with(requireContext()).load(photoUrl).into(dialogBinding.userImage)
 
         dialogBinding.btnStartAnonymousChat.isEnabled = false
@@ -177,27 +179,20 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             dialogBinding.btnStartAnonymousChat.isEnabled = text.isNotEmpty()
         })
 
+        joinGroupDialog?.dismiss()
         joinGroupDialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
             .setCancelable(true)
             .create()
 
         dialogBinding.btnStartChat.setOnClickListener {
-            groupsViewModel.onJoinGroupRequested(
-                groupName = group.name,
-                nick = displayName,
-                type = PUBLIC_USER,
-                message = requireContext().getString(R.string.msg_user_joined)
-            )
+            groupsViewModel.onJoinWithProfileRequested(roomName)
         }
 
         dialogBinding.btnStartAnonymousChat.setOnClickListener {
-            val nick = dialogBinding.edtNick.text.toString()
-            groupsViewModel.onJoinGroupRequested(
-                groupName = group.name,
-                nick = nick,
-                type = ANONYMOUS_USER,
-                message = requireContext().getString(R.string.msg_user_joined)
+            groupsViewModel.onJoinAnonymouslyRequested(
+                roomName = roomName,
+                alias = dialogBinding.edtNick.text.toString(),
             )
         }
 
@@ -218,12 +213,13 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
         val validate = { _: String ->
             dialogBinding.btnCreateNewChat.isEnabled =
                 dialogBinding.edtNameNewGroup.text?.isNotEmpty() == true &&
-                        dialogBinding.edtDataNewGroup.text?.isNotEmpty() == true
+                    dialogBinding.edtDataNewGroup.text?.isNotEmpty() == true
         }
 
         dialogBinding.edtNameNewGroup.addTextChangedListener(SimpleWatcher(validate))
         dialogBinding.edtDataNewGroup.addTextChangedListener(SimpleWatcher(validate))
 
+        joinGroupDialog?.dismiss()
         joinGroupDialog = MaterialAlertDialogBuilder(requireContext())
             .setView(dialogBinding.root)
             .setCancelable(true)
@@ -233,7 +229,6 @@ class GroupsFragment : BaseChatSessionFragment(), SearchHandler {
             groupsViewModel.onCreateNewGroupClicked(
                 groupName = dialogBinding.edtNameNewGroup.text.toString(),
                 groupData = dialogBinding.edtDataNewGroup.text.toString(),
-                message = requireContext().getString(R.string.msg_user_joined)
             )
         }
 
