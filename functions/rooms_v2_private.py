@@ -16,12 +16,12 @@ if __package__:
         _validated,
     )
     from .rooms_v2_core import validate_client_message_id, validate_message
+    from .rooms_v2_reply_state import send_private_text_with_reply_state
     from .rooms_v2_state import (
         active_membership,
         block_private_state,
         conversation_id_for,
         open_private_state,
-        send_private_text_state,
     )
 else:
     from rooms_v2 import (
@@ -37,12 +37,12 @@ else:
         _validated,
     )
     from rooms_v2_core import validate_client_message_id, validate_message
+    from rooms_v2_reply_state import send_private_text_with_reply_state
     from rooms_v2_state import (
         active_membership,
         block_private_state,
         conversation_id_for,
         open_private_state,
-        send_private_text_state,
     )
 
 
@@ -105,11 +105,17 @@ def send_room_private_v2_text(request: https_fn.CallableRequest) -> dict:
         validate_client_message_id,
         data.get("clientMessageId"),
     )
+    reply_value = data.get("replyToMessageId")
+    reply_to_message_id = (
+        _safe_id(reply_value, field="replyToMessageId")
+        if reply_value not in (None, "")
+        else None
+    )
     candidate_message_id = _public_id("msg")
     now = _now_ms()
 
     state = _transaction(
-        lambda current: send_private_text_state(
+        lambda current: send_private_text_with_reply_state(
             current,
             uid=uid,
             room_id=room_id,
@@ -117,6 +123,7 @@ def send_room_private_v2_text(request: https_fn.CallableRequest) -> dict:
             text=text,
             client_message_id=client_message_id,
             candidate_message_id=candidate_message_id,
+            reply_to_message_id=reply_to_message_id,
             now=now,
             visible_lease_ms=VISIBLE_THREAD_LEASE_MS,
         )
