@@ -14,13 +14,13 @@ import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.ConversationOverviewRepository
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryActions
 import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.roomsv2.ObserveRoomsV2UnreadSummaryUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
@@ -28,7 +28,6 @@ import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -36,9 +35,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -51,7 +47,7 @@ class MainViewModel @Inject constructor(
     private val exitGroupUseCase: ExitGroupUseCase,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val conversationOverviewRepository: ConversationOverviewRepository,
-    private val groupRepository: GroupRepositoryProvider,
+    private val observeRoomsV2UnreadSummary: ObserveRoomsV2UnreadSummaryUseCase,
     private val locationRepository: LocationRepositoryActions,
     private val presenceRepository: PresenceRepositoryActions,
     private val logoutUseCase: LogoutUseCase,
@@ -97,51 +93,21 @@ class MainViewModel @Inject constructor(
                 }
         }
 
-        // 2) Badge grupos
+        // 2) Badge RoomsV2
         observeGroupBadges()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeGroupBadges() {
-
-        // Badge bottom nav = (unread chat grupo) + (unread privados dentro de grupo)
         viewModelScope.launch {
-            userPreferencesProvider.groupContextFlow
-                .flatMapLatest { ctx ->
-                    if (ctx == null) flowOf(0)
-                    else groupRepository.unreadGroupBadgeCount(ctx.groupName)
+            observeRoomsV2UnreadSummary().collect { summary ->
+                _uiState.update {
+                    it.copy(
+                        groupBadgeCount = summary.totalUnread,
+                        unreadGroupChatCount = summary.publicUnread,
+                        unreadPrivateMessagesCount = summary.privateUnread,
+                    )
                 }
-                .distinctUntilChanged()
-                .collect { count ->
-                    _uiState.update { it.copy(groupBadgeCount = count) }
-                }
-        }
-
-        // Badge tab chat de grupo
-        viewModelScope.launch {
-            userPreferencesProvider.groupContextFlow
-                .flatMapLatest { ctx ->
-                    if (ctx == null) flowOf(0)
-                    else groupRepository.observeUnreadGroupChat(ctx.groupName)
-                }
-                .distinctUntilChanged()
-                .collect { count ->
-                    _uiState.update { it.copy(unreadGroupChatCount = count) }
-                }
-        }
-
-        // Badge privados dentro del grupo
-        viewModelScope.launch {
-            userPreferencesProvider.groupContextFlow
-                .flatMapLatest { ctx ->
-                    if (ctx == null) flowOf(0)
-                    else groupRepository.observeUnreadPrivateMessages()
-                    // ⚠️ Si querés que sea “solo del grupo actual”, tu repo tiene que filtrar por groupName.
-                }
-                .distinctUntilChanged()
-                .collect { count ->
-                    _uiState.update { it.copy(unreadPrivateMessagesCount = count) }
-                }
+            }
         }
     }
 
@@ -201,11 +167,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onGroupsTabSelected() {
-        viewModelScope.launch {
-            val ctx = groupContext.value
-            val inGroup = ctx?.inGroup ?: false
-            if (!inGroup) toGroupsSelect() else toGroupHost()
-        }
+        viewModelScope.launch { toGroupsSelect() }
     }
 
     fun onEditProfileSelected() {
