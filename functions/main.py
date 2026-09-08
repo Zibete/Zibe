@@ -16,11 +16,10 @@ from firebase_admin import initialize_app, messaging, db
 NODE_SESSIONS = "Sessions"
 KEY_FCM_TOKEN = "fcmToken"
 
-# --- Users / Chats / Groups ---
+# --- Users / Chats ---
 NODE_USERS_ACCOUNTS = "Users/Accounts"
 NODE_DM = "dm"
 PATH_DM_CHAT = "/Chats/dm/{chatId}/{messageId}"
-PATH_GROUP_CHAT = "/Groups/Chat/{groupName}/{messageId}"
 
 # --- Active thread contract ---
 ACTIVE_THREAD_NODE_TYPE = "nodeType"
@@ -47,17 +46,9 @@ CONVERSATION_KEY_LAST_MESSAGE_AT = "lastMessageAt"
 CONVERSATION_KEY_USER_ID = "userId"
 CONVERSATION_KEY_UNREAD_COUNT = "unreadCount"
 CONVERSATION_KEY_SEEN = "seen"
-GROUP_MSG_KEY_SENDER_NAME = "nameUser"
-GROUP_MSG_KEY_CONTENT = "content"
 DM_MSG_TYPE_TEXT = 100
 DM_VISIBLE_CONTENT_FALLBACK = "Abri ZIBE para ver el mensaje"
 DM_SENDER_NAME_FALLBACK = "ZIBE"
-
-# --- Legacy group contract, do not reuse for DM ---
-LEGACY_GROUP_PAYLOAD_KEY_OTHER_ID = "id_user"
-LEGACY_GROUP_PAYLOAD_KEY_OTHER_NAME = "user"
-LEGACY_GROUP_PAYLOAD_KEY_CONTENT = "msg"
-LEGACY_GROUP_PAYLOAD_KEY_UNREAD = "novistos"
 
 # ============================================================
 # INIT ADMIN SDK
@@ -289,9 +280,7 @@ def _send_push(
     body: str | None = None,
 ) -> str | None:
     """
-    Sends FCM.
-    - DM uses data-only so Android handles receipt and local notification
-    - Group keeps current legacy behavior
+    Sends FCM. DM uses data-only so Android handles receipt and local notification.
     """
     if not token:
         return None
@@ -314,7 +303,7 @@ def _send_push(
     return messaging.send(fcm_message)
 
 # ============================================================
-# TRIGGER 1: /Chats/dm/{chatId}/{messageId}
+# TRIGGER: /Chats/dm/{chatId}/{messageId}
 # ============================================================
 
 @db_fn.on_value_created(reference=PATH_DM_CHAT)
@@ -434,58 +423,6 @@ def on_dm_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             _safe_id(receiver_uid),
         )
         raise
-
-# ============================================================
-# TRIGGER 2: /Groups/Chat/{groupName}/{messageId}
-# ============================================================
-# Left intentionally close to current legacy behavior.
-# Out of scope for this iteration.
-
-@db_fn.on_value_created(reference=PATH_GROUP_CHAT)
-def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
-    group_name = (event.params.get("groupName") or "").strip()
-    if not group_name:
-        return
-
-    data = _event_data_as_dict(event)
-    if not isinstance(data, dict):
-        return
-
-    sender_uid = _read_str(data, MSG_KEY_SENDER_UID)
-    sender_name = _read_str(data, GROUP_MSG_KEY_SENDER_NAME) or group_name
-    group_message_text = _read_str(data, GROUP_MSG_KEY_CONTENT)
-
-    members = db.reference(f"Groups/Users/{group_name}").get()
-    if not isinstance(members, dict):
-        return
-
-    for uid in members.keys():
-        uid = str(uid).strip()
-        if not uid:
-            continue
-        if sender_uid and uid == sender_uid:
-            continue
-
-        token = _get_user_token(uid)
-        if not token:
-            continue
-
-        payload = {
-            PAYLOAD_KEY_TYPE: group_name,
-            LEGACY_GROUP_PAYLOAD_KEY_OTHER_ID: sender_uid,
-            LEGACY_GROUP_PAYLOAD_KEY_OTHER_NAME: sender_name,
-            LEGACY_GROUP_PAYLOAD_KEY_CONTENT: group_message_text,
-            LEGACY_GROUP_PAYLOAD_KEY_UNREAD: data.get(LEGACY_GROUP_PAYLOAD_KEY_UNREAD, ""),
-        }
-
-        _send_push(
-            token=token,
-            data_payload=payload,
-            include_notification=True,
-            title=f"Nuevo mensaje de {group_name}",
-            body=group_message_text or sender_name,
-        )
-
 
 # ============================================================
 # ROOMSV2 EXPORTS
