@@ -14,7 +14,7 @@ androidxAnnotation = "1.9.1"
 appcompat = "1.7.1"
 constraintLayout = "2.1.4"
 swipeRefresh = "1.1.0"
-viewPager = "1.0.0"
+viewPager = "1.1.0"
 recyclerView = "1.4.0"
 material = "1.13.0"
 navigation = "2.9.6"
@@ -74,7 +74,7 @@ androidx-annotation = { module = "androidx.annotation:annotation", version.ref =
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintLayout" }
 swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swipeRefresh" }
-viewpager = { module = "androidx.viewpager:viewpager", version.ref = "viewPager" }
+viewpager = { module = "androidx.viewpager2:viewpager2", version.ref = "viewPager" }
 recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerView" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
