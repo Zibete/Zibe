@@ -265,7 +265,8 @@ class RoomV2HostViewModel @Inject constructor(
                         if (loadingEarlierThread == thread) loadingEarlierThread = null
                         return@launch
                     }
-                    val merged = mergeRoomV2Messages(result.data, accumulatedMessages)
+                    val earlierMessages = result.data.orEmpty()
+                    val merged = mergeRoomV2Messages(earlierMessages, accumulatedMessages)
                     accumulatedMessages = merged
                     if (loadingEarlierThread == thread) loadingEarlierThread = null
                     _uiState.update { current ->
@@ -275,7 +276,7 @@ class RoomV2HostViewModel @Inject constructor(
                             current.copy(
                                 messages = merged,
                                 isLoadingEarlier = false,
-                                hasEarlierMessages = result.data.isNotEmpty() &&
+                                hasEarlierMessages = earlierMessages.isNotEmpty() &&
                                     hasEarlierRoomV2Messages(merged),
                             )
                         }
