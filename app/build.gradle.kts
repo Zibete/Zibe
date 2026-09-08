@@ -189,6 +189,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.functions)
     releaseImplementation(libs.firebase.appcheck.play.integrity)
     debugImplementation(libs.firebase.appcheck.debug)
 
