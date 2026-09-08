@@ -129,25 +129,7 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
             return
         }
 
-        // =========================
-        // 3) GRUPO LEGACY (type = groupName en el payload)
-        // =========================
-        val groupName = nodeType
-
-        val groupEnabled = userPreferencesProvider.groupNotificationsFlow.first()
-        if (!groupEnabled) return
-
-        val ctx = userPreferencesProvider.groupContextFlow.first()
-        val isInActiveGroup = (ctx?.inGroup == true && ctx.groupName == groupName)
-
-        if (isInActiveGroup) return
-
-//        notificationHelper.showGroupNotification(
-//            groupName = groupName,
-//            unreadCount = data[PayloadKeys.UNREAD_COUNT].orEmpty().toInt(), // viene del push
-//            lastSenderName = data[PayloadKeys.OTHER_NAME] ?: return,
-//            lastMessage = data[PayloadKeys.CONTENT].orEmpty()
-//        )
+        Log.w(TAG, "Ignoring unsupported FCM payload type")
     }
 
     private suspend fun handleRoomV2Message(data: Map<String, String>) {
