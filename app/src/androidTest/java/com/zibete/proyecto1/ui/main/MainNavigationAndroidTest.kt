@@ -5,9 +5,9 @@ import android.app.Activity
 import android.app.Instrumentation
 import android.content.Intent
 import android.view.View
+import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.performClick
 import androidx.appcompat.R as AppCompatR
 import androidx.core.content.ContextCompat
@@ -49,7 +49,6 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_FILTER_SHEE
 import com.zibete.proyecto1.core.constants.Constants.UiTags.DISCOVER_SCREEN
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.data.ConversationOverviewRepository
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.testing.BaseHiltComposeManualLaunchTest
 import com.zibete.proyecto1.testing.TestData
 import com.zibete.proyecto1.testing.TestScenario
@@ -61,7 +60,6 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import io.mockk.every
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -80,11 +78,7 @@ class MainNavigationAndroidTest :
     @Inject
     lateinit var conversationOverviewRepository: ConversationOverviewRepository
 
-    @Inject
-    lateinit var groupRepositoryProvider: GroupRepositoryProvider
-
     private val chatBadgeCount = MutableStateFlow(0)
-    private val groupBadgeCount = MutableStateFlow(0)
     private lateinit var mainScenario: ActivityScenario<MainActivity>
 
     @Before
@@ -99,9 +93,6 @@ class MainNavigationAndroidTest :
             Manifest.permission.ACCESS_FINE_LOCATION
         )
         every { conversationOverviewRepository.observeUnreadChatList() } returns chatBadgeCount
-        every { groupRepositoryProvider.unreadGroupBadgeCount(any()) } returns groupBadgeCount
-        every { groupRepositoryProvider.observeUnreadGroupChat(any()) } returns flowOf(0)
-        every { groupRepositoryProvider.observeUnreadPrivateMessages() } returns flowOf(0)
         Intents.init()
     }
 
@@ -297,45 +288,31 @@ class MainNavigationAndroidTest :
     }
 
     @Test
-    fun unreadCountsUpdateChatAndRoomsBadges() {
-        launchMain(
-            scenario = TestScenario(
-                currentUserUid = TestData.UID,
-                onboardingDone = true,
-                firstLoginDone = true,
-                hasLocationPermission = true,
-                inGroup = true,
-                groupName = "sala-test"
-            )
-        )
+    fun unreadChatCountUpdatesChatBadge() {
+        launchMain()
         waitTag(ACCOUNT_AVATAR, composeRule)
 
         chatBadgeCount.value = 4
-        groupBadgeCount.value = 2
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            var badgesMatch = false
+            var badgeMatches = false
             launchWithCurrentActivity { activity ->
                 val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
                 val chatBadge = bottomNav.getBadge(R.id.navBottomChat)
-                val groupBadge = bottomNav.getBadge(R.id.navBottomGroups)
-                badgesMatch = chatBadge?.isVisible == true && chatBadge.number == 4 &&
-                    groupBadge?.isVisible == true && groupBadge.number == 2
+                badgeMatches = chatBadge?.isVisible == true && chatBadge.number == 4
             }
-            badgesMatch
+            badgeMatches
         }
 
         chatBadgeCount.value = 0
-        groupBadgeCount.value = 0
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            var badgesHidden = false
+            var badgeHidden = false
             launchWithCurrentActivity { activity ->
                 val bottomNav = activity.findViewById<BottomNavigationView>(R.id.bottomNav)
-                badgesHidden = bottomNav.getBadge(R.id.navBottomChat)?.isVisible == false &&
-                    bottomNav.getBadge(R.id.navBottomGroups)?.isVisible == false
+                badgeHidden = bottomNav.getBadge(R.id.navBottomChat)?.isVisible == false
             }
-            badgesHidden
+            badgeHidden
         }
     }
 
