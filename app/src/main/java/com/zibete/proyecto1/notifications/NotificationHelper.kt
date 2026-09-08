@@ -17,6 +17,8 @@ import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_CHAT_ID
 import com.zibete.proyecto1.core.constants.Constants.EXTRA_PENDING_DM_TYPE
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
+import com.zibete.proyecto1.core.notifications.RoomsV2NotificationContract
+import com.zibete.proyecto1.core.notifications.RoomsV2NotificationPayload
 import com.zibete.proyecto1.data.UnreadSummary
 import com.zibete.proyecto1.ui.splash.SplashActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -67,6 +69,35 @@ class NotificationHelper @Inject constructor(
             title = title,
             text = "$lastSenderName: $lastMessage",
             openIntent = buildOpenMainIntent(/* luego: extras para abrir grupo */)
+        )
+    }
+
+    fun showRoomV2Notification(
+        payload: RoomsV2NotificationPayload,
+        roomName: String,
+        lastSenderName: String,
+        lastMessage: String,
+    ) {
+        val title = if (payload.type == RoomsV2NotificationContract.TYPE_PRIVATE) {
+            "Nuevo privado en $roomName"
+        } else {
+            "Nuevo mensaje en $roomName"
+        }
+        val notificationKey = buildString {
+            append(payload.roomId)
+            append('|')
+            append(payload.conversationId ?: "public")
+        }
+
+        Log.d(
+            TAG,
+            "Preparing RoomsV2 notification roomId=${safeId(payload.roomId)} private=${payload.conversationId != null}"
+        )
+        showMessageNotification(
+            notificationId = notificationKey.hashCode(),
+            title = title,
+            text = "$lastSenderName: $lastMessage",
+            openIntent = buildOpenRoomV2Intent(payload),
         )
     }
 
@@ -138,6 +169,16 @@ class NotificationHelper @Inject constructor(
             putExtra(PayloadKeys.CHAT_ID, chatId)
         }
 
+    private fun buildOpenRoomV2Intent(payload: RoomsV2NotificationPayload): Intent =
+        buildOpenMainIntent().apply {
+            putExtra(PayloadKeys.TYPE, payload.type)
+            putExtra(RoomsV2NotificationContract.PAYLOAD_ROOM_ID, payload.roomId)
+            payload.conversationId?.let {
+                putExtra(RoomsV2NotificationContract.PAYLOAD_CONVERSATION_ID, it)
+            }
+            putExtra(PayloadKeys.MESSAGE_ID, payload.messageId)
+        }
+
     private fun pendingIntent(intent: Intent): PendingIntent {
         return PendingIntent.getActivity(
             context,
@@ -145,6 +186,11 @@ class NotificationHelper @Inject constructor(
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+    }
+
+    private fun safeId(value: String): String {
+        if (value.length <= 8) return "${value.take(2)}..."
+        return "${value.take(4)}...${value.takeLast(3)}"
     }
 
     companion object {

@@ -6,6 +6,8 @@ import com.google.firebase.messaging.RemoteMessage
 import com.zibete.proyecto1.core.chat.ChatIdGenerator.getOtherUid
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.PayloadKeys
+import com.zibete.proyecto1.core.notifications.RoomsV2NotificationContract
+import com.zibete.proyecto1.core.notifications.RoomsV2NotificationPayload
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
@@ -120,7 +122,15 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         // =========================
-        // 2) GRUPO (type = groupName en tu payload)
+        // 2) ROOMS V2
+        // =========================
+        if (RoomsV2NotificationContract.isRoomsV2Type(nodeType)) {
+            handleRoomV2Message(data)
+            return
+        }
+
+        // =========================
+        // 3) GRUPO LEGACY (type = groupName en el payload)
         // =========================
         val groupName = nodeType
 
@@ -138,6 +148,35 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
 //            lastSenderName = data[PayloadKeys.OTHER_NAME] ?: return,
 //            lastMessage = data[PayloadKeys.CONTENT].orEmpty()
 //        )
+    }
+
+    private suspend fun handleRoomV2Message(data: Map<String, String>) {
+        val payload = RoomsV2NotificationContract.parse(data)
+        if (payload == null) {
+            Log.w(TAG, "Invalid RoomsV2 FCM payload")
+            return
+        }
+
+        val enabled = runCatchingPreservingCancellation {
+            userPreferencesProvider.groupNotificationsFlow.first()
+        }.onFailure {
+            Log.w(TAG, "Could not read RoomsV2 notification preference; skipping notification", it)
+        }.getOrDefault(false)
+        if (!enabled) {
+            Log.i(TAG, "Skipping RoomsV2 notification: group notifications disabled")
+            return
+        }
+
+        showRoomV2Notification(payload)
+    }
+
+    private fun showRoomV2Notification(payload: RoomsV2NotificationPayload) {
+        notificationHelper.showRoomV2Notification(
+            payload = payload,
+            roomName = payload.roomName ?: getString(R.string.menu_groups),
+            lastSenderName = payload.senderName ?: getString(R.string.app_name),
+            lastMessage = payload.preview ?: FALLBACK_ROOM_CONTENT,
+        )
     }
 
     private suspend fun handleDmMessage(
@@ -232,24 +271,48 @@ class ZibeFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showPayloadFallback(data: Map<String, String>) {
-        if (data[PayloadKeys.TYPE] != NODE_DM) return
-        val chatId = data[PayloadKeys.CHAT_ID]?.takeIf(String::isNotBlank) ?: return
-        notificationHelper.showChatSummaryNotification(
-            summary = UnreadSummary(totalChats = 1, totalUnread = 1),
-            lastSenderName = data[PayloadKeys.SENDER_NAME]
-                ?.takeIf(String::isNotBlank)
-                ?: "ZIBE",
-            lastMessage = data[PayloadKeys.CONTENT]
-                ?.takeIf(String::isNotBlank)
-                ?: FALLBACK_DM_CONTENT,
-            conversationId = chatId
-        )
+        if (data[PayloadKeys.TYPE] == NODE_DM) {
+            val chatId = data[PayloadKeys.CHAT_ID]?.takeIf(String::isNotBlank) ?: return
+            notificationHelper.showChatSummaryNotification(
+                summary = UnreadSummary(totalChats = 1, totalUnread = 1),
+                lastSenderName = data[PayloadKeys.SENDER_NAME]
+                    ?.takeIf(String::isNotBlank)
+                    ?: "ZIBE",
+                lastMessage = data[PayloadKeys.CONTENT]
+                    ?.takeIf(String::isNotBlank)
+                    ?: FALLBACK_DM_CONTENT,
+                conversationId = chatId
+            )
+            return
+        }
+
+        val payload = RoomsV2NotificationContract.parse(data) ?: return
+        val notificationsEnabled = runBlocking(Dispatchers.IO) {
+            withTimeoutOrNull(FALLBACK_PREFERENCE_TIMEOUT_MS) {
+                try {
+                    userPreferencesProvider.groupNotificationsFlow.first()
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (exception: Exception) {
+                    Log.w(TAG, "Could not read RoomsV2 fallback notification preference", exception)
+                    false
+                }
+            }
+        } ?: false
+        if (!notificationsEnabled) {
+            Log.w(TAG, "Skipping RoomsV2 fallback notification: preference unavailable or disabled")
+            return
+        }
+
+        showRoomV2Notification(payload)
     }
 
     private companion object {
         const val TAG = "ZibeFCM"
         const val FALLBACK_DM_CONTENT = "Abri ZIBE para ver el mensaje"
+        const val FALLBACK_ROOM_CONTENT = "Abrí ZIBE para ver el mensaje"
         const val CALLBACK_TIMEOUT_MS = 8_000L
+        const val FALLBACK_PREFERENCE_TIMEOUT_MS = 500L
 
         fun safeId(value: String?): String {
             if (value.isNullOrBlank()) return "missing"
