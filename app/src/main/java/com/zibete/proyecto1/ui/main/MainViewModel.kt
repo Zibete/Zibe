@@ -12,7 +12,6 @@ import com.zibete.proyecto1.core.ui.toUiText
 import com.zibete.proyecto1.core.utils.onFailure
 import com.zibete.proyecto1.core.utils.onSuccess
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
-import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryActions
@@ -22,7 +21,6 @@ import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.domain.roomsv2.ObserveRoomsV2UnreadSummaryUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
-import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
@@ -35,7 +33,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -44,7 +41,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val exitGroupUseCase: ExitGroupUseCase,
     private val localRepositoryProvider: LocalRepositoryProvider,
     private val conversationOverviewRepository: ConversationOverviewRepository,
     private val observeRoomsV2UnreadSummary: ObserveRoomsV2UnreadSummaryUseCase,
@@ -58,13 +54,9 @@ class MainViewModel @Inject constructor(
     private val config: SettingsConfig,
 ) : ViewModel() {
 
-    val groupContext: StateFlow<GroupContext?> =
-        userPreferencesProvider.groupContextFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
+    // Legacy toolbar compatibility only. Removed once the unreachable legacy host route is deleted.
     val groupName: StateFlow<String> =
-        userPreferencesProvider.groupContextFlow
-            .map { it?.groupName.orEmpty() }
+        userPreferencesProvider.groupNameFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     private val _uiState = MutableStateFlow(MainUiState())
@@ -85,7 +77,6 @@ class MainViewModel @Inject constructor(
     init {
         refreshAccountProfile()
 
-        // 1) Badge chats
         viewModelScope.launch {
             conversationOverviewRepository.observeUnreadChatList()
                 .collect { count ->
@@ -93,7 +84,6 @@ class MainViewModel @Inject constructor(
                 }
         }
 
-        // 2) Badge RoomsV2
         observeGroupBadges()
     }
 
@@ -111,7 +101,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // --- ACCIONES DE USUARIO ---
     fun onLocationChanged(latitude: Double, longitude: Double) {
         viewModelScope.launch {
             locationRepository.updateLocation(latitude, longitude)
@@ -139,16 +128,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun onExitGroupConfirmed(message: String) {
-        viewModelScope.launch {
-            exitGroupUseCase.performExitGroupDataCleanup(message)
-                .onSuccess {
-                    emit(MainUiEvent.ToGroupsAfterExit)
-                }
-                .onFailure { e ->
-                    showErrorSnack(e)
-                }
-        }
+    /** Compatibility path for the unreachable legacy host. No legacy Firebase cleanup is performed. */
+    fun onExitGroupConfirmed(@Suppress("UNUSED_PARAMETER") message: String) {
+        emit(MainUiEvent.ToGroupsAfterExit)
     }
 
     fun onUsersTabSelected() {
@@ -241,7 +223,6 @@ class MainViewModel @Inject constructor(
 
     fun onBackPressed() {
         when (_destinationUiState.value.currentScreen) {
-
             CurrentScreen.CHAT,
             CurrentScreen.USERS,
             CurrentScreen.FAVORITES,
@@ -286,8 +267,9 @@ class MainViewModel @Inject constructor(
                     uiText = UiText.StringRes(R.string.msg_no_blocked_users),
                     snackType = ZibeSnackType.WARNING
                 )
-            } else
+            } else {
                 emit(MainUiEvent.ShowUnblockUsersDialog(blockedUsers))
+            }
         }
     }
 
@@ -355,6 +337,4 @@ class MainViewModel @Inject constructor(
     fun setDestinationUiState(state: MainDestinationUiState) {
         _destinationUiState.value = state
     }
-
-
 }

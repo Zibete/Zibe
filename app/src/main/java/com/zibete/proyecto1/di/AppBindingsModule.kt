@@ -1,16 +1,17 @@
 package com.zibete.proyecto1.di
 
+import com.zibete.proyecto1.core.auth.AndroidExternalSessionCleaner
 import com.zibete.proyecto1.core.device.DefaultDeviceInfoProvider
 import com.zibete.proyecto1.core.device.DeviceInfoProvider
 import com.zibete.proyecto1.core.navigation.AppNavigator
 import com.zibete.proyecto1.core.utils.AppChecksProvider
 import com.zibete.proyecto1.core.utils.DefaultAppChecksProvider
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.GroupRepositoryProvider
-import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.ChatRepositoryContract
+import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
+import com.zibete.proyecto1.data.GroupRepository
+import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.LocationRepositoryActions
@@ -20,12 +21,12 @@ import com.zibete.proyecto1.data.PresenceRepositoryActions
 import com.zibete.proyecto1.data.SessionRepository
 import com.zibete.proyecto1.data.SessionRepositoryActions
 import com.zibete.proyecto1.data.SessionRepositoryProvider
+import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.UserPreferencesRepository
 import com.zibete.proyecto1.data.UserRepository
 import com.zibete.proyecto1.data.UserRepositoryActions
-import com.zibete.proyecto1.data.UserDirectoryProvider
 import com.zibete.proyecto1.data.UserRepositoryProvider
 import com.zibete.proyecto1.data.auth.AuthSessionActions
 import com.zibete.proyecto1.data.auth.AuthSessionProvider
@@ -35,6 +36,10 @@ import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
 import com.zibete.proyecto1.data.profile.ProfileRepository
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
+import com.zibete.proyecto1.domain.chat.DefaultResolveDmEntryUseCase
+import com.zibete.proyecto1.domain.chat.DefaultSendChatMessageUseCase
+import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
+import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.domain.profile.DefaultSendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.DefaultUpdatePasswordUseCase
@@ -43,27 +48,20 @@ import com.zibete.proyecto1.domain.profile.SendFeedbackUseCase
 import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
-import com.zibete.proyecto1.domain.chat.DefaultSendChatMessageUseCase
-import com.zibete.proyecto1.domain.chat.DefaultResolveDmEntryUseCase
-import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
-import com.zibete.proyecto1.domain.chat.SendChatMessageUseCase
 import com.zibete.proyecto1.domain.session.DefaultDeleteAccountUseCase
-import com.zibete.proyecto1.domain.session.DefaultExitGroupUseCase
 import com.zibete.proyecto1.domain.session.DefaultLogoutUseCase
-import com.zibete.proyecto1.domain.session.ExternalSessionCleaner
 import com.zibete.proyecto1.domain.session.DefaultSessionBootstrapper
 import com.zibete.proyecto1.domain.session.DefaultSessionConflictMonitor
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
-import com.zibete.proyecto1.domain.session.ExitGroupUseCase
+import com.zibete.proyecto1.domain.session.ExternalSessionCleaner
 import com.zibete.proyecto1.domain.session.LogoutUseCase
-import com.zibete.proyecto1.core.auth.AndroidExternalSessionCleaner
+import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
 import com.zibete.proyecto1.domain.session.SessionConflictNavigator
-import com.zibete.proyecto1.domain.session.SessionBootstrapper
-import com.zibete.proyecto1.ui.chat.AndroidChatTextProvider
-import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import com.zibete.proyecto1.notifications.AndroidNotificationPermissionStateProvider
 import com.zibete.proyecto1.notifications.NotificationPermissionStateProvider
+import com.zibete.proyecto1.ui.chat.AndroidChatTextProvider
+import com.zibete.proyecto1.ui.chat.ChatTextProvider
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -219,11 +217,6 @@ abstract class AppBindingsModule {
     ): DeleteAccountUseCase
 
     @Binds
-    abstract fun bindExitGroupUseCase(
-        impl: DefaultExitGroupUseCase
-    ): ExitGroupUseCase
-
-    @Binds
     abstract fun bindGroupRepositoryProvider(
         impl: GroupRepository
     ): GroupRepositoryProvider
@@ -266,7 +259,6 @@ abstract class AppBindingsModule {
         impl: DefaultUpdateProfileUseCase
     ): UpdateProfileUseCase
 
-    // --- Domain orchestrators ---
     @Binds
     @Singleton
     abstract fun bindSessionBootstrapper(
