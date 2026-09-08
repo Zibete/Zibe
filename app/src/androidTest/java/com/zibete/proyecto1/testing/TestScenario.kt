@@ -29,8 +29,6 @@ data class TestScenario(
     var hasBirthDate: Boolean = true,
 
     // --- Preferences ---
-    var inGroup: Boolean = false,
-    var groupName: String = "",
     var filterSwitch: Boolean = false,
     var applyAgeFilter: Boolean = false,
     var applyOnlineFilter: Boolean = false,
