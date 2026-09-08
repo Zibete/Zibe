@@ -485,3 +485,75 @@ def on_group_message_created(event: db_fn.Event[db_fn.DataSnapshot]) -> None:
             title=f"Nuevo mensaje de {group_name}",
             body=group_message_text or sender_name,
         )
+
+
+# ============================================================
+# ROOMSV2 EXPORTS
+# ============================================================
+# Existing unit tests intentionally stub only db_fn. In that synthetic environment
+# https_fn is absent, so skip only the new callable/trigger registration there.
+try:
+    from firebase_functions import https_fn as _https_fn  # noqa: F401
+except ImportError:
+    pass
+else:
+    try:
+        from .rooms_v2 import (
+            create_room_v2,
+            join_room_v2,
+            leave_room_v2,
+            mark_room_thread_read_v2,
+            send_room_v2_text,
+            set_room_notifications_v2,
+            set_room_visible_thread_v2,
+        )
+        from .rooms_v2_moderation import (
+            ban_room_member_v2,
+            close_room_v2,
+            edit_room_v2,
+            kick_room_member_v2,
+            remove_room_message_v2,
+            report_room_message_v2,
+            resolve_room_report_v2,
+            set_room_moderator_v2,
+            transfer_room_owner_v2,
+        )
+        from .rooms_v2_notifications import (
+            on_room_v2_private_message_created,
+            on_room_v2_public_message_created,
+        )
+        from .rooms_v2_private import (
+            block_room_private_v2,
+            open_room_private_v2,
+            send_room_private_v2_text,
+        )
+    except ImportError:
+        from rooms_v2 import (
+            create_room_v2,
+            join_room_v2,
+            leave_room_v2,
+            mark_room_thread_read_v2,
+            send_room_v2_text,
+            set_room_notifications_v2,
+            set_room_visible_thread_v2,
+        )
+        from rooms_v2_moderation import (
+            ban_room_member_v2,
+            close_room_v2,
+            edit_room_v2,
+            kick_room_member_v2,
+            remove_room_message_v2,
+            report_room_message_v2,
+            resolve_room_report_v2,
+            set_room_moderator_v2,
+            transfer_room_owner_v2,
+        )
+        from rooms_v2_notifications import (
+            on_room_v2_private_message_created,
+            on_room_v2_public_message_created,
+        )
+        from rooms_v2_private import (
+            block_room_private_v2,
+            open_room_private_v2,
+            send_room_private_v2_text,
+        )
