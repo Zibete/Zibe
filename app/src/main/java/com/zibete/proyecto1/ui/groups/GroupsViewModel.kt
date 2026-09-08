@@ -3,7 +3,6 @@ package com.zibete.proyecto1.ui.groups
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zibete.proyecto1.R
-import com.zibete.proyecto1.core.constants.Constants.PUBLIC_GROUP
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.LocalRepositoryProvider
@@ -17,7 +16,6 @@ import com.zibete.proyecto1.domain.roomsv2.RoomV2IdentityMode
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Membership
 import com.zibete.proyecto1.domain.roomsv2.RoomV2Status
 import com.zibete.proyecto1.domain.roomsv2.RoomsV2Repository
-import com.zibete.proyecto1.model.Groups
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -47,7 +45,7 @@ class GroupsViewModel @Inject constructor(
     private val _events = MutableSharedFlow<GroupsUiEvent>(extraBufferCapacity = 2)
     val events: SharedFlow<GroupsUiEvent> = _events.asSharedFlow()
 
-    private var allGroups: List<Groups> = emptyList()
+    private var allGroups: List<RoomV2DirectoryItem> = emptyList()
     private var roomsByName: Map<String, RoomV2DirectoryItem> = emptyMap()
     private var membershipsByRoomId: Map<String, RoomV2Membership> = emptyMap()
     private var searchQuery: String = ""
@@ -120,7 +118,6 @@ class GroupsViewModel @Inject constructor(
                             room.status == RoomV2Status.OPEN ||
                                 membershipsByRoomId.containsKey(room.roomId)
                         }
-                        .map(::toLegacyPresentationGroup)
                         .sortedBy { it.name.lowercase() }
                         .toList()
 
@@ -316,14 +313,6 @@ class GroupsViewModel @Inject constructor(
             )
         }
     }
-
-    private fun toLegacyPresentationGroup(room: RoomV2DirectoryItem): Groups = Groups(
-        name = room.name,
-        description = room.description,
-        type = PUBLIC_GROUP,
-        users = room.memberCount,
-        createdAt = room.updatedAt,
-    )
 
     private fun Throwable.toRoomText(): UiText {
         val resource = when ((this as? RoomV2Exception)?.code) {

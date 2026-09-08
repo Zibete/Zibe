@@ -5,22 +5,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.zibete.proyecto1.databinding.RowGroupBinding
-import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.core.constants.Constants
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_CATEGORY
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_DATA
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_USERS
 import com.zibete.proyecto1.core.utils.GlassEffect
+import com.zibete.proyecto1.databinding.RowGroupBinding
+import com.zibete.proyecto1.domain.roomsv2.RoomV2DirectoryItem
 import eightbitlab.com.blurview.BlurView
 
 class AdapterGroups(
-    private val onGroupClicked: (Groups) -> Unit
-) : ListAdapter<Groups, AdapterGroups.ViewHolder>(GroupsDiffCallback) {
+    private val onGroupClicked: (RoomV2DirectoryItem) -> Unit
+) : ListAdapter<RoomV2DirectoryItem, AdapterGroups.ViewHolder>(GroupsDiffCallback) {
 
-    private var originalList: List<Groups> = emptyList()
+    private var originalList: List<RoomV2DirectoryItem> = emptyList()
 
-    fun submitOriginal(list: List<Groups>) {
+    fun submitOriginal(list: List<RoomV2DirectoryItem>) {
         originalList = list
         submitList(list)
     }
@@ -49,40 +47,29 @@ class AdapterGroups(
             GlassEffect.startGlowIfAny(glowBorder)
         }
 
-        fun bind(item: Groups) = with(binding) {
+        fun bind(item: RoomV2DirectoryItem) = with(binding) {
             tvTitle.text = item.name
             tvDataGroup.text = item.description
             tvDataGroup.isSelected = true
-            tvNumberPersons.text = item.users.toString()
+            tvNumberPersons.text = item.memberCount.toString()
 
             card.setOnClickListener {
-                if (item.type == Constants.PUBLIC_GROUP) {
-                    onGroupClicked(item)
-                }
+                onGroupClicked(item)
             }
         }
 
-        fun bindPayload(payload: Any, item: Groups) = with(binding) {
+        fun bindPayload(payload: Any, item: RoomV2DirectoryItem) = with(binding) {
             val changes = payload as? Set<String> ?: run {
                 bind(item)
                 return
             }
 
             if (PAYLOAD_GROUPS_USERS in changes) {
-                tvNumberPersons.text = item.users.toString()
+                tvNumberPersons.text = item.memberCount.toString()
             }
 
             if (PAYLOAD_GROUPS_DATA in changes) {
                 tvDataGroup.text = item.description
-            }
-
-            if (PAYLOAD_GROUPS_CATEGORY in changes) {
-                // si cambia categoría, puede afectar el click habilitado
-                card.setOnClickListener {
-                    if (item.type == Constants.PUBLIC_GROUP) {
-                        onGroupClicked(item)
-                    }
-                }
             }
         }
     }

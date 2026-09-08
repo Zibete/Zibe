@@ -1,29 +1,30 @@
 package com.zibete.proyecto1.adapters
 
 import androidx.recyclerview.widget.DiffUtil
-import com.zibete.proyecto1.model.Groups
-import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_CATEGORY
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_DATA
 import com.zibete.proyecto1.core.constants.Constants.PAYLOAD_GROUPS_USERS
+import com.zibete.proyecto1.domain.roomsv2.RoomV2DirectoryItem
 
-object GroupsDiffCallback : DiffUtil.ItemCallback<Groups>() {
+object GroupsDiffCallback : DiffUtil.ItemCallback<RoomV2DirectoryItem>() {
 
+    override fun areItemsTheSame(
+        oldItem: RoomV2DirectoryItem,
+        newItem: RoomV2DirectoryItem,
+    ): Boolean = oldItem.roomId == newItem.roomId
 
-    override fun areItemsTheSame(oldItem: Groups, newItem: Groups): Boolean {
-        // En tu app, el key real del grupo es el name.
-        return oldItem.name == newItem.name
-    }
+    override fun areContentsTheSame(
+        oldItem: RoomV2DirectoryItem,
+        newItem: RoomV2DirectoryItem,
+    ): Boolean = oldItem == newItem
 
-    override fun areContentsTheSame(oldItem: Groups, newItem: Groups): Boolean {
-        return oldItem == newItem
-    }
-
-    override fun getChangePayload(oldItem: Groups, newItem: Groups): Any? {
+    override fun getChangePayload(
+        oldItem: RoomV2DirectoryItem,
+        newItem: RoomV2DirectoryItem,
+    ): Any? {
         val changed = mutableSetOf<String>()
 
-        if (oldItem.users != newItem.users) changed += PAYLOAD_GROUPS_USERS
+        if (oldItem.memberCount != newItem.memberCount) changed += PAYLOAD_GROUPS_USERS
         if (oldItem.description != newItem.description) changed += PAYLOAD_GROUPS_DATA
-        if (oldItem.type != newItem.type) changed += PAYLOAD_GROUPS_CATEGORY
 
         return changed.takeIf { it.isNotEmpty() }
     }
