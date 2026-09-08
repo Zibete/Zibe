@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -48,15 +47,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.zibete.proyecto1.R
 import com.zibete.proyecto1.core.designsystem.R as DsR
 import com.zibete.proyecto1.core.ui.SnackBarManagerEntryPoint
 import com.zibete.proyecto1.model.Users
 import com.zibete.proyecto1.model.UserStatus
-import com.zibete.proyecto1.R
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
-import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.FirstContactSheet
+import com.zibete.proyecto1.ui.components.PhotoHeader
 import com.zibete.proyecto1.ui.components.ProfileCard
 import com.zibete.proyecto1.ui.components.ZibeCard
 import com.zibete.proyecto1.ui.components.ZibeCircularProgress
@@ -75,13 +74,11 @@ fun ProfileRoute(
     isActive: Boolean = true,
     onBack: () -> Unit,
     onOpenDmChat: (String) -> Unit,
-    onOpenGroupDmChat: (String) -> Unit,
     onOpenPhoto: (String) -> Unit
 ) {
     val state by profileViewModel.uiState.collectAsStateWithLifecycle()
     val userStatus by profileViewModel.userStatus.collectAsStateWithLifecycle()
     val photosFromChat by profileViewModel.photoList.collectAsStateWithLifecycle()
-    val groupName by profileViewModel.groupName.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -132,7 +129,6 @@ fun ProfileRoute(
         state = state,
         userStatus = userStatus,
         photoList = photosFromChat,
-        groupName = groupName,
         distanceLabel = state.distanceLabel,
         isActive = isActive,
         onBack = onBack,
@@ -140,7 +136,6 @@ fun ProfileRoute(
         onDmChatClick = profileViewModel::onDmChatRequested,
         onConfirmFirstContact = profileViewModel::confirmFirstContact,
         onCancelFirstContact = profileViewModel::cancelFirstContact,
-        onOpenGroupDmChat = onOpenGroupDmChat,
         onOpenPhoto = onOpenPhoto,
         onToggleFavorite = profileViewModel::onToggleFavorite,
         onToggleNotifications = { profileViewModel.onToggleNotifications() },
@@ -156,7 +151,6 @@ fun ProfileScreen(
     state: ProfileUiState,
     userStatus: UserStatus,
     photoList: List<String>,
-    groupName: String,
     distanceLabel: String,
     isActive: Boolean = true,
     onBack: () -> Unit,
@@ -165,7 +159,6 @@ fun ProfileScreen(
     onDmChatClick: () -> Unit,
     onConfirmFirstContact: () -> Unit,
     onCancelFirstContact: () -> Unit,
-    onOpenGroupDmChat: (userId: String) -> Unit,
     onOpenPhoto: (String) -> Unit,
     onToggleNotifications: () -> Unit,
     onConfirmBlockAction: () -> Unit,
@@ -183,8 +176,6 @@ fun ProfileScreen(
     val fabHeightDp = with(LocalDensity.current) { fabHeightPx.toDp() }
     val bottomSpacerTarget = fabHeightDp + spacingMd
     val bottomSpacer by animateDpAsState(bottomSpacerTarget, label = "fabSpacer")
-
-    val profile = state.profile
 
     val menuItems = buildList {
         add(
@@ -246,10 +237,6 @@ fun ProfileScreen(
                 )
             },
             floatingActionButton = {
-                val secondaryLabel = if (state.isGroupMatch) {
-                    stringResource(R.string.chat_private_in_group, groupName)
-                } else null
-
                 val collapseThresholdPx = with(LocalDensity.current) {
                     dimensionResource(DsR.dimen.fab_collapse_scroll_threshold).toPx()
                 }
@@ -274,26 +261,10 @@ fun ProfileScreen(
                     primaryEnabled = state.canOpenChat,
                     primaryLoading = state.isDmEntryLoading,
                     onPrimaryClick = onDmChatClick,
-                    secondaryText = secondaryLabel?.let { label ->
-                        {
-                            Text(
-                                label,
-                                style = zibeTypography.label
-                            )
-                        }
-                    },
-                    secondaryIcon = secondaryLabel?.let {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.PersonAdd,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    secondaryEnabled = !state.isActionLoading,
-                    onSecondaryClick = secondaryLabel?.let {
-                        { profile?.id?.let(onOpenGroupDmChat) }
-                    },
+                    secondaryText = null,
+                    secondaryIcon = null,
+                    secondaryEnabled = false,
+                    onSecondaryClick = null,
                     onHeightPxChanged = { fabHeightPx = it }
                 )
             }
@@ -377,7 +348,7 @@ fun ProfileScreen(
                                 distanceLabel = distanceLabel,
                                 photoList = photoList,
                                 onToggleFavorite = onToggleFavorite,
-                                onOpenPhoto = { url -> onOpenPhoto(url) }
+                                onOpenPhoto = onOpenPhoto
                             )
 
                             if (profile.description.isNotBlank()) {
@@ -428,7 +399,6 @@ fun ProfileScreenPreview() {
             state = sampleState,
             userStatus = UserStatus.Online,
             photoList = listOf("url1", "url2"),
-            groupName = "Sample Group",
             distanceLabel = sampleState.distanceLabel,
             isActive = true,
             onBack = {},
@@ -437,7 +407,6 @@ fun ProfileScreenPreview() {
             onDmChatClick = {},
             onConfirmFirstContact = {},
             onCancelFirstContact = {},
-            onOpenGroupDmChat = {},
             onOpenPhoto = {},
             onToggleNotifications = {},
             onConfirmBlockAction = {},

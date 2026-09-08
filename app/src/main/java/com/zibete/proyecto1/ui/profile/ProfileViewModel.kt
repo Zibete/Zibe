@@ -20,9 +20,7 @@ import com.zibete.proyecto1.core.utils.onSuccessNotNull
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ChatThread
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
-import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
@@ -32,6 +30,8 @@ import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -46,25 +46,19 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
-import kotlin.coroutines.cancellation.CancellationException
-import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val chatRepository: ChatRepositoryContract,
-    private val groupRepositoryProvider: GroupRepositoryProvider,
     private val locationRepository: LocationRepositoryProvider,
     private val profileRepositoryProvider: ProfileRepositoryProvider,
     private val profileRepositoryActions: ProfileRepositoryActions,
-    private val userPreferencesProvider: UserPreferencesProvider,
     private val resolveDmEntry: ResolveDmEntryUseCase,
     private val snackBarManager: SnackBarManager
 ) : ViewModel() {
 
     val otherUid: String = savedStateHandle[EXTRA_USER_ID] ?: ""
-    val groupName: StateFlow<String> = userPreferencesProvider.groupNameFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
     val profileError = UiText.StringRes(R.string.msg_profile_load_error)
 
     private val _events = MutableSharedFlow<ChatSessionUiEvent>(
@@ -113,8 +107,9 @@ class ProfileViewModel @Inject constructor(
                 else _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
                 if (isRefresh && loadJob == currentJob) _uiState.update { it.copy(isRefreshing = false) }
                 return@launch
-            } else if (_uiState.value.profile?.id != otherUid && shouldShowLoading)
+            } else if (_uiState.value.profile?.id != otherUid && shouldShowLoading) {
                 setNotProfileState(content = ProfileContent.Loading)
+            }
 
             profileRepositoryProvider.getOtherAccount(otherUid)
                 .onFailure { e ->
@@ -123,20 +118,21 @@ class ProfileViewModel @Inject constructor(
                         return@onFailure
                     }
                     setNotProfileState(
-                        content = if (e.message == USER_NOT_FOUND_EXCEPTION)
+                        content = if (e.message == USER_NOT_FOUND_EXCEPTION) {
                             ProfileContent.NotFound
-                        else
+                        } else {
                             ProfileContent.Error(profileError)
+                        }
                     )
                     _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
                 }
                 .onSuccess { profile ->
                     if (profile == null) {
-                        if (isRefresh && hadReadyContent)
+                        if (isRefresh && hadReadyContent) {
                             _events.emit(ChatSessionUiEvent.ShowErrorDialog(profileError))
-                        else
+                        } else {
                             setNotProfileState(content = ProfileContent.NotFound)
-
+                        }
                         return@onSuccess
                     }
 
@@ -154,8 +150,9 @@ class ProfileViewModel @Inject constructor(
                     metaJob = viewModelScope.launch { enrichProfileMeta() }
                 }
                 .onFinally {
-                    if (isRefresh && loadJob == currentJob)
+                    if (isRefresh && loadJob == currentJob) {
                         _uiState.update { it.copy(isRefreshing = false) }
+                    }
                 }
         }
     }
@@ -233,8 +230,6 @@ class ProfileViewModel @Inject constructor(
     }
 
     private suspend fun enrichProfileMeta() = supervisorScope {
-        val groupNameValue = groupName.value
-
         val chatStateDeferred = async(Dispatchers.IO) {
             profileRepositoryProvider.getMyChatState(otherUid)
                 .onFailure { onFailure(it) }
@@ -255,11 +250,6 @@ class ProfileViewModel @Inject constructor(
                 .onFailure { onFailure(it) }
                 .getOrDefault("")
         }
-        val groupMatchDeferred = async(Dispatchers.IO) {
-            groupRepositoryProvider.isGroupMatch(otherUid, groupNameValue)
-                .onFailure { onFailure(it) }
-                .getOrDefault(false)
-        }
         val photosDeferred = async(Dispatchers.IO) {
             profileRepositoryProvider.getDmPhotoList(otherUid, NODE_DM)
                 .onFailure { onFailure(it) }
@@ -274,7 +264,6 @@ class ProfileViewModel @Inject constructor(
         val chatState = chatStateDeferred.await()
         val blockState = blockStateDeferred.await()
         val distanceLabel = distanceDeferred.await()
-        val isGroupMatch = groupMatchDeferred.await()
         val isFavorite = favoriteDeferred.await()
         val hasConversation = hasConversationDeferred.await()
         val photoList = photosDeferred.await()
@@ -282,7 +271,6 @@ class ProfileViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 distanceLabel = distanceLabel,
-                isGroupMatch = isGroupMatch,
                 isFavorite = isFavorite,
                 isBlockedByMe = blockState.isBlockedByMe,
                 hasBlockedMe = blockState.hasBlockedMe,
@@ -306,7 +294,6 @@ class ProfileViewModel @Inject constructor(
                 isDmEntryLoading = false,
                 profile = null,
                 distanceLabel = "",
-                isGroupMatch = false,
                 isFavorite = false,
                 isBlockedByMe = false,
                 isNotificationsSilenced = false,
@@ -364,7 +351,7 @@ class ProfileViewModel @Inject constructor(
     fun onConfirmBlockAction() {
         if (isActionLoading()) return
         val state = _uiState.value
-        val profile = _uiState.value.profile ?: return
+        val profile = state.profile ?: return
         val otherName = profile.name
 
         viewModelScope.launch {
@@ -418,8 +405,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             val chatRefs = chatRepository.chatThread(otherUid, NODE_DM)
             val count = chatRepository.getMessageCount(chatRefs)
-            if (_uiState.value.isHide) onConfirmDelete(chatRefs, userName)
-            else
+            if (_uiState.value.isHide) {
+                onConfirmDelete(chatRefs, userName)
+            } else {
                 _events.emit(
                     ChatSessionUiEvent.DeleteClickedChoiceMode(
                         name = userName,
@@ -430,6 +418,7 @@ class ProfileViewModel @Inject constructor(
                         }
                     )
                 )
+            }
         }
     }
 
@@ -467,12 +456,10 @@ class ProfileViewModel @Inject constructor(
             thread = chatRefs,
             selectedIds = null
         ).onSuccess { deleteResult ->
-            val deleteResult = deleteResult ?: return@onSuccess
-            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(deleteResult.deletedCount))
+            val result = deleteResult ?: return@onSuccess
+            _events.emit(ChatSessionUiEvent.ShowDeleteMessagesSuccess(result.deletedCount))
         }.onFailure { onFailure(it) }
     }
-
-    // ---------- UI ----------
 
     private fun setActionLoading(isActionLoading: Boolean) =
         _uiState.update { it.copy(isActionLoading = isActionLoading) }

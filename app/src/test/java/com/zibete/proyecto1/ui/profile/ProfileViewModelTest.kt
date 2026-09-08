@@ -7,17 +7,14 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.ui.SnackBarManager
 import com.zibete.proyecto1.core.utils.ZibeResult
 import com.zibete.proyecto1.data.ChatRepositoryContract
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepositoryProvider
 import com.zibete.proyecto1.data.profile.BlockState
 import com.zibete.proyecto1.data.profile.ProfileRepositoryActions
 import com.zibete.proyecto1.data.profile.ProfileRepositoryProvider
 import com.zibete.proyecto1.domain.chat.DmEntryDecision
 import com.zibete.proyecto1.domain.chat.ResolveDmEntryUseCase
-import com.zibete.proyecto1.fakes.FakeUserPreferencesProvider
 import com.zibete.proyecto1.model.UserStatus
 import com.zibete.proyecto1.model.Users
-import com.zibete.proyecto1.testing.TestScenario
 import com.zibete.proyecto1.ui.chat.session.ChatSessionUiEvent
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import io.mockk.coEvery
@@ -184,11 +181,9 @@ class ProfileViewModelTest {
     ): Harness {
         val profileProvider = mockk<ProfileRepositoryProvider>()
         val chatRepository = mockk<ChatRepositoryContract>(relaxed = true)
-        val groupRepository = mockk<GroupRepositoryProvider>(relaxed = true)
         val locationRepository = mockk<LocationRepositoryProvider>()
         val gate = mockk<ResolveDmEntryUseCase>()
         val snackBarManager = SnackBarManager()
-        val scenario = TestScenario()
 
         every { profileProvider.observeUserStatus(OTHER_UID, NODE_DM) } returns
             kotlinx.coroutines.flow.flowOf(UserStatus.Offline)
@@ -201,8 +196,6 @@ class ProfileViewModelTest {
             ZibeResult.Success(emptyList())
         coEvery { locationRepository.getDistanceToUser(OTHER_UID) } returns
             ZibeResult.Success(DISTANCE_LABEL)
-        coEvery { groupRepository.isGroupMatch(OTHER_UID, any()) } returns
-            ZibeResult.Success(false)
         coEvery { chatRepository.hasConversation(OTHER_UID, NODE_DM) } returns
             ZibeResult.Success(false)
         coEvery { gate(OTHER_UID) } returns resolution
@@ -210,11 +203,9 @@ class ProfileViewModelTest {
         val vm = ProfileViewModel(
             savedStateHandle = SavedStateHandle(mapOf(EXTRA_USER_ID to OTHER_UID)),
             chatRepository = chatRepository,
-            groupRepositoryProvider = groupRepository,
             locationRepository = locationRepository,
             profileRepositoryProvider = profileProvider,
             profileRepositoryActions = mockk<ProfileRepositoryActions>(relaxed = true),
-            userPreferencesProvider = FakeUserPreferencesProvider { scenario },
             resolveDmEntry = gate,
             snackBarManager = snackBarManager
         )
