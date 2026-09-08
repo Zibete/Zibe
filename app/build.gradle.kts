@@ -113,7 +113,6 @@ dependencies {
     implementation(libs.recyclerview)
     implementation(libs.material)
     implementation(libs.androidx.annotation)
-    implementation(libs.concurrent.futures)
 
     // Navigation
     implementation(libs.navigation.fragment)
@@ -173,7 +172,6 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.coil.compose)
 
-    implementation(libs.compressor)
     implementation(libs.ucrop)
 
     // -------------------------------
@@ -201,8 +199,6 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services)
     implementation(libs.google.id)
-
-    implementation(libs.graphics.path)
 
     implementation(libs.lottie)
     implementation(libs.lottie.compose)
