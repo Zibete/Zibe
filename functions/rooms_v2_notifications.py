@@ -8,6 +8,7 @@ from firebase_admin import db, messaging
 from firebase_functions import db_fn
 
 if __package__:
+    from .rooms_v2_events import should_notify_public_room_message
     from .rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
@@ -15,6 +16,7 @@ if __package__:
         safe_text_preview,
     )
 else:
+    from rooms_v2_events import should_notify_public_room_message
     from rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
@@ -119,6 +121,8 @@ def on_room_v2_public_message_created(
     message_id = _read_str(event.params.get("messageId"))
     message = _event_data(event)
     if not room_id or not message_id or not isinstance(message, dict):
+        return
+    if not should_notify_public_room_message(message):
         return
     sender_identity_id = _read_str(message.get("authorIdentityId"))
     if not sender_identity_id:
