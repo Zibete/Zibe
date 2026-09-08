@@ -3,7 +3,6 @@ package com.zibete.proyecto1.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import com.zibete.proyecto1.core.constants.Constants.PUBLIC_USER
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -15,62 +14,6 @@ import javax.inject.Singleton
 class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) : UserPreferencesProvider, UserPreferencesActions {
-
-    // ---------------------------------------------------------------------------------------------
-    // GROUP (source of truth)
-    // ---------------------------------------------------------------------------------------------
-
-    /** Contexto reactivo del grupo (si no está en grupo -> null) */
-    override val groupContextFlow: Flow<GroupContext?> =
-        dataStore.data
-            .map { prefs ->
-                val inGroup = prefs[Keys.IN_GROUP] ?: false
-                val groupName = prefs[Keys.GROUP_NAME].orEmpty()
-
-                if (!inGroup || groupName.isBlank()) return@map null
-
-                GroupContext(
-                    inGroup = true,
-                    groupName = groupName,
-                    userName = prefs[Keys.USER_NAME_GROUP].orEmpty(),
-                    userType = prefs[Keys.USER_TYPE] ?: PUBLIC_USER
-                )
-            }
-            .distinctUntilChanged()
-
-    /** Flag simple (reactivo) por si alguna pantalla lo necesita */
-    override val inGroupFlow: Flow<Boolean> =
-        dataStore.data
-            .map { it[Keys.IN_GROUP] ?: false }
-            .distinctUntilChanged()
-
-    /** groupName reactivo (útil para toolbar o labels sin armar GroupContext) */
-    override val groupNameFlow: Flow<String> =
-        dataStore.data
-            .map { it[Keys.GROUP_NAME].orEmpty() }
-            .distinctUntilChanged()
-
-    override suspend fun setGroupSession(
-        groupName: String,
-        userName: String,
-        userType: Int
-    ) {
-        dataStore.edit { prefs ->
-            prefs[Keys.IN_GROUP] = true
-            prefs[Keys.GROUP_NAME] = groupName
-            prefs[Keys.USER_NAME_GROUP] = userName
-            prefs[Keys.USER_TYPE] = userType
-        }
-    }
-
-    override suspend fun resetGroupState() {
-        dataStore.edit { prefs ->
-            prefs[Keys.IN_GROUP] = false
-            prefs[Keys.GROUP_NAME] = ""
-            prefs[Keys.USER_NAME_GROUP] = ""
-            prefs[Keys.USER_TYPE] = PUBLIC_USER
-        }
-    }
 
     // ---------------------------------------------------------------------------------------------
     // FILTERS (reactivo)
@@ -155,7 +98,6 @@ class UserPreferencesRepository @Inject constructor(
     // ---------------------------------------------------------------------------------------------
 
     override suspend fun clearSessionData() {
-        resetGroupState()
         dataStore.edit { prefs ->
             prefs[Keys.FILTER_SWITCH] = false
             prefs[Keys.APPLY_ONLINE_FILTER] = false

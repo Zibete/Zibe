@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.fakes
 
-import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.testing.TestScenario
@@ -15,11 +14,6 @@ class FakeUserPreferencesProvider(
     override suspend fun isFirstLoginDone(): Boolean = scenarioProvider().firstLoginDone
     override suspend fun isEditProfileWelcomeShown(): Boolean = false
 
-    override val groupContextFlow: Flow<GroupContext?> = flow {
-        emit(null)
-    }
-
-    override val inGroupFlow: Flow<Boolean> = flow { emit(scenarioProvider().inGroup) }
     override val applyAgeFilterFlow: Flow<Boolean> =
         flow { emit(scenarioProvider().applyAgeFilter) }
     override val applyOnlineFilterFlow: Flow<Boolean> =
@@ -31,7 +25,6 @@ class FakeUserPreferencesProvider(
     override val groupNotificationsFlow: Flow<Boolean> =
         flow { emit(scenarioProvider().groupNotifications) }
     override val filterSwitchFlow: Flow<Boolean> = flow { emit(scenarioProvider().filterSwitch) }
-    override val groupNameFlow: Flow<String> = flow { emit(scenarioProvider().groupName) }
 }
 
 class FakeUserPreferencesActions(
@@ -49,18 +42,11 @@ class FakeUserPreferencesActions(
     override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/
     }
 
-    override suspend fun resetGroupState() {
-        scenarioProvider().inGroup = false
-        scenarioProvider().groupName = ""
-    }
-
     override suspend fun clearSessionData() {
         val s = scenarioProvider()
         s.onboardingDone = false
         s.firstLoginDone = false
         s.deleteUser = false
-        s.inGroup = false
-        s.groupName = ""
         s.filterSwitch = false
         s.applyAgeFilter = false
         s.applyOnlineFilter = false
@@ -96,10 +82,5 @@ class FakeUserPreferencesActions(
 
     override suspend fun setIndividualNotifications(value: Boolean) {
         scenarioProvider().individualNotifications = value
-    }
-
-    override suspend fun setGroupSession(groupName: String, userName: String, userType: Int) {
-        scenarioProvider().inGroup = true
-        scenarioProvider().groupName = groupName
     }
 }

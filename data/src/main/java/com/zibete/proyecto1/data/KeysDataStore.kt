@@ -2,19 +2,10 @@ package com.zibete.proyecto1.data
 
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 
 object Keys {
     // migration marker (por si querés usarlo luego)
     val MIGRATED_FROM_SP = booleanPreferencesKey("migratedFromSharedPrefs")
-
-    // user/group
-    val IN_GROUP = booleanPreferencesKey("inGroup")
-    val USER_NAME_GROUP = stringPreferencesKey("userName")
-    val GROUP_NAME = stringPreferencesKey("groupName")
-    val USER_TYPE = intPreferencesKey("userType")
-    val USER_DATE = stringPreferencesKey("userDate")
-    val READ_GROUP_MSG = intPreferencesKey("readGroupMsg")
 
     // filters
     val FILTER_SWITCH = booleanPreferencesKey("filterPrefs")

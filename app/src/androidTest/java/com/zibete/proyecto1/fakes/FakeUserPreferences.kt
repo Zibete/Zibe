@@ -1,6 +1,5 @@
 package com.zibete.proyecto1.fakes
 
-import com.zibete.proyecto1.data.GroupContext
 import com.zibete.proyecto1.data.UserPreferencesActions
 import com.zibete.proyecto1.data.UserPreferencesProvider
 import com.zibete.proyecto1.testing.TestScenario
@@ -24,22 +23,6 @@ class FakeUserPreferencesProvider(
 
     override suspend fun isEditProfileWelcomeShown(): Boolean = false
 
-    override val groupContextFlow: Flow<GroupContext?> = flow {
-        val scenario = scenarioProvider()
-        emit(
-            if (scenario.inGroup) {
-                GroupContext(
-                    inGroup = true,
-                    groupName = scenario.groupName,
-                    userName = "test-user",
-                    userType = 0
-                )
-            } else {
-                null
-            }
-        )
-    }
-    override val inGroupFlow: Flow<Boolean> = flow { emit(scenarioProvider().inGroup) }
     override val applyAgeFilterFlow: Flow<Boolean> =
         flow { emit(scenarioProvider().applyAgeFilter) }
     override val applyOnlineFilterFlow: Flow<Boolean> =
@@ -51,7 +34,6 @@ class FakeUserPreferencesProvider(
     override val groupNotificationsFlow: Flow<Boolean> =
         flow { emit(scenarioProvider().groupNotifications) }
     override val filterSwitchFlow: Flow<Boolean> = flow { emit(scenarioProvider().filterSwitch) }
-    override val groupNameFlow: Flow<String> = flow { emit(scenarioProvider().groupName) }
 }
 
 class FakeUserPreferencesActions(
@@ -72,7 +54,6 @@ class FakeUserPreferencesActions(
     override suspend fun setEditProfileWelcomeShown(done: Boolean) { /*...*/
     }
 
-    override suspend fun resetGroupState() {}
     override suspend fun clearSessionData() {}
     override suspend fun setApplyAgeFilter(value: Boolean) {}
     override suspend fun setApplyOnlineFilter(value: Boolean) {}
@@ -81,7 +62,4 @@ class FakeUserPreferencesActions(
     override suspend fun setFilterSwitch(value: Boolean) {}
     override suspend fun setGroupNotifications(value: Boolean) {}
     override suspend fun setIndividualNotifications(value: Boolean) {}
-
-    override suspend fun setGroupSession(groupName: String, userName: String, userType: Int) {}
 }
-
