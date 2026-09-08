@@ -11,12 +11,14 @@ if __package__:
     from .rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
+        room_notification_name,
         safe_text_preview,
     )
 else:
     from rooms_v2_notification_core import (
         private_room_recipient,
         public_room_recipients,
+        room_notification_name,
         safe_text_preview,
     )
 
@@ -133,6 +135,7 @@ def on_room_v2_public_message_created(
     payload = {
         "type": "room_v2",
         "roomId": room_id,
+        "roomName": room_notification_name(state, room_id=room_id),
         **_base_payload(message, message_id=message_id),
     }
 
@@ -183,6 +186,7 @@ def on_room_v2_private_message_created(
     payload = {
         "type": "room_private_v2",
         "roomId": room_id,
+        "roomName": room_notification_name(state, room_id=room_id),
         "conversationId": conversation_id,
         **_base_payload(message, message_id=message_id),
     }
