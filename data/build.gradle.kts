@@ -38,8 +38,6 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services)
     implementation(libs.google.id)
-    implementation(libs.firebase.ui.auth)
-    implementation(libs.facebook.login)
     implementation(libs.hilt.android)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.play.services)

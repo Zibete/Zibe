@@ -1,9 +1,6 @@
 package com.zibete.proyecto1.data.auth
 
-import android.content.Context
 import android.net.Uri
-import com.facebook.AccessToken
-import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -16,12 +13,10 @@ import com.zibete.proyecto1.core.utils.zibeCatching
 import com.zibete.proyecto1.core.utils.runCatchingPreservingCancellation
 import com.zibete.proyecto1.data.auth.AuthCredentialRequest.Facebook
 import com.zibete.proyecto1.data.auth.AuthCredentialRequest.Google
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class FirebaseSessionManager @Inject constructor(
-    @ApplicationContext private val appContext: Context,
     private val firebaseAuth: FirebaseAuth
 ) : AuthSessionProvider, AuthSessionActions {
 
@@ -104,31 +99,12 @@ class FirebaseSessionManager @Inject constructor(
     }
 
     override suspend fun reauthenticate(credentials: String?): Boolean {
-
-        val provider = authProvider()
         val user = firebaseUser ?: return false
+        if (authProvider() != AuthProvider.PASSWORD) return false
 
-        val credential = when (provider) {
-            AuthProvider.PASSWORD -> {
-                val email = user.email.orEmpty()
-                if (email.isBlank() || credentials.isNullOrBlank()) return false
-                EmailAuthProvider.getCredential(email, credentials)
-            }
-
-            AuthProvider.GOOGLE -> {
-                val acct = GoogleSignIn.getLastSignedInAccount(appContext) ?: return false
-                val token = acct.idToken ?: return false
-                GoogleAuthProvider.getCredential(token, null)
-            }
-
-            AuthProvider.FACEBOOK -> {
-                val token = AccessToken.getCurrentAccessToken()?.token ?: return false
-                FacebookAuthProvider.getCredential(token)
-            }
-
-            AuthProvider.OTHER -> return false
-            AuthProvider.NONE -> return false
-        }
+        val email = user.email.orEmpty()
+        if (email.isBlank() || credentials.isNullOrBlank()) return false
+        val credential = EmailAuthProvider.getCredential(email, credentials)
 
         return runCatchingPreservingCancellation {
             user.reauthenticate(credential).await()
