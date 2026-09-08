@@ -10,8 +10,6 @@ import com.zibete.proyecto1.data.ChatRepository
 import com.zibete.proyecto1.data.ChatRepositoryContract
 import com.zibete.proyecto1.data.ConversationOverviewRepository
 import com.zibete.proyecto1.data.DirectMessageReceiptAcknowledger
-import com.zibete.proyecto1.data.GroupRepository
-import com.zibete.proyecto1.data.GroupRepositoryProvider
 import com.zibete.proyecto1.data.LocalRepositoryProvider
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.LocationRepositoryActions
@@ -215,11 +213,6 @@ abstract class AppBindingsModule {
     abstract fun bindDeleteAccountUseCase(
         impl: DefaultDeleteAccountUseCase
     ): DeleteAccountUseCase
-
-    @Binds
-    abstract fun bindGroupRepositoryProvider(
-        impl: GroupRepository
-    ): GroupRepositoryProvider
 
     @Binds
     @Singleton

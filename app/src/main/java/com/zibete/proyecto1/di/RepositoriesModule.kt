@@ -1,7 +1,6 @@
 package com.zibete.proyecto1.di
 
 import android.content.Context
-import com.zibete.proyecto1.data.GroupRepository
 import com.zibete.proyecto1.data.LocationRepository
 import com.zibete.proyecto1.data.PresenceRepository
 import com.zibete.proyecto1.data.UserRepository
@@ -36,14 +35,6 @@ object RepositoriesModule {
         @ApplicationContext context: Context
     ): UserRepository =
         UserRepository(firebaseRefsContainer, authSessionProvider, presenceRepository, context)
-
-    @Provides
-    @Singleton
-    fun provideGroupRepository(
-        firebaseRefsContainer: FirebaseRefsContainer,
-        authSessionProvider: AuthSessionProvider
-    ): GroupRepository =
-        GroupRepository(firebaseRefsContainer, authSessionProvider)
 
     @Provides
     @Singleton
