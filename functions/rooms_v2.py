@@ -19,13 +19,15 @@ if __package__:
         validate_message,
         validate_room_name,
     )
+    from .rooms_v2_events import (
+        create_room_with_event_state,
+        join_room_with_event_state,
+        leave_room_with_event_state,
+    )
     from .rooms_v2_state import (
         MODE_ANONYMOUS,
         MODE_REAL,
         RoomsV2StateError,
-        create_room_state,
-        join_room_state,
-        leave_room_state,
         mark_read_state,
         send_public_text_state,
         set_notifications_state,
@@ -41,13 +43,15 @@ else:
         validate_message,
         validate_room_name,
     )
+    from rooms_v2_events import (
+        create_room_with_event_state,
+        join_room_with_event_state,
+        leave_room_with_event_state,
+    )
     from rooms_v2_state import (
         MODE_ANONYMOUS,
         MODE_REAL,
         RoomsV2StateError,
-        create_room_state,
-        join_room_state,
-        leave_room_state,
         mark_read_state,
         send_public_text_state,
         set_notifications_state,
@@ -214,10 +218,11 @@ def create_room_v2(request: https_fn.CallableRequest) -> dict:
     name_key = _room_name_key(normalized_name)
     room_id = _public_id("room")
     identity_id = _public_id("id")
+    event_message_id = _public_id("event")
     now = _now_ms()
 
     state = _transaction(
-        lambda current: create_room_state(
+        lambda current: create_room_with_event_state(
             current,
             uid=uid,
             display_name=display_name,
@@ -230,6 +235,8 @@ def create_room_v2(request: https_fn.CallableRequest) -> dict:
             identity_id=identity_id,
             now=now,
             public_profile_id=uid,
+            event_message_id=event_message_id,
+            visible_lease_ms=VISIBLE_THREAD_LEASE_MS,
         )
     )
     operation = _peek(state, "private", "createOperations", uid, operation_id)
@@ -267,8 +274,9 @@ def join_room_v2(request: https_fn.CallableRequest) -> dict:
         )
 
     candidate_identity_id = _public_id("anon" if mode == MODE_ANONYMOUS else "id")
+    event_message_id = _public_id("event")
     state = _transaction(
-        lambda current: join_room_state(
+        lambda current: join_room_with_event_state(
             current,
             uid=uid,
             room_id=room_id,
@@ -279,6 +287,8 @@ def join_room_v2(request: https_fn.CallableRequest) -> dict:
             now=now,
             public_profile_id=public_profile_id,
             alias_claim_key=alias_claim_key,
+            event_message_id=event_message_id,
+            visible_lease_ms=VISIBLE_THREAD_LEASE_MS,
         )
     )
     return {"membership": _membership(state, uid, room_id)}
@@ -289,12 +299,15 @@ def leave_room_v2(request: https_fn.CallableRequest) -> dict:
     uid = _uid(request)
     room_id = _safe_id(_payload(request).get("roomId"), field="roomId")
     now = _now_ms()
+    event_message_id = _public_id("event")
     _transaction(
-        lambda current: leave_room_state(
+        lambda current: leave_room_with_event_state(
             current,
             uid=uid,
             room_id=room_id,
             now=now,
+            event_message_id=event_message_id,
+            visible_lease_ms=VISIBLE_THREAD_LEASE_MS,
         )
     )
     return {"ok": True, "roomId": room_id}
