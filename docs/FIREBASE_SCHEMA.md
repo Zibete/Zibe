@@ -13,7 +13,7 @@ El ruleset que se despliega **no** es `database.rules.json` de forma aislada.
 - `database.rules.json`: contrato base de ZIBE fuera de RoomsV2.
 - `database.roomsv2.rules.json`: contrato exclusivo de RoomsV2.
 - `tools/firebase-rules-tests/merge_rooms_rules.py`: combina ambos árboles.
-- `build/firebase-rules/database.combined.rules.json`: ruleset generado.
+- `build/generated/firebase/database.rooms-combined.rules.json`: ruleset generado.
 - `firebase.json`: referencia el ruleset combinado para Realtime Database y ejecuta el merge antes del deploy.
 
 Por lo tanto, cualquier cambio de esquema debe preservar la compatibilidad de las suites base, RoomsV2 y combined.
@@ -310,7 +310,7 @@ python tools/firebase-rules-tests/merge_rooms_rules.py
 Salida:
 
 ```text
-build/firebase-rules/database.combined.rules.json
+build/generated/firebase/database.rooms-combined.rules.json
 ```
 
 El CI ejecuta Functions contract tests y las suites de Rules base + RoomsV2 + combined antes de los checks Android.

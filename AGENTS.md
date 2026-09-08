@@ -104,11 +104,11 @@ Al finalizar cualquier tarea, el agente debe listar:
 - Archivos modificados (con ruta relativa).
 - Archivos nuevos creados (si aplica), con justificación.
 - Checklist de prueba manual.
-- Si se pide PR: Crear el archivo md en la raíz del proyecto según las instrucciones
+- Si se pide PR: entregar título y cuerpo listos para GitHub en la respuesta; no crear ni versionar archivos `PR_*.md` salvo pedido explícito.
 
 ## 🤖 Instrucciones para Creación de Pull Requests (PR)
 
-Siempre que se solicite la creación de un PR, el agente debe generar un archivo `.md` en la raíz del proyecto (sugerido: `PR_[nombre_del_repo]_[timestamp].md`) y redactarlo con el estilo real del repo:
+El contenido de PR debe redactarse para pegar directamente en GitHub. **No crear ni versionar archivos `.md` temporales de PR en la raíz** salvo pedido explícito del usuario.
 
 - **Idioma:** cuerpo, headings y explicación en **español (es-AR)**. Dejar en inglés solo `type(scope)`, nombres de módulos/paths/clases/comandos y subjects de commit citados literal.
 - **Tono:** técnico, directo y breve. Priorizar bullets concretos; evitar prosa larga, marketing o contexto redundante.
@@ -198,7 +198,7 @@ Se recomienda usarlas para búsqueda, inspección y operaciones sobre el repo an
 - `messaging.send()` exitoso no equivale a receipt.
 - Mensaje y dos resúmenes DM se escriben en un fan-out raíz atómico; unread
   usa incremento de servidor; estados nunca retroceden.
-- Conservar Groups/group chat legacy salvo pedido explícito.
+- Salas usa RoomsV2 como contrato vigente. No reintroducir `/Groups`, `group_dm`, `NODE_GROUP_DM` ni `readGroupMessages` sin un requerimiento de migración explícito.
 - Todo cambio de contrato debe alinear Android, Functions, Rules, tests y docs.
 
 ### Paths relevantes

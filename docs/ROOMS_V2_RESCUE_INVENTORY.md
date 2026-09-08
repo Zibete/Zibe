@@ -1,8 +1,21 @@
 # RoomsV2 clean rescue inventory
 
-Status: Phase 0 only. No RoomsV2 implementation has been ported to this branch yet.
+> **Estado actual — septiembre 2026:** este documento nació como inventario de rescate de Phase 0. La implementación RoomsV2 ya fue portada y endurecida progresivamente en `feature/rooms-v2-clean`; el contenido histórico de abajo se conserva como registro de decisiones y del enfoque de rescate, no como estado operativo vigente.
 
-## Baseline
+## Estado funcional actual
+
+La vertical RoomsV2 es funcional y fue validada manualmente en dispositivo para navegación/entrada a salas y flujo general. El CI de la rama está verde. La feature permanece en desarrollo y este PR no pretende cerrar todo el polish de UX.
+
+### Pendientes conocidos / fuera de alcance de esta iteración
+
+1. Al ingresar a una sala aparece un mensaje de error aunque la sala abre y el flujo continúa.
+2. Falta mostrar la cantidad de personas presentes mediante badge sobre `person_icon`.
+3. El composer/barra inferior presenta un comportamiento indeseado cuando se expande el teclado.
+4. Media de RoomsV2 queda deliberadamente fuera de alcance de esta entrega.
+5. Identidad visual: usuarios no incógnitos deben mostrar su avatar real; las iniciales quedan reservadas para identidad anónima/incógnita.
+6. Falta restaurar la elección de identidad al entrar a la sala: perfil/avatar propio o identidad anónima con nickname configurable.
+
+## Baseline histórico
 
 - Clean target branch: `feature/rooms-v2-clean`
 - Base: `main`
@@ -126,9 +139,9 @@ Candidate files:
 
 Required fixes/review:
 
-- Canonical deploy must use combined legacy + RoomsV2 rules.
+- Canonical deploy must use combined base + RoomsV2 rules.
 - Rules are not filters; sensitive children cannot live beneath readable public parents.
-- Re-run legacy, V2 and combined suites after every schema change.
+- Re-run base, V2 and combined suites after every schema change.
 
 ### Firebase Functions entrypoint
 
@@ -136,7 +149,7 @@ Candidate concept from donor:
 
 - split legacy Functions into `legacy_main.py` and export RoomsV2 through `functions/main.py`.
 
-Port only after verifying that Firebase discovery/deploy behavior remains deterministic and legacy function names stay unchanged.
+Port only after verifying that Firebase discovery/deploy behavior remains deterministic and existing function names stay unchanged.
 
 ### RoomsV2 notification routing
 
@@ -150,7 +163,7 @@ Required fixes/review:
 
 - Explicitly distinguish `room_v2` and `room_private_v2`; never derive a legacy room key from the notification type.
 - Public push routes to room; private push routes to exact contextual conversation.
-- Do not alter legacy DM notification semantics.
+- Do not alter DM notification semantics.
 - Route through a session-safe bootstrap; stale post-logout notification must not bypass auth/session checks.
 
 ### Local emulator/test tooling
@@ -206,11 +219,11 @@ Any cleanup happens later as an independent, justified refactor after the new im
 9. Add RoomsV2 FCM/badges/session-safe routing.
 10. Validate CI + real-device compile/runtime checkpoints. Request screenshots only for a concrete visual ambiguity that code/design tokens cannot resolve.
 
-## Phase 0 exit criterion
+## Phase 0 exit criterion histórico
 
-Phase 0 is complete when:
+Phase 0 se consideró completa cuando:
 
-- `feature/rooms-v2-clean` exists from `main`;
-- donor branch remains untouched and readable;
-- this inventory is committed;
-- no RoomsV2 implementation code has yet been copied into the clean branch.
+- `feature/rooms-v2-clean` quedó creada desde `main`;
+- la rama donante permaneció intacta y disponible como referencia;
+- este inventario quedó versionado;
+- todavía no se había copiado implementación RoomsV2 a la rama limpia.
