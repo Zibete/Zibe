@@ -30,7 +30,6 @@ import com.zibete.proyecto1.domain.profile.UpdateEmailUseCase
 import com.zibete.proyecto1.domain.profile.UpdatePasswordUseCase
 import com.zibete.proyecto1.domain.profile.UpdateProfileUseCase
 import com.zibete.proyecto1.domain.session.DeleteAccountUseCase
-import com.zibete.proyecto1.domain.session.ExitGroupUseCase
 import com.zibete.proyecto1.domain.session.LogoutUseCase
 import com.zibete.proyecto1.domain.session.SessionBootstrapper
 import com.zibete.proyecto1.domain.session.SessionConflictMonitor
@@ -38,7 +37,6 @@ import com.zibete.proyecto1.fakes.FakeAppChecksProvider
 import com.zibete.proyecto1.fakes.FakeAuthSessionActions
 import com.zibete.proyecto1.fakes.FakeAuthSessionProvider
 import com.zibete.proyecto1.fakes.FakeDeleteAccountUseCase
-import com.zibete.proyecto1.fakes.FakeExitGroupUseCase
 import com.zibete.proyecto1.fakes.FakeGoogleSignInUseCase
 import com.zibete.proyecto1.fakes.FakeLogoutUseCase
 import com.zibete.proyecto1.fakes.FakeNotificationPermissionStateProvider
@@ -105,11 +103,6 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSessionRepositoryProvider(): SessionRepositoryProvider = mockk(relaxed = true)
-
-    @Provides
-    @Singleton
-    fun provideExitGroupUseCase(store: TestScenarioStore): ExitGroupUseCase =
-        FakeExitGroupUseCase { store.scenario }
 
     @Provides
     @Singleton
@@ -239,5 +232,4 @@ object TestAppBindingsModule {
     @Provides
     @Singleton
     fun provideSessionRepositoryActions(): SessionRepositoryActions = mockk(relaxed = true)
-
 }
