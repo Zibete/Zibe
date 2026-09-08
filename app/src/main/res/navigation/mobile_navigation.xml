@@ -41,11 +41,6 @@
         android:label="@string/menu_settings" />
 
     <fragment
-        android:id="@+id/nav_group_host"
-        android:name="com.zibete.proyecto1.ui.groups.host.GroupHostFragment"
-        android:label="@string/menu_groups" />
-
-    <fragment
         android:id="@+id/nav_room_v2_host"
         android:name="com.zibete.proyecto1.ui.groups.host.RoomV2HostFragment"
         android:label="@string/menu_groups">

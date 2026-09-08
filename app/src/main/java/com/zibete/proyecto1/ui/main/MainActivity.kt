@@ -80,7 +80,6 @@ import com.zibete.proyecto1.ui.chat.session.ChatSessionUiHandler
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 import com.zibete.proyecto1.ui.editprofile.EditProfileExitHandler
 import com.zibete.proyecto1.ui.extensions.getColorCompat
-import com.zibete.proyecto1.ui.main.chrome.CurrentScreen
 import com.zibete.proyecto1.ui.main.chrome.MainDestinationUiMapper
 import com.zibete.proyecto1.ui.main.search.MainSearchCoordinator
 import com.zibete.proyecto1.ui.search.SearchHandler
@@ -107,7 +106,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
     private lateinit var navController: NavController
     private lateinit var materialToolbar: MaterialToolbar
     private lateinit var bottomNavigationView: BottomNavigationView
-    private var currentScreen: CurrentScreen = CurrentScreen.OTHER
     private val destinationUiMapper = MainDestinationUiMapper()
     private val searchCoordinator = MainSearchCoordinator { activeSearchHandler() }
     private var badgeDrawableChat: BadgeDrawable? = null
@@ -352,12 +350,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                     bottomNavigationView.isVisible = state.showBottomNav
                     // title
                     materialToolbar.title = when {
-                        state.useGroupNameTitle -> mainViewModel.groupName.value
                         state.title != null -> state.title.asString(this@MainActivity)
                         else -> state.currentScreen.titleRes.asString(this@MainActivity)
                     }
-
-                    currentScreen = state.currentScreen
 
                     invalidateOptionsMenu()
                 }
@@ -383,10 +378,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                 goToChatTab()
                             }
 
-                            is MainUiEvent.ToGroupHost -> {
-                                navigateRoot(R.id.nav_group_host)
-                            }
-
                             is MainUiEvent.ToGroupsSelect -> {
                                 navigateRoot(R.id.nav_group_select)
                             }
@@ -399,28 +390,9 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                                 navController.navigate(R.id.editProfileFragment)
                             }
 
-                            is MainUiEvent.ToGroupsAfterExit -> {
-                                navigateRoot(R.id.nav_group_select)
-                            }
-
                             is MainUiEvent.BackExitAppOrCloseSearch -> {
                                 if (searchCoordinator.isSearchOpen()) {
                                     searchCoordinator.collapseAndClear()
-                                } else if (
-                                    currentScreen == CurrentScreen.GROUPS &&
-                                    navController.currentDestination?.id == R.id.nav_group_host
-                                ) {
-                                    val popped =
-                                        navController.popBackStack(R.id.nav_group_select, false)
-                                    if (!popped) {
-                                        navController.navigate(
-                                            R.id.nav_group_select,
-                                            null,
-                                            navOptions { launchSingleTop = true }
-                                        )
-                                    }
-                                    bottomNavigationView.menu.findItem(R.id.navBottomGroups)?.isChecked =
-                                        true
                                 } else {
                                     finish()
                                 }
@@ -428,17 +400,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
 
                             is MainUiEvent.NavigateToSettings -> {
                                 ensureNavHostController().navigate(R.id.settingsFragment)
-                            }
-
-                            is MainUiEvent.ConfirmExitGroup -> {
-                                UserMessageUtils.confirm(
-                                    context = this@MainActivity,
-                                    title = getString(R.string.action_exit),
-                                    message = "¿Desea abandonar ${mainViewModel.groupName.value}?",
-                                    onConfirm = {
-                                        mainViewModel.onExitGroupConfirmed(getString(R.string.msg_user_leaved))
-                                    }
-                                )
                             }
 
                             is MainUiEvent.ConfirmLogout -> {
@@ -713,7 +674,6 @@ class MainActivity : BaseEdgeToEdgeActivity(), EditProfileExitHandler {
                 )
             )
         }
-        menu.findItem(R.id.action_exit_group)?.isVisible = menuConfig.showExitGroup
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

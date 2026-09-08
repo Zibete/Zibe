@@ -30,11 +30,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -53,11 +50,6 @@ class MainViewModel @Inject constructor(
     private val appNavigator: AppNavigator,
     private val config: SettingsConfig,
 ) : ViewModel() {
-
-    // Legacy toolbar compatibility only. Removed once the unreachable legacy host route is deleted.
-    val groupName: StateFlow<String> =
-        userPreferencesProvider.groupNameFlow
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
@@ -128,11 +120,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    /** Compatibility path for the unreachable legacy host. No legacy Firebase cleanup is performed. */
-    fun onExitGroupConfirmed(@Suppress("UNUSED_PARAMETER") message: String) {
-        emit(MainUiEvent.ToGroupsAfterExit)
-    }
-
     fun onUsersTabSelected() {
         if (_destinationUiState.value.currentScreen == CurrentScreen.USERS) return
         viewModelScope.launch { toUsers() }
@@ -188,13 +175,11 @@ class MainViewModel @Inject constructor(
 
     fun toEditProfile() = emit(MainUiEvent.ToEditProfile)
 
-    fun toGroupHost() = emit(MainUiEvent.ToGroupHost)
     fun toGroupsSelect() = emit(MainUiEvent.ToGroupsSelect)
     fun toFavorites() = emit(MainUiEvent.ToFavorites)
     fun toChat() = emit(MainUiEvent.ToChat)
     fun toUsers() = emit(MainUiEvent.ToUsers)
     fun toSettings() = emit(MainUiEvent.NavigateToSettings)
-    fun confirmExitGroup() = emit(MainUiEvent.ConfirmExitGroup)
 
     fun emit(event: MainUiEvent) {
         viewModelScope.launch { _uiEvents.send(event) }
@@ -244,7 +229,6 @@ class MainViewModel @Inject constructor(
         when (itemId) {
             R.id.action_settings -> toSettings()
             R.id.action_favorites -> onBottomItemSelected(R.id.navBottomFavorites)
-            R.id.action_exit_group -> confirmExitGroup()
             R.id.action_unblock_users -> onUnblockUsersSelected()
             R.id.action_unhide_chats -> onUnhideChatsSelected()
         }
