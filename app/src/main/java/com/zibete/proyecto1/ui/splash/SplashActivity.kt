@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavDeepLinkBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,6 +52,7 @@ import com.zibete.proyecto1.core.constants.Constants.UiTags.PERMISSION_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SIGNUP_SCREEN
 import com.zibete.proyecto1.core.constants.Constants.UiTags.SPLASH_SCREEN
 import com.zibete.proyecto1.core.navigation.AppNavigator
+import com.zibete.proyecto1.core.notifications.RoomsV2NotificationContract
 import com.zibete.proyecto1.core.ui.UiText
 import com.zibete.proyecto1.core.utils.getAuthErrorMessage
 import com.zibete.proyecto1.data.auth.GoogleSignInUseCase
@@ -326,16 +328,21 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                             }
 
                             is SplashUiEvent.NavigateMain -> {
-                                val intent =
-                                    Intent(this@SplashActivity, MainActivity::class.java).apply {
-                                        flags =
-                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                                Intent.FLAG_ACTIVITY_SINGLE_TOP
-                                        putExtra(EXTRA_UI_TEXT, event.uiText)
-                                        putExtra(EXTRA_SNACK_TYPE, event.snackType)
-                                        copyPendingDmExtras(from = this@SplashActivity.intent, to = this)
-                                    }
-                                startActivity(intent)
+                                if (!openPendingRoomV2Destination()) {
+                                    val mainIntent =
+                                        Intent(this@SplashActivity, MainActivity::class.java).apply {
+                                            flags =
+                                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                            putExtra(EXTRA_UI_TEXT, event.uiText)
+                                            putExtra(EXTRA_SNACK_TYPE, event.snackType)
+                                            copyPendingDmExtras(
+                                                from = this@SplashActivity.intent,
+                                                to = this,
+                                            )
+                                        }
+                                    startActivity(mainIntent)
+                                }
                                 finish()
                             }
                         }
@@ -343,6 +350,36 @@ class SplashActivity : BaseEdgeToEdgeActivity() {
                 }
             }
         }
+    }
+
+    private fun openPendingRoomV2Destination(): Boolean {
+        val type = intent.getRequiredStringExtra(PayloadKeys.TYPE)
+        if (!RoomsV2NotificationContract.isRoomsV2Type(type)) return false
+
+        val roomId = intent.getRequiredStringExtra(RoomsV2NotificationContract.PAYLOAD_ROOM_ID)
+            ?: return false
+        val conversationId = intent.getRequiredStringExtra(
+            RoomsV2NotificationContract.PAYLOAD_CONVERSATION_ID
+        )
+        if (type == RoomsV2NotificationContract.TYPE_PRIVATE && conversationId == null) {
+            return false
+        }
+
+        val arguments = Bundle().apply {
+            putString(RoomsV2NotificationContract.PAYLOAD_ROOM_ID, roomId)
+            putString(
+                RoomsV2NotificationContract.PAYLOAD_CONVERSATION_ID,
+                conversationId.orEmpty(),
+            )
+        }
+        NavDeepLinkBuilder(this)
+            .setComponentName(MainActivity::class.java)
+            .setGraph(R.navigation.mobile_navigation)
+            .setDestination(R.id.nav_room_v2_host)
+            .setArguments(arguments)
+            .createTaskStackBuilder()
+            .startActivities()
+        return true
     }
 
     private fun copyPendingDmExtras(from: Intent, to: Intent) {

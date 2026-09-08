@@ -12,6 +12,7 @@ import com.zibete.proyecto1.domain.roomsv2.RoomV2Thread
 import com.zibete.proyecto1.ui.components.ZibeSnackType
 
 const val ROOM_V2_ID_ARG = "roomId"
+const val ROOM_V2_CONVERSATION_ARG = "conversationId"
 
 enum class RoomV2HostTab { CHAT, PEOPLE, PRIVATES, REPORTS }
 

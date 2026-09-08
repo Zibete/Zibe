@@ -36,6 +36,18 @@ class RoomV2HostFragment : androidx.fragment.app.Fragment() {
                 }
             },
         )
+
+        val restoredConversationId = if (
+            savedInstanceState?.containsKey(STATE_SELECTED_CONVERSATION_ID) == true
+        ) {
+            savedInstanceState.getString(STATE_SELECTED_CONVERSATION_ID)
+        } else {
+            arguments?.getString(ROOM_V2_CONVERSATION_ARG)
+        }
+        restoredConversationId
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?.let(viewModel::selectConversation)
     }
 
     override fun onCreateView(
@@ -76,5 +88,17 @@ class RoomV2HostFragment : androidx.fragment.app.Fragment() {
     override fun onStop() {
         viewModel.onScreenVisible(false)
         super.onStop()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(
+            STATE_SELECTED_CONVERSATION_ID,
+            viewModel.uiState.value.selectedConversationId,
+        )
+        super.onSaveInstanceState(outState)
+    }
+
+    private companion object {
+        const val STATE_SELECTED_CONVERSATION_ID = "room_v2_selected_conversation_id"
     }
 }
