@@ -78,24 +78,19 @@ object Constants {
     const val EXTRA_PENDING_DM_TYPE = "extra_pending_dm_type"
     const val EXTRA_PENDING_DM_CHAT_ID = "extra_pending_dm_chat_id"
 
-    const val EXTRA_GROUP_NAME = "groupName"
-
     // ==============================
     // Firebase RTDB Root Nodes
     // ==============================
     const val NODE_CHATS_ROOT = "Chats"
-    const val NODE_GROUPS_ROOT = "Groups"
     const val NODE_USERS_ROOT = "Users"
     const val NODE_SESSIONS = "Sessions"
     const val NODE_APP_FEEDBACK = "Feedback"
 
     // Sub-nodos comunes
     const val NODE_DM = "dm"
-    const val NODE_GROUP_DM = "group_dm"
     const val NODE_CLIENT_DATA = "ClientData"
     const val NODE_STATUS = "Status"
     const val NODE_ACTIVE_VIEW = "ActiveView"
-    const val NODE_CHAT_LIST = "ChatList"
     const val NODE_USERS_ACCOUNTS = "Accounts"
     const val NODE_USERS_DATA = "Data"
     const val NODE_FAVORITE_LIST = "FavoriteList"
@@ -118,11 +113,6 @@ object Constants {
         const val UPDATED_AT = "updatedAt"
     }
 
-    object ChatListKeys {
-        const val READ_GROUP_MESSAGES = "readGroupMessages"
-        const val UNREAD_GROUP_COUNT = "unreadGroupCount"
-    }
-
     object ChatMessageKeys {
         const val CONTENT = "content"
         const val CREATED_AT = "createdAt"
@@ -130,41 +120,6 @@ object Constants {
         const val SENDER_UID = "senderUid"
         const val TYPE = "type"
         const val SEEN = "seen"
-    }
-
-    object ChatGroupKeys {
-        const val CONTENT = "content"
-        const val TIMESTAMP = "timestamp"
-        const val USER_NAME = "userName"
-        const val SENDER_UID = "senderUid"
-        const val CHAT_TYPE = "chatType"
-        const val USER_TYPE = "userType"
-    }
-
-    object GroupUserKeys {
-        const val USER_TYPE = "type"
-        const val USER_ID = "userId"
-        const val USER_NAME = "userName"
-        const val JOINED_AT_MS = "joinedAtMs"
-    }
-
-    object GroupChatKeys {
-        const val CONTENT = "content"
-        const val DATE = "date"
-        const val NAME_USER = "nameUser"
-        const val SENDER_UID = "senderUid"
-        const val TYPE = "type"
-        const val USER_TYPE = "userType"
-    }
-
-    object GroupMetaKeys {
-        const val NAME = "name"
-        const val DESCRIPTION = "description"
-        const val CREATOR_UID = "creatorUid"
-        const val TYPE = "type"
-        const val USERS = "users"
-        const val CREATED_AT = "createdAt"
-        const val TOTAL_MESSAGES = "totalMessages"
     }
 
     object AccountsKeys {
@@ -226,7 +181,6 @@ object Constants {
     const val MSG_SEEN = 3
 
     const val CHAT_STATE_DEFAULT_DM = NODE_DM
-    const val CHAT_STATE_DEFAULT_GROUP_DM_DM = NODE_GROUP_DM
     const val CHAT_STATE_BLOCKED = "blocked"
     const val CHAT_STATE_SILENT = "silent"
     const val CHAT_STATE_HIDE = "hide"
@@ -264,12 +218,5 @@ object Constants {
     const val EXTENSION_AUDIO = ".m4a"
     const val EXTENSION_IMAGE = ".jpg"
     const val KEY_SEPARATOR = "_"
-
-    // ==============================
-    // Groups Logic (Sub-nodes)
-    // ==============================
-    const val NODE_GROUPS_USERS = "Users"
-    const val NODE_GROUPS_CHAT = "Chat"
-    const val NODE_GROUPS_META = "Meta"
 
 }
