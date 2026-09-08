@@ -19,7 +19,6 @@ import com.zibete.proyecto1.core.constants.Constants.NODE_ACTIVE_VIEW
 import com.zibete.proyecto1.core.constants.Constants.NODE_CLIENT_DATA
 import com.zibete.proyecto1.core.constants.Constants.NODE_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_FAVORITE_LIST
-import com.zibete.proyecto1.core.constants.Constants.NODE_GROUP_DM
 import com.zibete.proyecto1.core.constants.Constants.NODE_STATUS
 import com.zibete.proyecto1.core.constants.Constants.StatusKeys
 import com.zibete.proyecto1.core.constants.USER_NOT_FOUND_EXCEPTION
@@ -306,15 +305,9 @@ class ProfileRepository @Inject constructor(
                         val other =
                             otherAt.child(ActiveThreadKeys.OTHER_UID).getValue(String::class.java)
                                 .orEmpty()
-                        val matches = when (node) {
-                            NODE_DM ->
-                                otherNode == NODE_DM && other == myUidSnapshot
-
-                            NODE_GROUP_DM ->
-                                otherNode == NODE_GROUP_DM && other == myUidSnapshot
-
-                            else -> false
-                        }
+                        val matches = node == NODE_DM &&
+                            otherNode == NODE_DM &&
+                            other == myUidSnapshot
                         if (matches) trySend(base) else trySend(UserStatus.Online)
                     }
                 }
