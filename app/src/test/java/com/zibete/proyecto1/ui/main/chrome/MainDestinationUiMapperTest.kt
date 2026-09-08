@@ -38,15 +38,6 @@ class MainDestinationUiMapperTest {
     }
 
     @Test
-    fun `legacy group host preserves back and rooms selection`() {
-        val state = mapper.map(R.id.nav_group_host)
-
-        assertTrue(state.showAccountAvatar)
-        assertTrue(state.showBack)
-        assertEquals(R.id.navBottomGroups, state.selectedBottomNavItemId)
-    }
-
-    @Test
     fun `rooms v2 host owns its chat chrome`() {
         val state = mapper.map(R.id.nav_room_v2_host)
 

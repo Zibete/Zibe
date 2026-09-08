@@ -9,8 +9,7 @@ data class ToolbarMenuConfig(
     val showUnhideChats: Boolean = false,
     val showFavorites: Boolean = false,
     val showSearch: Boolean = false,
-    val showDiscoverFilter: Boolean = false,
-    val showExitGroup: Boolean = false
+    val showDiscoverFilter: Boolean = false
 )
 
 data class MainDestinationUiState(
@@ -20,7 +19,6 @@ data class MainDestinationUiState(
     val showAccountAvatar: Boolean = false,
     val showBack: Boolean = false,
     val title: UiText? = null,
-    val useGroupNameTitle: Boolean = false,
     val selectedBottomNavItemId: Int? = null,
     val menuConfig: ToolbarMenuConfig = ToolbarMenuConfig()
 )
@@ -74,22 +72,6 @@ class MainDestinationUiMapper {
             menuConfig = ToolbarMenuConfig(
                 showSettings = true,
                 showFavorites = true,
-                showSearch = true,
-                showUnhideChats = true
-            )
-        )
-
-        R.id.nav_group_host -> MainDestinationUiState(
-            currentScreen = CurrentScreen.GROUPS,
-            showToolbar = true,
-            showBottomNav = true,
-            showAccountAvatar = true,
-            showBack = true,
-            title = CurrentScreen.GROUPS.titleRes,
-            useGroupNameTitle = true,
-            selectedBottomNavItemId = R.id.navBottomGroups,
-            menuConfig = ToolbarMenuConfig(
-                showSettings = true,
                 showSearch = true,
                 showUnhideChats = true
             )
